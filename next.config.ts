@@ -1,0 +1,21 @@
+import type { NextConfig } from "next";
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { DefinePlugin } = require("webpack");
+
+const nextConfig: NextConfig = {
+  webpack: (config) => {
+    config.plugins ??= [];
+    config.plugins.push(
+      new DefinePlugin({
+        "import.meta.env.VITE_GEMINI_API_KEY": JSON.stringify(
+          process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? "",
+        ),
+      }),
+    );
+
+    return config;
+  },
+};
+
+export default nextConfig;

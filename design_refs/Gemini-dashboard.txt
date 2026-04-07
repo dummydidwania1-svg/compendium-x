@@ -1,0 +1,988 @@
+'use client';
+
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { 
+  Lock, Flame, FileText, Download, ChevronRight, ArrowLeft, 
+  X, Sparkles, User, LogOut, Info, Settings, Search, CheckCircle2,
+  BarChart3, Target, Award, ArrowUpRight
+} from 'lucide-react';
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  LineChart, Line, PieChart, Pie, Sector
+} from 'recharts';
+
+// --- MOCK DATA ---
+const MOCK_CASES = [
+  { id: '1', name: 'McKinsey Profitability — Airline Turnaround', type: 'Profitability', level: 'Hard', date: '2026-03-12', score: 82, hasTranscript: true, hasPDF: true },
+  { id: '2', name: 'Market Entry — EV Charging India', type: 'Market Entry', level: 'Medium', date: '2026-03-08', score: 76, hasTranscript: true, hasPDF: false },
+  { id: '3', name: 'Growth — Subscription Box Scale', type: 'Growth', level: 'Medium', date: '2026-02-05', score: 88, hasTranscript: true, hasPDF: true },
+  { id: '4', name: 'Bain Pricing — D2C Premium', type: 'Pricing', level: 'Hard', date: '2026-02-28', score: 91, hasTranscript: false, hasPDF: true },
+  { id: '5', name: 'Unconventional — Zoo Logistics', type: 'Unconventional', level: 'Easy', date: '2026-02-15', score: 65, hasTranscript: true, hasPDF: false },
+  { id: '6', name: 'Profitability — Retail Shrinkage', type: 'Profitability', level: 'Medium', date: '2026-01-20', score: 79, hasTranscript: false, hasPDF: false },
+  { id: '7', name: 'Market Entry — SaaS LatAm', type: 'Market Entry', level: 'Hard', date: '2026-01-10', score: 85, hasTranscript: true, hasPDF: true },
+  { id: '8', name: 'Pricing — SaaS Tier Overhaul', type: 'Pricing', level: 'Medium', date: '2025-12-28', score: 88, hasTranscript: true, hasPDF: true },
+];
+
+const PARAMETER_SCORES = [
+  { name: 'Structure', score: 82 },
+  { name: 'Analysis', score: 74 },
+  { name: 'Delivery', score: 71 },
+  { name: 'Creativity', score: 68 },
+];
+
+const PARAMETER_DRILLDOWN = {
+  Structure: [
+    { name: 'Profitability', score: 85 },
+    { name: 'Market Entry', score: 80 },
+    { name: 'Growth', score: 78 },
+  ],
+  Analysis: [
+    { name: 'Profitability', score: 70 },
+    { name: 'Pricing', score: 85 },
+    { name: 'Unconventional', score: 60 },
+  ],
+  Delivery: [
+    { name: 'Easy', score: 85 },
+    { name: 'Medium', score: 70 },
+    { name: 'Hard', score: 65 },
+  ],
+  Creativity: [
+    { name: 'Unconventional', score: 80 },
+    { name: 'Growth', score: 75 },
+    { name: 'Profitability', score: 55 },
+  ]
+};
+
+const TIMELINE_DATA = [
+  { date: 'Dec 15', overall: 72, structure: 75, delivery: 68, creativity: 65, analysis: 78, caseName: 'Initial Diagnostic', caseType: 'Profitability' },
+  { date: 'Dec 22', overall: 68, structure: 70, delivery: 65, creativity: 62, analysis: 72, caseName: 'Retail Supply Chain', caseType: 'Unconventional' },
+  { date: 'Jan 05', overall: 75, structure: 78, delivery: 70, creativity: 66, analysis: 80, caseName: 'SaaS Expansion', caseType: 'Growth' },
+  { date: 'Jan 10', overall: 80, structure: 82, delivery: 75, creativity: 70, analysis: 85, caseName: 'Market Entry - SaaS LatAm', caseType: 'Market Entry' },
+  { date: 'Jan 20', overall: 77, structure: 79, delivery: 72, creativity: 71, analysis: 82, caseName: 'Retail Shrinkage', caseType: 'Profitability' },
+  { date: 'Jan 28', overall: 82, structure: 85, delivery: 78, creativity: 72, analysis: 88, caseName: 'Fintech Scale', caseType: 'Growth' },
+  { date: 'Feb 05', overall: 79, structure: 81, delivery: 75, creativity: 74, analysis: 84, caseName: 'Growth - Subscription Box', caseType: 'Growth' },
+  { date: 'Feb 15', overall: 85, structure: 88, delivery: 80, creativity: 76, analysis: 90, caseName: 'Unconventional - Zoo', caseType: 'Unconventional' },
+  { date: 'Feb 20', overall: 81, structure: 84, delivery: 78, creativity: 75, analysis: 86, caseName: 'Mining Operations', caseType: 'Profitability' },
+  { date: 'Feb 28', overall: 78, structure: 80, delivery: 76, creativity: 78, analysis: 82, caseName: 'Bain Pricing - D2C', caseType: 'Pricing' },
+  { date: 'Mar 08', overall: 88, structure: 90, delivery: 82, creativity: 80, analysis: 92, caseName: 'Market Entry - EV', caseType: 'Market Entry' },
+  { date: 'Mar 12', overall: 84, structure: 86, delivery: 80, creativity: 82, analysis: 88, caseName: 'Airline Turnaround', caseType: 'Profitability' },
+];
+
+const SCORE_BREAKDOWN = [
+  { name: 'Pricing', score: 91 },
+  { name: 'Growth', score: 88 },
+  { name: 'Profitability', score: 82 },
+  { name: 'Market Entry', score: 76 },
+  { name: 'Unconventional', score: 65 },
+];
+
+const DYNAMIC_QUESTIONS = [
+  "How's my structure improving?",
+  "What should I focus on next?",
+  "Compare profitability vs. pricing"
+];
+
+// --- STYLES & THEME ---
+const COLORS = {
+  dark: '#3B2F2F',
+  warm: '#5C4033',
+  base: '#F0EBE3',
+  subtle: '#D9D0C4',
+  accent: '#5BAFCC',
+};
+
+const GlobalStyles = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Merriweather:wght@300;400;600;700&display=swap');
+    
+    :root {
+      --primary-dark: #3B2F2F;
+      --primary-warm: #5C4033;
+      --bg-base: #F0EBE3;
+      --bg-subtle: #D9D0C4;
+      --accent-pop: #5BAFCC;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--primary-dark);
+      font-family: 'Geist', sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-sans { font-family: 'Geist', sans-serif; }
+    .font-serif { font-family: 'Merriweather', serif; }
+
+    .glass-card {
+      background: rgba(240, 235, 227, 0.8);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(92, 64, 51, 0.12);
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgba(59, 47, 47, 0.04);
+    }
+
+    .eyebrow {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+      font-family: 'Geist', sans-serif;
+      font-weight: 500;
+      color: rgba(92, 64, 51, 0.6);
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(92, 64, 51, 0.15);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(92, 64, 51, 0.3);
+    }
+
+    @keyframes rise {
+      0% { opacity: 0; transform: translateY(24px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-rise {
+      animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes scale-in {
+      0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-scale-in {
+      animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    
+    .radial-bg {
+      background: radial-gradient(circle at top right, rgba(91, 175, 204, 0.08), transparent 40%),
+                  radial-gradient(circle at bottom left, rgba(92, 64, 51, 0.05), transparent 40%);
+    }
+
+    /* Range slider custom styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: var(--primary-dark);
+      cursor: pointer;
+      margin-top: -6px;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      cursor: pointer;
+      background: rgba(92, 64, 51, 0.2);
+      border-radius: 2px;
+    }
+  `}</style>
+);
+
+// --- UTILITY COMPONENTS ---
+const TieLogo = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M12 2L9 7L11 12L9 22H15L13 12L15 7L12 2Z" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinejoin="round"/>
+    <path d="M10.5 7H13.5" stroke="var(--bg-base)" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
+const ScrollReveal = ({ children, className = "", delay = 0 }) => {
+  const ref = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.05, rootMargin: "0px 0px -50px 0px" }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div 
+      ref={ref} 
+      className={`${className} transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      }`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+};
+
+// --- MAIN DASHBOARD COMPONENTS ---
+
+const Navbar = () => {
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-card !rounded-none !border-t-0 !border-x-0 !border-b-rgba(92,64,51,0.1) h-16 flex items-center justify-between px-6 lg:px-12 bg-[#F0EBE3]/90">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-[#3B2F2F] text-[#F0EBE3] rounded-lg flex items-center justify-center">
+          <TieLogo className="w-5 h-5" />
+        </div>
+        <span className="font-serif font-bold text-lg text-[#3B2F2F]">
+          Case Compendium <span className="text-[#5BAFCC]">X</span>
+        </span>
+      </div>
+      
+      <div className="flex items-center gap-8">
+        <a href="#" className="text-sm font-medium text-[#3B2F2F] border-b-2 border-[#5BAFCC] pb-1">Dashboard</a>
+        
+        <div className="relative group py-4">
+          <button className="text-sm font-medium text-[#5C4033]/80 hover:text-[#3B2F2F] flex items-center gap-1 transition-colors">
+            About Us
+          </button>
+          <div className="absolute top-full right-0 w-48 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 -translate-y-2 z-50">
+            <div className="glass-card p-2 flex flex-col">
+              <a href="#" className="px-4 py-2 text-sm text-[#5C4033] hover:bg-[#D9D0C4]/40 rounded-lg transition-colors">Founders</a>
+              <a href="#" className="px-4 py-2 text-sm text-[#5C4033] hover:bg-[#D9D0C4]/40 rounded-lg transition-colors">Contributors</a>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-8 h-8 rounded-full bg-[#3B2F2F] text-[#F0EBE3] flex items-center justify-center text-xs font-semibold shadow-sm cursor-pointer hover:bg-[#5C4033] transition-colors">
+          SD
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+const IntroBar = ({ filters, setFilters }) => {
+  return (
+    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 pt-24 border-b border-[#5C4033]/10">
+      <div>
+        <h1 className="font-serif text-3xl font-semibold text-[#3B2F2F] mb-1 tracking-tight">Hi Saksham,</h1>
+        <p className="font-sans text-sm text-[#5C4033]/60 font-medium">Ready to ace your next interview?</p>
+      </div>
+      
+      <div className="flex flex-wrap items-center gap-3">
+        {['Type', 'Level', 'Time'].map((filterKey) => (
+          <div key={filterKey} className="relative group">
+            <button className="glass-card !rounded-full px-4 py-2 text-xs font-medium text-[#5C4033] flex items-center gap-2 hover:bg-[#D9D0C4]/30 transition-colors !shadow-none border-[#5C4033]/20">
+              <span className="opacity-60">{filterKey}:</span> 
+              <span className="text-[#3B2F2F]">{filters[filterKey.toLowerCase()]}</span>
+            </button>
+            {/* Simple dropdown mock for visual completeness */}
+            <div className="absolute top-full right-0 mt-2 w-40 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-40">
+               <div className="glass-card p-1 flex flex-col shadow-lg">
+                 {['All', 'Option A', 'Option B'].map(opt => (
+                   <button key={opt} className="text-left px-4 py-2 text-xs text-[#5C4033] hover:bg-[#D9D0C4]/40 rounded-lg">
+                     {filterKey === 'Time' && opt === 'All' ? 'This Month' : opt}
+                   </button>
+                 ))}
+               </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const CoachInsight = () => (
+  <div className="glass-card p-6 h-full flex flex-col justify-center relative overflow-hidden group">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-[#5BAFCC]/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none transition-all duration-700 group-hover:bg-[#5BAFCC]/20" />
+    <div className="eyebrow">
+      <Sparkles className="w-3 h-3 mr-2 text-[#5BAFCC]" />
+      AI COACH INSIGHT
+    </div>
+    <p className="text-sm md:text-base text-[#3B2F2F] leading-relaxed max-w-xl font-medium">
+      Your <strong className="text-[#3B2F2F]">structure scores</strong> have improved 15% this month. Focus on <strong className="text-[#3B2F2F]">quantitative analysis</strong> — it's your weakest parameter across all case types. Try a <strong className="text-[#5BAFCC]">Pricing case</strong> next to diversify your practice.
+    </p>
+  </div>
+);
+
+const GoalTracker = ({ isLocked }) => {
+  return (
+    <div className="glass-card p-6 relative h-full flex flex-col">
+      <div className="eyebrow">GOAL TRACKER</div>
+      
+      <div className="flex flex-col gap-6 flex-1">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-[#5C4033]/60 font-medium">Target Cases (Monthly)</label>
+            <input type="number" defaultValue={15} className="bg-transparent border border-[#5C4033]/20 rounded-lg px-3 py-2 text-sm text-[#3B2F2F] focus:outline-none focus:border-[#5C4033]/50 transition-colors" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-[#5C4033]/60 font-medium">Target Avg. Score</label>
+            <input type="number" defaultValue={85} className="bg-transparent border border-[#5C4033]/20 rounded-lg px-3 py-2 text-sm text-[#3B2F2F] focus:outline-none focus:border-[#5C4033]/50 transition-colors" />
+          </div>
+        </div>
+        <button className="w-full bg-[#3B2F2F] text-[#F0EBE3] rounded-lg py-2.5 text-xs font-semibold hover:bg-[#5C4033] transition-colors shadow-sm">
+          Update Goals
+        </button>
+
+        <div className="mt-auto pt-4 border-t border-[#5C4033]/10 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             {/* Progress Ring Mock */}
+             <div className="relative w-14 h-14">
+                <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(92, 64, 51, 0.1)" strokeWidth="3" />
+                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#5BAFCC" strokeWidth="3" strokeDasharray="65, 100" className="animate-[dash_1.5s_ease-out]" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-[#3B2F2F]">65%</div>
+             </div>
+             <div>
+                <p className="text-xs text-[#5C4033]/70 font-medium">Monthly Progress</p>
+                <p className="text-sm font-semibold text-[#3B2F2F]">10 / 15 Cases</p>
+             </div>
+          </div>
+          <div className="flex items-center gap-1.5 bg-[#D9D0C4]/40 px-3 py-1.5 rounded-full border border-[#5C4033]/5">
+             <Flame className="w-3.5 h-3.5 text-[#5C4033]" />
+             <span className="text-xs font-bold text-[#3B2F2F]">5-Day Streak</span>
+          </div>
+        </div>
+      </div>
+
+      {isLocked && (
+        <div className="absolute inset-0 z-10 bg-[#F0EBE3]/60 backdrop-blur-[4px] rounded-2xl flex flex-col items-center justify-center text-center p-6 border border-[#5C4033]/10">
+          <div className="w-10 h-10 bg-[#F0EBE3] rounded-full flex items-center justify-center mb-3 shadow-sm border border-[#5C4033]/10">
+            <Lock className="w-4 h-4 text-[#5C4033]/60" />
+          </div>
+          <p className="text-xs text-[#5C4033] font-medium max-w-[200px] leading-relaxed">
+            Select a specific Case Type filter to unlock focused Goal Tracker insights.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CaseScoreCard = () => {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="glass-card p-6 flex flex-col transition-all duration-500 ease-in-out">
+      <div className="eyebrow mb-2">
+        OVERALL ASSESSMENT <span className="mx-2 opacity-40">•</span> Case Score
+      </div>
+      
+      {!expanded ? (
+        <div className="flex flex-col items-center justify-center py-4 animate-scale-in">
+          <div className="relative w-36 h-20 overflow-hidden mb-2">
+            <ResponsiveContainer width="100%" height={144}>
+              <PieChart>
+                <Pie 
+                  data={[{value: 78}, {value: 22}]} 
+                  cx="50%" cy="100%" 
+                  startAngle={180} endAngle={0} 
+                  innerRadius={55} outerRadius={70} 
+                  dataKey="value" stroke="none"
+                  isAnimationActive={true}
+                >
+                  <Cell fill={COLORS.accent} />
+                  <Cell fill={COLORS.subtle} opacity={0.4} />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center pb-2">
+               <span className="font-serif text-4xl font-bold text-[#3B2F2F] tracking-tight">78</span>
+               <span className="text-xs font-medium text-[#5C4033]/60 mb-1.5 ml-1">/100</span>
+            </div>
+          </div>
+          <p className="text-[10px] text-[#5C4033]/60 font-medium uppercase tracking-widest mt-2">Top 15% of Cohort</p>
+          
+          <button 
+            onClick={() => setExpanded(true)}
+            className="mt-6 text-xs font-semibold text-[#5BAFCC] hover:text-[#3B2F2F] transition-colors flex items-center gap-1 group"
+          >
+            View Breakdown <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col py-2 animate-scale-in flex-1">
+          <button 
+            onClick={() => setExpanded(false)}
+            className="text-[10px] font-semibold text-[#5C4033]/60 hover:text-[#3B2F2F] transition-colors flex items-center gap-1 mb-4 self-start"
+          >
+            <ArrowLeft className="w-3 h-3" /> Back to Overall
+          </button>
+          
+          <div className="space-y-3 flex-1">
+            {SCORE_BREAKDOWN.map((item, i) => (
+              <div key={item.name} className="flex items-center gap-3">
+                <span className="text-xs font-medium text-[#5C4033] w-24 truncate">{item.name}</span>
+                <div className="flex-1 h-1.5 bg-[#D9D0C4]/30 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-gradient-to-r from-[#5C4033] to-[#5BAFCC]"
+                    style={{ width: `${item.score}%`, opacity: 0.8 + (item.score/100)*0.2 }}
+                  />
+                </div>
+                <span className="text-xs font-bold text-[#3B2F2F] w-6 text-right">{item.score}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PlaceholderCard = ({ title }) => (
+  <div className="glass-card p-4 border-dashed border-2 border-[#5C4033]/20 flex items-center justify-center min-h-[100px] bg-[#F0EBE3]/40">
+    <span className="text-xs font-medium text-[#5C4033]/40">{title || "Metric coming soon"}</span>
+  </div>
+);
+
+const CustomBarTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="glass-card p-3 !rounded-lg border-[#5C4033]/10 shadow-lg">
+        <p className="text-xs font-bold text-[#3B2F2F] mb-1">{payload[0].payload.name}</p>
+        <p className="text-sm font-medium text-[#5BAFCC]">Score: {payload[0].value}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const ParameterBarChart = () => {
+  const [drillDown, setDrillDown] = useState(null);
+
+  return (
+    <div className="glass-card p-6 flex flex-col relative overflow-hidden h-full min-h-[280px]">
+      <div className="eyebrow mb-6">
+        PARAMETER ANALYSIS <span className="mx-2 opacity-40">•</span> Skill Profile
+      </div>
+
+      {!drillDown ? (
+        <div className="flex-1 animate-scale-in">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart 
+              layout="vertical" 
+              data={PARAMETER_SCORES} 
+              margin={{ top: 0, right: 20, left: -20, bottom: 0 }}
+            >
+              <XAxis type="number" hide domain={[0, 100]} />
+              <YAxis 
+                dataKey="name" 
+                type="category" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: COLORS.warm, fontSize: 11, fontWeight: 500 }} 
+                width={80}
+              />
+              <Tooltip cursor={{ fill: 'rgba(217, 208, 196, 0.4)' }} content={<CustomBarTooltip />} />
+              <Bar 
+                dataKey="score" 
+                radius={[0, 4, 4, 0]} 
+                barSize={20}
+                onClick={(data) => setDrillDown(data.name)}
+                cursor="pointer"
+              >
+                {PARAMETER_SCORES.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.score > 75 ? COLORS.accent : COLORS.warm} 
+                    className="transition-all duration-300 hover:opacity-80"
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <p className="text-[10px] text-[#5C4033]/50 text-center mt-2">Click any bar to view breakdown</p>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col animate-scale-in absolute inset-0 bg-[#F0EBE3]/95 backdrop-blur-md z-10 p-6 rounded-2xl">
+           <div className="flex items-center justify-between mb-6">
+              <span className="text-sm font-bold text-[#3B2F2F] tracking-tight">{drillDown} Breakdown</span>
+              <button 
+                onClick={() => setDrillDown(null)}
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-[#D9D0C4]/50 text-[#5C4033] hover:bg-[#3B2F2F] hover:text-[#F0EBE3] transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+           </div>
+           <div className="flex-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart 
+                layout="vertical" 
+                data={PARAMETER_DRILLDOWN[drillDown] || []} 
+                margin={{ top: 0, right: 30, left: 0, bottom: 0 }}
+              >
+                <XAxis type="number" hide domain={[0, 100]} />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: COLORS.warm, fontSize: 10, fontWeight: 500 }} 
+                  width={90}
+                />
+                <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={12} fill={COLORS.warm} opacity={0.8}>
+                   {(PARAMETER_DRILLDOWN[drillDown] || []).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS.dark} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CaseHistoryTable = () => {
+  return (
+    <div className="glass-card p-6 flex-1 flex flex-col h-full min-h-[400px]">
+      <div className="flex justify-between items-center mb-4">
+        <div className="eyebrow !mb-0">
+          RECENT ACTIVITY <span className="mx-2 opacity-40">•</span> Case History
+        </div>
+        <a href="#" className="text-xs font-semibold text-[#5BAFCC] hover:text-[#3B2F2F] transition-colors">View All →</a>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 -mr-2">
+        <table className="w-full text-left border-collapse">
+          <thead className="sticky top-0 bg-[#F0EBE3]/95 backdrop-blur z-10 border-b border-[#5C4033]/10">
+            <tr>
+              <th className="py-3 px-2 text-[10px] uppercase tracking-wider font-semibold text-[#5C4033]/60">Case Name</th>
+              <th className="py-3 px-2 text-[10px] uppercase tracking-wider font-semibold text-[#5C4033]/60 hidden sm:table-cell">Type</th>
+              <th className="py-3 px-2 text-[10px] uppercase tracking-wider font-semibold text-[#5C4033]/60">Date</th>
+              <th className="py-3 px-2 text-[10px] uppercase tracking-wider font-semibold text-[#5C4033]/60 text-right">Score</th>
+              <th className="py-3 px-2 text-[10px] uppercase tracking-wider font-semibold text-[#5C4033]/60 text-right">Assets</th>
+            </tr>
+          </thead>
+          <tbody>
+            {MOCK_CASES.map((entry, i) => (
+              <tr key={entry.id} className={`group hover:bg-[#D9D0C4]/20 transition-colors ${i % 2 === 0 ? 'bg-transparent' : 'bg-[#D9D0C4]/5'}`}>
+                <td className="py-3 px-2 text-xs font-medium text-[#3B2F2F] max-w-[140px] truncate" title={entry.name}>
+                  {entry.name}
+                </td>
+                <td className="py-3 px-2 text-xs text-[#5C4033]/80 hidden sm:table-cell">{entry.type}</td>
+                <td className="py-3 px-2 text-xs text-[#5C4033]/80 whitespace-nowrap">{entry.date}</td>
+                <td className="py-3 px-2 text-xs font-bold text-[#3B2F2F] text-right">{entry.score}</td>
+                <td className="py-3 px-2 text-right">
+                  <div className="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                    <button className="p-1 hover:bg-[#D9D0C4] rounded transition-colors text-[#5C4033]" title="View Transcript">
+                      <FileText className="w-3.5 h-3.5" />
+                    </button>
+                    <button className={`p-1 rounded transition-colors ${entry.hasPDF ? 'hover:bg-[#D9D0C4] text-[#5C4033]' : 'opacity-30 cursor-not-allowed text-[#5C4033]'}`} title={entry.hasPDF ? "Download PDF" : "No PDF available"}>
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {MOCK_CASES.length === 0 && (
+           <div className="flex flex-col items-center justify-center py-12 text-[#5C4033]/40">
+              <FileText className="w-8 h-8 mb-2 opacity-20" />
+              <p className="text-sm font-medium">No cases yet</p>
+           </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CustomLineTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="glass-card p-3 !rounded-lg border-[#5C4033]/10 shadow-lg min-w-[150px]">
+        <p className="text-[10px] font-bold text-[#5C4033]/60 uppercase tracking-widest mb-2">{data.date}</p>
+        <p className="text-xs font-semibold text-[#3B2F2F] mb-0.5 truncate max-w-[180px]">{data.caseName}</p>
+        <p className="text-[10px] text-[#5C4033] mb-3">{data.caseType}</p>
+        
+        <div className="space-y-1 border-t border-[#5C4033]/10 pt-2">
+           {payload.map((p, i) => (
+             <div key={i} className="flex justify-between items-center gap-4">
+                <span className="text-xs font-medium text-[#5C4033]" style={{color: p.color}}>{p.name}</span>
+                <span className="text-xs font-bold text-[#3B2F2F]">{p.value}</span>
+             </div>
+           ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const TimeLineChart = () => {
+  const [activeMetrics, setActiveMetrics] = useState(['overall']);
+  const metrics = [
+    { id: 'overall', label: 'Overall Score', color: COLORS.dark },
+    { id: 'structure', label: 'Structure', color: COLORS.accent },
+    { id: 'delivery', label: 'Delivery', color: COLORS.warm },
+  ];
+
+  const toggleMetric = (id) => {
+    if (activeMetrics.includes(id)) {
+      if (activeMetrics.length > 1) setActiveMetrics(activeMetrics.filter(m => m !== id));
+    } else {
+      setActiveMetrics([...activeMetrics, id]);
+    }
+  };
+
+  return (
+    <div className="glass-card p-6 flex flex-col h-[340px]">
+      <div className="eyebrow mb-4">
+        PERFORMANCE TREND <span className="mx-2 opacity-40">•</span> Score over Time
+      </div>
+      
+      <div className="flex flex-wrap gap-2 mb-6">
+        {metrics.map(m => (
+          <button
+            key={m.id}
+            onClick={() => toggleMetric(m.id)}
+            className={`px-3 py-1 rounded-full text-[10px] font-semibold transition-colors border ${
+              activeMetrics.includes(m.id) 
+                ? 'bg-[#3B2F2F] text-[#F0EBE3] border-[#3B2F2F]' 
+                : 'bg-transparent text-[#5C4033]/60 border-[#5C4033]/20 hover:border-[#5C4033]/40'
+            }`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={TIMELINE_DATA} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+            <XAxis 
+              dataKey="date" 
+              tickLine={false} 
+              axisLine={false} 
+              tick={{ fill: COLORS.warm, fontSize: 10, opacity: 0.6 }} 
+              dy={10}
+            />
+            <YAxis 
+              domain={['dataMin - 5', 100]} 
+              tickLine={false} 
+              axisLine={false} 
+              tick={{ fill: COLORS.warm, fontSize: 10, opacity: 0.6 }} 
+            />
+            <Tooltip 
+              cursor={{ stroke: COLORS.subtle, strokeWidth: 1, strokeDasharray: '4 4' }} 
+              content={<CustomLineTooltip />} 
+            />
+            
+            {activeMetrics.includes('overall') && (
+              <Line 
+                type="monotone" 
+                dataKey="overall" 
+                name="Overall Score"
+                stroke={COLORS.dark} 
+                strokeWidth={2.5} 
+                dot={{ fill: COLORS.base, stroke: COLORS.dark, strokeWidth: 2, r: 4 }} 
+                activeDot={{ r: 6, fill: COLORS.accent, stroke: COLORS.base, strokeWidth: 2 }} 
+                animationDuration={1500}
+              />
+            )}
+            {activeMetrics.includes('structure') && (
+              <Line 
+                type="monotone" 
+                dataKey="structure" 
+                name="Structure"
+                stroke={COLORS.accent} 
+                strokeWidth={2} 
+                dot={{ fill: COLORS.base, stroke: COLORS.accent, strokeWidth: 2, r: 3 }} 
+                animationDuration={1500}
+              />
+            )}
+            {activeMetrics.includes('delivery') && (
+              <Line 
+                type="monotone" 
+                dataKey="delivery" 
+                name="Delivery"
+                stroke={COLORS.warm} 
+                strokeWidth={2} 
+                strokeDasharray="4 4"
+                dot={{ fill: COLORS.base, stroke: COLORS.warm, strokeWidth: 2, r: 3 }} 
+                animationDuration={1500}
+              />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+const PlaceholderChartArea = () => (
+  <div className="glass-card p-6 h-[340px] flex flex-col">
+     <div className="eyebrow mb-4">
+        COMPARATIVE ANALYSIS <span className="mx-2 opacity-40">•</span> Future Metric
+      </div>
+      <div className="flex-1 border-dashed border-2 border-[#5C4033]/15 rounded-xl flex items-center justify-center bg-[#F0EBE3]/30">
+        <span className="text-xs font-medium text-[#5C4033]/40">Analysis view coming soon</span>
+      </div>
+  </div>
+);
+
+const FeedbackAnalyser = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: 'agent', text: "Hi! I'm your Feedback Analyser. Ask me anything about your case performance, feedback patterns, or areas for improvement." }
+  ]);
+  const [input, setInput] = useState('');
+  const endOfMessagesRef = useRef(null);
+
+  const handleSend = (text) => {
+    if (!text.trim()) return;
+    setMessages(prev => [...prev, { role: 'user', text }]);
+    setInput('');
+    // Mock response
+    setTimeout(() => {
+      setMessages(prev => [...prev, { role: 'agent', text: "Based on your recent history, your structure is solid, but you often rush the quantitative analysis. Let's work on setting up robust math frameworks." }]);
+    }, 800);
+  };
+
+  useEffect(() => {
+    if (isOpen && endOfMessagesRef.current) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isOpen]);
+
+  return (
+    <>
+      <div 
+        className="fixed bottom-6 right-6 z-50 flex flex-col items-end"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Dynamic Prompts - Fan Out */}
+        {isHovered && !isOpen && (
+          <div className="absolute bottom-[110%] right-0 mb-2 flex flex-col items-end gap-2 pointer-events-auto">
+            {DYNAMIC_QUESTIONS.map((q, i) => (
+              <button
+                key={i}
+                onClick={() => { setIsOpen(true); handleSend(q); }}
+                className="bg-[#D9D0C4]/80 backdrop-blur-md border border-[#5C4033]/10 text-[#3B2F2F] text-[10px] font-medium py-1.5 px-3 rounded-full shadow-sm hover:bg-[#F0EBE3] hover:shadow-md transition-all whitespace-nowrap animate-rise"
+                style={{ animationDelay: `${(DYNAMIC_QUESTIONS.length - i) * 50}ms`, animationDuration: '0.4s' }}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Floating Icon */}
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 relative group
+            ${isOpen ? 'bg-[#5C4033] shadow-none scale-90' : 'bg-[#3B2F2F]/90 backdrop-blur-md shadow-[0_0_15px_rgba(91,175,204,0.12)] hover:scale-110 hover:shadow-[0_0_20px_rgba(91,175,204,0.3)] hover:bg-[#3B2F2F]'}
+          `}
+        >
+          {isOpen ? (
+             <X className="w-6 h-6 text-[#F0EBE3]" />
+          ) : (
+             <>
+               <TieLogo className="w-5 h-5 text-[#F0EBE3] relative z-10" />
+               <div className="absolute inset-0 rounded-full border border-[#5BAFCC]/30 scale-110 opacity-0 group-hover:opacity-100 group-hover:animate-[spin_4s_linear_infinite] transition-opacity" />
+               {/* Sparkle particles on hover (CSS hack using pseudo elements in production, but simplified here) */}
+               <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-[#5BAFCC] opacity-0 group-hover:opacity-100 transition-opacity delay-100" />
+             </>
+          )}
+        </button>
+      </div>
+
+      {/* Chat Overlay */}
+      {isOpen && (
+        <div className="fixed bottom-24 right-6 w-[360px] h-[500px] bg-[#F0EBE3]/95 backdrop-blur-xl border border-[#5C4033]/15 rounded-2xl shadow-2xl z-40 flex flex-col overflow-hidden animate-rise" style={{ animationDuration: '0.3s' }}>
+          <div className="flex items-center justify-between p-4 border-b border-[#5C4033]/10 bg-[#3B2F2F]/5">
+             <div className="flex items-center gap-2">
+               <div className="w-6 h-6 bg-[#3B2F2F] rounded-md flex items-center justify-center">
+                 <TieLogo className="w-3 h-3 text-[#F0EBE3]" />
+               </div>
+               <span className="font-serif font-semibold text-sm text-[#3B2F2F]">Feedback Analyser</span>
+             </div>
+             <button onClick={() => setIsOpen(false)} className="text-[#5C4033]/60 hover:text-[#3B2F2F]"><X className="w-4 h-4"/></button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
+                  msg.role === 'user' 
+                    ? 'bg-[#3B2F2F] text-[#F0EBE3] rounded-tr-sm' 
+                    : 'bg-[#D9D0C4]/40 text-[#3B2F2F] rounded-tl-sm border border-[#5C4033]/5'
+                }`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+            <div ref={endOfMessagesRef} />
+          </div>
+          
+          <div className="p-3 bg-[#F0EBE3] border-t border-[#5C4033]/10">
+             <div className="relative">
+               <input 
+                 type="text" 
+                 value={input}
+                 onChange={(e) => setInput(e.target.value)}
+                 onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
+                 placeholder="Ask about your performance..." 
+                 className="w-full bg-[#D9D0C4]/30 border border-[#5C4033]/20 rounded-xl py-2.5 pl-3 pr-10 text-xs text-[#3B2F2F] focus:outline-none focus:border-[#5C4033]/50 transition-colors"
+               />
+               <button 
+                 onClick={() => handleSend(input)}
+                 className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-[#5C4033] hover:text-[#5BAFCC] transition-colors"
+               >
+                 <ChevronRight className="w-4 h-4" />
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+const Footer = () => (
+  <footer className="mt-16 bg-[#3B2F2F] text-[#F0EBE3] relative overflow-hidden py-12 px-6 lg:px-12">
+    <div className="absolute inset-0 radial-bg opacity-40 pointer-events-none" />
+    
+    <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
+      <div className="flex flex-col gap-4 pr-8">
+        <div className="flex items-center gap-2 text-[#F0EBE3]">
+           <TieLogo className="w-6 h-6 text-[#F0EBE3]" />
+           <span className="font-serif font-bold text-lg">Case Compendium <span className="text-[#5BAFCC]">X</span></span>
+        </div>
+        <p className="text-sm text-[#F0EBE3]/60 leading-relaxed font-sans">
+          The ultimate AI-native case interview preparation platform for aspiring consultants.
+        </p>
+      </div>
+      
+      <div className="flex flex-col gap-3">
+        <h4 className="font-serif font-semibold text-base mb-2">Product</h4>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">Browse Cases</a>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">Do a Case</a>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">Dashboard</a>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">AI Models</a>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h4 className="font-serif font-semibold text-base mb-2">Company</h4>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">About Us</a>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">Founders</a>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">Contributors</a>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h4 className="font-serif font-semibold text-base mb-2">Connect</h4>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">Twitter / X</a>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">LinkedIn</a>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">Email</a>
+        <a href="#" className="text-sm text-[#F0EBE3]/60 hover:text-[#F0EBE3] transition-colors">GitHub</a>
+      </div>
+    </div>
+    
+    <div className="max-w-[1400px] mx-auto mt-12 pt-6 border-t border-[#F0EBE3]/15 flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
+       <p className="text-xs text-[#F0EBE3]/50">© 2026 Case Compendium X. All rights reserved.</p>
+       <div className="flex gap-4 text-xs text-[#F0EBE3]/50">
+          <a href="#" className="hover:text-[#F0EBE3] transition-colors">Privacy Policy</a>
+          <span>·</span>
+          <a href="#" className="hover:text-[#F0EBE3] transition-colors">Terms of Service</a>
+       </div>
+    </div>
+  </footer>
+);
+
+export default function App() {
+  const [filters, setFilters] = useState({
+    type: 'All',
+    level: 'All',
+    time: 'This Month'
+  });
+
+  const isGoalTrackerLocked = filters.type === 'All' && filters.level !== 'All';
+
+  return (
+    <>
+      <GlobalStyles />
+      <div className="min-h-screen bg-[#F0EBE3] font-sans selection:bg-[#5BAFCC]/30 selection:text-[#3B2F2F] overflow-x-hidden relative">
+        <Navbar />
+        
+        <main className="px-6 lg:px-12 max-w-[1400px] mx-auto pb-12">
+          {/* ROW 1 */}
+          <IntroBar filters={filters} setFilters={setFilters} />
+          
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* LEFT COLUMN (~60% width) */}
+            <div className="lg:col-span-7 flex flex-col gap-6">
+              {/* ROW 2 Left */}
+              <ScrollReveal delay={0}>
+                <CoachInsight />
+              </ScrollReveal>
+
+              {/* ROW 3 Left Subgrid */}
+              <ScrollReveal delay={100}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-6 h-full">
+                    <CaseScoreCard />
+                    <div className="grid grid-cols-2 gap-6 mt-auto">
+                      <PlaceholderCard title="Time per Case" />
+                      <PlaceholderCard title="Framework Usage" />
+                    </div>
+                  </div>
+                  <ParameterBarChart />
+                </div>
+              </ScrollReveal>
+
+              {/* ROW 4 Left Subgrid */}
+              <ScrollReveal delay={200}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <TimeLineChart />
+                  <PlaceholderChartArea />
+                </div>
+              </ScrollReveal>
+            </div>
+
+            {/* RIGHT COLUMN (~40% width) */}
+            <div className="lg:col-span-5 flex flex-col gap-6 h-full">
+              {/* ROW 2 Right */}
+              <ScrollReveal delay={50} className="shrink-0">
+                <GoalTracker isLocked={isGoalTrackerLocked} />
+              </ScrollReveal>
+
+              {/* ROW 3+4 Right (Spans full height below Goal Tracker) */}
+              <ScrollReveal delay={150} className="flex-1 flex flex-col min-h-0">
+                <CaseHistoryTable />
+              </ScrollReveal>
+            </div>
+
+          </div>
+        </main>
+        
+        {/* ROW 5 */}
+        <ScrollReveal delay={300}>
+          <Footer />
+        </ScrollReveal>
+
+        {/* FLOATING AGENT */}
+        <FeedbackAnalyser />
+      </div>
+    </>
+  );
+}

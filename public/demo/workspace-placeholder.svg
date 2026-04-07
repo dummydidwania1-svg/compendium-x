@@ -1,0 +1,22 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#FFF8F0"/>
+  <rect x="110" y="90" width="980" height="720" rx="28" fill="#FFFCF8" stroke="#D9D0C4" stroke-width="6"/>
+  <path d="M180 220H1020" stroke="#E8DFD3" stroke-width="4"/>
+  <path d="M180 300H1020" stroke="#E8DFD3" stroke-width="4"/>
+  <path d="M180 380H1020" stroke="#E8DFD3" stroke-width="4"/>
+  <path d="M180 460H1020" stroke="#E8DFD3" stroke-width="4"/>
+  <path d="M180 540H1020" stroke="#E8DFD3" stroke-width="4"/>
+  <path d="M180 620H1020" stroke="#E8DFD3" stroke-width="4"/>
+  <path d="M180 700H1020" stroke="#E8DFD3" stroke-width="4"/>
+  <path d="M240 150V760" stroke="#C4A882" stroke-width="5" stroke-linecap="round"/>
+  <rect x="312" y="168" width="256" height="42" rx="12" fill="#3D5A35" fill-opacity="0.08"/>
+  <text x="340" y="196" fill="#3D5A35" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="700">Compendium X Notes</text>
+  <circle cx="950" cy="155" r="42" fill="#3D5A35" fill-opacity="0.1"/>
+  <path d="M938 156L949 167L973 143" stroke="#3D5A35" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="312" y="278" fill="#5C4033" font-family="Arial, sans-serif" font-size="32">Candidate framework snapshot</text>
+  <text x="312" y="358" fill="#5C4033" fill-opacity="0.82" font-family="Arial, sans-serif" font-size="28">Revenue tree, buckets, and quick math notes</text>
+  <text x="312" y="438" fill="#5C4033" fill-opacity="0.82" font-family="Arial, sans-serif" font-size="28">captured during the live case session.</text>
+  <text x="312" y="598" fill="#3D5A35" font-family="Arial, sans-serif" font-size="24" letter-spacing="4">DEMO WORKSPACE IMAGE</text>
+  <rect x="308" y="628" width="446" height="76" rx="18" fill="#D9D0C4" fill-opacity="0.34"/>
+  <text x="336" y="676" fill="#5C4033" font-family="Arial, sans-serif" font-size="28">Used for seeded dashboard demo accounts</text>
+</svg>
