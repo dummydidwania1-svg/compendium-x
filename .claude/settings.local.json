@@ -10,7 +10,11 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git pull:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npm run:*)",
+      "Bash(awk 'NR==849{found=1} found && /^\\\\t\\\\}$/{print; found=0; skip=0; next} found{next} !found{print}' /Users/sakshamd/Desktop/compendiumx_testing-1/app/case/[id]/interviewer/page.tsx)"
     ]
   }
 }
