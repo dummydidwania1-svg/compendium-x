@@ -4,11 +4,42 @@
   "docId": "case-1",
   "title": "Banking on You",
   "industry": "BFSI",
-  "difficulty": "Hard",
+  "difficulty": "Medium",
   "case_type": "Profitability",
   "company": "BCG",
   "round": "Partner",
-  "prompt": "Your client is a commercial bank that has faced a 20% decline in revenues.\nYou need to analyse why this is happening and recommend solutions accordingly.",
+  "prompt": "Your client is a commercial bank that has faced a 20% decline in revenues. You need to analyse why this is happening and recommend solutions accordingly.",
+  "frameworkTree": {
+    "nodes": {
+      "revenue":             { "id": "revenue",             "label": "Revenue",                "tone": "root",    "children": ["interest-on-loans","fees-and-penalties","interest-on-investments","locker-charges","ancillary"] },
+      "interest-on-loans":   { "id": "interest-on-loans",   "label": "Interest on Loans",      "tone": "branch",  "children": ["amount-of-loans","interest-rate","percent-collected"] },
+      "fees-and-penalties":  { "id": "fees-and-penalties",  "label": "Fees & Penalties",       "tone": "support", "children": [] },
+      "interest-on-investments": { "id": "interest-on-investments", "label": "Interest on Investments", "tone": "support", "children": [] },
+      "locker-charges":      { "id": "locker-charges",      "label": "Locker Charges",         "tone": "support", "children": [] },
+      "ancillary":           { "id": "ancillary",           "label": "Ancillary",              "tone": "support", "children": [] },
+      "amount-of-loans":     { "id": "amount-of-loans",     "label": "Amount of Loans",        "tone": "branch",  "children": ["supply-side","demand-side"] },
+      "interest-rate":       { "id": "interest-rate",       "label": "Interest Rate",          "tone": "support", "children": [] },
+      "percent-collected":   { "id": "percent-collected",   "label": "% Collected",            "tone": "support", "children": [] },
+      "supply-side":         { "id": "supply-side",         "label": "Supply-Side",            "tone": "branch",  "children": ["deposits","other-sources"] },
+      "demand-side":         { "id": "demand-side",         "label": "Demand-Side",            "tone": "support", "children": [] },
+      "deposits":            { "id": "deposits",            "label": "Deposits",               "tone": "branch",  "children": ["num-depositors","amount-per-person"] },
+      "other-sources":       { "id": "other-sources",       "label": "Other Sources",          "tone": "support", "children": [] },
+      "num-depositors":      { "id": "num-depositors",      "label": "No. of Depositors",      "tone": "support", "children": [] },
+      "amount-per-person":   { "id": "amount-per-person",   "label": "Amount per Person",      "tone": "branch",  "children": ["amount-earned","percent-deposited"] },
+      "amount-earned":       { "id": "amount-earned",       "label": "Amount Earned",          "tone": "support", "children": [] },
+      "percent-deposited":   { "id": "percent-deposited",   "label": "% Deposited",            "tone": "branch",  "children": ["alternatives","policies","consumption"] },
+      "alternatives":        { "id": "alternatives",        "label": "Alternatives",           "tone": "leaf",    "children": [] },
+      "policies":            { "id": "policies",            "label": "Policies",               "tone": "leaf",    "children": [] },
+      "consumption":         { "id": "consumption",         "label": "Consumption",            "tone": "leaf",    "children": [] }
+    },
+    "defaultExpanded": ["revenue","interest-on-loans","amount-of-loans","supply-side","deposits","amount-per-person","percent-deposited"],
+    "defaultFocusedId": "alternatives",
+    "notes": [
+      { "title": "Questions",      "items": ["Which revenue stream?", "Where are the branches concentrated?"] },
+      { "title": "Keep In Mind",   "items": ["Know all five revenue streams", "Loans: supply vs. demand split", "Segment deposits by customer profile"] },
+      { "title": "Brownie Points", "items": ["Increased consumption expenditure", "Salary-account tie-ups and policy nudges"] }
+    ]
+  },
   "framework": "Candidate: Got it. Where is our client located? Since when have we been facing this problem?\nInterviewer: Our client is based out of Mumbai and has been facing this problem for 2 years now.\nCandidate: Interesting. Have other commercial banks been facing a similar decline?\nInterviewer: Some of the banks have been facing this problem and some have not.\nCandidate: Understood. Is there a specific branch of the bank that has been facing this problem?\nInterviewer: We are facing this problem in all branches across major cities.\nCandidate: Alright. Do we have any information on which revenue stream has been the most affected? From what I know, the revenue streams are: a) Interest on loans b) Fees and Penalties c) Interest on forex investments d) Locker storage facilities e) Ancillary services.\nInterviewer: You seem to have quite a bit of knowledge of this industry. You can look at interest on loans.\nCandidate: Sure. Here, I would like to look at:\nInterest on loans = Amount of loans given * Interest Rate * Percentage Collected\nCandidate: Under amount of loans, we can look at:\n1) Availability of funds to lend (Supply-side) or b) Limited demand for loans.\nInterviewer: Great. We have realised that we don't have enough money to give as loans because our deposits have gone down.\nAmount deposited = Number of people depositing * Amount deposited per person\nInterviewer: Good. You can look at the amount deposited per person.\nCandidate: Here, do we have information on whether there is a particular customer segment that has not been depositing as much? Perhaps, on the basis of gender, age, etc.?\nInterviewer: Yes indeed. We have realised that people between the ages of 21 and 35 have reduced the amount they deposit.\nCandidate: Interesting.\nAmount deposited = Amount earned * % deposited\nCandidate: It is unlikely that everyone in this age bracket has started earning less.\nInterviewer: Yes, correct. You can look at % deposited.\nCandidate: % deposited can be affected by:\n1) Alternate opportunities such as investments in securities\n2) Policies (collaboration with companies, etc.). Example - HDFC Bank may be preferred for salary accounts\n3) Increased consumption expenditure resulting in lower savings\nInterviewer: You have reached the solution. People are now investing in mutual funds and SIPs more than they are depositing in banks.\nCandidate: Interesting. Let's look at what we can do.\n1) Implement a mutual fund and SIPs division in our bank\n2) Have alternative investment options like gold, etc.\n3) Look at targeting people of other age groups.\nInterviewer: Good suggestions. We can close the case now.\n\nBanking on You Framework & Recommendations\nREVENUE OF A BANK\nClarifying Questions: Which revenue stream? Location of bank branches?\nBrownie Points: Increased consumption expenditure Salary accounts, i.e., policy tie-ups\nKeep In Mind: Read up about the banking industry to get an idea of their value chain\nRECOMMENDATIONS: Implement a mutual fund and SIPs division for our bank Have alternate investment options like gold etc. Look at targeting people of different age groups."
 },
 {

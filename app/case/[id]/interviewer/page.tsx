@@ -7,6 +7,7 @@ import { collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/f
 import { db, waitForAuthUser } from '@/lib/firebase/config'
 import { CaseForumSection } from '@/components/forum/CaseForumSection'
 import CasePreviewView from '@/components/case/CasePreviewView'
+import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
 
 type CaseDocument = {
 	title: string
@@ -18,6 +19,7 @@ type CaseDocument = {
 	difficulty?: string
 	prompt?: string
 	framework?: string
+	frameworkTree?: import('@/components/case/CasePreviewMaster').FrameworkTree
 }
 
 type SessionDocument = {
@@ -708,7 +710,7 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 			batch.set(evaluationRef, {
 				caseId: resolvedCaseId,
 				caseTitle: caseData.title,
-				caseType: caseData.caseType ?? caseData.case_type ?? null,
+				caseType: caseData.caseType ?? caseData!.case_type ?? null,
 				industry: caseData.industry ?? null,
 				lobbyId: lobbyId ?? null,
 				candidateId,
@@ -816,12 +818,38 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 					companyLabel={companyLabel}
 					roundLabel={roundLabel}
 					isBankingOnYou={isBankingOnYou}
-					ForumSection={resolvedCaseId ? <CaseForumSection caseId={resolvedCaseId} caseTitle={caseData.title} /> : undefined}
+					frameworkTree={caseData.frameworkTree}
+					ForumSection={resolvedCaseId ? <CaseForumSection caseId={resolvedCaseId} caseTitle={caseData!.title} /> : undefined}
 				/>
 			)
 		}
 
+		if (!caseData) return null
+
 		return (
+			<CaseInterviewerMaster
+				caseData={caseData}
+				transcriptDisplayLines={transcriptDisplayLines}
+				parsedFramework={parsedFramework}
+				promptLines={promptLines}
+				caseTypeLabel={caseTypeLabel}
+				industryLabel={industryLabel}
+				difficultyLabel={difficultyLabel}
+				companyLabel={companyLabel}
+				roundLabel={roundLabel}
+				frameworkTree={caseData.frameworkTree}
+				notes={notes}
+				setNotes={setNotes}
+				scores={scores}
+				setScores={setScores}
+				onEndCase={() => setCurrentView('feedback')}
+			/>
+		)
+
+		// Legacy block start (never reached)
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const _legacyCaseData = caseData!
+		const _noop = () => (
 			<div className="min-h-screen bg-[#e7e0d5] text-[#2d2520] font-sans flex flex-col">
 
 				{/* Minimal sticky nav */}
@@ -853,7 +881,7 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 						<header className="border-b border-[#d7cdbf]/70 px-10 pb-8 pt-10 md:px-20">
 							<div className="mx-auto max-w-4xl text-center">
 								<h1 className="mb-4 font-serif text-[3.4rem] font-bold leading-[0.96] tracking-tight text-[#2d2520] md:text-[4.25rem]">
-									{caseData.title.trim()}
+									{caseData!.title.trim()}
 								</h1>
 								{!isBankingOnYou && (
 									<div className="mb-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[13px] font-bold uppercase tracking-[0.35em] text-[#4a3f38]">
@@ -942,7 +970,7 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 
 											{previewMode && resolvedCaseId && (
 												<div className="mx-auto mt-12 max-w-[62rem] xl:max-w-[65rem]">
-													<CaseForumSection caseId={resolvedCaseId} caseTitle={caseData.title} />
+													<CaseForumSection caseId={resolvedCaseId} caseTitle={caseData!.title} />
 												</div>
 											)}
 										</div>
@@ -967,9 +995,9 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 											</div>
 										)}
 
-										{caseData.prompt && (
+										{caseData!.prompt && (
 											<section>
-												<p className={documentPromptClass}>{caseData.prompt.trim()}</p>
+												<p className={documentPromptClass}>{caseData!.prompt.trim()}</p>
 											</section>
 										)}
 
@@ -995,7 +1023,7 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 
 									{previewMode && resolvedCaseId && (
 										<div className="mx-auto mt-12 max-w-3xl">
-											<CaseForumSection caseId={resolvedCaseId} caseTitle={caseData.title} />
+											<CaseForumSection caseId={resolvedCaseId} caseTitle={caseData!.title} />
 										</div>
 									)}
 								</>
@@ -1088,7 +1116,7 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 						)}
 				</div>
 			</div>
-		)
+		) // end _noop
 	}
 
 	if (previewMode) return null
@@ -1128,7 +1156,7 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 					<h1 className="text-3xl font-bold text-slate-900">Candidate Evaluation</h1>
 					<p className="text-slate-500 mt-2">
 						Rate the candidate&apos;s performance for:{' '}
-						<span className="font-bold text-slate-700">{caseData.title}</span>
+						<span className="font-bold text-slate-700">{caseData!.title}</span>
 					</p>
 				</div>
 

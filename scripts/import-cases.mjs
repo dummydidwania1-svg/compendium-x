@@ -43,6 +43,9 @@ function buildPayload(rawCase) {
   if (typeof rawCase.round === 'string' && rawCase.round.trim()) {
     payload.round = rawCase.round.trim()
   }
+  if (rawCase.frameworkTree && typeof rawCase.frameworkTree === 'object') {
+    payload.frameworkTree = rawCase.frameworkTree
+  }
   return payload
 }
 
@@ -87,7 +90,13 @@ async function main() {
     const docId = providedDocId || derivedDocId
 
     if (docId) {
-      await db.collection('cases').doc(docId).set(payload, { merge: true })
+      const ref = db.collection('cases').doc(docId)
+      // Merge all fields EXCEPT frameworkTree — that gets fully replaced to avoid stale nodes
+      const { frameworkTree, ...rest } = payload
+      await ref.set(rest, { merge: true })
+      if (frameworkTree !== undefined) {
+        await ref.update({ frameworkTree })
+      }
       upsertedCount += 1
       console.log(`Upserted case: ${payload.title} (${docId})`)
     } else {
