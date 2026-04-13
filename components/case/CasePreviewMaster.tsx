@@ -1222,6 +1222,7 @@ export default function CasePreviewMaster({
   const chartRef = useRef<HTMLDivElement>(null)
   const walkthroughRef = useRef<HTMLElement>(null)
   const drilldownRef = useRef<HTMLElement>(null)
+  const drilldownBottomRef = useRef<HTMLDivElement>(null)
   const activeStepRef = useRef(0)
 
   // ─── Engagement state — shows FABs after 1% interaction ─
@@ -1260,6 +1261,19 @@ export default function CasePreviewMaster({
     return () => obs.disconnect()
   }, [])
 
+
+  // ─── Detect when drilldown container bottom border is visible ─
+  const [drilldownBottomVisible, setDrilldownBottomVisible] = useState(false)
+  useEffect(() => {
+    const el = drilldownBottomRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => setDrilldownBottomVisible(entry.isIntersecting),
+      { threshold: 0 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
   // ─── Chart reveal (depth-by-depth tree animation) ─
   const [revealDepth, setRevealDepth] = useState(-1)
@@ -1847,9 +1861,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"   style={{height:
   />
 </div>
 
-                    <div className="relative flex flex-col pl-7 pr-5 py-6" style={{ minHeight: 'calc(100vh - 216px)' }}>
-                      {/* Glass blur overlay — only when framework is in full default-expanded state */}
-                      {isChartFullyExpanded && treeFullyRevealed && (
+                    <div className={`relative flex flex-col pl-7 pr-5 py-6${recommendations.length === 0 ? ' justify-center' : ''}`} style={recommendations.length > 0 ? { minHeight: 'calc(100vh - 216px)' } : { minHeight: 'calc(100vh - 216px)' }}>
+                      {/* Glass blur overlay — only when framework is fully expanded AND bottom border is not yet visible */}
+                      {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                         <div className="pointer-events-none z-20"
                           style={{
                             position: 'sticky',
@@ -1866,11 +1880,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"   style={{height:
                         />
                       )}
 
-                      {/* Desktop chart — flex-1 fills remaining space; centers node when single */}
+                      {/* Desktop chart — centers vertically when no recommendations */}
                       <div
                         ref={chartRef}
-                        className={chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1'}
-                        style={{ transform: 'scale(1.05)', transformOrigin: 'top center' }}
+                        className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')}
+                        style={{ transform: 'scale(1.05)', transformOrigin: 'center center' }}
                       >
                         <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds}
   focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
@@ -1898,6 +1912,8 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"   style={{height:
                           </ul>
                         </div>
                       )}
+                      {/* Sentinel for bottom-border visibility detection */}
+                      <div ref={drilldownBottomRef} className="h-px w-full" />
                     </div>
                   </div>
                 </div>
@@ -1985,7 +2001,21 @@ export function CaseInterviewerMaster({
   const maxTreeDepth = hasTree ? Math.max(...Object.keys(NODES).map(nodeDepth), 0) : 0
 
   const chartRef = useRef<HTMLDivElement>(null)
+  const drilldownBottomRef2 = useRef<HTMLDivElement>(null)
   const activeStepRef = useRef(0)
+
+  // ─── Detect when drilldown container bottom border is visible ─
+  const [drilldownBottomVisible, setDrilldownBottomVisible] = useState(false)
+  useEffect(() => {
+    const el = drilldownBottomRef2.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => setDrilldownBottomVisible(entry.isIntersecting),
+      { threshold: 0 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
   const [isDesktop, setIsDesktop] = useState(false)
   useEffect(() => {
@@ -2273,11 +2303,11 @@ export function CaseInterviewerMaster({
                       <div className="absolute left-0 top-0 hidden h-full w-px lg:block">
                         <div className="sticky top-[128px] w-full" style={{ height: 'calc(100vh - 168px)', background: 'linear-gradient(180deg, transparent 0%, rgba(92,64,51,0.14) 12%, rgba(92,64,51,0.14) 88%, transparent 100%)' }} />
                       </div>
-                      <div className="relative flex flex-col pl-7 pr-5 py-6" style={{ minHeight: 'calc(100vh - 216px)' }}>
-                        {isChartFullyExpanded && treeFullyRevealed && (
+                      <div className={`relative flex flex-col pl-7 pr-5 py-6${recommendations.length === 0 ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
+                        {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.88) 40%, rgba(255,248,240,0) 100%)', backdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`, WebkitBackdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`, WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
-                        <div ref={chartRef} className={chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1'} style={{ transform: 'scale(1.05)', transformOrigin: 'top center' }}>
+                        <div ref={chartRef} className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')} style={{ transform: 'scale(1.05)', transformOrigin: 'center center' }}>
                           <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                         </div>
                         {recommendations.length > 0 && (
@@ -2301,6 +2331,8 @@ export function CaseInterviewerMaster({
                             </ul>
                           </div>
                         )}
+                        {/* Sentinel for bottom-border visibility detection */}
+                        <div ref={drilldownBottomRef2} className="h-px w-full" />
                       </div>
                     </div>
                   </div>
