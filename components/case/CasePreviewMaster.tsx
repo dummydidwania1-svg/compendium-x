@@ -1246,19 +1246,38 @@ export default function CasePreviewMaster({
     return () => mq.removeEventListener('change', sync)
   }, [])
 
-  // ─── Mini step nav on scroll ──────────────────
+  // ─── Mini step nav on scroll + auto-hide on inactivity ──────────────────
   const stepIndicatorRef = useRef<HTMLDivElement>(null)
-  const [showMiniNav, setShowMiniNav] = useState(false)
+  const [miniNavEligible, setMiniNavEligible] = useState(false)
+  const [miniNavActive, setMiniNavActive] = useState(true)
+  const miniNavTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const showMiniNav = miniNavEligible && miniNavActive
 
   useEffect(() => {
     const el = stepIndicatorRef.current
     if (!el) return
     const obs = new IntersectionObserver(
-      ([entry]) => setShowMiniNav(!entry.isIntersecting),
+      ([entry]) => setMiniNavEligible(!entry.isIntersecting),
       { threshold: 0, rootMargin: '-70px 0px 0px 0px' }
     )
     obs.observe(el)
     return () => obs.disconnect()
+  }, [])
+
+  // Auto-hide after 4s of inactivity; show again on interaction
+  useEffect(() => {
+    const resetTimer = () => {
+      setMiniNavActive(true)
+      if (miniNavTimerRef.current) clearTimeout(miniNavTimerRef.current)
+      miniNavTimerRef.current = setTimeout(() => setMiniNavActive(false), 2500)
+    }
+    const events = ['mousemove', 'scroll', 'keydown', 'touchstart', 'click'] as const
+    events.forEach(e => window.addEventListener(e, resetTimer, { passive: true }))
+    resetTimer()
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetTimer))
+      if (miniNavTimerRef.current) clearTimeout(miniNavTimerRef.current)
+    }
   }, [])
 
 
@@ -1639,8 +1658,10 @@ html::-webkit-scrollbar {
 </div>
 
 {/* ── Mini step nav — Notion-style right-side bars on scroll ── */}
-{showMiniNav && (
-  <MiniStepNav steps={STEPS} activeStep={activeStep} onStepClick={handleStepClick} />
+{miniNavEligible && (
+  <div style={{ opacity: miniNavActive ? 1 : 0, transition: 'opacity 0.4s ease-in-out', pointerEvents: miniNavActive ? 'auto' : 'none' }}>
+    <MiniStepNav steps={STEPS} activeStep={activeStep} onStepClick={handleStepClick} />
+  </div>
 )}
 
           {/* ══════════════════════════════════════
