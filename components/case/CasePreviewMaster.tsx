@@ -1269,7 +1269,7 @@ export default function CasePreviewMaster({
     const resetTimer = () => {
       setMiniNavActive(true)
       if (miniNavTimerRef.current) clearTimeout(miniNavTimerRef.current)
-      miniNavTimerRef.current = setTimeout(() => setMiniNavActive(false), 1350)
+      miniNavTimerRef.current = setTimeout(() => setMiniNavActive(false), 1000)
     }
     const events = ['mousemove', 'scroll', 'keydown', 'touchstart', 'click'] as const
     events.forEach(e => window.addEventListener(e, resetTimer, { passive: true }))
