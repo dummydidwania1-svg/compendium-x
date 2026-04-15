@@ -183,6 +183,25 @@ function estNodeFootprint(id: string) {
   return labelWidth + (node?.children.length ? 34 : 0)
 }
 
+function estNodeLines(id: string): number {
+  const node = NODES[id]
+  if (!node) return 1
+  const nw = estNodeW(id)
+  const hasCh = node.children.length > 0
+  const buttonW = hasCh ? nw - 18 : nw
+  const inner = Math.max(1, buttonW - 40)
+  const CHAR_WIDTH = 8.5
+  const cpl = Math.max(1, Math.floor(inner / CHAR_WIDTH))
+  const words = node.label.split(/\s+/)
+  let lines = 1, lc = 0
+  for (const w of words) {
+    if (lc > 0 && lc + 1 + w.length > cpl) { lines++; lc = w.length }
+    else { lc += (lc > 0 ? 1 : 0) + w.length }
+  }
+  return lines
+}
+
+
 function layoutDesktop(
   ids: string[], width: number, height: number, topPad: number, bottomPad: number,
 ) {
@@ -594,15 +613,25 @@ function DesktopChart({
 
   // Fixed vStep matched to original 6-level tree: (520-42-36)/6 ≈ 74px
   const FIXED_V_STEP = 74
+  const extraHeightForTallNodes = useMemo(() => {
+  const LINE_H = 38
+  let maxExtraLines = 0
+  visibleIds.forEach(id => {
+    const lines = estNodeLines(id)
+    if (lines > 2) maxExtraLines = Math.max(maxExtraLines, lines - 2)
+  })
+  return maxExtraLines * LINE_H * maxD
+}, [visibleIds, maxD])
+
   const metrics = useMemo(() => {
-    if (maxD <= 0) return { h: 160, tp: 80, bp: 20 }
-    if (maxD <= 1) return { h: 220, tp: 56, bp: 28 }
-    if (maxD <= 2) return { h: 300, tp: 50, bp: 34 }
-    if (maxD <= 4) return { h: 420, tp: 46, bp: 38 }
-    if (maxD <= 6) return { h: 520, tp: 42, bp: 36 }
-    // Deeper than 6 levels: grow the chart rather than compress connector lines
-    return { h: 42 + FIXED_V_STEP * maxD + 36, tp: 42, bp: 36 }
-  }, [maxD])
+    const e = extraHeightForTallNodes
+     if (maxD <= 0) return { h: 160, tp: 80, bp: 20 }
+  if (maxD <= 1) return { h: 220 + e, tp: 56, bp: 28 }
+  if (maxD <= 2) return { h: 300 + e, tp: 50, bp: 34 }
+  if (maxD <= 4) return { h: 420 + e, tp: 46, bp: 38 }
+  if (maxD <= 6) return { h: 520 + e, tp: 42, bp: 36 }
+  return { h: 42 + FIXED_V_STEP * maxD + 36 + e, tp: 42, bp: 36 }
+}, [maxD, extraHeightForTallNodes])
 
   useEffect(() => {
     const el = outerRef.current; if (!el) return
@@ -643,14 +672,15 @@ function DesktopChart({
       style={{ opacity: started ? 1 : 0, transform: started ? 'translateY(0)' : 'translateY(24px)', filter: started ? 'blur(0)' : 'blur(8px)' }}>
       <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${metrics.h}px` }}>
 
-        <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox={`0 0 ${cW} ${metrics.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <svg className="absolute inset-0 h-full w-full overflow-visible z-10" viewBox={`0 0 ${cW} ${metrics.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           {edges.map(({ pid, cid }) => {
             const pp = positions.get(pid), cp = positions.get(cid)
             if (!pp || !cp) return null
             const childDepth = nodeDepth(cid)
             const edgeRevealed = childDepth <= revealDepth
             const stagger = (depthStagger.get(cid) ?? 0) * 40
-            const sY = pp.y + 28, eY = cp.y - 28, mY = sY + (eY - sY) / 2
+            const halfH = (id: string) => Math.round(labelMinH / 2 + Math.max(0, estNodeLines(id) - 2) * 9)
+const sY = pp.y + halfH(pid), eY = cp.y - halfH(cid), mY = sY + (eY - sY) / 2
             return (
               <path key={`${pid}-${cid}-${edgeAnimKey}`} 
   d={`M ${Math.round(pp.x)} ${Math.round(sY)} V ${Math.round(mY)} H ${Math.round(cp.x)} V ${Math.round(eY)}`}
@@ -684,7 +714,7 @@ function DesktopChart({
   ? 'border-[#3D5A35]/90 bg-[#3D5A35] text-[#f0f5ee] shadow-[0_16px_30px_-26px_rgba(61,90,53,0.22)]'
   : isSelected
     ? 'border-[#C4A882]/50 bg-[rgba(255,248,240,0.96)] text-[#4f4335] shadow-[0_0_0_1px_rgba(196,168,130,0.2),0_0_20px_-10px_rgba(196,168,130,0.18)]'
-    : 'border-[rgba(92,64,51,0.08)] bg-[rgba(255,248,240,0.6)] text-[#5C4033] shadow-[0_4px_14px_rgba(59,47,47,0.035)] backdrop-blur-[28px]'
+    : 'border-[rgba(92,64,51,0.08)] bg-[rgba(255,248,240,1)] text-[#5C4033] shadow-[0_4px_14px_rgba(59,47,47,0.035)]'
           return (
             <div key={id} className="absolute z-20 flex items-center gap-2 transition-all duration-500"
               style={{ left: p.x, top: p.y, transform: 'translate(-50%,-50%)', opacity: isRevealed ? 1 : 0, transitionDelay: `${stagger}ms` }}>
