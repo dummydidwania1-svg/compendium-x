@@ -277,7 +277,7 @@ const [isCompleted, setIsCompleted] = useState(false);
       });
     }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
 
-    document.querySelectorAll('.pipe-stage, .pipeline-reveal, .demo-section-reveal, .demo-timeline-reveal').forEach((element) => observer.observe(element));
+    document.querySelectorAll('.pipe-stage, .pipeline-reveal, .demo-section-reveal, .demo-timeline-reveal, .grant-label-reveal, .grant-slide-left, .grant-slide-right').forEach((element) => observer.observe(element));
     return () => observer.disconnect();
   }, []);
 
@@ -1009,6 +1009,44 @@ const handleMuteToggle = (e: React.MouseEvent) => {
           transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .pipeline-reveal.visible { opacity: 1; transform: translateY(0); }
+        .grant-logo-link {
+          display: flex;
+          align-items: center;
+          transition: transform 0.35s ease;
+        }
+        .grant-logo-link:hover {
+          transform: translateY(-2px);
+        }
+        .grant-slide-left {
+          opacity: 0;
+          transform: translateX(-32px);
+          transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .grant-slide-left.visible { opacity: 1; transform: translateX(0); }
+        .grant-slide-right {
+          opacity: 0;
+          transform: translateX(32px);
+          transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .grant-slide-right.visible { opacity: 1; transform: translateX(0); }
+        .grant-label-reveal {
+          opacity: 0;
+          transform: translateY(12px);
+          transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .grant-label-reveal.visible { opacity: 1; transform: translateY(0); }
+
+        @keyframes grant-logo-breathe {
+          0%, 100% { opacity: 0.45; }
+          50% { opacity: 1; }
+        }
+        .grant-logo-pulse-1 {
+          animation: grant-logo-breathe 3s ease-in-out infinite;
+        }
+        .grant-logo-pulse-2 {
+          animation: grant-logo-breathe 3s ease-in-out infinite;
+          animation-delay: 1.5s;
+        }
         .pipe-glow-brown { box-shadow: 0 0 0 0 rgba(69,58,42,0); transition: box-shadow 0.8s ease; }
         .pipe-glow-brown.visible { box-shadow: 0 0 24px 6px rgba(69,58,42,0.1), 0 0 8px 2px rgba(69,58,42,0.06); }
         .pipe-glow-bridge { box-shadow: 0 0 0 0 rgba(105,92,77,0); transition: box-shadow 0.8s ease; }
@@ -1895,6 +1933,21 @@ const handleMuteToggle = (e: React.MouseEvent) => {
                 <ContributorLogoTile src={logo.src} alt={logo.alt} title={logo.title} />
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="pt-12 pb-28 px-8" style={{ position: 'relative' }}>
+        <div className="max-w-7xl mx-auto flex flex-col items-center gap-5">
+          <p className="grant-label-reveal font-label text-[9px] uppercase tracking-[0.35em] font-semibold" style={{ color: '#b0a898' }}>Supported by</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
+            <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer" className="grant-logo-link grant-slide-left grant-logo-pulse-1" data-delay="120">
+              <img src="/grants/elevenlabs-grants.webp" alt="ElevenLabs Grants" style={{ width: '200px', height: 'auto', display: 'block' }} />
+            </a>
+            <div style={{ width: '1px', height: '24px', background: 'rgba(69,58,42,0.12)' }} />
+            <a href="https://cloud.google.com/startup" target="_blank" rel="noopener noreferrer" className="grant-logo-link grant-slide-right grant-logo-pulse-2" data-delay="120" style={{ marginTop: '4px' }}>
+              <img src="/grants/google-for-startups-new.png" alt="Google for Startups" style={{ width: '175px', height: 'auto', display: 'block' }} />
+            </a>
           </div>
         </div>
       </section>
