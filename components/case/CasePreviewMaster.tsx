@@ -1536,29 +1536,14 @@ const EVAL_CRITERIA: Array<{ id: keyof ScoreState; label: string }> = [
    Synced Notes Sidebar — scroll-synced with window, fades at bottom
    ═══════════════════════════════════════════════════════════ */
 function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[] }[] }) {
-  const contentRef = useRef<HTMLDivElement>(null)
-  const [overflows, setOverflows] = useState(false)
-
-  useEffect(() => {
-    const el = contentRef.current
-    if (!el) return
-    // Measure natural content height vs viewport
-    const check = () => setOverflows(el.scrollHeight > window.innerHeight - 168)
-    check()
-    window.addEventListener('resize', check, { passive: true })
-    return () => window.removeEventListener('resize', check)
-  }, [notes])
-
-  const cardBase = 'group relative rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]'
+  // Use overflow layout if any card has more than 3 items
+  const overflows = notes.some(n => n.items.length > 3)
 
   return (
-    // Outer wrapper fills the full height of the aside column (h-full on aside)
-    // so the sticky inner div has room to stick and scroll within the container
     <div className="h-full">
       <div
-        ref={contentRef}
         className="sticky top-[128px] relative flex flex-col gap-3.5 px-3 py-4"
-        style={{ height: overflows ? 'auto' : 'calc(100vh - 168px)' }}
+        style={{ height: overflows ? 'auto' : 'calc(100vh - 168px)', overflow: overflows ? 'visible' : 'hidden' }}
       >
         {/* Ambient glow */}
         <div className="pointer-events-none absolute inset-0 z-0"
@@ -1566,7 +1551,7 @@ function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[]
 
         {notes.map((n, idx) => (
           <div key={n.title}
-            className={`${cardBase} ${overflows ? 'flex flex-col' : 'flex-1 min-h-0 flex flex-col justify-center'}`}
+            className={`group relative rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)] ${overflows ? 'flex flex-col' : 'flex-1 min-h-0 flex flex-col justify-center'}`}
             style={{ background: 'rgba(255,248,240,0.80)', animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
           >
             <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center pt-3 pb-2 px-3 shrink-0">{n.title}</p>
