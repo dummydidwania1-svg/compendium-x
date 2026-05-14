@@ -868,22 +868,41 @@ function VerticalChart({
                   {node.label}
                 </button>
 
-                {/* Chevron: rightmost column → to the right of node; all others → above node */}
-                {hasCh && (
+                {/* Chevron: rightmost column → right of node;
+                    other columns → below by default, but flip above if a sibling
+                    node is close enough below to hide the chevron */}
+                {hasCh && (() => {
+                  let chevronStyle: React.CSSProperties
+                  if (depth === maxD) {
+                    chevronStyle = { top: '50%', left: `${nodeW + 6}px`, transform: 'translateY(-50%)' }
+                  } else {
+                    // Check if any visible node at the same depth sits just below this one
+                    const siblingsBelow = visibleIds.filter(other => {
+                      if (other === id) return false
+                      const op = positions.get(other)
+                      if (!op) return false
+                      const otherDepth = nodeDepth(other)
+                      // Same depth column, positioned below within danger zone
+                      return otherDepth === depth && op.y > p.y && op.y < p.y + nodeH + V_GAP_V + 16
+                    })
+                    const hasNodeBelow = siblingsBelow.length > 0
+                    chevronStyle = hasNodeBelow
+                      ? { top: '-20px', left: '50%', transform: 'translateX(-50%)' }   // above — clear of node border
+                      : { top: `${nodeH + 4}px`, left: '50%', transform: 'translateX(-50%)' } // below
+                  }
+                  return (
                   <button
                     type="button"
                     data-node-button
                     onClick={e => { e.stopPropagation(); onToggle(id) }}
                     className="absolute transition-all duration-300 hover:scale-110 z-30 opacity-70 hover:opacity-100"
-                    style={depth === maxD
-                      ? { top: '50%', left: `${nodeW + 6}px`, transform: 'translateY(-50%)' }
-                      : { top: `${nodeH + 4}px`, left: '50%', transform: 'translateX(-50%)' }
-                    }
+                    style={chevronStyle}
                     aria-label={`${isExp ? 'Collapse' : 'Expand'} ${node.label}`}
                   >
                     <ChevronChip expanded={isExp} />
                   </button>
-                )}
+                  )
+                })()}
               </div>
             </div>
           )
@@ -1543,15 +1562,17 @@ function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[]
     <div className="h-full">
       <div
         className="sticky top-[128px] relative flex flex-col gap-3.5 px-3 py-4"
-        style={{ height: overflows ? 'auto' : 'calc(100vh - 168px)', overflow: overflows ? 'visible' : 'hidden' }}
+        style={{ height: 'calc(100vh - 168px)', overflow: 'hidden' }}
       >
         {/* Ambient glow */}
         <div className="pointer-events-none absolute inset-0 z-0"
           style={{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)', animation: 'cpm-sidebar-glow 14s ease-in-out infinite'}} />
 
-        {notes.map((n, idx) => (
+        {notes.map((n, idx) => {
+          const isLast = idx === notes.length - 1
+          return (
           <div key={n.title}
-            className={`group relative rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)] ${overflows ? 'flex flex-col' : 'flex-1 min-h-0 flex flex-col justify-center'}`}
+            className={`group relative rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)] ${overflows ? (isLast ? 'flex-1 min-h-0 flex flex-col justify-center' : 'flex flex-col') : 'flex-1 min-h-0 flex flex-col justify-center'}`}
             style={{ background: 'rgba(255,248,240,0.80)', animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
           >
             <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center pt-3 pb-2 px-3 shrink-0">{n.title}</p>
@@ -1564,7 +1585,7 @@ function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[]
               ))}
             </ul>
           </div>
-        ))}
+        )})}
       </div>
     </div>
   )
