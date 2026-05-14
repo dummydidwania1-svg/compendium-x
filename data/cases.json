@@ -35,59 +35,525 @@
     "defaultExpanded": ["revenue","interest-on-loans","amount-of-loans","supply-side","deposits","amount-per-person","percent-deposited"],
     "defaultFocusedId": "alternatives",
     "notes": [
-      { "title": "Questions",      "items": ["Which revenue stream?", "Where are the branches concentrated?"] },
-      { "title": "Keep In Mind",   "items": ["Know all five revenue streams", "Loans: supply vs. demand split", "Segment deposits by customer profile"] },
-      { "title": "Brownie Points", "items": ["Increased consumption expenditure", "Salary-account tie-ups and policy nudges"] }
+      { "title": "Questions",      "items": ["Which revenue stream?", "Location of bank branches?"] },
+      { "title": "Keep In Mind",   "items": ["Know all five revenue streams", "Segment deposits by customer profile"] },
+      { "title": "Brownie Points", "items": ["Increased consumption expenditure", "Salary accounts, i.e.,policy tie-ups"] }
     ]
   },
-  "framework": "Candidate: Got it. Where is our client located? Since when have we been facing this problem?\nInterviewer: Our client is based out of Mumbai and has been facing this problem for 2 years now.\nCandidate: Interesting. Have other commercial banks been facing a similar decline?\nInterviewer: Some of the banks have been facing this problem and some have not.\nCandidate: Understood. Is there a specific branch of the bank that has been facing this problem?\nInterviewer: We are facing this problem in all branches across major cities.\nCandidate: Alright. Do we have any information on which revenue stream has been the most affected? From what I know, the revenue streams are: a) Interest on loans b) Fees and Penalties c) Interest on forex investments d) Locker storage facilities e) Ancillary services.\nInterviewer: You seem to have quite a bit of knowledge of this industry. You can look at interest on loans.\nCandidate: Sure. Here, I would like to look at:\nInterest on loans = Amount of loans given * Interest Rate * Percentage Collected\nCandidate: Under amount of loans, we can look at:\n1) Availability of funds to lend (Supply-side) or b) Limited demand for loans.\nInterviewer: Great. We have realised that we don't have enough money to give as loans because our deposits have gone down.\nAmount deposited = Number of people depositing * Amount deposited per person\nInterviewer: Good. You can look at the amount deposited per person.\nCandidate: Here, do we have information on whether there is a particular customer segment that has not been depositing as much? Perhaps, on the basis of gender, age, etc.?\nInterviewer: Yes indeed. We have realised that people between the ages of 21 and 35 have reduced the amount they deposit.\nCandidate: Interesting.\nAmount deposited = Amount earned * % deposited\nCandidate: It is unlikely that everyone in this age bracket has started earning less.\nInterviewer: Yes, correct. You can look at % deposited.\nCandidate: % deposited can be affected by:\n1) Alternate opportunities such as investments in securities\n2) Policies (collaboration with companies, etc.). Example - HDFC Bank may be preferred for salary accounts\n3) Increased consumption expenditure resulting in lower savings\nInterviewer: You have reached the solution. People are now investing in mutual funds and SIPs more than they are depositing in banks.\nCandidate: Interesting. Let's look at what we can do.\n1) Implement a mutual fund and SIPs division in our bank\n2) Have alternative investment options like gold, etc.\n3) Look at targeting people of other age groups.\nInterviewer: Good suggestions. We can close the case now.\n\nBanking on You Framework & Recommendations\nREVENUE OF A BANK\nClarifying Questions: Which revenue stream? Location of bank branches?\nBrownie Points: Increased consumption expenditure Salary accounts, i.e., policy tie-ups\nKeep In Mind: Read up about the banking industry to get an idea of their value chain\nRECOMMENDATIONS: Implement a mutual fund and SIPs division for our bank Have alternate investment options like gold etc. Look at targeting people of different age groups."
+  "framework": "Candidate: Got it. Where is our client located? Since when have we been facing this problem?\nInterviewer: Our client is based out of Mumbai and has been facing this problem for 2 years now.\nCandidate: Interesting. Have other commercial banks been facing a similar decline?\nInterviewer: Some of the banks have been facing this problem and some have not.\nCandidate: Understood. Is there a specific branch of the bank that has been facing this problem?\nInterviewer: We are facing this problem in all branches across major cities.\nCandidate: Alright. Do we have any information on which revenue stream has been the most affected? From what I know, the revenue streams are: a) Interest on loans b) Fees and Penalties c) Interest on forex investments d) Locker storage facilities e) Ancillary services.\nInterviewer: You seem to have quite a bit of knowledge of this industry. You can look at interest on loans.\nCandidate: Sure. Here, I would like to look at:\nInterest on loans = Amount of loans given * Interest Rate * Percentage Collected\nCandidate: Under amount of loans, we can look at:\n1) Availability of funds to lend (Supply-side) or b) Limited demand for loans.\nInterviewer: Great. We have realised that we don't have enough money to give as loans because our deposits have gone down.\nAmount deposited = Number of people depositing * Amount deposited per person\nInterviewer: Good. You can look at the amount deposited per person.\nCandidate: Here, do we have information on whether there is a particular customer segment that has not been depositing as much? Perhaps, on the basis of gender, age, etc.?\nInterviewer: Yes indeed. We have realised that people between the ages of 21 and 35 have reduced the amount they deposit.\nCandidate: Interesting.\nAmount deposited = Amount earned * % deposited\nCandidate: It is unlikely that everyone in this age bracket has started earning less.\nInterviewer: Yes, correct. You can look at % deposited.\nCandidate: % deposited can be affected by:\n1) Alternate opportunities such as investments in securities\n2) Policies (collaboration with companies, etc.). Example - HDFC Bank may be preferred for salary accounts\n3) Increased consumption expenditure resulting in lower savings\nInterviewer: You have reached the solution. People are now investing in mutual funds and SIPs more than they are depositing in banks.\nCandidate: Interesting. Let's look at what we can do.\n1) Implement a mutual fund and SIPs division in our bank\n2) Have alternative investment options like gold, etc.\n3) Look at targeting people of other age groups.\nInterviewer: Good suggestions. We can close the case now.\n\nBanking on You Framework & Recommendations\nREVENUE OF A BANK\nClarifying Questions: Which revenue stream? Location of bank branches?\nBrownie Points: Increased consumption expenditure Salary accounts, i.e., policy tie-ups\nKeep In Mind: Read up about the banking industry to get an idea of their value chain\nRECOMMENDATIONS: Implement a mutual fund and SIPs division for our bank\nHave alternate investment options like gold etc.\nLook at targeting people of different age groups."
 },
 {
-  "id": 2,
-  "docId": "case-2",
-  "title": "Oil Be There For You",
-  "industry": "Oil & Gas",
-  "difficulty": "Medium",
-  "case_type": "Profitability",
-  "company": "Bain",
-  "round": "Manager",
-  "prompt": "Your client is XYZ Energy. They are concerned about declining profits and would like your help in diagnosing the problem.",
-  "framework": "Sure. What exactly does the company do? What geography is it located in? \nThe company is in the oil business in India. They extract and sell oil to third-party distributors. \nGot it. How much have profits declined by and since when has this been happening? \nHave profits gone down across India or is the decline limited to a specific region? \nThe profits have seen a decline of about 2-3%. This has been happening for the last 2 months. \nProfits have gone down in the Eastern region of the country. \nHave our competitors too seen a similar decline? \nNo. \nOkay. Profits are equal to Revenues minus Costs. Has there been a change in revenue in the last 2 months? \nThe revenues have remained stable. \nSounds like the declining profits are driven by increasing costs then. \nI would like to draw the value chain of the company and see which costs have seen an increase. \nGo ahead. \nSure. The different steps of the value chain are as follows: \n1) Licensing: Getting the requisite permissions to commence operations. \n2) Exploration: Identification of prospective sites to extract oil and conducting studies to assess the sites. \n3) Extraction: Setting up the drill and other machinery and extracting the oil. \nThis stage also involves money spent on labour. \n4) Transportation: Oil is usually transported in pipelines. Maybe this stage has seen an increase in repair costs, cost of setting up new pipelines, etc. \n5) Refining: Converting the crude oil extracted into useable forms. \n6) Storage: Money spent on tanks or reservoirs may have seen an increase. \n7) Distribution: Distribution costs may have increased. \nDo we know which stage of the value chain has seen an increase in costs? \nIn fact, our extraction costs are higher than usual. Why do you think this may be the case? \nInteresting. We can further divide extraction costs into: \n1) Cost of machinery (drills, motors, etc.) \n2) Power \n3) Labour \n4) Restoration of site \nAm I missing out on any costs at this stage? \nYou have listed most of the relevant costs. The power used at this stage to run the machinery is unusually high. \nOkay. This could be due to the following reasons: \n1) Old machinery: Due to wear and tear, our machinery may not be as efficient as before. \n2) Terrain: Maybe the terrain is different and our drills have to expend more energy to extract oil. \n3) Wastage: It is possible that power is getting wasted at some point such as transmission. \n4) Deepness: More power may be expended to extract the oil if it is located deeper in the ground. \nSpot on. We had taken up a new project in Assam a couple of months ago. \nThe terrain has been difficult to work on and our costs have seen an increase. What would you recommend? \nThe following solutions can be explored: \n1) Using manpower to loosen the terrain to make it easier for the machinery \n2) Changing our machinery to ensure energy efficiency \n3) Recovering the cost from the end-consumers \nGood. We can end the case here. \n\nOil Be There For You Framework \nDECLINING PROFITS OF AN ENERGY COMPANY \nClarifying Questions: What does the company do? Specific region or all over the country? \nBrownie Points: Mentioning restoration of land as an important cost. \nKeep In Mind: Try going through at least 1 case in every major industry to familiarize yourself with their operating model."
-},
+    "id": 2,
+    "docId": "case-2",
+    "title": "Oil Be There For You",
+    "industry": "Oil and Gas",
+    "difficulty": "Medium",
+    "case_type": "Profitability",
+    "company": "Bain & Company",
+    "round": "Manager",
+    "prompt": "Your client is XYZ Energy. They are concerned about declining profits and would like your help in diagnosing the problem.",
+    "frameworkTree": {
+      "nodes": {
+        "profits": {
+          "id": "profits",
+          "label": "Profits",
+          "tone": "root",
+          "children": [
+            "revenue",
+            "costs"
+          ]
+        },
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "support",
+          "children": []
+        },
+        "costs": {
+          "id": "costs",
+          "label": "Costs",
+          "tone": "branch",
+          "children": [
+            "licensing",
+            "exploration",
+            "extraction",
+            "transportation",
+            "refining",
+            "storage",
+            "distribution"
+          ]
+        },
+        "licensing": {
+          "id": "licensing",
+          "label": "Licensing",
+          "tone": "support",
+          "children": []
+        },
+        "exploration": {
+          "id": "exploration",
+          "label": "Exploration",
+          "tone": "support",
+          "children": []
+        },
+        "extraction": {
+          "id": "extraction",
+          "label": "Extraction",
+          "tone": "branch",
+          "children": [
+            "cost-of-machinery",
+            "power",
+            "labour",
+            "restoration"
+          ]
+        },
+        "transportation": {
+          "id": "transportation",
+          "label": "Transportation",
+          "tone": "support",
+          "children": []
+        },
+        "refining": {
+          "id": "refining",
+          "label": "Refining",
+          "tone": "support",
+          "children": []
+        },
+        "storage": {
+          "id": "storage",
+          "label": "Storage",
+          "tone": "support",
+          "children": []
+        },
+        "distribution": {
+          "id": "distribution",
+          "label": "Distribution",
+          "tone": "support",
+          "children": []
+        },
+        "cost-of-machinery": {
+          "id": "cost-of-machinery",
+          "label": "Cost Of Machinery",
+          "tone": "support",
+          "children": []
+        },
+        "power": {
+          "id": "power",
+          "label": "Power",
+          "tone": "branch",
+          "children": [
+            "old-machinery",
+            "terrain",
+            "wastage",
+            "deepness"
+          ]
+        },
+        "labour": {
+          "id": "labour",
+          "label": "Labour",
+          "tone": "support",
+          "children": []
+        },
+        "restoration": {
+          "id": "restoration",
+          "label": "Restoration",
+          "tone": "support",
+          "children": []
+        },
+        "old-machinery": {
+          "id": "old-machinery",
+          "label": "Old Machinery",
+          "tone": "support",
+          "children": []
+        },
+        "terrain": {
+          "id": "terrain",
+          "label": "Terrain",
+          "tone": "leaf",
+          "children": []
+        },
+        "wastage": {
+          "id": "wastage",
+          "label": "Wastage",
+          "tone": "support",
+          "children": []
+        },
+        "deepness": {
+          "id": "deepness",
+          "label": "Deepness",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "profits",
+        "costs",
+        "extraction",
+        "power"
+      ],
+      "defaultFocusedId": "terrain",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "What does the company do?",
+            "Specific region or all over the country?",
+            "Where in the value chain do they lie?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Use value chain to segment operational costs",
+            "Link case timeline to recent project changes"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Mentioning restoration of land as an important cost."
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: Sure. What exactly does the company do? What geography is it located in?\nInterviewer: The company is in the oil business in India. They extract and sell oil to third-party distributors.\nCandidate: Got it. How much have profits declined by and since when has this been happening? Have profits gone down across India or is the decline limited to a specific region?\nInterviewer: The profits have seen a decline of about 2-3%. This has been happening for the last 2 months. Profits have gone down in the Eastern region of the country.\nCandidate: Have our competitors too seen a similar decline?\nInterviewer: No.\nCandidate: Okay. Profits are equal to Revenues minus Costs. Has there been a change in revenue in the last 2 months?\nInterviewer: The revenues have remained stable.\nCandidate: Sounds like the declining profits are driven by increasing costs then. I would like to draw the value chain of the company and see which costs have seen an increase.\nInterviewer: Go ahead.\nCandidate: Sure. The different steps of the value chain are as follows:\n1) Licensing: Getting the requisite permissions to commence operations.\n2) Exploration: Identification of prospective sites to extract oil and conducting studies to assess the sites.\n3) Extraction: Setting up the drill and other machinery and extracting the oil. This stage also involves money spent on labour.\n4) Transportation: Oil is usually transported in pipelines. Maybe this stage has seen an increase in repair costs, cost of setting up new pipelines, etc.\n5) Refining: Converting the crude oil extracted into useable forms.\n6) Storage: Money spent on tanks or reservoirs may have seen an increase.\n7) Distribution: Distribution costs may have increased.\nCandidate: Do we know which stage of the value chain has seen an increase in costs?\nInterviewer: In fact, our extraction costs are higher than usual. Why do you think this may be the case?\nCandidate: Interesting. We can further divide extraction costs into:\n1) Cost of machinery (drills, motors, etc.)\n2) Power\n3) Labour\n4) Restoration of site\nCandidate: Am I missing out on any costs at this stage?\nInterviewer: You have listed most of the relevant costs. The power used at this stage to run the machinery is unusually high.\nCandidate: Okay. This could be due to the following reasons:\n1) Old machinery: Due to wear and tear, our machinery may not be as efficient as before.\n2) Terrain: Maybe the terrain is different and our drills have to expend more energy to extract oil.\n3) Wastage: It is possible that power is getting wasted at some point such as transmission.\n4) Deepness: More power may be expended to extract the oil if it is located deeper in the ground.\nInterviewer: Spot on. We had taken up a new project in Assam a couple of months ago. The terrain has been difficult to work on and our costs have seen an increase. What would you recommend?\nCandidate: The following solutions can be explored:\n1) Using manpower to loosen the terrain to make it easier for the machinery\n2) Changing our machinery to ensure energy efficiency\n3) Recovering the cost from the end-consumers\nInterviewer: Good. We can end the case here."
+  },
 {
   "id": 3,
   "docId": "case-3",
   "title": "Hotel California",
   "industry": "Food & Beverage",
-  "difficulty": "Hard",
+  "difficulty": "Medium",
   "case_type": "Profitability",
   "company": "BCG",
   "round": "Partner",
-  "prompt": "Hey. Your client owns a restaurant facing a 10% decline in profits since the last 2 months.\nYou have been hired to analyse why and suggest recommendations to turn around the situation.",
-  "framework": "Sure. I'd like to understand a little bit more about the client's business. Where is the restaurant located? \nWhat type of restaurant is it? Do we sell both online and offline? \nThe client has its restaurants spread across the USA, with 12 branches in total. \nIt is a chain of multi-cuisine restaurants selling both food and beverages (alcoholic & non-alcoholic). It's a traditional restaurant chain. \nThey sell via online and dine-in modes for our customers. \nHave all branches seen a decline in profits? \nThe decline in profits is observed only in one particular branch, located in a popular market area in California. Interesting. \nHow have competitors in this area performed? \nAll competitors have performed well. \nNo change has been observed in the costs. Let's see why the revenue has declined. \nOkay, I can begin now. I know that the decline in profits can be attributed to either a decline in revenues or an increase in costs or maybe a combination of both? \nSure, I can think of 5 revenue streams for a restaurant - Dine-in, Take away and Delivery (Own and aggregators), Advertisements, Parking, Leasing out area. \nWhich of these has all changed in the last 2 months? \nThe client has observed a decline in revenue from dine-in. \nI would like to segment revenue from Dine-in into - Number of customers x Bill amount/customer. \nDo we know which one has seen a decline? \nNumber of customers has declined. \nFall in the number of customers could be because of supply or demand reasons. \nDo we know which one has seen a decline? \nOur capacity to serve food has not changed. In fact, there are no issues on the supply side. \nFall in demand could be because of decline in Quality of food, Overall experience, Affordability, Awareness, Promotion and Availability of complementary goods. \nIn fact, we have no reason to believe any of this has changed. What else can you analyse? \nOh. I'd like to understand certain things better then. Has there been a change in the demographics of customers we attract, change in customer tastes or if the fall in demand is related to a particular time of the day. \nFor example - we may have low occupancy during lunch time, etc. \nGood question. Most of the decline has been from the youth segment. All other segments have not seen a change. \nInteresting. I'd like to understand the reason for the same. My next segmentation would be Ability and Want. \nUnder Ability, I'd like to look at factors that are restricting their ability to visit our restaurant. \nUnder Want, I'd like to look at factors that are undesirable (or more desirable for competitors) causing them to not come even though they have the ability to. \nGreat. You can say the answer lies in Ability. \nThat means that the youth have, in the last 2 months, decided to go to competitors but not us because there is something restricting them. \nMy hypothesis is that we have certain regulations with regards to under-age entries - Either denying them from drinking alcohol or denying their entries during party nights - something that competitors might not be so strict about. \nSpot on! The issue is that the adjacent restaurants have removed the age restriction on serving alcohol, and serve to everyone without an ID. \nHence, more people, especially the younger generation are preferring their restaurants over ours. \nYou can give recommendations now (On next page). \nThank you! \n\nHotel California Framework & Recommendations \nDECLINING PROFITS OF A RESTAURANT \nClarifying Questions: Where is the client located? All branches? How have competitors performed? \nBrownie Points: Emphasizing the importance of complementary services and goods as a reason leading to decline in demand \nKeep In Mind: You might get stuck in interviews. Try to trace your steps back and collect more information if unsure. \nRECOMMENDATIONS \nWe can explore the option of providing mocktails to our customers that are non-alcoholic. We can have party nights and other attractions (Movie night with screening) to attract the youth. Inform the authorities of the malpractices followed by competitors. \nExcessively market new dishes and restaurant experiences to attract different customer segments."
+  "prompt": "Hey. Your client owns a restaurant facing a 10% decline in profits since the last 2 months. You have been hired to analyse why and suggest recommendations to turn around the situation.",
+  "frameworkTree": {
+    "nodes": {
+      "profits": { "id": "profits", "label": "Profits", "tone": "root", "children": ["revenue", "costs"] },
+      "revenue": { "id": "revenue", "label": "Revenue", "tone": "branch", "children": ["core-revenue", "non-core-revenue"] },
+      "costs": { "id": "costs", "label": "Costs", "tone": "support", "children": [] },
+      "core-revenue": { "id": "core-revenue", "label": "Core Revenue", "tone": "branch", "children": ["dine-in", "take-away-and-delivery"] },
+      "non-core-revenue": { "id": "non-core-revenue", "label": "Non-Core Revenue", "tone": "support", "children": ["advertisements", "parking-and-leasing"] },
+      "dine-in": { "id": "dine-in", "label": "Dine-in", "tone": "branch", "children": ["no-of-customers", "avg-bill-per-customer"] },
+      "take-away-and-delivery": { "id": "take-away-and-delivery", "label": "Take-away & Delivery", "tone": "support", "children": [] },
+      "advertisements": { "id": "advertisements", "label": "Advertisements", "tone": "support", "children": [] },
+      "parking-and-leasing": { "id": "parking-and-leasing", "label": "Parking & Leasing", "tone": "support", "children": [] },
+      "no-of-customers": { "id": "no-of-customers", "label": "No. of Customers", "tone": "branch", "children": ["supply", "demand"] },
+      "avg-bill-per-customer": { "id": "avg-bill-per-customer", "label": "Avg. Bill / Customer", "tone": "support", "children": [] },
+      "supply": { "id": "supply", "label": "Supply", "tone": "support", "children": [] },
+      "demand": { "id": "demand", "label": "Demand", "tone": "branch", "children": ["who", "what", "when-and-how"] },
+      "who": { "id": "who", "label": "Who", "tone": "branch", "children": ["youth"] },
+      "what": { "id": "what", "label": "What", "tone": "support", "children": [] },
+      "when-and-how": { "id": "when-and-how", "label": "When & How", "tone": "support", "children": [] },
+      "youth": { "id": "youth", "label": "Youth", "tone": "branch", "children": ["ability", "want"] },
+      "want": { "id": "want", "label": "Want", "tone": "support", "children": [] },
+      "ability": { "id": "ability", "label": "Ability", "tone": "branch", "children": ["pre-entry", "post-entry"] },
+      "pre-entry": { "id": "pre-entry", "label": "Pre-Entry", "tone": "branch", "children": ["party-night-ban"] },
+      "post-entry": { "id": "post-entry", "label": "Post-Entry", "tone": "branch", "children": ["alcohol-denied"] },
+      "party-night-ban": { "id": "party-night-ban", "label": "Party Night Ban", "tone": "leaf", "children": [] },
+      "alcohol-denied": { "id": "alcohol-denied", "label": "Alcohol Denied", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["profits", "revenue", "core-revenue", "dine-in", "no-of-customers", "demand", "who", "youth", "ability", "pre-entry", "post-entry"],
+    "defaultFocusedId": "alcohol-denied",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "Where is the client located?",
+          "All branches?",
+          "How have competitors performed?",
+          "What type of restaurant?",
+          "Does the client sell both offline and online?"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "Split revenue into streams before drilling deeper",
+          "Break each stream into price times volume",
+          "Use ability versus want to close segments"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Emphasizing the importance of complementary services and goods as a reason leading to decline in demand",
+          "Raising complementary goods proactively before being prompted"
+        ]
+      }
+    ]
+  },
+  "framework": "Candidate: Sure. I'd like to understand a little bit more about the client's business. Where is the restaurant located? What type of restaurant is it? Do we sell both online and offline?\nInterviewer: The client has its restaurants spread across the USA, with 12 branches in total. It is a chain of multi-cuisine restaurants selling both food and beverages (alcoholic & non-alcoholic). It's a traditional restaurant chain. They sell via online and dine-in modes for our customers.\nCandidate: Have all branches seen a decline in profits?\nInterviewer: The decline in profits is observed only in one particular branch, located in a popular market area in California.\nCandidate: Interesting. How have competitors in this area performed?\nInterviewer: All competitors have performed well.\nCandidate: Okay, I can begin now. I know that the decline in profits can be attributed to either a decline in revenues or an increase in costs or maybe a combination of both?\nInterviewer: No change has been observed in the costs. Let's see why the revenue has declined.\nCandidate: Sure. I can think of 5 revenue streams for a restaurant – Dine-in, Take away and Delivery (Own and aggregators), Advertisements, Parking, Leasing out area. Which of these has all changed in the last 2 months?\nInterviewer: The client has observed a decline in revenue from dine-in.\nCandidate: I would like to segment revenue from Dine-in into - Number of customers x Bill amount/customer. Do we know which one has seen a decline?\nInterviewer: Number of customers has declined.\nCandidate: Fall in the number of customers could be because of supply or demand reasons. Do we know which one has seen a decline?\nInterviewer: Our capacity to serve food has not changed. In fact, there are no issues on the supply side.\nCandidate: Fall in demand could be because of decline in Quality of food, Overall experience, Affordability, Awareness, Promotion and Availability of complementary goods.\nInterviewer: In fact, we have no reason to believe any of this has changed. What else can you analyse?\nCandidate: Oh. I'd like to understand certain things better then. Has there been a change in the demographics of customers we attract, change in customer tastes or if the fall in demand is related to a particular time of the day. For example - we may have low occupancy during lunch time, etc.\nInterviewer: Good question. Most of the decline has been from the youth segment. All other segments have not seen a change.\nCandidate: Interesting. I'd like to understand the reason for the same. My next segmentation would be Ability and Want. Under Ability, I'd like to look at factors that are restricting their ability to visit our restaurant. Under Want, I'd like to look at factors that are undesirable (or more desirable for competitors) causing them to not come even though they have the ability to.\nInterviewer: Great. You can say the answer lies in Ability.\nCandidate: That means that the youth have, in the last 2 months, decided to go to competitors but not us because there is something restricting them. My hypothesis is that we have certain regulations with regards to under-age entries – Either denying them from drinking alcohol or denying their entries during party nights – something that competitors might not be so strict about.\nInterviewer: Spot on! The issue is that the adjacent restaurants have removed the age restriction on serving alcohol, and serve to everyone without an ID. Hence, more people, especially the younger generation are preferring their restaurants over ours. You can give recommendations now (On next page).\nCandidate: Thank you!\n\nHotel California Framework & Recommendations\nDECLINING PROFITS OF A RESTAURANT\nClarifying Questions: Where is the client located? All branches? How have competitors performed?\nBrownie Points: Emphasizing the importance of complementary services and goods as a reason leading to decline in demand\nKeep In Mind: You might get stuck in interviews. Try to trace your steps back and collect more information if unsure.\nRECOMMENDATIONS:\nAdd mocktails and non-alcoholic drinks menu\nHost party nights and movie screening events\nRun social media campaigns targeting youth segment\nReport competitor age-rule violations to authorities"
 },
 {
   "id": 4,
   "docId": "case-4",
   "title": "Chip-o-Tale",
   "industry": "FMCG",
-  "difficulty": "Hard",
-  "case_type": "Profitability",
-  "company": "Bain",
-  "round": "Partner",
-  "prompt": "Hey. Let's start with a case. Your client is Fringles, a famous Soya chip manufacturer in India.\nFringles has been reporting declining profits for the last one year. They have approached you to diagnose the problem immediately.",
-  "framework": "Interesting. I'd like to understand the problem a little better. Can I know the quantum of decline in profits? \nI'd also like to understand if profits have gone down across India? \nSure, profits have gone down by 20%. Good question. Profits have been affected only in Western India. \nThe rest of India has reported good results. \nOkay. I'd like to know the product categories we offer in Western India? \nSure. For the purpose of this case, assume there is one type of Classic Soya Chip sold in Western India by us. \nGreat. I'd like to know if our competitors in Western India have also seen a decline in profits? \nNo, they haven't. You can assume it is a client-specific issue. \nGreat. I can now begin. Profits are a function of revenues minus costs. \nSo, I'd like to understand whether revenue has fallen or costs have increased or a combination of both? \nFocus on revenues. \nSince we are focusing on only one type of product, this becomes our primary revenue source. \nAre there any other revenue streams I need to identify? \nNo. You may proceed. \nSure. Revenues from the Classic Soya Chip can be down due to the volume sold or due to the average price charged. \nMy hypothesis is that the volume sold has gone down and the price has remained constant since the problem is only in one part of India. \nYou're right, let's look at volume sold. \nAnalysing the steps of the value chain (candidate ignores market size since it is not an industry-wide problem), do we know if there has been a fall in the production, distribution, or demand of our Classic Soya Chip? \nThere has been a fall in demand. \nSure. So, for some reason, customers have been preferring our competitors' products over ours. \nI would like to analyse the following buckets. \n1) Need: Maybe there has been a reduction in the need for the type of chips we sell, probably due to substitutes. \nBut since it is not an industry-wide problem, I do not think this is the cause. \n1) Awareness: This would entail both positive promotion and publicity we're undertaking that might have gone down or negative publicity that we've received. \nOur competitors might also be aggressively pushing their products. 2) Affordability: Maybe our competitors have reduced prices or they have been offering more lucrative payment schemes. \n3) Accessibility: Here, I would benchmark how many stores our competitors are present in and also look at how dispersed we are compared to them to ensure that we're accessible to all customers. \n4) Experience: Here, I would analyse the entire experience, from buying our product to its taste and other features. Brilliant. \nIn fact, let's look at the need aspect. \nThat's interesting. There seems to be a need of the consumers that is being fulfilled by our competitors but not by us. \nI'd like to divide this need into 3 types: \n1) Method of packaging - They might prefer certain types of packaging over others. Eg. Recyclable packaging. \n2) Quality and health considerations - There might be a requirement for healthier chips. Eg. Cholesterol-free or baked chips \n3) Status and public perception - Certain brands might have a perception attached to them that we do not, \nGreat. You have identified it correctly. The last one year has seen a huge wave of baked goods in Western India. \nWhile all competitors have taken note of this, we haven't reacted to it yet and are still making fried chips. \nYou may give us your recommendations now. \n(Recommendations on next page) Thank you for the case! \n\nChip-o-Tale Framework & Recommendations \nDECLINING PROFITS OF FRINGLES \nClarifying Questions: Segmenting problem geographically Product types the client offers Competitor benchmarking in the same period \nBrownie Points: Dividing recommendations into long and short term to tackle different problems Identifying multiple types of needs customers may have \nKeep In Mind: Interviewers often throw curveballs based on your line of thinking. Try to hypothesize but be willing to accept that some hypotheses might not be right. \nRECOMMENDATIONS \nShort-term: Advertise the healthy aspect of our chips Launch a campaign targeting people from different parts of Western India through relatable advertising \nLong-term: Launch a variant of our soya chip that is baked to regain market share Launch multiple flavours of baked chips across India since the health-conscious wave is bound to spread to other parts of the country too"
-},
-{
-  "id": 5,
-  "docId": "case-5",
-  "title": "Max Problems at Mini-so",
-  "industry": "Retail",
   "difficulty": "Medium",
   "case_type": "Profitability",
-  "company": "Curated Authors",
-  "round": "N.A.",
-  "prompt": "Your client is the owner of one of the Miniso stores in Delhi and the store has been facing declining product sales.\nYou need to analyse why this is happening and also recommend solutions accordingly.",
-  "framework": "Sure, thank you for the case. I would like to begin by understanding the case better. \nFirstly, are we talking about the departmental store which sells a variety of products from stationery to cosmetics? \nYes. That's right. \nSince when have we been facing this problem and do we know the magnitude of the decline? \nWe have been facing this problem since March 2020. So, roughly 4 months. \nThere has been a 60% decline in revenues. \nAlright. 60% seems like a huge decline. Do we have information on whether other Miniso stores and other competitors in our locality have faced a decline of a similar magnitude? \nOur competitors, as well as other Miniso stores, have faced a decline of about 30% in revenues. \nOkay, so the market, in general, is not doing well. \nIn addition, there is a factor that is affecting our firm more. \nThe general decline could be because of the lockdown imposed in Delhi in March. \nAccurate observations. \nNext, I would like to understand if a certain product line has been affected more, or if the decline is uniform? \nThe decline is quite uniform across all lines. \nGot it. So our revenues can be affected by:\n1) Supply-side constraints which seems more likely given our competitors are not affected by this factor\n2) Demand-side constraints \nYour hypothesis is correct. We have reason to believe it is a supply-side constraint. \nThank you. For a store like Miniso, the supply-side would consist of procurement and distribution. \nDo we have information on which of these has been an issue in the past 4 months? \nSure. We have reason to believe that it's an issue with our distribution push. \nGreat. We can understand distribution push by mapping the customer journey. \nThe stages are- \nStage 1- Before Entry \nStage 2- After Entry \nStage 3-Billing \nIn terms of 'Before Entry', we need to analyse if people are finding it difficult to enter the store. \nA few reasons could be - Construction work outside our store \n1) \n2) Our entry gate is blocked by an obstruction such as a tree or a barricade \n3) Accessibility in terms of non-functional elevators or broken steps \n4) Long security checks \n5) Parking facilities \n6) Listing on google maps \nComing to 'After Entry', we need to analyse what might stop them from buying the product. \n1) Sub-optimal placement of the products \n2) Unavailability of or untrained/unmotivated staff \n3) Unavailability of shopping bags/carts \n4) Lack of signage for direction \nFinally, coming to 'Billing Stage', we can look at the following - \n1) Number of counters and efficiency of the counters \n2) Payment methods offered - online and offline \n3) Availability of carry bags \nYou have identified the reason correctly. Due to the pandemic, people prefer using online modes of payment. \nThis branch has not implemented this yet. What would you suggest to the store? \nThe store needs to accept online modes of payment like Paytm, Google Pay, Bhim, etc. to tackle this specific problem in the long run. \nTo immediately tackle the problem, the store manager can accept the payments on a personal number to not lose customers. \nThe store can also implement home delivery to better deal with the lockdown imposed and make use of social media marketing through WhatsApp, Instagram, etc. \nThese are all good suggestions, thank you! \n\nMax Problems at Mini-so Framework & Recommendations \nDECLINING REVENUES IN MINISO \nClarifying Questions: Since when? What about other branches? \nBrownie Points: Listing on Google Maps Contextualizing with respect to the pandemic \nKeep In Mind: It is important to segment the various branches of the store to isolate the problem \nRECOMMENDATIONS \nImmediately accepting payments on a personal number \nImplementing online payment modes \nHome delivery of products"
+  "company": "Bain & Company",
+  "round": "Partner",
+  "prompt": "Hey. Let's start with a case. Your client is Fringles, a famous Soya chip manufacturer in India. Fringles has been reporting declining profits for the last one year. They have approached you to diagnose the problem immediately.",
+  "frameworkTree": {
+    "nodes": {
+      "profits": { "id": "profits", "label": "Profits", "tone": "root", "children": ["revenue", "costs"] },
+      "revenue": { "id": "revenue", "label": "Revenue", "tone": "branch", "children": ["volume-sold", "average-price"] },
+      "costs": { "id": "costs", "label": "Costs", "tone": "support", "children": [] },
+      "volume-sold": { "id": "volume-sold", "label": "Volume Sold", "tone": "branch", "children": ["production", "distribution", "demand"] },
+      "average-price": { "id": "average-price", "label": "Average Price", "tone": "support", "children": [] },
+      "production": { "id": "production", "label": "Production", "tone": "support", "children": [] },
+      "distribution": { "id": "distribution", "label": "Distribution", "tone": "support", "children": [] },
+      "demand": { "id": "demand", "label": "Demand", "tone": "branch", "children": ["need", "awareness", "affordability", "accessibility", "experience"] },
+      "need": { "id": "need", "label": "Need", "tone": "branch", "children": ["core-product", "complements", "substitutes"] },
+      "awareness": { "id": "awareness", "label": "Awareness", "tone": "support", "children": [] },
+      "affordability": { "id": "affordability", "label": "Affordability", "tone": "support", "children": [] },
+      "accessibility": { "id": "accessibility", "label": "Accessibility", "tone": "support", "children": [] },
+      "experience": { "id": "experience", "label": "Experience", "tone": "support", "children": [] },
+      "core-product": { "id": "core-product", "label": "Core Product", "tone": "branch", "children": ["intrinsic", "extrinsic"] },
+      "complements": { "id": "complements", "label": "Complements", "tone": "support", "children": [] },
+      "substitutes": { "id": "substitutes", "label": "Substitutes", "tone": "support", "children": [] },
+      "intrinsic": { "id": "intrinsic", "label": "Intrinsic", "tone": "branch", "children": ["health", "packaging"] },
+      "extrinsic": { "id": "extrinsic", "label": "Extrinsic", "tone": "support", "children": ["status-and-perception"] },
+      "health": { "id": "health", "label": "Health", "tone": "leaf", "children": [] },
+      "packaging": { "id": "packaging", "label": "Packaging", "tone": "support", "children": [] },
+      "status-and-perception": { "id": "status-and-perception", "label": "Status & Perception", "tone": "support", "children": [] }
+    },
+    "defaultExpanded": [
+      "profits",
+      "revenue",
+      "volume-sold",
+      "demand",
+      "need",
+      "core-product",
+      "intrinsic"
+    ],
+    "defaultFocusedId": "health",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "Segmenting problem geographically",
+          "Product types the client offers",
+          "Competitor benchmarking in the same period"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "Segment geographically before diving deeper",
+          "State hypotheses clearly but stay flexible"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Dividing recommendations into long and short term to tackle different problems",
+          "Identifying multiple types of needs customers may have"
+        ]
+      }
+    ]
+  },
+  "framework": "Candidate: Interesting. I'd like to understand the problem a little better. Can I know the quantum of decline in profits? I'd also like to understand if profits have gone down across India?\nInterviewer: Sure, profits have gone down by 20%. Good question. Profits have been affected only in Western India. The rest of India has reported good results.\nCandidate: Okay. I'd like to know the product categories we offer in Western India?\nInterviewer: Sure. For the purpose of this case, assume there is one type of Classic Soya Chip sold in Western India by us.\nCandidate: Great. I'd like to know if our competitors in Western India have also seen a decline in profits?\nInterviewer: No, they haven't. You can assume it is a client-specific issue.\nCandidate: Great. I can now begin. Profits are a function of revenues minus costs. So, I'd like to understand whether revenue has fallen or costs have increased or a combination of both?\nInterviewer: Focus on revenues.\nCandidate: Since we are focusing on only one type of product, this becomes our primary revenue source. Are there any other revenue streams I need to identify?\nInterviewer: No. You may proceed.\nCandidate: Sure. Revenues from the Classic Soya Chip can be down due to the volume sold or due to the average price charged. My hypothesis is that the volume sold has gone down and the price has remained constant since the problem is only in one part of India.\nInterviewer: You're right, let's look at volume sold.\nCandidate: Analysing the steps of the value chain (candidate ignores market size since it is not an industry-wide problem), do we know if there has been a fall in the production, distribution, or demand of our Classic Soya Chip?\nInterviewer: There has been a fall in demand.\nCandidate: Sure. So, for some reason, customers have been preferring our competitors' products over ours. I would like to analyse the following buckets.\n1) Need: Maybe there has been a reduction in the need for the type of chips we sell, probably due to substitutes. But since it is not an industry-wide problem, I do not think this is the cause.\n1) Awareness: This would entail both positive promotion and publicity we're undertaking that might have gone down or negative publicity that we've received. Our competitors might also be aggressively pushing their products.\n2) Affordability: Maybe our competitors have reduced prices or they have been offering more lucrative payment schemes.\n3) Accessibility: Here, I would benchmark how many stores our competitors are present in and also look at how dispersed we are compared to them to ensure that we're accessible to all customers.\n4) Experience: Here, I would analyse the entire experience, from buying our product to its taste and other features.\nInterviewer: Brilliant. In fact, let's look at the need aspect.\nCandidate: That's interesting. There seems to be a need of the consumers that is being fulfilled by our competitors but not by us. I'd like to divide this need into 3 types:\n1) Method of packaging – They might prefer certain types of packaging over others. Eg. Recyclable packaging.\n2) Quality and health considerations – There might be a requirement for healthier chips. Eg. Cholesterol-free or baked chips.\n3) Status and public perception – Certain brands might have a perception attached to them that we do not.\nInterviewer: Great. You have identified it correctly. The last one year has seen a huge wave of baked goods in Western India. While all competitors have taken note of this, we haven't reacted to it yet and are still making fried chips. You may give us your recommendations now.\nCandidate: (Recommendations on next page) Thank you for the case!\n\nChip-o-Tale Framework & Recommendations\nDECLINING PROFITS OF FRINGLES\nClarifying Questions: Segmenting problem geographically Product types the client offers Competitor benchmarking in the same period\nBrownie Points: Dividing recommendations into long and short term to tackle different problems Identifying multiple types of needs customers may have\nKeep In Mind: Interviewers often throw curveballs based on your line of thinking. Try to hypothesize but be willing to accept that some hypotheses might not be right.\nRECOMMENDATIONS: Advertise healthy aspects of existing chips\nLaunch localised campaigns across Western India\nLaunch baked Soya Chip in Western India\nRoll out baked chip flavours nationwide"
+},
+{
+    "id": 5,
+    "docId": "case-5",
+    "title": "Max Problems at Mini-so",
+    "industry": "Retail",
+    "difficulty": "Medium",
+    "case_type": "Profitability",
+    "company": "Curated by the Authors",
+    "round": "[FLAG] Round not visible in screenshots",
+    "prompt": "Your client is the owner of one of the Miniso stores in Delhi and the store has been facing declining product sales. You need to analyse why this is happening and also recommend solutions accordingly.",
+    "frameworkTree": {
+      "nodes": {
+        "revenue": { "id": "revenue", "label": "Revenue", "tone": "root", "children": ["supply", "demand"] },
+        "supply": { "id": "supply", "label": "Supply", "tone": "branch", "children": ["product-procurement", "distribution-push"] },
+        "demand": { "id": "demand", "label": "Demand", "tone": "support", "children": [] },
+        "product-procurement": { "id": "product-procurement", "label": "Procurement", "tone": "support", "children": [] },
+        "distribution-push": { "id": "distribution-push", "label": "Distribution Push", "tone": "branch", "children": ["before-buying", "during-buying", "post-buying"] },
+        "before-buying": { "id": "before-buying", "label": "Before Buying", "tone": "support", "children": ["discovery", "travel-and-parking", "physical-obstruction", "accessibility", "security-checks"] },
+        "during-buying": { "id": "during-buying", "label": "During Buying", "tone": "branch", "children": ["during-procurement", "payment"] },
+        "post-buying": { "id": "post-buying", "label": "Post Buying", "tone": "support", "children": [] },
+        "discovery": { "id": "discovery", "label": "Discovery / Google Maps Listing", "tone": "leaf", "children": [] },
+        "travel-and-parking": { "id": "travel-and-parking", "label": "Travel & Parking", "tone": "leaf", "children": [] },
+        "physical-obstruction": { "id": "physical-obstruction", "label": "Physical Obstruction", "tone": "leaf", "children": [] },
+        "accessibility": { "id": "accessibility", "label": "Accessibility (Elevators / Steps)", "tone": "leaf", "children": [] },
+        "security-checks": { "id": "security-checks", "label": "Security Checks", "tone": "leaf", "children": [] },
+        "during-procurement": { "id": "during-procurement", "label": "Procurement", "tone": "support", "children": ["product-placement", "staff-quality", "shopping-aids", "directional-signage"] },
+        "payment": { "id": "payment", "label": "Payment", "tone": "branch", "children": ["payment-methods", "operations"] },
+        "product-placement": { "id": "product-placement", "label": "Product Placement", "tone": "leaf", "children": [] },
+        "staff-quality": { "id": "staff-quality", "label": "Staff Quality", "tone": "leaf", "children": [] },
+        "shopping-aids": { "id": "shopping-aids", "label": "Shopping Aids", "tone": "leaf", "children": [] },
+        "directional-signage": { "id": "directional-signage", "label": "Directional Signage", "tone": "leaf", "children": [] },
+        "payment-methods": { "id": "payment-methods", "label": "Payment Methods", "tone": "branch", "children": ["online", "offline"] },
+        "operations": { "id": "operations", "label": "Operations", "tone": "support", "children": ["counter-efficiency", "no-of-counters", "carry-bags"] },
+        "online": { "id": "online", "label": "Online ↓", "tone": "leaf", "children": [] },
+        "offline": { "id": "offline", "label": "Offline", "tone": "leaf", "children": [] },
+        "counter-efficiency": { "id": "counter-efficiency", "label": "Counter Efficiency", "tone": "leaf", "children": [] },
+        "no-of-counters": { "id": "no-of-counters", "label": "No. of Counters", "tone": "leaf", "children": [] },
+        "carry-bags": { "id": "carry-bags", "label": "Carry Bags", "tone": "leaf", "children": [] }
+      },
+      "defaultExpanded": [
+        "revenue",
+        "supply",
+        "distribution-push",
+        "before-buying",
+        "during-buying",
+        "during-procurement",
+        "payment",
+        "payment-methods",
+        "operations"
+      ],
+      "defaultFocusedId": "online",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Since when?",
+            "What about other branches?",
+            "Has the decline been uniform across all product lines, or has a particular line been more affected?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Identify supply or demand driver first.",
+            "Use customer journey to map distribution push."
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Listing on Google Maps",
+            "Contextualizing with respect to the pandemic"
+          ]
+        }
+      ]
+    },
+    "recommendationsTable": {
+      "framework": "Short-Term vs. Long-Term",
+      "columns": ["Dimension", "Short-Term (Immediate)", "Long-Term (Sustained)"],
+      "rows": [
+        {
+          "dimension": "Payment",
+          "shortTerm": "Accept UPI payments on the store manager's personal mobile number (Paytm / BHIM / Google Pay) to avoid losing customers immediately",
+          "longTerm": "Formally integrate online payment infrastructure with QR-based billing counters, card readers, and digital receipts"
+        },
+        {
+          "dimension": "Reach & Visibility",
+          "shortTerm": "Ensure the store is listed and updated on Google Maps with correct hours, photos, and address",
+          "longTerm": "Run targeted social media marketing via WhatsApp and Instagram to drive footfall and build local brand presence"
+        },
+        {
+          "dimension": "Fulfilment",
+          "shortTerm": "Offer home delivery for regular customers through informal channels such as WhatsApp orders to work around lockdown constraints",
+          "longTerm": "Partner with delivery platforms or build a lightweight delivery workflow for the post-pandemic environment"
+        }
+      ]
+    },
+    "framework": "Candidate: Sure, thank you for the case. I would like to begin by understanding the case better. Firstly, are we talking about the departmental store which sells a variety of products from stationery to cosmetics?\nInterviewer: Yes. That's right.\nCandidate: Since when have we been facing this problem and do we know the magnitude of the decline?\nInterviewer: We have been facing this problem since March 2020. So, roughly 4 months. There has been a 60% decline in revenues.\nCandidate: Alright. 60% seems like a huge decline. Do we have information on whether other Miniso stores and other competitors in our locality have faced a decline of a similar magnitude?\nInterviewer: Our competitors, as well as other Miniso stores, have faced a decline of about 30% in revenues.\nCandidate: Okay, so the market, in general, is not doing well. In addition, there is a factor that is affecting our firm more. The general decline could be because of the lockdown imposed in Delhi in March.\nInterviewer: Accurate observations.\nCandidate: Next, I would like to understand if a certain product line has been affected more, or if the decline is uniform?\nInterviewer: The decline is quite uniform across all lines.\nCandidate: Got it. So our revenues can be affected by:\n1) Supply-side constraints which seems more likely given our competitors are not affected by this factor\n2) Demand-side constraints\nInterviewer: Your hypothesis is correct. We have reason to believe it is a supply-side constraint.\nCandidate: Thank you. For a store like Miniso, the supply-side would consist of procurement and distribution. Do we have information on which of these has been an issue in the past 4 months?\nInterviewer: Sure. We have reason to believe that it's an issue with our distribution push.\nCandidate: Great. We can understand distribution push by mapping the customer journey.\nThe stages are-\nStage 1 - Before Entry\nStage 2 - After Entry\nStage 3 – Billing\nIn terms of 'Before Entry', we need to analyse if people are finding it difficult to enter the store. A few reasons could be -\n1) Construction work outside our store\n2) Our entry gate is blocked by an obstruction such as a tree or a barricade\n3) Accessibility in terms of non-functional elevators or broken steps\n4) Long security checks\n5) Parking facilities\n6) Listing on google maps\nComing to 'After Entry', we need to analyse what might stop them from buying the product.\n1) Sub-optimal placement of the products\n2) Unavailability of or untrained/unmotivated staff\n3) Unavailability of shopping bags/carts\n4) Lack of signage for direction\nFinally, coming to 'Billing Stage', we can look at the following -\n1) Number of counters and efficiency of the counters\n2) Payment methods offered - online and offline\n3) Availability of carry bags\nInterviewer: You have identified the reason correctly. Due to the pandemic, people prefer using online modes of payment. This branch has not implemented this yet. What would you suggest to the store?\nCandidate: The store needs to accept online modes of payment like Paytm, Google Pay, Bhim, etc. to tackle this specific problem in the long run. To immediately tackle the problem, the store manager can accept the payments on a personal number to not lose customers. The store can also implement home delivery to better deal with the lockdown imposed and make use of social media marketing through WhatsApp, Instagram, etc.\nInterviewer: These are all good suggestions, thank you!\n\nMax Problems at Mini-so Framework & Recommendations\nDECLINING REVENUES IN MINISO\nClarifying Questions: Since when? What about other branches?\nBrownie Points: Listing on Google Maps Contextualizing with respect to the pandemic\nKeep In Mind: It is important to segment the various branches of the store to isolate the problem\nRECOMMENDATIONS: Accept UPI on manager's personal mobile number\nIntegrate online payments formally at counters\nList store accurately on Google Maps\nRun WhatsApp and Instagram marketing campaigns\nOffer informal home delivery via WhatsApp\nPartner with delivery platforms for online orders"
+},
+{
+  "id": 23,
+  "docId": "case-23",
+  "title": "Mr. Worldwide",
+  "industry": "Hospitality",
+  "difficulty": "Medium",
+  "case_type": "Market Entry",
+  "company": "L. E. K. Consulting",
+  "round": "Principal",
+  "prompt": "Hey, let's begin with a quick case. Your client is the CEO of a famous hotel chain in India. He believes the Indian market has saturated and wants to open operations in another country. You are required to help him.",
+  "frameworkTree": {
+    "nodes": {
+      "mr-worldwide-enter-new-market": { "id": "mr-worldwide-enter-new-market", "label": "Mr. Worldwide - Enter New Market", "tone": "root", "children": ["financial-feasibility","operational-feasibility","risks"] },
+      "financial-feasibility": { "id": "financial-feasibility", "label": "Financial Feasibility", "tone": "branch", "children": ["market-size","market-share","profit-per-night","market-growth-rate"] },
+      "operational-feasibility": { "id": "operational-feasibility", "label": "Operational Feasibility", "tone": "branch", "children": ["pre-setup","setup","post-setup"] },
+      "risks": { "id": "risks", "label": "Risks", "tone": "branch", "children": ["regulatory","cost-and-capital","market-and-economic"] },
+      "market-size": { "id": "market-size", "label": "Market Size", "tone": "branch", "children": ["no-of-tourists","avg-stay"] },
+      "market-share": { "id": "market-share", "label": "Market Share", "tone": "support", "children": [] },
+      "profit-per-night": { "id": "profit-per-night", "label": "Profit per Night: (R - VC) - FC", "tone": "branch", "children": ["revenue-per-night","variable-cost-per-night","fixed-investment"] },
+      "market-growth-rate": { "id": "market-growth-rate", "label": "Market Growth Rate", "tone": "leaf", "children": [] },
+      "no-of-tourists": { "id": "no-of-tourists", "label": "No. of Tourists", "tone": "leaf", "children": [] },
+      "avg-stay": { "id": "avg-stay", "label": "Avg Stay (nights)", "tone": "leaf", "children": [] },
+      "revenue-per-night": { "id": "revenue-per-night", "label": "Revenue/Night", "tone": "leaf", "children": [] },
+      "variable-cost-per-night": { "id": "variable-cost-per-night", "label": "Variable Cost/Night", "tone": "leaf", "children": [] },
+      "fixed-investment": { "id": "fixed-investment", "label": "Fixed Investment", "tone": "leaf", "children": [] },
+      "pre-setup": { "id": "pre-setup", "label": "Pre-Setup", "tone": "branch", "children": ["permissions-and-licensing","market-research","land-acquisition"] },
+      "setup": { "id": "setup", "label": "Setup", "tone": "branch", "children": ["establishing-hotels","hiring-and-staffing","marketing"] },
+      "post-setup": { "id": "post-setup", "label": "Post-Setup", "tone": "branch", "children": ["service-delivery","maintenance"] },
+      "permissions-and-licensing": { "id": "permissions-and-licensing", "label": "Permissions & Licensing", "tone": "leaf", "children": [] },
+      "market-research": { "id": "market-research", "label": "Market Research", "tone": "leaf", "children": [] },
+      "land-acquisition": { "id": "land-acquisition", "label": "Land Acquisition", "tone": "leaf", "children": [] },
+      "establishing-hotels": { "id": "establishing-hotels", "label": "Establishing Hotels", "tone": "leaf", "children": [] },
+      "hiring-and-staffing": { "id": "hiring-and-staffing", "label": "Hiring & Staffing", "tone": "leaf", "children": [] },
+      "marketing": { "id": "marketing", "label": "Marketing", "tone": "leaf", "children": [] },
+      "service-delivery": { "id": "service-delivery", "label": "Service Delivery", "tone": "leaf", "children": [] },
+      "maintenance": { "id": "maintenance", "label": "Maintenance", "tone": "leaf", "children": [] },
+      "regulatory": { "id": "regulatory", "label": "Regulatory", "tone": "branch", "children": ["licensing-and-permits","land-ownership-laws"] },
+      "cost-and-capital": { "id": "cost-and-capital", "label": "Cost & Capital", "tone": "branch", "children": ["capex-overruns","setup-cost-overruns"] },
+      "market-and-economic": { "id": "market-and-economic", "label": "Market & Economic", "tone": "branch", "children": ["demand-volatility","macroeconomic-conditions"] },
+      "licensing-and-permits": { "id": "licensing-and-permits", "label": "Licensing & Permits", "tone": "leaf", "children": [] },
+      "land-ownership-laws": { "id": "land-ownership-laws", "label": "Land Ownership Laws", "tone": "leaf", "children": [] },
+      "capex-overruns": { "id": "capex-overruns", "label": "Capex Overruns", "tone": "leaf", "children": [] },
+      "setup-cost-overruns": { "id": "setup-cost-overruns", "label": "Setup Cost Overruns", "tone": "leaf", "children": [] },
+      "demand-volatility": { "id": "demand-volatility", "label": "Demand Volatility", "tone": "leaf", "children": [] },
+      "macroeconomic-conditions": { "id": "macroeconomic-conditions", "label": "Macroeconomic Conditions", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["mr-worldwide-enter-new-market","financial-feasibility","market-size","profit-per-night","operational-feasibility","pre-setup","setup","post-setup","risks","regulatory","cost-and-capital","market-and-economic"],
+    "defaultFocusedId": "land-acquisition",
+    "notes": [
+      { "title": "Questions",      "items": ["Primary Objective", "Any particular countries being targeted?", "Type of hotel chain", "India market share and hotel count"] },
+      { "title": "Keep In Mind",   "items": ["Ask for average stay to calculate market size", "Check operational constraints before finalising the winner", "Use long-term growth potential to break ties"] },
+      { "title": "Brownie Points", "items": ["Keeping in mind, long-term potential of Australia", "Telling the interviewer the exact information required", "Adding market growth rate to financial feasibility table", "Highlighting scalability from future land acquisition"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "financial-feasibility-table",
+      "type": "table",
+      "title": "Financial Feasibility - Comparative Table",
+      "columns": ["Particulars", "Brazil", "Australia", "South Africa"],
+      "rows": [
+        ["No. of tourists/year (A)", "2 million", "4 million", "5 million"],
+        ["Avg stay - nights (B)", "3", "5", "4"],
+        ["Total nights/year (C = A x B)", "6 million", "20 million", "20 million"],
+        ["Proposed market share (D)", "30%", "25%", "25%"],
+        ["Revenue/night/customer", "$550", "$650", "$600"],
+        ["Variable cost/night/customer", "$350", "$450", "$450"],
+        ["Profit/night/customer (E)", "$200", "$200", "$150"],
+        ["Potential profit - pre-fixed (F = C x D x E)", "$360 Million", "$1 Billion", "$750 Million"],
+        ["Fixed investment (G)", "$100 Million", "$300 Million", "$350 Million"],
+        ["Proposed profit - pre-adj (H = F - G)", "$260 Million", "$700 Million", "$400 Million"],
+        ["Market growth rate", "10%", "15%", "15%"]
+      ]
+    },
+    {
+      "id": "profit-adjustments-table",
+      "type": "table",
+      "title": "Profit Adjustments Post-Operational Constraints",
+      "columns": ["Parameter", "Brazil", "Australia", "South Africa"],
+      "rows": [
+        ["Proposed profit (pre-adj)", "$260 Million", "$700 Million", "$400 Million"],
+        ["Adjustment", "None", "50% land only, so 50% of $700M", "Additional license: -$50M"],
+        ["Revised profit", "$260 Million", "$350 Million", "$350 Million"]
+      ]
+    },
+    {
+      "id": "recommendation-matrix",
+      "type": "table",
+      "title": "Recommendation Framework: Short-Term vs Long-Term",
+      "columns": ["Dimension", "South Africa", "Australia (Recommended)"],
+      "rows": [
+        ["Revised profit (Year 1)", "$350 Million", "$350 Million"],
+        ["Market growth rate", "15%", "15%"],
+        ["Short-term constraint", "Additional license ($50M, one-time)", "Only 50% land acquirable now, limits initial capacity"],
+        ["Long-term upside", "Profits scale with growth but no structural expansion lever", "Remaining 50% land acquirable in 10 years, profit potential doubles to ~$700M"],
+        ["Scalability", "Limited, no identified expansion pathway", "High, built-in land expansion mechanism in 10 years"]
+      ]
+    }
+  ],
+  "framework": "Candidate: Oh wow, that's interesting! I'd like to get a better understanding of the problem. What kind of hotels does our client own? How has he fared in India? How many hotels does he own and where are they located in India?\nInterviewer: He owns premium hotels, similar to Taj. He has 50% share in the Indian market and believes the Indian hospitality industry has slow growth. He has 30 hotels in India, located in Tier 1 and 2 cities.\nCandidate: Okay. What is his primary objective of expanding? Is it profits?\nInterviewer: Yes, he wants to maximise profits.\nCandidate: Great. Do we have any countries in mind among which he wants to choose or is it open to us?\nInterviewer: Good question. We have 3 countries among which he wants to choose - Brazil, Australia and South Africa.\nCandidate: Lastly, are we planning on setting up premium hotels in these countries or are we open to other types of hotels too?\nInterviewer: Your client wants to be recognized in the premium segment only.\nCandidate: Okay brilliant. I would like to follow a 2 step approach. First, I'd like to analyse the profits he can earn in each of these three countries. Second, I'd like to see if operations can be easily set up in these countries. Based on these two steps, I shall make my recommendations.\nInterviewer: Sure. Let us begin.\nCandidate: To analyse the financial aspect of things, I would require the following information since I am unfamiliar with the demographics of the 3 countries.\n\nMarket size of the premium hospitality industry\nMarket share that we can expect\nMarket growth rate\nAverage revenue per night per customer\nAverage cost per night per customer\nFixed investment required to acquire above market share\nInterviewer: Sure! Have a look at the table.\nCandidate: (analyses for a minute) Interesting. I can calculate market size and our expected market share from this information. I shall multiply this into profit per night per customer to get our profits and then subtract the fixed costs.\nInterviewer: Are you sure you can calculate market size?\nCandidate: Oh wait. To get the number of nights occupied per year by tourists, I would also require the average number of nights occupied per premium tourist per stay.\nInterviewer: Exactly. The average stay is 3, 5 and 4 nights for Brazil, Australia and South Africa respectively.\nCandidate: Here are my calculations -\n(Refer to the next page)\nClearly, Australia seems like the best option according to financial attractiveness. Let us now move on to the operational feasibility test. There are 6 steps according to me in the setting up of operations.\nObtaining necessary permission and licenses - Research to analyse hotspots - Acquiring the requisite land - Setting up our hotels - Hiring the requisite staff - Marketing our hotel chain - Starting operations.\nI would like to understand the ease with which each of these can be done at the 3 locations.\nInterviewer: Great. There seems to be no issue in any of the steps in Brazil. In South Africa, there are certain regulatory issues regarding licenses and in Australia, an issue with purchasing of the land.\nCandidate: What are the particular issues in each of these countries?\nInterviewer: Australia has recently come up with regulations that limit the amount of land foreigners can purchase every ten years. Thus, we will only be able to acquire 50% of our initial estimates and the balance after 10 years. In South Africa, there are certain additional licenses to be obtained for premium Hotel Chains that would cost us an additional investment of $50 million not included in our previous estimates.\nCandidate: That's interesting. In light of the new information, our revised profits are as follows:\nAustralia: 50% of $700 Million = $350 Million\nSouth Africa: $400 Million - $50 million = $350 Million\nBrazil: $260 million.\nInterviewer: What are your final recommendations?\nCandidate: Since profit is our primary motive, the decision comes down to Australia and South Africa. We can consider various qualitative factors before finalising, in the absence of it, my suggestion would be Australia.\nThere is massive potential for increasing profits in the long term since we can acquire additional land in 10 years whereas in South Africa, the potential is maximised.\n\nMr. Worldwide Framework & Recommendations\nA HOTEL CHAIN ENTERING NEW MARKETS\nClarifying Questions: Primary Objective Any particular countries being targeted? Type of hotel chain India market share and hotel count\nBrownie Points: Keeping in mind, long-term potential of Australia Telling the interviewer the exact information required Adding market growth rate to financial feasibility table Highlighting scalability from future land acquisition\nKeep In Mind: Ask for average stay to calculate market size Check operational constraints before finalising the winner Use long-term growth potential to break ties\nRECOMMENDATIONS:\nPick Australia for stronger long-term growth potential\nAcquire remaining 50% land in Australia after ten years\nPlan staged capacity expansion as land restrictions ease\nAvoid South Africa due to limited expansion levers"
 }
 ]

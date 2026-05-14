@@ -591,6 +591,309 @@ function walkthroughSpacingClass(block: WalkthroughBlock, previous?: Walkthrough
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Vertical (left-to-right) Layout — for deep/wide trees
+   ═══════════════════════════════════════════════════════════ */
+
+/** Use vertical layout when either:
+ *  1. Any depth row has threshold+ total nodes in the full tree, OR
+ *  2. Any parent has siblings where at least one sibling is expanded (has
+ *     visible children) AND at least one other sibling can also be expanded
+ *     (has children but is currently collapsed). This mixed active/inactive
+ *     drill-down state causes overlap in horizontal layout.
+ */
+function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview'): boolean {
+  const threshold = mode === 'interviewer' ? 7 : 8
+
+  // Check 1: any depth row in the full tree hits threshold+
+  const byDepth: Record<number, number> = {}
+  for (const id of Object.keys(NODES)) {
+    const d = pathTo(id).length - 1
+    byDepth[d] = (byDepth[d] ?? 0) + 1
+  }
+  if (Object.values(byDepth).some(count => count >= threshold)) return true
+
+  // Check 2: any parent whose children include both an expandable node
+  // (has children of its own) AND another expandable sibling — meaning
+  // multiple drill-downs are possible at the same level simultaneously.
+  for (const node of Object.values(NODES)) {
+    if (node.children.length < 2) continue
+    const expandableChildren = node.children.filter(
+      cid => (NODES[cid]?.children.length ?? 0) > 0
+    )
+    if (expandableChildren.length >= 2) return true
+  }
+
+  return false
+}
+
+const V_GAP_V = 2      // vertical gap between leaf rows — needs room for above-node chevron
+const H_PAD_V = 16     // left/right padding inside canvas
+
+/** Compute node dimensions that always fit within containerWidth — no scrolling.
+ *  Font size is derived from nodeW so text always wraps within the box. */
+function verticalNodeMetrics(maxDepth: number, containerWidth: number) {
+  const cols = maxDepth + 1
+  // Cap column width at 160px so nodes don't drift apart horizontally
+  const colW = Math.min(160, Math.max(60, (containerWidth - H_PAD_V * 2) / cols))
+  const nodeW = Math.min(148, Math.floor(colW * 0.88))
+  const hStep = Math.floor(colW)
+  const nodeH = cols <= 3 ? 40 : cols <= 5 ? 48 : cols <= 7 ? 54 : 60
+  // Font is 13% of nodeW, hard floor at 12px so it's always readable
+  const fontSize = Math.min(13.5, Math.max(12, Math.floor(nodeW * 0.13)))
+  return { nodeW, nodeH, hStep, fontSize }
+}
+
+function layoutVertical(
+  visibleIds: string[],
+  hStep: number,
+  nodeW: number,
+  nodeH: number,
+): {
+  positions: Map<string, { x: number; y: number }>
+  totalHeight: number
+  totalWidth: number
+} {
+  const vis = new Set(visibleIds)
+  const positions = new Map<string, { x: number; y: number }>()
+  let cursor = 0
+  const ROW = nodeH + V_GAP_V
+
+  const place = (id: string, depth: number) => {
+    if (!vis.has(id)) return
+    const vc = (NODES[id]?.children ?? []).filter(c => vis.has(c))
+    if (!vc.length) {
+      positions.set(id, { x: H_PAD_V + depth * hStep, y: cursor * ROW })
+      cursor++
+      return
+    }
+    vc.forEach(c => place(c, depth + 1))
+    const firstY = positions.get(vc[0])?.y ?? 0
+    const lastY  = positions.get(vc[vc.length - 1])?.y ?? 0
+    positions.set(id, { x: H_PAD_V + depth * hStep, y: (firstY + lastY) / 2 })
+  }
+
+  place(ROOT_ID, 0)
+
+  const maxD = Math.max(...visibleIds.map(nodeDepth), 0)
+  const totalWidth  = H_PAD_V + (maxD + 1) * hStep + nodeW + H_PAD_V
+  const totalHeight = cursor * ROW + 24
+
+  return { positions, totalHeight, totalWidth }
+}
+
+function VerticalChart({
+  visibleIds, expandedIds, focusedId, onSelect, onToggle, revealDepth, edgeAnimKey,
+}: {
+  visibleIds: string[]
+  expandedIds: Set<string>
+  focusedId: string | null
+  onSelect: (id: string) => void
+  onToggle: (id: string) => void
+  revealDepth: number
+  edgeAnimKey: number
+}) {
+  const outerRef = useRef<HTMLDivElement>(null)
+  const [cW, setCW] = useState(0)
+  const started = revealDepth >= 0
+  const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
+
+  // Measure container width so we can fill it
+  useEffect(() => {
+    const el = outerRef.current; if (!el) return
+    let fid = 0
+    const measure = () => {
+      if (fid) return
+      fid = requestAnimationFrame(() => {
+        fid = 0
+        if (outerRef.current) setCW(outerRef.current.clientWidth)
+      })
+    }
+    measure()
+    const ro = new ResizeObserver(measure); ro.observe(el)
+    return () => { if (fid) cancelAnimationFrame(fid); ro.disconnect() }
+  }, [])
+
+  const maxD = useMemo(() => Math.max(...visibleIds.map(nodeDepth), 0), [visibleIds])
+
+  const metrics = useMemo(() => verticalNodeMetrics(maxD, cW || 800), [cW, maxD])
+
+  const { nodeW, nodeH, hStep, fontSize } = metrics
+
+  const { positions, totalHeight, totalWidth } = useMemo(
+    () => layoutVertical(visibleIds, hStep, nodeW, nodeH),
+    [visibleIds, hStep, nodeW, nodeH]
+  )
+
+  // Centre the tree: totalWidth already includes H_PAD_V on both sides,
+  // so subtract them to get the bare tree width for centering math
+  const leftOffset = useMemo(() => {
+    if (!cW) return 0
+    const treeContentW = totalWidth - H_PAD_V * 2
+    if (treeContentW >= cW) return 0
+    return Math.floor((cW - treeContentW) / 2) - H_PAD_V
+  }, [cW, totalWidth])
+
+  const edges = useMemo(() => {
+    const vs = new Set(visibleIds)
+    return visibleIds.flatMap(pid =>
+      (NODES[pid]?.children ?? []).filter(c => vs.has(c)).map(c => ({ pid, cid: c }))
+    )
+  }, [visibleIds])
+
+  const depthStagger = useMemo(() => {
+    const map = new Map<string, number>()
+    const counter = new Map<number, number>()
+    visibleIds.forEach(id => {
+      const d = nodeDepth(id)
+      const idx = counter.get(d) ?? 0
+      map.set(id, idx)
+      counter.set(d, idx + 1)
+    })
+    return map
+  }, [visibleIds])
+
+  const TOP_PAD = 16
+
+  return (
+    <div
+      ref={outerRef}
+      className="relative w-full transition-all duration-700"
+      style={{
+        opacity: started ? 1 : 0,
+        transform: started ? 'translateY(0)' : 'translateY(24px)',
+        filter: started ? 'blur(0)' : 'blur(8px)',
+      }}
+    >
+      <div
+        className="relative"
+        style={{
+          height: `${totalHeight + TOP_PAD * 2}px`,
+          width: '100%',
+        }}
+      >
+        {/* SVG connector lines — absolutely behind nodes */}
+        <svg
+          className="absolute inset-0 overflow-visible z-10 pointer-events-none"
+          width="100%"
+          height={totalHeight + TOP_PAD * 2}
+          aria-hidden="true"
+        >
+          {edges.map(({ pid, cid }) => {
+            const pp = positions.get(pid), cp = positions.get(cid)
+            if (!pp || !cp) return null
+            const childDepth = nodeDepth(cid)
+            const edgeRevealed = childDepth <= revealDepth
+            const stagger = (depthStagger.get(cid) ?? 0) * 30
+            // Connector exits from right edge of parent, enters left edge of child
+            const px = leftOffset + pp.x + nodeW
+            const py = TOP_PAD + pp.y + nodeH / 2
+            const cx = leftOffset + cp.x
+            const cy = TOP_PAD + cp.y + nodeH / 2
+            const midX = px + (cx - px) / 2
+            return (
+              <path
+                key={`${pid}-${cid}-${edgeAnimKey}`}
+                d={`M ${px} ${py} H ${midX} V ${cy} H ${cx}`}
+                fill="none"
+                stroke="#c9bdb0"
+                strokeWidth="1"
+                strokeLinecap="round"
+                shapeRendering="crispEdges"
+                pathLength={1}
+                style={{
+                  opacity: edgeRevealed ? 1 : 0,
+                  strokeDasharray: 1,
+                  strokeDashoffset: edgeRevealed ? 0 : 1,
+                  transition: `opacity 0.5s cubic-bezier(0.22,1,0.36,1) ${stagger}ms, stroke-dashoffset 0.65s cubic-bezier(0.22,1,0.36,1) ${stagger}ms`,
+                }}
+              />
+            )
+          })}
+        </svg>
+
+        {visibleIds.map(id => {
+          const node = NODES[id], p = positions.get(id)
+          if (!p || !node) return null
+          const depth = nodeDepth(id)
+          const isRevealed = depth <= revealDepth
+          const stagger = (depthStagger.get(id) ?? 0) * 40
+          const isExp = expandedIds.has(id)
+          const isSelected = focusedId === id
+          const isDefaultPath = defaultPath.includes(id)
+          const hasCh = node.children.length > 0
+
+          const cls = isDefaultPath
+            ? 'border-[#3D5A35]/90 bg-[#3D5A35] text-[#f0f5ee] shadow-[0_8px_20px_-10px_rgba(61,90,53,0.30)]'
+            : isSelected
+              ? 'border-[#C4A882]/50 bg-[rgba(255,248,240,0.96)] text-[#4f4335] shadow-[0_0_0_1px_rgba(196,168,130,0.2)]'
+              : 'border-[rgba(92,64,51,0.08)] bg-[rgba(255,248,240,1)] text-[#5C4033] shadow-[0_2px_8px_rgba(59,47,47,0.04)]'
+
+          return (
+            <div
+              key={id}
+              className="absolute z-20 transition-all duration-500"
+              style={{
+                left: leftOffset + p.x,
+                top: TOP_PAD + p.y,
+                opacity: isRevealed ? 1 : 0,
+                transitionDelay: `${stagger}ms`,
+              }}
+            >
+              <div
+                style={{
+                  paddingTop: '0px',
+                  animation: isRevealed
+                    ? `cpm-node-in 420ms cubic-bezier(0.22,1,0.36,1) ${stagger}ms both`
+                    : 'none',
+                }}
+                className="relative"
+              >
+                {/* Node button — full width, connector exits from right edge */}
+                <button
+                  type="button"
+                  data-node-button
+                  onClick={() => onSelect(id)}
+                  className={`flex items-center justify-center rounded-[4px] border px-2 py-2 text-center font-medium tracking-[0.01em] transition-all duration-300 hover:-translate-y-0.5 ${cls}`}
+                  style={{
+                    width: `${nodeW}px`,
+                    minHeight: `${nodeH}px`,
+                    fontSize: `${fontSize}px`,
+                    lineHeight: '1.3',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {node.label}
+                </button>
+
+                {/* Chevron: rightmost column → to the right of node; all others → above node */}
+                {hasCh && (
+                  <button
+                    type="button"
+                    data-node-button
+                    onClick={e => { e.stopPropagation(); onToggle(id) }}
+                    className="absolute transition-all duration-300 hover:scale-110 z-30 opacity-70 hover:opacity-100"
+                    style={depth === maxD
+                      ? { top: '50%', left: `${nodeW + 6}px`, transform: 'translateY(-50%)' }
+                      : { top: `${nodeH + 4}px`, left: '50%', transform: 'translateX(-50%)' }
+                    }
+                    aria-label={`${isExp ? 'Collapse' : 'Expand'} ${node.label}`}
+                  >
+                    <ChevronChip expanded={isExp} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    Desktop Framework Chart
    ═══════════════════════════════════════════════════════════ */
 
@@ -1229,6 +1532,59 @@ const EVAL_CRITERIA: Array<{ id: keyof ScoreState; label: string }> = [
   { id: 'creativity',    label: 'Creativity' },
 ]
 
+/* ═══════════════════════════════════════════════════════════
+   Synced Notes Sidebar — scroll-synced with window, fades at bottom
+   ═══════════════════════════════════════════════════════════ */
+function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[] }[] }) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [overflows, setOverflows] = useState(false)
+
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+    // Measure natural content height vs viewport
+    const check = () => setOverflows(el.scrollHeight > window.innerHeight - 168)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [notes])
+
+  const cardBase = 'group relative rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]'
+
+  return (
+    // Outer wrapper fills the full height of the aside column (h-full on aside)
+    // so the sticky inner div has room to stick and scroll within the container
+    <div className="h-full">
+      <div
+        ref={contentRef}
+        className="sticky top-[128px] relative flex flex-col gap-3.5 px-3 py-4"
+        style={{ height: overflows ? 'auto' : 'calc(100vh - 168px)' }}
+      >
+        {/* Ambient glow */}
+        <div className="pointer-events-none absolute inset-0 z-0"
+          style={{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)', animation: 'cpm-sidebar-glow 14s ease-in-out infinite'}} />
+
+        {notes.map((n, idx) => (
+          <div key={n.title}
+            className={`${cardBase} ${overflows ? 'flex flex-col' : 'flex-1 min-h-0 flex flex-col justify-center'}`}
+            style={{ background: 'rgba(255,248,240,0.80)', animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
+          >
+            <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center pt-3 pb-2 px-3 shrink-0">{n.title}</p>
+            <ul className="w-full px-3 pb-3">
+              {n.items.map(item => (
+                <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
+                  <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                  <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{fontFamily: "'Newsreader', serif"}}>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function CasePreviewMaster({
   caseData, previewMode, transcriptDisplayLines, parsedFramework,
   promptLines, caseTypeLabel, industryLabel, difficultyLabel,
@@ -1721,15 +2077,12 @@ html::-webkit-scrollbar {
 <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">                {/* ── Desktop sidebar: case metadata ── */}
                 <aside className="hidden lg:block">
   <div
-className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"   style={{height: 'calc(100vh - 168px)'}}
+className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: 'calc(100vh - 168px)'}}
   >
     {/* ── B: Ambient green glow behind sidebar ── */}
     <div
       className="pointer-events-none absolute inset-0 z-0"
-      style=
-        {{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)',
-        animation: 'cpm-sidebar-glow 14s ease-in-out infinite',}}
-      
+      style={{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)', animation: 'cpm-sidebar-glow 14s ease-in-out infinite'}}
     />
 
     {[
@@ -1742,12 +2095,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"   style={{height:
         key={item.label}
         className="group relative flex-1 flex flex-col items-center justify-center rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
         style={{
-  background: 'rgba(255,248,240,0.80)',
-  animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`,
-  zIndex: 1,
-}}
+          background: 'rgba(255,248,240,0.80)',
+          animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`,
+          zIndex: 1,
+        }}
       >
-        
         <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center">
           {item.label}
         </p>
@@ -1767,7 +2119,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"   style={{height:
     background: 'rgba(255,248,240,0.80)',
     animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both`,
     zIndex: 1,}}
-  
 >
       
       <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center">
@@ -1855,49 +2206,8 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"   style={{height:
 <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
 <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">
                   {/* ── Desktop sidebar: notes ─────────── */}
-                  <aside className="hidden lg:block">
-  <div
-    className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"
-    style= {{height: 'calc(100vh - 168px)' }}
-  >
-    {/* Ambient green glow behind sidebar */}
-    <div
-      className="pointer-events-none absolute inset-0 z-0"
-      style=
-        {{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)',
-        animation: 'cpm-sidebar-glow 14s ease-in-out infinite',}}
-      
-    />
-
-    {NOTES.map((n, idx) => (
-      <div
-        key={n.title}
-        className="group relative flex-1 flex flex-col items-center justify-center rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
-        style={{
-          background: 'rgba(255,248,240,0.80)',
-          animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`,
-          zIndex: 1,
-        }}
-      >
-        {/* Card heading */}
-        <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center mb-3">
-          {n.title}
-        </p>
-
-        {/* Bullet items */}
-        <ul className="w-full px-3">
-          {n.items.map(item => (
-            <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
-              <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-<span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style= {{fontFamily: "'Newsreader', serif" }}>
-  {item}
-</span>                
-            </li>
-          ))}
-        </ul>
-      </div>
-    ))}
-  </div>
+                  <aside className="hidden lg:block h-full">
+  <SyncedNotesSidebar notes={NOTES}  />
 </aside>
 
                   {/* ── Gradient divider + chart/recommendations ── */}
@@ -1912,7 +2222,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"   style={{height:
   />
 </div>
 
-                    <div className={`relative flex flex-col pl-7 pr-5 py-6${recommendations.length === 0 ? ' justify-center' : ''}`} style={recommendations.length > 0 ? { minHeight: 'calc(100vh - 216px)' } : { minHeight: 'calc(100vh - 216px)' }}>
+                    <div className={`relative flex flex-col pl-7 pr-5 py-6${recommendations.length === 0 ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
                       {/* Glass blur overlay — only when framework is fully expanded AND bottom border is not yet visible */}
                       {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                         <div className="pointer-events-none z-20"
@@ -1935,10 +2245,15 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4"   style={{height:
                       <div
                         ref={chartRef}
                         className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')}
-                        style={{ transform: 'scale(1.05)', transformOrigin: 'center center' }}
+                        style={shouldUseVerticalLayout('preview') ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }}
                       >
-                        <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds}
-  focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                        {shouldUseVerticalLayout('preview') ? (
+                          <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds}
+                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                        ) : (
+                          <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds}
+                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                        )}
                       </div>
 
                       {/* ── Recommendations ─────────────── */}
@@ -2331,24 +2646,8 @@ export function CaseInterviewerMaster({
               <div className="hidden lg:block">
                 <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
                   <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">
-                    <aside className="hidden lg:block">
-                      <div className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{ height: 'calc(100vh - 168px)' }}>
-                        <div className="pointer-events-none absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)', animation: 'cpm-sidebar-glow 14s ease-in-out infinite' }} />
-                        {NOTES.map((n, idx) => (
-                          <div key={n.title} className="group relative flex-1 flex flex-col items-center justify-center rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
-                            style={{ background: 'rgba(255,248,240,0.80)', animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}>
-                            <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center mb-3">{n.title}</p>
-                            <ul className="w-full px-3">
-                              {n.items.map(item => (
-                                <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
-                                  <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                  <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
+                    <aside className="hidden lg:block h-full">
+                      <SyncedNotesSidebar notes={NOTES}  />
                     </aside>
                     <div className="relative min-w-0">
                       <div className="absolute left-0 top-0 hidden h-full w-px lg:block">
@@ -2358,8 +2657,12 @@ export function CaseInterviewerMaster({
                         {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.88) 40%, rgba(255,248,240,0) 100%)', backdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`, WebkitBackdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`, WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
-                        <div ref={chartRef} className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')} style={{ transform: 'scale(1.05)', transformOrigin: 'center center' }}>
-                          <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                        <div ref={chartRef} className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')} style={shouldUseVerticalLayout('interviewer') ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }}>
+                          {shouldUseVerticalLayout('interviewer') ? (
+                            <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                          ) : (
+                            <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                          )}
                         </div>
                         {recommendations.length > 0 && (
                           <div className="pt-16">
