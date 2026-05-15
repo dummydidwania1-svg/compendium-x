@@ -31,7 +31,7 @@ export function authenticatedRoute<P extends Record<string, string> = Record<str
 ) {
   return async (
     request: Request,
-    ctx: NextRouteContext<P> = { params: Promise.resolve({} as P) },
+    ctx: NextRouteContext<P>,
   ): Promise<NextResponse> => {
     const start = Date.now()
     let uid: string | null = null
