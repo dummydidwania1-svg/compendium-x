@@ -61,6 +61,11 @@ The Firebase project (`compendium-x`) is version-controlled from this repo:
    ```bash
    npx firebase login
    ```
+3. **Configure Vercel env vars** so server routes can authenticate as Firebase Admin:
+   - Vercel dashboard → `compendium-x` project → Settings → Environment Variables
+   - Add `FIREBASE_SERVICE_ACCOUNT_JSON` — paste the entire contents of `serviceAccountKey.json` as a single line, scoped to Production + Preview
+   - Trigger a redeploy so it takes effect
+   - Locally this variable is not needed — the file at the repo root is used automatically.
 
 ### Local development with emulators (recommended)
 

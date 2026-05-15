@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { AuthError, verifyRequest } from '@/lib/auth/verifyRequest'
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com'
 const DEFAULT_TRANSCRIBE_MODEL = 'gemini-2.5-flash-lite'
@@ -29,11 +30,6 @@ type GeminiUsageMetadata = {
   totalTokenCount?: number
 }
 
-type VerifiedRequester = {
-  uid: string
-  email: string | null
-}
-
 export const runtime = 'nodejs'
 export const maxDuration = 300
 
@@ -58,14 +54,6 @@ function extractGeminiErrorMessage(payload: unknown): string {
   return 'Gemini request failed.'
 }
 
-function readBearerToken(authorizationHeader: string | null): string | null {
-  if (!authorizationHeader) return null
-  const [scheme, token] = authorizationHeader.trim().split(/\s+/)
-  if (!scheme || !token) return null
-  if (scheme.toLowerCase() !== 'bearer') return null
-  return token
-}
-
 function isValidStoragePath(storagePath: string, uid: string, sessionId: string): boolean {
   const cleanPath = storagePath.replace(/^\/+|\/+$/g, '')
   return cleanPath.startsWith(`session-recordings/${uid}/${sessionId}/`)
@@ -80,48 +68,6 @@ function matchesFirebaseDownloadUrl(audioUrl: string, storagePath: string): bool
     return parsedUrl.pathname.includes(`/o/${encodedPath}`)
   } catch {
     return false
-  }
-}
-
-async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedRequester | null> {
-  const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
-  if (!firebaseApiKey) return null
-
-  const verifyResponse = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseApiKey)}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ idToken }),
-    }
-  )
-
-  const payload = await verifyResponse.json().catch(() => null)
-  if (!verifyResponse.ok || !payload || typeof payload !== 'object') {
-    return null
-  }
-
-  const users = (payload as { users?: unknown }).users
-  if (!Array.isArray(users) || users.length === 0) {
-    return null
-  }
-
-  const firstUser = users[0]
-  if (!firstUser || typeof firstUser !== 'object') {
-    return null
-  }
-
-  const uid = (firstUser as { localId?: unknown }).localId
-  const email = (firstUser as { email?: unknown }).email
-  if (typeof uid !== 'string' || uid.trim().length === 0) {
-    return null
-  }
-
-  return {
-    uid: uid.trim(),
-    email: typeof email === 'string' && email.trim().length > 0 ? email.trim() : null,
   }
 }
 
@@ -225,14 +171,14 @@ export async function POST(request: Request) {
     )
   }
 
-  const bearerToken = readBearerToken(request.headers.get('authorization'))
-  if (!bearerToken) {
-    return NextResponse.json({ error: 'Unauthorized request.' }, { status: 401 })
-  }
-
-  const requester = await verifyFirebaseIdToken(bearerToken)
-  if (!requester) {
-    return NextResponse.json({ error: 'Unauthorized request.' }, { status: 401 })
+  let requester
+  try {
+    requester = await verifyRequest(request)
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return NextResponse.json({ error: 'Unauthorized request.' }, { status: err.status })
+    }
+    throw err
   }
 
   let body: TranscribeRequestBody
