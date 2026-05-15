@@ -4,13 +4,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { collection, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import { X } from 'lucide-react'
 import Footer from '@/components/dashboard/Footer'
 import Navbar from '@/components/dashboard/Navbar'
 import { db } from '@/lib/firebase/config'
 import { FILTER_TYPES, FILTER_LEVELS } from '@/lib/constants'
 import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown'
+import { apiPost } from '@/lib/api/client'
 
 const CASES_CACHE_KEY = 'compendium_cases_v2'
 
@@ -125,17 +126,10 @@ function RepositoryContent() {
       localStorage.setItem('compendium-session-start', JSON.stringify(eventData))
 
       try {
-        await setDoc(
-          doc(db, 'sessions', lobbyId),
-          {
-            caseId,
-            status: 'in_progress',
-            sessionMode,
-            selectedAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        )
+        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/select-case`, {
+          caseId,
+          sessionMode,
+        })
 
         router.push(
           `/case/${caseId}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`

@@ -4,8 +4,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
-import { db, waitForAuthUser } from '@/lib/firebase/config'
+import { getDoc, onSnapshot } from 'firebase/firestore'
+import { waitForAuthUser } from '@/lib/firebase/config'
+import { sessionDoc } from '@/lib/firebase/collections'
+import { apiPost } from '@/lib/api/client'
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 type SessionState = {
@@ -918,7 +920,7 @@ export default function LobbyPage() {
 
     let unsubscribeSession = () => {}
     let pollTimer: ReturnType<typeof setInterval> | null = null
-    const sessionRef = doc(db, 'sessions', lobbyId)
+    const sessionRef = sessionDoc(lobbyId)
     const clearPoll = () => {
       if (!pollTimer) return
       clearInterval(pollTimer)
@@ -1012,19 +1014,10 @@ export default function LobbyPage() {
           }
         }
 
-        const payload: Record<string, unknown> = {
+        await apiPost('/api/sessions', {
           lobbyId,
-          candidateId: user.uid,
-          candidateEmail: user.email ?? null,
           sessionMode: requestedSessionMode,
-          updatedAt: serverTimestamp(),
-        }
-        if (!existingSession.exists()) {
-          payload.status = 'waiting'
-          payload.createdAt = serverTimestamp()
-        }
-
-        await setDoc(sessionRef, payload, { merge: true })
+        })
 
         setCheckingCandidate(false)
 

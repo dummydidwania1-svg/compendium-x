@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { FieldValue } from 'firebase-admin/firestore'
+import { adminDb } from '@/lib/firebase/admin'
 import { AuthError, verifyRequest } from '@/lib/auth/verifyRequest'
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com'
@@ -160,6 +162,24 @@ async function deleteGeminiFile(fileName: string, apiKey: string): Promise<void>
   }
 }
 
+async function mergeRecording(sessionId: string, fields: Record<string, unknown>): Promise<void> {
+  try {
+    await adminDb
+      .collection('sessions')
+      .doc(sessionId)
+      .set(
+        {
+          recording: fields,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+  } catch {
+    // Transcript metadata is best-effort — never crash a successful
+    // transcription because we couldn't update the session doc.
+  }
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY
   const model = process.env.GEMINI_TRANSCRIBE_MODEL || DEFAULT_TRANSCRIBE_MODEL
@@ -212,6 +232,12 @@ export async function POST(request: Request) {
   if (!matchesFirebaseDownloadUrl(audioUrl, storagePath)) {
     return NextResponse.json({ error: 'audioUrl does not match provided storagePath.' }, { status: 400 })
   }
+
+  await mergeRecording(sessionId, {
+    transcriptStatus: 'processing',
+    transcriptRequestedAt: FieldValue.serverTimestamp(),
+    transcriptError: null,
+  })
 
   let uploadedFileName = ''
 
@@ -336,21 +362,36 @@ export async function POST(request: Request) {
     }
 
     const usageMetadata = (generationPayload as { usageMetadata?: GeminiUsageMetadata }).usageMetadata
+    const finalMimeType = readyFile.mimeType || sourceMimeType
+
+    await mergeRecording(sessionId, {
+      transcriptStatus: 'completed',
+      transcript,
+      transcriptPreview: transcript.slice(0, 1000),
+      transcriptCompletedAt: FieldValue.serverTimestamp(),
+      transcriptModel: model,
+      transcriptUsage: usageMetadata ?? null,
+      transcriptMimeType: finalMimeType,
+      transcriptByteSize: byteSize,
+      transcriptStoragePath: storagePath,
+      transcriptError: null,
+    })
 
     return NextResponse.json({
       transcript,
       model,
-      mimeType: readyFile.mimeType || sourceMimeType,
+      mimeType: finalMimeType,
       byteSize,
       usageMetadata: usageMetadata ?? null,
     })
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Unable to transcribe audio.',
-      },
-      { status: 500 }
-    )
+    const message = error instanceof Error ? error.message : 'Unable to transcribe audio.'
+    await mergeRecording(sessionId, {
+      transcriptStatus: 'failed',
+      transcriptFailedAt: FieldValue.serverTimestamp(),
+      transcriptError: message,
+    })
+    return NextResponse.json({ error: message }, { status: 500 })
   } finally {
     if (uploadedFileName) {
       await deleteGeminiFile(uploadedFileName, apiKey)

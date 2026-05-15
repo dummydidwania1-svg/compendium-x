@@ -17,23 +17,31 @@ service cloud.firestore {
       allow create, update, delete: if signedIn() && request.auth.uid == userId;
     }
 
-    // Keep remote partner flow working
-    // TODO(phase-3): lock this down once writes move to /api routes with admin SDK.
+    // Sessions: clients read scoped to participants. All writes go through
+    // /api/sessions* routes which use the Admin SDK (and bypass these rules).
+    // `resource == null` allows reads of non-existent docs (e.g. lobby page's
+    // initial existence check before calling POST /api/sessions).
     match /sessions/{sessionId} {
-      allow read, write: if true;
+      allow read: if signedIn() && (
+        resource == null ||
+        resource.data.candidateId == request.auth.uid ||
+        (resource.data.interviewerId is string && resource.data.interviewerId == request.auth.uid)
+      );
+      allow write: if false;
     }
 
-    // Evaluations
-    // TODO(phase-3): require auth on create; move write path through /api.
+    // Evaluations: clients read scoped to participants. All writes go through
+    // /api/evaluations which uses the Admin SDK.
+    // Image-URL updates are still permitted client-side (dashboard upload UI).
     match /evaluations/{evaluationId} {
-      allow create: if true;
-
       allow read: if signedIn() && (
         resource.data.candidateId == request.auth.uid ||
         (resource.data.interviewerId is string && resource.data.interviewerId == request.auth.uid)
       );
 
-      // Allow only workspace image URL updates (+updatedAt) by owner
+      allow create: if false;
+
+      // Allow only workspace image URL updates (+updatedAt) by owner.
       allow update: if signedIn()
         && (
           resource.data.candidateId == request.auth.uid ||

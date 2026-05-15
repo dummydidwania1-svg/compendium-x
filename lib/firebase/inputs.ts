@@ -1,0 +1,96 @@
+/**
+ * Zod input schemas for the API routes that mutate Firestore.
+ *
+ * These are deliberately stricter than the document-shape schemas in
+ * `lib/firebase/schema.ts`:
+ *   - No timestamps (server fills with `FieldValue.serverTimestamp()`)
+ *   - No identity claims (server derives `candidateId` / `interviewerId`
+ *     from the verified caller token)
+ *   - Tight bounds on string lengths to avoid abuse
+ */
+import { z } from 'zod'
+
+const lobbyId = z.string().min(8).max(128)
+const caseId = z.string().min(1).max(128)
+const sessionMode = z.enum(['remote', 'local'])
+const stopReason = z.string().min(1).max(64)
+const score = z.number().int().min(1).max(5)
+
+/* -------------------------------------------------------------------------- */
+/* POST /api/sessions — candidate creates / refreshes their session           */
+/* -------------------------------------------------------------------------- */
+
+export const createSessionInput = z.object({
+  lobbyId,
+  sessionMode,
+})
+export type CreateSessionInput = z.infer<typeof createSessionInput>
+
+/* -------------------------------------------------------------------------- */
+/* POST /api/sessions/[lobbyId]/select-case                                   */
+/* -------------------------------------------------------------------------- */
+
+export const selectCaseInput = z.object({
+  caseId,
+  sessionMode,
+})
+export type SelectCaseInput = z.infer<typeof selectCaseInput>
+
+/* -------------------------------------------------------------------------- */
+/* POST /api/sessions/[lobbyId]/recording                                     */
+/* -------------------------------------------------------------------------- */
+
+const recordingUploadedInput = z.object({
+  status: z.literal('uploaded'),
+  mode: sessionMode,
+  storagePath: z.string().min(1).max(512),
+  audioUrl: z.string().url().max(2048),
+  byteSize: z.number().int().nonnegative(),
+  mimeType: z.string().min(1).max(128),
+  durationMs: z.number().int().nullable(),
+  startedAtMs: z.number().int().nonnegative(),
+  stoppedAtMs: z.number().int().nonnegative(),
+  stopReason,
+})
+
+const recordingFailedInput = z.object({
+  status: z.literal('upload_failed'),
+  mode: sessionMode,
+  stoppedAtMs: z.number().int().nonnegative(),
+  stopReason,
+  error: z.string().min(1).max(2000),
+})
+
+export const recordingInput = z.discriminatedUnion('status', [
+  recordingUploadedInput,
+  recordingFailedInput,
+])
+export type RecordingInput = z.infer<typeof recordingInput>
+
+/* -------------------------------------------------------------------------- */
+/* POST /api/sessions/[lobbyId]/complete                                      */
+/* -------------------------------------------------------------------------- */
+
+export const completeSessionInput = z.object({
+  completedBy: z.literal('candidate'),
+})
+export type CompleteSessionInput = z.infer<typeof completeSessionInput>
+
+/* -------------------------------------------------------------------------- */
+/* POST /api/evaluations                                                      */
+/* -------------------------------------------------------------------------- */
+
+// Server fetches caseTitle/caseType/industry from the `cases` collection so
+// the client can't tamper with denormalized eval metadata.
+export const submitEvaluationInput = z.object({
+  lobbyId: lobbyId.nullable(),
+  caseId,
+  scores: z.object({
+    structure: score,
+    understanding: score,
+    delivery: score,
+    creativity: score,
+  }),
+  notes: z.string().max(10000),
+})
+export type SubmitEvaluationInput = z.infer<typeof submitEvaluationInput>

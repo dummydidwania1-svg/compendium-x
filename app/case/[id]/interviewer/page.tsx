@@ -3,8 +3,10 @@ import Image from 'next/image'
 import { useEffect, useMemo, useState, useRef, ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
-import { db, waitForAuthUser } from '@/lib/firebase/config'
+import { getDoc } from 'firebase/firestore'
+import { waitForAuthUser } from '@/lib/firebase/config'
+import { caseDoc } from '@/lib/firebase/collections'
+import { apiPost } from '@/lib/api/client'
 import { CaseForumSection } from '@/components/forum/CaseForumSection'
 import CasePreviewView from '@/components/case/CasePreviewView'
 import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
@@ -20,12 +22,6 @@ type CaseDocument = {
 	prompt?: string
 	framework?: string
 	frameworkTree?: import('@/components/case/CasePreviewMaster').FrameworkTree
-}
-
-type SessionDocument = {
-	candidateId?: string
-	candidateEmail?: string | null
-	status?: 'waiting' | 'in_progress' | 'completed'
 }
 
 type ScoreState = {
@@ -640,8 +636,7 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 					}
 				}
 
-				const caseRef = doc(db, 'cases', caseId)
-				const caseSnapshot = await withTimeout(getDoc(caseRef), 15000)
+				const caseSnapshot = await withTimeout(getDoc(caseDoc(caseId)), 15000)
 				if (caseSnapshot.exists()) {
 					const liveCase = caseSnapshot.data() as CaseDocument
 					setCaseData(liveCase)
@@ -672,74 +667,24 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 		setSubmitting(true)
 		setSubmitError('')
 		const interviewerUser = await waitForAuthUser()
-		const interviewerId = interviewerUser?.uid ?? null
-		const interviewerEmail = interviewerUser?.email ?? null
-		if (!lobbyId && !interviewerUser) {
+		if (!interviewerUser) {
 			setSubmitting(false)
 			router.push(`/login?redirect=${encodeURIComponent(`/case/${resolvedCaseId}/interviewer`)}`)
 			return
 		}
 
-		let candidateId: string | null = null
-		let candidateName: string | null = null
-		if (lobbyId) {
-			const sessionSnapshot = await getDoc(doc(db, 'sessions', lobbyId))
-			if (sessionSnapshot.exists()) {
-				const sessionData = sessionSnapshot.data() as SessionDocument
-				candidateId = sessionData.candidateId ?? null
-				candidateName = sessionData.candidateEmail ?? null
-			}
-			if (!candidateId && interviewerUser) {
-				candidateId = interviewerUser.uid
-				candidateName = interviewerUser.email ?? null
-			}
-		} else if (interviewerUser) {
-			candidateId = interviewerUser.uid
-			candidateName = interviewerUser.email ?? null
-		}
-
-		if (!candidateId) {
-			setSubmitting(false)
-			setSubmitError('Session is not linked to a candidate. Ask candidate to start from Practice mode.')
-			return
-		}
-
 		try {
-			const batch = writeBatch(db)
-			const evaluationRef = doc(collection(db, 'evaluations'))
-			batch.set(evaluationRef, {
-				caseId: resolvedCaseId,
-				caseTitle: caseData.title,
-				caseType: caseData.caseType ?? caseData!.case_type ?? null,
-				industry: caseData.industry ?? null,
+			await apiPost('/api/evaluations', {
 				lobbyId: lobbyId ?? null,
-				candidateId,
-				interviewerId,
-				candidateName: candidateName ?? interviewerEmail,
-				interviewerEmail,
-				structureScore: scores.structure,
-				understandingScore: scores.understanding,
-				deliveryScore: scores.delivery,
-				creativityScore: scores.creativity,
-				interviewerObservations: notes,
+				caseId: resolvedCaseId,
+				scores: {
+					structure: scores.structure,
+					understanding: scores.understanding,
+					delivery: scores.delivery,
+					creativity: scores.creativity,
+				},
 				notes,
-				createdAt: serverTimestamp(),
 			})
-
-			if (lobbyId) {
-				batch.set(
-					doc(db, 'sessions', lobbyId),
-					{
-						status: 'completed',
-						caseId: resolvedCaseId,
-						completedAt: serverTimestamp(),
-						updatedAt: serverTimestamp(),
-					},
-					{ merge: true },
-				)
-			}
-
-			await batch.commit()
 		} catch (error) {
 			setSubmitError(error instanceof Error ? error.message : 'Unable to save feedback.')
 			setSubmitting(false)

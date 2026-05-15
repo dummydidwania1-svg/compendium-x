@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { type User } from 'firebase/auth'
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { getDoc, onSnapshot } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
-import { db, storage, waitForAuthUser } from '@/lib/firebase/config'
+import { storage, waitForAuthUser } from '@/lib/firebase/config'
+import { sessionDoc } from '@/lib/firebase/collections'
+import { apiPost } from '@/lib/api/client'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed'
@@ -312,21 +314,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     [readMicrophonePermissionState]
   )
 
-  const updateSessionRecording = useCallback(
-    async (payload: Record<string, unknown>) => {
-      if (!lobbyId) return
-      await setDoc(
-        doc(db, 'sessions', lobbyId),
-        {
-          recording: payload,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      )
-    },
-    [lobbyId]
-  )
-
+  // The server's /api/transcribe route writes transcript status/result fields
+  // to the session doc itself, so this client wrapper just initiates the call.
   const requestTranscript = useCallback(
     async (payload: { audioUrl: string; mimeType: string; storagePath: string }) => {
       if (!currentUser) {
@@ -337,12 +326,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       }
 
       const idToken = await currentUser.getIdToken()
-
-      await updateSessionRecording({
-        transcriptStatus: 'processing',
-        transcriptRequestedAt: serverTimestamp(),
-        transcriptError: null,
-      })
 
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -359,10 +342,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       })
 
       const result = (await response.json().catch(() => null)) as TranscribeResponse | null
-      const transcriptText =
-        result && typeof result.transcript === 'string' ? result.transcript.trim() : ''
 
-      if (!response.ok || transcriptText.length === 0) {
+      if (!response.ok) {
         const message =
           result && typeof result.error === 'string' && result.error.trim().length > 0
             ? result.error.trim()
@@ -370,19 +351,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         throw new Error(message)
       }
 
-      await updateSessionRecording({
-        transcriptStatus: 'completed',
-        transcript: transcriptText,
-        transcriptPreview: transcriptText.slice(0, 1000),
-        transcriptCompletedAt: serverTimestamp(),
-        transcriptModel: typeof result?.model === 'string' ? result.model : null,
-        transcriptUsage: result?.usageMetadata ?? null,
-        transcriptMimeType: typeof result?.mimeType === 'string' ? result.mimeType : payload.mimeType,
-        transcriptByteSize: typeof result?.byteSize === 'number' ? result.byteSize : null,
-        transcriptStoragePath: payload.storagePath,
-      })
+      const transcriptText =
+        result && typeof result.transcript === 'string' ? result.transcript.trim() : ''
+      if (transcriptText.length === 0) {
+        throw new Error('AI transcription did not return text.')
+      }
     },
-    [currentUser, lobbyId, updateSessionRecording]
+    [currentUser, lobbyId]
   )
 
   const uploadRecordingBlob = useCallback(
@@ -407,15 +382,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         const audioUrl = await getDownloadURL(recordingRef)
         const nowMs = Date.now()
 
-        await updateSessionRecording({
+        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
           status: 'uploaded',
-          source: 'candidate_workspace',
           mode: recordingMode,
-          candidateId: currentUser.uid,
-          candidateEmail: currentUser.email ?? null,
-          caseId: caseIdRef.current || null,
           startedAtMs: recordingStartMsRef.current,
-          stoppedAt: serverTimestamp(),
           stoppedAtMs: nowMs,
           durationMs: recordingStartMsRef.current ? nowMs - recordingStartMsRef.current : null,
           stopReason,
@@ -423,7 +393,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           audioUrl,
           mimeType,
           byteSize: blob.size,
-          transcriptStatus: 'pending',
         })
 
         setRecordingNote('Audio uploaded. Starting AI transcription...')
@@ -431,13 +400,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           await requestTranscript({ audioUrl, mimeType, storagePath })
           setRecordingNote('Audio uploaded and transcript generated successfully.')
         } catch (transcriptionError) {
+          // /api/transcribe writes transcriptStatus='failed' on the session itself.
           const transcriptErrorMessage =
             transcriptionError instanceof Error ? transcriptionError.message : 'Unable to transcribe recording.'
-          await updateSessionRecording({
-            transcriptStatus: 'failed',
-            transcriptFailedAt: serverTimestamp(),
-            transcriptError: transcriptErrorMessage,
-          })
           setRecordingError(formatTranscriptFailureMessage(transcriptErrorMessage))
           setRecordingNote('Audio uploaded, but transcript review could not finish this time.')
         }
@@ -453,21 +418,20 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         setRecordingState('failed')
         setRecordingError(uploadError instanceof Error ? uploadError.message : 'Unable to upload recording.')
         setCompletionPending(routeAfterUpload)
-        await updateSessionRecording({
-          status: 'upload_failed',
-          source: 'candidate_workspace',
-          mode: recordingMode,
-          candidateId: currentUser.uid,
-          caseId: caseIdRef.current || null,
-          stoppedAt: serverTimestamp(),
-          stoppedAtMs: Date.now(),
-          stopReason,
-          error: uploadError instanceof Error ? uploadError.message : 'Upload failed',
-          transcriptStatus: 'failed',
-        })
+        try {
+          await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
+            status: 'upload_failed',
+            mode: recordingMode,
+            stoppedAtMs: Date.now(),
+            stopReason,
+            error: uploadError instanceof Error ? uploadError.message : 'Upload failed',
+          })
+        } catch {
+          // Server-side persistence is best-effort here — UI already reflects failure.
+        }
       }
     },
-    [currentUser, lobbyId, recordingMode, requestTranscript, router, updateSessionRecording]
+    [currentUser, lobbyId, recordingMode, requestTranscript, router]
   )
 
   const stopRecordingAndFinalize = useCallback(
@@ -685,18 +649,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         setRecordingNote(mode === 'remote'
           ? 'Recording tab/system audio + microphone. Keep this tab open until feedback submission.'
           : 'Recording microphone audio. Keep this tab open until feedback submission.')
-
-        await updateSessionRecording({
-          status: 'recording',
-          source: 'candidate_workspace',
-          mode,
-          candidateId: currentUser.uid,
-          candidateEmail: currentUser.email ?? null,
-          caseId: caseIdRef.current || null,
-          startedAt: serverTimestamp(),
-          startedAtMs: Date.now(),
-          transcriptStatus: 'pending',
-        })
+        // Recording-in-progress is local UI state only; nothing else reads it
+        // so we don't write it to Firestore. The server learns about the
+        // recording when it's uploaded (or failed) via /api/sessions/[id]/recording.
       } catch (startError) {
         teardownMedia()
         recorderRef.current = null
@@ -739,7 +694,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         setRecordingError(message)
       }
     },
-    [canStartRecording, currentUser, lobbyId, readMicrophonePermissionState, stopRecordingAndFinalize, teardownMedia, updateSessionRecording]
+    [canStartRecording, currentUser, lobbyId, readMicrophonePermissionState, stopRecordingAndFinalize, teardownMedia]
   )
 
   const startCaptureFlow = useCallback(
@@ -820,16 +775,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
     try {
       if (lobbyId) {
-        await setDoc(
-          doc(db, 'sessions', lobbyId),
-          {
-            status: 'completed',
-            completedBy: 'candidate',
-            completedAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        )
+        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, {
+          completedBy: 'candidate',
+        })
       }
     } catch (endError) {
       setSessionIssue(endError instanceof Error ? endError.message : 'Unable to update session state in cloud.')
@@ -852,7 +800,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     let unsubscribeSession = () => {}
     let pollTimer: ReturnType<typeof setInterval> | null = null
-    const sessionRef = lobbyId ? doc(db, 'sessions', lobbyId) : null
+    const sessionRef = lobbyId ? sessionDoc(lobbyId) : null
 
     const clearPoll = () => {
       if (!pollTimer) return
