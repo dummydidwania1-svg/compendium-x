@@ -541,11 +541,21 @@ function walkthroughSpeakerTone(speaker: TranscriptSpeaker) {
       : 'font-normal text-[#5C4033]'
 }
 
+/** Render text with _italic_ markdown support */
+function renderInline(text: string) {
+  const parts = text.split(/(_[^_]+_)/)
+  return parts.map((part, i) =>
+    part.startsWith('_') && part.endsWith('_')
+      ? <em key={i}>{part.slice(1, -1)}</em>
+      : part
+  )
+}
+
 function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
   if (block.kind === 'heading') {
     return (
       <div className="pt-3 pb-0.5">
-        <h4 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3D5A35]/50">{block.text}</h4>
+        <h4 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3D5A35]/50">{renderInline(block.text)}</h4>
         <div className="mt-1.5 h-[1px] w-14" style={{ background: 'linear-gradient(90deg, rgba(61,90,53,0.2), transparent)' }} />
       </div>
     )
@@ -553,7 +563,7 @@ function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
   if (block.kind === 'equation') {
     return (
       <p className={`text-center text-[16px] leading-[1.5] tracking-[0.01em] ${walkthroughSpeakerTone(block.speaker)}`}>
-        {block.text}
+        {renderInline(block.text)}
       </p>
     )
   }
@@ -561,13 +571,13 @@ function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
     return (
       <div className={`ml-5 flex gap-3 ${walkthroughSpeakerTone(block.speaker)}`}>
         <span className="min-w-[1.2rem] text-[16px] leading-[1.5]">{block.marker}</span>
-        <p className="text-[16px] leading-[1.5]">{block.text}</p>
+        <p className="text-[16px] leading-[1.5]">{renderInline(block.text)}</p>
       </div>
     )
   }
   return (
     <p className={`text-[16px] leading-[1.5] ${walkthroughSpeakerTone(block.speaker)}`}>
-      {block.text}
+      {renderInline(block.text)}
     </p>
   )
 }
@@ -1555,14 +1565,26 @@ const EVAL_CRITERIA: Array<{ id: keyof ScoreState; label: string }> = [
    Synced Notes Sidebar — scroll-synced with window, fades at bottom
    ═══════════════════════════════════════════════════════════ */
 function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[] }[] }) {
-  // Use overflow layout if any card has more than 3 items
-  const overflows = notes.some(n => n.items.length > 3)
+  // Use overflow layout if any card has more than 3 items OR total chars > 100
+  const overflows = notes.some(n =>
+    n.items.length > 3 ||
+    n.items.reduce((sum, item) => sum + item.length, 0) > 100
+  )
+  // If last card itself also has too much content, container must grow beyond viewport
+  const lastNote = notes[notes.length - 1]
+  const lastCardOverflows = lastNote
+    ? lastNote.items.length > 3 || lastNote.items.reduce((s, i) => s + i.length, 0) > 100
+    : false
 
   return (
     <div className="h-full">
       <div
         className="sticky top-[128px] relative flex flex-col gap-3.5 px-3 py-4"
-        style={{ height: 'calc(100vh - 168px)', overflow: 'hidden' }}
+        style={{
+          height: overflows && lastCardOverflows ? 'auto' : 'calc(100vh - 168px)',
+          minHeight: 'calc(100vh - 168px)',
+          overflow: 'visible',
+        }}
       >
         {/* Ambient glow */}
         <div className="pointer-events-none absolute inset-0 z-0"
@@ -1572,7 +1594,13 @@ function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[]
           const isLast = idx === notes.length - 1
           return (
           <div key={n.title}
-            className={`group relative rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)] ${overflows ? (isLast ? 'flex-1 min-h-0 flex flex-col justify-center' : 'flex flex-col') : 'flex-1 min-h-0 flex flex-col justify-center'}`}
+            className={`group relative rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)] ${
+              !overflows
+                ? 'flex-1 min-h-0 flex flex-col justify-center'           // default: equal flex
+                : isLast
+                  ? 'flex-1 min-h-0 flex flex-col justify-center'         // last: fill remaining
+                  : 'flex flex-col shrink-0'                               // others: size to content
+            }`}
             style={{ background: 'rgba(255,248,240,0.80)', animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
           >
             <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center pt-3 pb-2 px-3 shrink-0">{n.title}</p>
