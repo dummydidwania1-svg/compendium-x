@@ -40,12 +40,18 @@ const score = z.number().int().min(1).max(5)
 /* profiles/{uid}                                                             */
 /* -------------------------------------------------------------------------- */
 
-export const profileSchema = z.object({
-  fullName: z.string(),
-  university: z.string(),
-  goalTargetCases: z.number().optional(),
-  updatedAt: timestamp.optional(),
-})
+// Loose objects on the read path so future fields added by other sessions
+// survive parsing. Without `.loose()`, Zod silently strips unknown keys and
+// downstream renderers fall through to defaults — see the frameworkTree
+// regression that hit case-detail rendering after the cross-branch rebase.
+export const profileSchema = z
+  .object({
+    fullName: z.string(),
+    university: z.string(),
+    goalTargetCases: z.number().optional(),
+    updatedAt: timestamp.optional(),
+  })
+  .loose()
 export type Profile = z.infer<typeof profileSchema>
 
 /* -------------------------------------------------------------------------- */
@@ -54,19 +60,24 @@ export type Profile = z.infer<typeof profileSchema>
 
 // TODO(normalize): `case_type` should be `caseType` for consistency with the
 // rest of the codebase. Migration requires backfill + dual-read window.
-export const caseSchema = z.object({
-  id: z.number().optional(),
-  title: z.string(),
-  industry: z.string(),
-  difficulty: z.string(),
-  case_type: z.string(),
-  prompt: z.string(),
-  framework: z.string(),
-  company: z.string().optional(),
-  round: z.string().optional(),
-  createdAt: timestamp.optional(),
-  updatedAt: timestamp.optional(),
-})
+// `frameworkTree` is the rich tree consumed by CasePreviewMaster; we keep it
+// typed as `unknown` here so the renderer can cast and Zod doesn't strip it.
+export const caseSchema = z
+  .object({
+    id: z.number().optional(),
+    title: z.string(),
+    industry: z.string(),
+    difficulty: z.string(),
+    case_type: z.string(),
+    prompt: z.string(),
+    framework: z.string(),
+    frameworkTree: z.unknown().optional(),
+    company: z.string().optional(),
+    round: z.string().optional(),
+    createdAt: timestamp.optional(),
+    updatedAt: timestamp.optional(),
+  })
+  .loose()
 export type Case = z.infer<typeof caseSchema>
 
 /* -------------------------------------------------------------------------- */
@@ -86,59 +97,63 @@ export const transcriptStatus = z.enum(['pending', 'processing', 'completed', 'f
 export type TranscriptStatus = z.infer<typeof transcriptStatus>
 
 /** The `recording` subdocument embedded on a session doc once recording starts. */
-export const sessionRecordingSchema = z.object({
-  status: recordingStatus,
-  source: z.literal('candidate_workspace'),
-  mode: sessionMode,
-  candidateId: z.string(),
-  candidateEmail: optionalString,
-  caseId: optionalString,
+export const sessionRecordingSchema = z
+  .object({
+    status: recordingStatus,
+    source: z.literal('candidate_workspace'),
+    mode: sessionMode,
+    candidateId: z.string(),
+    candidateEmail: optionalString,
+    caseId: optionalString,
 
-  startedAt: timestamp.optional(),
-  startedAtMs: z.number().optional(),
-  stoppedAt: timestamp.optional(),
-  stoppedAtMs: z.number().optional(),
-  durationMs: z.number().nullable().optional(),
-  stopReason: z.string().optional(),
+    startedAt: timestamp.optional(),
+    startedAtMs: z.number().optional(),
+    stoppedAt: timestamp.optional(),
+    stoppedAtMs: z.number().optional(),
+    durationMs: z.number().nullable().optional(),
+    stopReason: z.string().optional(),
 
-  storagePath: z.string().optional(),
-  audioUrl: z.string().optional(),
-  mimeType: z.string().optional(),
-  byteSize: z.number().optional(),
+    storagePath: z.string().optional(),
+    audioUrl: z.string().optional(),
+    mimeType: z.string().optional(),
+    byteSize: z.number().optional(),
 
-  transcriptStatus: transcriptStatus.optional(),
-  transcriptRequestedAt: timestamp.optional(),
-  transcriptCompletedAt: timestamp.optional(),
-  transcriptFailedAt: timestamp.optional(),
-  transcript: z.string().optional(),
-  transcriptPreview: z.string().optional(),
-  transcriptModel: optionalString,
-  transcriptUsage: z.unknown().optional(),
-  transcriptMimeType: z.string().optional(),
-  transcriptByteSize: z.number().nullable().optional(),
-  transcriptStoragePath: z.string().optional(),
-  transcriptError: optionalString,
+    transcriptStatus: transcriptStatus.optional(),
+    transcriptRequestedAt: timestamp.optional(),
+    transcriptCompletedAt: timestamp.optional(),
+    transcriptFailedAt: timestamp.optional(),
+    transcript: z.string().optional(),
+    transcriptPreview: z.string().optional(),
+    transcriptModel: optionalString,
+    transcriptUsage: z.unknown().optional(),
+    transcriptMimeType: z.string().optional(),
+    transcriptByteSize: z.number().nullable().optional(),
+    transcriptStoragePath: z.string().optional(),
+    transcriptError: optionalString,
 
-  error: z.string().optional(),
-})
+    error: z.string().optional(),
+  })
+  .loose()
 export type SessionRecording = z.infer<typeof sessionRecordingSchema>
 
-export const sessionSchema = z.object({
-  lobbyId: z.string(),
-  candidateId: z.string(),
-  candidateEmail: optionalString,
-  status: sessionStatus,
-  sessionMode: sessionMode,
-  caseId: optionalString,
+export const sessionSchema = z
+  .object({
+    lobbyId: z.string(),
+    candidateId: z.string(),
+    candidateEmail: optionalString,
+    status: sessionStatus,
+    sessionMode: sessionMode,
+    caseId: optionalString,
 
-  createdAt: timestamp.optional(),
-  updatedAt: timestamp.optional(),
-  selectedAt: timestamp.optional(),
-  completedAt: timestamp.optional(),
-  completedBy: z.string().optional(),
+    createdAt: timestamp.optional(),
+    updatedAt: timestamp.optional(),
+    selectedAt: timestamp.optional(),
+    completedAt: timestamp.optional(),
+    completedBy: z.string().optional(),
 
-  recording: sessionRecordingSchema.optional(),
-})
+    recording: sessionRecordingSchema.optional(),
+  })
+  .loose()
 export type Session = z.infer<typeof sessionSchema>
 
 /* -------------------------------------------------------------------------- */
@@ -149,81 +164,91 @@ export type Session = z.infer<typeof sessionSchema>
 // TODO(normalize): legacy aliases `quantScore`, `businessSenseScore`,
 //   `communicationScore`, and singular `workspaceImageUrl` should be migrated
 //   off in a future cleanup.
-export const evaluationSchema = z.object({
-  caseId: z.string(),
-  caseTitle: z.string(),
-  caseType: optionalString,
-  industry: optionalString,
-  lobbyId: optionalString,
+export const evaluationSchema = z
+  .object({
+    caseId: z.string(),
+    caseTitle: z.string(),
+    caseType: optionalString,
+    industry: optionalString,
+    lobbyId: optionalString,
 
-  candidateId: z.string(),
-  interviewerId: z.string().nullable(),
-  candidateName: optionalString,
-  interviewerEmail: optionalString,
+    candidateId: z.string(),
+    interviewerId: z.string().nullable(),
+    candidateName: optionalString,
+    interviewerEmail: optionalString,
 
-  structureScore: score,
-  understandingScore: score,
-  deliveryScore: score,
-  creativityScore: score,
+    structureScore: score,
+    understandingScore: score,
+    deliveryScore: score,
+    creativityScore: score,
 
-  notes: z.string(),
-  interviewerObservations: z.string().optional(),
+    notes: z.string(),
+    interviewerObservations: z.string().optional(),
 
-  workspaceImageUrls: z.array(z.string()).optional(),
+    workspaceImageUrls: z.array(z.string()).optional(),
 
-  createdAt: timestamp.optional(),
-  updatedAt: timestamp.optional(),
-})
+    createdAt: timestamp.optional(),
+    updatedAt: timestamp.optional(),
+  })
+  .loose()
 export type Evaluation = z.infer<typeof evaluationSchema>
 
 /* -------------------------------------------------------------------------- */
 /* case_forums/{caseId}                                                       */
 /* -------------------------------------------------------------------------- */
 
-export const caseForumSchema = z.object({
-  caseId: z.string(),
-  caseTitle: optionalString,
-  updatedAt: timestamp.optional(),
-  lastActivityAt: timestamp.optional(),
-  threadCount: z.number().optional(),
-})
+export const caseForumSchema = z
+  .object({
+    caseId: z.string(),
+    caseTitle: optionalString,
+    updatedAt: timestamp.optional(),
+    lastActivityAt: timestamp.optional(),
+    threadCount: z.number().optional(),
+  })
+  .loose()
 export type CaseForum = z.infer<typeof caseForumSchema>
 
 /* -------------------------------------------------------------------------- */
 /* case_forums/{caseId}/threads/{threadId}                                    */
 /* -------------------------------------------------------------------------- */
 
-export const forumThreadSchema = z.object({
-  caseId: z.string(),
-  caseTitle: optionalString,
-  body: z.string().min(1).max(3000),
-  title: z.string().optional(), // legacy
-  authorId: z.string(),
-  authorName: z.string(),
-  createdAt: timestamp.optional(),
-  updatedAt: timestamp.optional(),
-})
+export const forumThreadSchema = z
+  .object({
+    caseId: z.string(),
+    caseTitle: optionalString,
+    body: z.string().min(1).max(3000),
+    title: z.string().optional(), // legacy
+    authorId: z.string(),
+    authorName: z.string(),
+    createdAt: timestamp.optional(),
+    updatedAt: timestamp.optional(),
+  })
+  .loose()
 export type ForumThread = z.infer<typeof forumThreadSchema>
 
 /* -------------------------------------------------------------------------- */
 /* case_forums/{caseId}/threads/{threadId}/replies/{replyId}                  */
 /* -------------------------------------------------------------------------- */
 
-export const forumReplySchema = z.object({
-  body: z.string().min(1).max(3000),
-  authorId: z.string(),
-  authorName: z.string(),
-  createdAt: timestamp.optional(),
-  updatedAt: timestamp.optional(),
-})
+export const forumReplySchema = z
+  .object({
+    body: z.string().min(1).max(3000),
+    authorId: z.string(),
+    authorName: z.string(),
+    createdAt: timestamp.optional(),
+    updatedAt: timestamp.optional(),
+  })
+  .loose()
 export type ForumReply = z.infer<typeof forumReplySchema>
 
 /* -------------------------------------------------------------------------- */
 /* case_forums/{caseId}/threads/{threadId}/votes/{uid}                        */
 /* -------------------------------------------------------------------------- */
 
-export const forumVoteSchema = z.object({
-  value: z.union([z.literal(1), z.literal(-1)]),
-  updatedAt: timestamp.optional(),
-})
+export const forumVoteSchema = z
+  .object({
+    value: z.union([z.literal(1), z.literal(-1)]),
+    updatedAt: timestamp.optional(),
+  })
+  .loose()
 export type ForumVote = z.infer<typeof forumVoteSchema>
