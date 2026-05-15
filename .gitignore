@@ -32,6 +32,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# firebase emulator runtime
+firestore-debug.log
+firebase-debug.log
+ui-debug.log
+.firebase/
+
+# claude code worktree internals
+.claude/
+
 # env files (can opt-in for committing if needed)
 .env*
 _vertex-api-backup/env.local.vertex

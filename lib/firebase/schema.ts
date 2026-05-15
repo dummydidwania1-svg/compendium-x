@@ -1,0 +1,229 @@
+/**
+ * Single source of truth for Firestore document shapes.
+ *
+ * Each section defines:
+ *   - A Zod schema (runtime validation, parsed on every Firestore read via
+ *     `withConverter` in `lib/firebase/collections.ts`)
+ *   - An inferred TypeScript type derived from the schema
+ *
+ * Schemas reflect the CURRENT shape of data in production, including legacy /
+ * inconsistent fields. Items marked `TODO(normalize)` are tech-debt we will
+ * fix in a later phase once writes are server-mediated.
+ */
+import { z } from 'zod'
+import type { Timestamp } from 'firebase/firestore'
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A Firestore Timestamp value. Duck-typed via `.toDate()` so the same schema
+ * passes whether parsed against a client SDK Timestamp or an Admin SDK
+ * Timestamp (different classes, same interface).
+ */
+const timestamp = z.custom<Timestamp>(
+  (value): value is Timestamp =>
+    value != null &&
+    typeof value === 'object' &&
+    typeof (value as { toDate?: unknown }).toDate === 'function',
+  { message: 'Expected Firestore Timestamp' },
+)
+
+/** Permissive nullable string — accepts string, null, or missing. */
+const optionalString = z.string().nullable().optional()
+
+/** Score field used across all four evaluation dimensions. */
+const score = z.number().int().min(1).max(5)
+
+/* -------------------------------------------------------------------------- */
+/* profiles/{uid}                                                             */
+/* -------------------------------------------------------------------------- */
+
+export const profileSchema = z.object({
+  fullName: z.string(),
+  university: z.string(),
+  goalTargetCases: z.number().optional(),
+  updatedAt: timestamp.optional(),
+})
+export type Profile = z.infer<typeof profileSchema>
+
+/* -------------------------------------------------------------------------- */
+/* cases/{docId}                                                              */
+/* -------------------------------------------------------------------------- */
+
+// TODO(normalize): `case_type` should be `caseType` for consistency with the
+// rest of the codebase. Migration requires backfill + dual-read window.
+export const caseSchema = z.object({
+  id: z.number().optional(),
+  title: z.string(),
+  industry: z.string(),
+  difficulty: z.string(),
+  case_type: z.string(),
+  prompt: z.string(),
+  framework: z.string(),
+  company: z.string().optional(),
+  round: z.string().optional(),
+  createdAt: timestamp.optional(),
+  updatedAt: timestamp.optional(),
+})
+export type Case = z.infer<typeof caseSchema>
+
+/* -------------------------------------------------------------------------- */
+/* sessions/{lobbyId}                                                         */
+/* -------------------------------------------------------------------------- */
+
+export const sessionStatus = z.enum(['waiting', 'in_progress', 'completed'])
+export type SessionStatus = z.infer<typeof sessionStatus>
+
+export const sessionMode = z.enum(['remote', 'local'])
+export type SessionMode = z.infer<typeof sessionMode>
+
+export const recordingStatus = z.enum(['recording', 'uploaded', 'upload_failed'])
+export type RecordingStatus = z.infer<typeof recordingStatus>
+
+export const transcriptStatus = z.enum(['pending', 'processing', 'completed', 'failed'])
+export type TranscriptStatus = z.infer<typeof transcriptStatus>
+
+/** The `recording` subdocument embedded on a session doc once recording starts. */
+export const sessionRecordingSchema = z.object({
+  status: recordingStatus,
+  source: z.literal('candidate_workspace'),
+  mode: sessionMode,
+  candidateId: z.string(),
+  candidateEmail: optionalString,
+  caseId: optionalString,
+
+  startedAt: timestamp.optional(),
+  startedAtMs: z.number().optional(),
+  stoppedAt: timestamp.optional(),
+  stoppedAtMs: z.number().optional(),
+  durationMs: z.number().nullable().optional(),
+  stopReason: z.string().optional(),
+
+  storagePath: z.string().optional(),
+  audioUrl: z.string().optional(),
+  mimeType: z.string().optional(),
+  byteSize: z.number().optional(),
+
+  transcriptStatus: transcriptStatus.optional(),
+  transcriptRequestedAt: timestamp.optional(),
+  transcriptCompletedAt: timestamp.optional(),
+  transcriptFailedAt: timestamp.optional(),
+  transcript: z.string().optional(),
+  transcriptPreview: z.string().optional(),
+  transcriptModel: optionalString,
+  transcriptUsage: z.unknown().optional(),
+  transcriptMimeType: z.string().optional(),
+  transcriptByteSize: z.number().nullable().optional(),
+  transcriptStoragePath: z.string().optional(),
+  transcriptError: optionalString,
+
+  error: z.string().optional(),
+})
+export type SessionRecording = z.infer<typeof sessionRecordingSchema>
+
+export const sessionSchema = z.object({
+  lobbyId: z.string(),
+  candidateId: z.string(),
+  candidateEmail: optionalString,
+  status: sessionStatus,
+  sessionMode: sessionMode,
+  caseId: optionalString,
+
+  createdAt: timestamp.optional(),
+  updatedAt: timestamp.optional(),
+  selectedAt: timestamp.optional(),
+  completedAt: timestamp.optional(),
+  completedBy: z.string().optional(),
+
+  recording: sessionRecordingSchema.optional(),
+})
+export type Session = z.infer<typeof sessionSchema>
+
+/* -------------------------------------------------------------------------- */
+/* evaluations/{evaluationId}                                                 */
+/* -------------------------------------------------------------------------- */
+
+// TODO(normalize): `notes` and `interviewerObservations` are duplicates.
+// TODO(normalize): legacy aliases `quantScore`, `businessSenseScore`,
+//   `communicationScore`, and singular `workspaceImageUrl` should be migrated
+//   off in a future cleanup.
+export const evaluationSchema = z.object({
+  caseId: z.string(),
+  caseTitle: z.string(),
+  caseType: optionalString,
+  industry: optionalString,
+  lobbyId: optionalString,
+
+  candidateId: z.string(),
+  interviewerId: z.string().nullable(),
+  candidateName: optionalString,
+  interviewerEmail: optionalString,
+
+  structureScore: score,
+  understandingScore: score,
+  deliveryScore: score,
+  creativityScore: score,
+
+  notes: z.string(),
+  interviewerObservations: z.string().optional(),
+
+  workspaceImageUrls: z.array(z.string()).optional(),
+
+  createdAt: timestamp.optional(),
+  updatedAt: timestamp.optional(),
+})
+export type Evaluation = z.infer<typeof evaluationSchema>
+
+/* -------------------------------------------------------------------------- */
+/* case_forums/{caseId}                                                       */
+/* -------------------------------------------------------------------------- */
+
+export const caseForumSchema = z.object({
+  caseId: z.string(),
+  caseTitle: optionalString,
+  updatedAt: timestamp.optional(),
+  lastActivityAt: timestamp.optional(),
+  threadCount: z.number().optional(),
+})
+export type CaseForum = z.infer<typeof caseForumSchema>
+
+/* -------------------------------------------------------------------------- */
+/* case_forums/{caseId}/threads/{threadId}                                    */
+/* -------------------------------------------------------------------------- */
+
+export const forumThreadSchema = z.object({
+  caseId: z.string(),
+  caseTitle: optionalString,
+  body: z.string().min(1).max(3000),
+  title: z.string().optional(), // legacy
+  authorId: z.string(),
+  authorName: z.string(),
+  createdAt: timestamp.optional(),
+  updatedAt: timestamp.optional(),
+})
+export type ForumThread = z.infer<typeof forumThreadSchema>
+
+/* -------------------------------------------------------------------------- */
+/* case_forums/{caseId}/threads/{threadId}/replies/{replyId}                  */
+/* -------------------------------------------------------------------------- */
+
+export const forumReplySchema = z.object({
+  body: z.string().min(1).max(3000),
+  authorId: z.string(),
+  authorName: z.string(),
+  createdAt: timestamp.optional(),
+  updatedAt: timestamp.optional(),
+})
+export type ForumReply = z.infer<typeof forumReplySchema>
+
+/* -------------------------------------------------------------------------- */
+/* case_forums/{caseId}/threads/{threadId}/votes/{uid}                        */
+/* -------------------------------------------------------------------------- */
+
+export const forumVoteSchema = z.object({
+  value: z.union([z.literal(1), z.literal(-1)]),
+  updatedAt: timestamp.optional(),
+})
+export type ForumVote = z.infer<typeof forumVoteSchema>

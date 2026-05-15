@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut, type User } from 'firebase/auth'
-import { collection, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from 'firebase/firestore'
+import { collection, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from 'firebase/firestore'
 import { auth, db, waitForAuthUser } from '@/lib/firebase/config'
+import { profileDoc } from '@/lib/firebase/collections'
 import { mapEvaluationDoc } from '@/lib/dashboard/mappers'
 import { computeKpis, lastAttemptLabel, practiceStreakDays, recentRows, sortByNewest } from '@/lib/dashboard/selectors'
 import type { EvaluationRecord } from '@/lib/dashboard/types'
@@ -52,7 +53,7 @@ export default function WelcomePage() {
       setError('')
 
       try {
-        const profileSnapshot = await getDoc(doc(db, 'profiles', currentUser.uid))
+        const profileSnapshot = await getDoc(profileDoc(currentUser.uid))
         if (profileSnapshot.exists()) {
           const profileData = profileSnapshot.data()
           const profileName = typeof profileData?.fullName === 'string' ? profileData.fullName.trim() : ''
@@ -123,7 +124,7 @@ export default function WelcomePage() {
     setError('')
     try {
       await setDoc(
-        doc(db, 'profiles', user.uid),
+        profileDoc(user.uid),
         {
           goalTargetCases: parsed,
           updatedAt: serverTimestamp(),
