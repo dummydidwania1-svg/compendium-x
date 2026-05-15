@@ -7,20 +7,15 @@
  */
 import { FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase/admin'
-import { verifyRequest } from '@/lib/auth/verifyRequest'
-import { TransitionError, errorToResponse, jsonOk, parseBody } from '@/lib/api/responses'
+import { TransitionError, jsonOk, parseBody } from '@/lib/api/responses'
+import { authenticatedRoute } from '@/lib/api/route'
 import { selectCaseInput } from '@/lib/firebase/inputs'
 
 export const runtime = 'nodejs'
 
-interface RouteContext {
-  params: Promise<{ lobbyId: string }>
-}
-
-export async function POST(request: Request, { params }: RouteContext) {
-  try {
-    const caller = await verifyRequest(request)
-    const { lobbyId } = await params
+export const POST = authenticatedRoute<{ lobbyId: string }>(
+  '/api/sessions/[lobbyId]/select-case',
+  async (request, caller, { lobbyId }) => {
     const { caseId, sessionMode } = await parseBody(request, selectCaseInput)
 
     const ref = adminDb.collection('sessions').doc(lobbyId)
@@ -59,7 +54,5 @@ export async function POST(request: Request, { params }: RouteContext) {
     })
 
     return jsonOk({ ok: true, lobbyId, caseId })
-  } catch (err) {
-    return errorToResponse(err)
-  }
-}
+  },
+)

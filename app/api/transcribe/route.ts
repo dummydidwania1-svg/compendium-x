@@ -1,20 +1,14 @@
-import { NextResponse } from 'next/server'
 import { FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase/admin'
-import { AuthError, verifyRequest } from '@/lib/auth/verifyRequest'
+import { TransitionError, jsonError, jsonOk, parseBody } from '@/lib/api/responses'
+import { authenticatedRoute } from '@/lib/api/route'
+import { transcribeInput } from '@/lib/firebase/inputs'
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com'
 const DEFAULT_TRANSCRIBE_MODEL = 'gemini-2.5-flash-lite'
 const MAX_AUDIO_BYTES = 100 * 1024 * 1024
 const FILE_READY_ATTEMPTS = 45
 const FILE_READY_WAIT_MS = 2000
-
-type TranscribeRequestBody = {
-  audioUrl?: string
-  mimeType?: string
-  sessionId?: string
-  storagePath?: string
-}
 
 type GeminiFile = {
   name?: string
@@ -180,57 +174,26 @@ async function mergeRecording(sessionId: string, fields: Record<string, unknown>
   }
 }
 
-export async function POST(request: Request) {
+export const POST = authenticatedRoute('/api/transcribe', async (request, caller) => {
   const apiKey = process.env.GEMINI_API_KEY
   const model = process.env.GEMINI_TRANSCRIBE_MODEL || DEFAULT_TRANSCRIBE_MODEL
 
   if (!apiKey) {
-    return NextResponse.json(
-      { error: 'Missing GEMINI_API_KEY. Configure it in environment variables.' },
-      { status: 500 }
-    )
+    return jsonError(500, 'gemini_unconfigured', 'Missing GEMINI_API_KEY. Configure it in environment variables.')
   }
 
-  let requester
-  try {
-    requester = await verifyRequest(request)
-  } catch (err) {
-    if (err instanceof AuthError) {
-      return NextResponse.json({ error: 'Unauthorized request.' }, { status: err.status })
-    }
-    throw err
-  }
+  const body = await parseBody(request, transcribeInput)
+  const audioUrl = body.audioUrl.trim()
+  const sessionId = body.sessionId.trim()
+  const storagePath = body.storagePath.trim()
+  const requestedMimeType = body.mimeType?.trim() ?? ''
 
-  let body: TranscribeRequestBody
-  try {
-    body = (await request.json()) as TranscribeRequestBody
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON payload.' }, { status: 400 })
-  }
-
-  const audioUrl = typeof body.audioUrl === 'string' ? body.audioUrl.trim() : ''
-  const sessionId = typeof body.sessionId === 'string' ? body.sessionId.trim() : ''
-  const storagePath = typeof body.storagePath === 'string' ? body.storagePath.trim() : ''
-  const requestedMimeType = typeof body.mimeType === 'string' ? body.mimeType.trim() : ''
-
-  if (!audioUrl) {
-    return NextResponse.json({ error: 'audioUrl is required.' }, { status: 400 })
-  }
-
-  if (!sessionId) {
-    return NextResponse.json({ error: 'sessionId is required.' }, { status: 400 })
-  }
-
-  if (!storagePath) {
-    return NextResponse.json({ error: 'storagePath is required.' }, { status: 400 })
-  }
-
-  if (!isValidStoragePath(storagePath, requester.uid, sessionId)) {
-    return NextResponse.json({ error: 'Unauthorized storage path.' }, { status: 403 })
+  if (!isValidStoragePath(storagePath, caller.uid, sessionId)) {
+    throw new TransitionError(403, 'storage_path_mismatch', 'Storage path does not belong to caller.')
   }
 
   if (!matchesFirebaseDownloadUrl(audioUrl, storagePath)) {
-    return NextResponse.json({ error: 'audioUrl does not match provided storagePath.' }, { status: 400 })
+    throw new TransitionError(400, 'audio_url_mismatch', 'audioUrl does not match provided storagePath.')
   }
 
   await mergeRecording(sessionId, {
@@ -244,10 +207,7 @@ export async function POST(request: Request) {
   try {
     const audioResponse = await fetch(audioUrl)
     if (!audioResponse.ok) {
-      return NextResponse.json(
-        { error: `Unable to download audio artifact (HTTP ${audioResponse.status}).` },
-        { status: 400 }
-      )
+      throw new Error(`Unable to download audio artifact (HTTP ${audioResponse.status}).`)
     }
 
     const sourceMimeType = normalizeMimeType(requestedMimeType || audioResponse.headers.get('content-type'))
@@ -255,14 +215,11 @@ export async function POST(request: Request) {
     const byteSize = audioBytes.byteLength
 
     if (byteSize === 0) {
-      return NextResponse.json({ error: 'Audio artifact is empty.' }, { status: 400 })
+      throw new Error('Audio artifact is empty.')
     }
 
     if (byteSize > MAX_AUDIO_BYTES) {
-      return NextResponse.json(
-        { error: 'Audio artifact is too large for direct transcription in this API route.' },
-        { status: 413 }
-      )
+      throw new Error('Audio artifact is too large for direct transcription in this API route.')
     }
 
     const startUploadResponse = await fetch(`${GEMINI_API_BASE}/upload/v1beta/files?key=${encodeURIComponent(apiKey)}`, {
@@ -377,7 +334,7 @@ export async function POST(request: Request) {
       transcriptError: null,
     })
 
-    return NextResponse.json({
+    return jsonOk({
       transcript,
       model,
       mimeType: finalMimeType,
@@ -391,10 +348,10 @@ export async function POST(request: Request) {
       transcriptFailedAt: FieldValue.serverTimestamp(),
       transcriptError: message,
     })
-    return NextResponse.json({ error: message }, { status: 500 })
+    return jsonError(500, 'transcribe_failed', message)
   } finally {
     if (uploadedFileName) {
       await deleteGeminiFile(uploadedFileName, apiKey)
     }
   }
-}
+})

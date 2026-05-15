@@ -7,53 +7,48 @@
  */
 import { FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase/admin'
-import { verifyRequest } from '@/lib/auth/verifyRequest'
-import { errorToResponse, jsonError, jsonOk, parseBody } from '@/lib/api/responses'
+import { TransitionError, jsonOk, parseBody } from '@/lib/api/responses'
+import { authenticatedRoute } from '@/lib/api/route'
 import { createSessionInput } from '@/lib/firebase/inputs'
 
 export const runtime = 'nodejs'
 
-export async function POST(request: Request) {
-  try {
-    const caller = await verifyRequest(request)
-    const { lobbyId, sessionMode } = await parseBody(request, createSessionInput)
+export const POST = authenticatedRoute('/api/sessions', async (request, caller) => {
+  const { lobbyId, sessionMode } = await parseBody(request, createSessionInput)
 
-    const ref = adminDb.collection('sessions').doc(lobbyId)
-    const snap = await ref.get()
+  const ref = adminDb.collection('sessions').doc(lobbyId)
+  const snap = await ref.get()
 
-    if (snap.exists) {
-      const existing = snap.data() ?? {}
-      if (existing.candidateId && existing.candidateId !== caller.uid) {
-        return jsonError(
-          403,
-          'session_owned_by_other',
-          'This lobby is already owned by another user.',
-        )
-      }
-      await ref.set(
-        {
-          lobbyId,
-          candidateId: caller.uid,
-          candidateEmail: caller.email,
-          sessionMode,
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true },
+  if (snap.exists) {
+    const existing = snap.data() ?? {}
+    if (existing.candidateId && existing.candidateId !== caller.uid) {
+      throw new TransitionError(
+        403,
+        'session_owned_by_other',
+        'This lobby is already owned by another user.',
       )
-    } else {
-      await ref.set({
+    }
+    await ref.set(
+      {
         lobbyId,
         candidateId: caller.uid,
         candidateEmail: caller.email,
         sessionMode,
-        status: 'waiting',
-        createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-      })
-    }
-
-    return jsonOk({ ok: true, lobbyId })
-  } catch (err) {
-    return errorToResponse(err)
+      },
+      { merge: true },
+    )
+  } else {
+    await ref.set({
+      lobbyId,
+      candidateId: caller.uid,
+      candidateEmail: caller.email,
+      sessionMode,
+      status: 'waiting',
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    })
   }
-}
+
+  return jsonOk({ ok: true, lobbyId })
+})

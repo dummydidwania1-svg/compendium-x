@@ -16,6 +16,18 @@ type SessionState = {
   caseId?: string
   completedBy?: string
   sessionMode?: RecordingMode
+  recording?: {
+    transcriptStatus?: 'pending' | 'processing' | 'completed' | 'failed'
+    audioUrl?: string
+    mimeType?: string
+    storagePath?: string
+  }
+}
+
+type TranscriptRetryInfo = {
+  audioUrl: string
+  mimeType: string
+  storagePath: string
 }
 
 type TranscribeResponse = {
@@ -24,7 +36,6 @@ type TranscribeResponse = {
   mimeType?: string
   byteSize?: number
   usageMetadata?: Record<string, unknown> | null
-  error?: string
 }
 
 type RecordingMode = 'remote' | 'local'
@@ -204,6 +215,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [localPrepVisible, setLocalPrepVisible] = useState(false)
   const [localPrepStep, setLocalPrepStep] = useState(0)
   const [microphonePermissionState, setMicrophonePermissionState] = useState<BrowserPermissionState>('unknown')
+  const [transcriptRetryInfo, setTranscriptRetryInfo] = useState<TranscriptRetryInfo | null>(null)
+  const [retryingTranscript, setRetryingTranscript] = useState(false)
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const displayStreamRef = useRef<MediaStream | null>(null)
@@ -325,34 +338,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         throw new Error('Session ID missing for transcript processing.')
       }
 
-      const idToken = await currentUser.getIdToken()
-
-      const response = await fetch('/api/transcribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          audioUrl: payload.audioUrl,
-          mimeType: payload.mimeType,
-          sessionId: lobbyId,
-          storagePath: payload.storagePath,
-        }),
+      const result = await apiPost<TranscribeResponse>('/api/transcribe', {
+        audioUrl: payload.audioUrl,
+        mimeType: payload.mimeType,
+        sessionId: lobbyId,
+        storagePath: payload.storagePath,
       })
 
-      const result = (await response.json().catch(() => null)) as TranscribeResponse | null
-
-      if (!response.ok) {
-        const message =
-          result && typeof result.error === 'string' && result.error.trim().length > 0
-            ? result.error.trim()
-            : 'AI transcription did not return text.'
-        throw new Error(message)
-      }
-
       const transcriptText =
-        result && typeof result.transcript === 'string' ? result.transcript.trim() : ''
+        typeof result?.transcript === 'string' ? result.transcript.trim() : ''
       if (transcriptText.length === 0) {
         throw new Error('AI transcription did not return text.')
       }
@@ -757,6 +751,23 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     await uploadRecordingBlob(pendingBlobRef.current, stopReasonRef.current || 'retry_upload', completionPending)
   }, [completionPending, uploadRecordingBlob])
 
+  const handleRetryTranscript = useCallback(async () => {
+    if (!transcriptRetryInfo || retryingTranscript) return
+    setRetryingTranscript(true)
+    setRecordingError('')
+    setRecordingNote('Retrying transcript generation...')
+    try {
+      await requestTranscript(transcriptRetryInfo)
+      setRecordingNote('Transcript generated successfully.')
+      setTranscriptRetryInfo(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to retry transcript.'
+      setRecordingError(`Transcript retry failed: ${message}`)
+    } finally {
+      setRetryingTranscript(false)
+    }
+  }, [requestTranscript, retryingTranscript, transcriptRetryInfo])
+
   const handleEnableCapture = useCallback(() => {
     if (preferredRecordingMode === 'local' && microphonePermissionState === 'denied') {
       setCaptureWarning('Microphone access is blocked. Allow it in the address bar. This page will refresh automatically.')
@@ -827,6 +838,21 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     const routeIfCompleted = (raw: SessionState | null) => {
       if (!raw) return
       setPreferredRecordingMode(resolveSessionMode(raw.sessionMode))
+      const rec = raw.recording
+      if (
+        rec?.transcriptStatus === 'failed' &&
+        typeof rec.audioUrl === 'string' &&
+        typeof rec.mimeType === 'string' &&
+        typeof rec.storagePath === 'string'
+      ) {
+        setTranscriptRetryInfo({
+          audioUrl: rec.audioUrl,
+          mimeType: rec.mimeType,
+          storagePath: rec.storagePath,
+        })
+      } else if (rec?.transcriptStatus === 'completed' || rec?.transcriptStatus === 'processing') {
+        setTranscriptRetryInfo(null)
+      }
       if (raw.status === 'completed') {
         const stopReason = raw.completedBy === 'candidate' ? 'candidate_ended' : 'feedback_submitted'
         void handleSessionCompleted(stopReason)
@@ -1618,6 +1644,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 ) : null}
               </div>
             </div>
+
+            {transcriptRetryInfo && (
+              <div className="mt-4 rounded-md border border-cyan-700/40 bg-cyan-950/30 p-3">
+                <p className="text-xs text-cyan-200">
+                  Audio uploaded but transcript generation failed. Retry now to try again with the same recording.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleRetryTranscript()}
+                    disabled={retryingTranscript}
+                    className="rounded-md border border-cyan-400/50 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-100 transition hover:border-cyan-300/80 hover:bg-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {retryingTranscript ? 'Retrying...' : 'Retry Transcript'}
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </main>

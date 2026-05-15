@@ -6,20 +6,15 @@
  */
 import { FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase/admin'
-import { verifyRequest } from '@/lib/auth/verifyRequest'
-import { TransitionError, errorToResponse, jsonOk, parseBody } from '@/lib/api/responses'
+import { TransitionError, jsonOk, parseBody } from '@/lib/api/responses'
+import { authenticatedRoute } from '@/lib/api/route'
 import { completeSessionInput } from '@/lib/firebase/inputs'
 
 export const runtime = 'nodejs'
 
-interface RouteContext {
-  params: Promise<{ lobbyId: string }>
-}
-
-export async function POST(request: Request, { params }: RouteContext) {
-  try {
-    const caller = await verifyRequest(request)
-    const { lobbyId } = await params
+export const POST = authenticatedRoute<{ lobbyId: string }>(
+  '/api/sessions/[lobbyId]/complete',
+  async (request, caller, { lobbyId }) => {
     const { completedBy } = await parseBody(request, completeSessionInput)
 
     const ref = adminDb.collection('sessions').doc(lobbyId)
@@ -58,7 +53,5 @@ export async function POST(request: Request, { params }: RouteContext) {
     })
 
     return jsonOk({ ok: true, lobbyId })
-  } catch (err) {
-    return errorToResponse(err)
-  }
-}
+  },
+)
