@@ -4,14 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
+    "dev:emulators": "NEXT_PUBLIC_USE_FIREBASE_EMULATORS=1 next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "import:cases": "node scripts/import-cases.mjs",
-    "seed:dashboard-demo": "node scripts/seed-dashboard-demo.mjs"
+    "seed:dashboard-demo": "node scripts/seed-dashboard-demo.mjs",
+    "firebase": "firebase",
+    "emulators": "firebase emulators:start",
+    "rules:deploy": "firebase deploy --only firestore:rules,storage:rules",
+    "indexes:deploy": "firebase deploy --only firestore:indexes",
+    "rules:dump": "node scripts/dump-live-rules.mjs"
   },
   "dependencies": {
     "firebase": "^12.10.0",
+    "firebase-admin": "^13.9.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "pdfjs-dist": "^5.5.207",
@@ -26,7 +33,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "firebase-admin": "^13.9.0",
+    "firebase-tools": "^15.18.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

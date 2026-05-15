@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Public case library, admin-only writes (via console/script)
+    match /cases/{caseId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // User profile
+    match /profiles/{userId} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Keep remote partner flow working
+    // TODO(phase-3): lock this down once writes move to /api routes with admin SDK.
+    match /sessions/{sessionId} {
+      allow read, write: if true;
+    }
+
+    // Evaluations
+    // TODO(phase-3): require auth on create; move write path through /api.
+    match /evaluations/{evaluationId} {
+      allow create: if true;
+
+      allow read: if signedIn() && (
+        resource.data.candidateId == request.auth.uid ||
+        (resource.data.interviewerId is string && resource.data.interviewerId == request.auth.uid)
+      );
+
+      // Allow only workspace image URL updates (+updatedAt) by owner
+      allow update: if signedIn()
+        && (
+          resource.data.candidateId == request.auth.uid ||
+          (
+            !(resource.data.candidateId is string) &&
+            (resource.data.interviewerId is string && resource.data.interviewerId == request.auth.uid)
+          )
+        )
+        && request.resource.data.diff(resource.data).changedKeys()
+             .hasOnly(['workspaceImageUrls', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    // Forum
+    match /case_forums/{caseId} {
+      allow read: if true;
+      allow create, update, delete: if signedIn();
+
+      match /threads/{threadId} {
+        allow read: if true;
+
+        allow create: if signedIn()
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.body is string
+          && request.resource.data.body.size() > 0
+          && request.resource.data.body.size() <= 3000;
+
+        // Author can edit/delete own comment.
+        // Any signed-in user can only bump updatedAt (used when posting reply).
+        allow update: if signedIn() && (
+          resource.data.authorId == request.auth.uid ||
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['updatedAt'])
+        );
+
+        allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+
+        match /replies/{replyId} {
+          allow read: if true;
+
+          allow create: if signedIn()
+            && request.resource.data.authorId == request.auth.uid
+            && request.resource.data.body is string
+            && request.resource.data.body.size() > 0
+            && request.resource.data.body.size() <= 3000;
+
+          allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
+        }
+
+        match /votes/{uid} {
+          allow read: if true;
+          allow create, update: if signedIn()
+            && request.auth.uid == uid
+            && request.resource.data.value in [-1, 1];
+          allow delete: if signedIn() && request.auth.uid == uid;
+        }
+      }
+    }
+  }
+}

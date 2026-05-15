@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Workspace image uploads (used during interviewer-side evaluation flow)
+    match /workspace-images/{userId}/{evaluationId}/{fileName} {
+      allow write: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow read: if signedIn();
+    }
+
+    // Session audio recordings
+    match /session-recordings/{userId}/{lobbyId}/{fileName} {
+      allow write: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.size < 100 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*');
+      allow read: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
