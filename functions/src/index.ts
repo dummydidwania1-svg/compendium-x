@@ -40,6 +40,20 @@ const FILE_READY_ATTEMPTS = 90 // 90 × 2s = 3 minutes max wait for Gemini file 
 const FILE_READY_WAIT_MS = 2000
 const GENERATION_MAX_ATTEMPTS = 3
 
+// WebM/Opus speech at 24 kbps ≈ 3KB/sec. We reject recordings below this
+// threshold because Gemini's audio models reliably hallucinate generic
+// dialogue on very short / silent clips. 150KB ≈ 50 seconds of speech, which
+// is well under a real case session but comfortably above a "test the mic
+// for 5 seconds" recording.
+const MIN_AUDIO_BYTES = 150 * 1024
+
+// If Gemini returns this exact token (or anything obviously too short to be
+// a real interview transcript), we treat it as a failure rather than letting
+// hallucinated filler land in the dashboard. See the strengthened prompt
+// below that explicitly instructs the model to use this signal.
+const INAUDIBLE_TOKEN = 'INAUDIBLE'
+const MIN_TRANSCRIPT_CHARS = 40
+
 type GeminiFile = {
   name?: string
   uri?: string
@@ -173,6 +187,15 @@ async function runTranscription(args: {
     const audioBytes = await audioResponse.arrayBuffer()
     const byteSize = audioBytes.byteLength
     if (byteSize === 0) throw new Error('Audio artifact is empty.')
+    if (byteSize < MIN_AUDIO_BYTES) {
+      // Refuse early — sending too-short audio to Gemini reliably produces
+      // hallucinated dialogue rather than an honest "couldn't transcribe".
+      throw new Error(
+        `Recording is too short to transcribe reliably (${Math.round(
+          byteSize / 1024,
+        )} KB; need at least ${MIN_AUDIO_BYTES / 1024} KB). Record for at least ~1 minute.`,
+      )
+    }
 
     // Resumable upload to Gemini Files API.
     const startUploadResponse = await fetch(
@@ -226,6 +249,10 @@ async function runTranscription(args: {
                 'Keep it concise and clean for downstream feedback analysis.',
                 'Do not include any timestamps, timecodes, or bracketed time markers.',
                 'Return only the transcript text.',
+                // Anti-hallucination: explicitly tell Gemini to refuse on
+                // unclear audio rather than invent plausible-sounding filler.
+                `If the audio is silent, contains no clear speech, is mostly background noise, or is too short to be a real interview, respond with the single word ${INAUDIBLE_TOKEN} and nothing else.`,
+                'Never invent or hallucinate dialogue. Only transcribe what you can clearly hear.',
               ].join(' '),
             },
             {
@@ -263,6 +290,21 @@ async function runTranscription(args: {
 
     const transcript = stripTimestamps(extractTranscriptText(generationPayload))
     if (!transcript) throw new Error('Gemini returned an empty transcript.')
+
+    // Anti-hallucination: reject the explicit INAUDIBLE refusal token, and
+    // also reject suspiciously short responses (very short = either silence
+    // or a hallucinated filler line we don't want to surface to the user).
+    const normalizedTranscript = transcript.replace(/[^a-z]/gi, '').toUpperCase()
+    if (normalizedTranscript === INAUDIBLE_TOKEN) {
+      throw new Error(
+        'No clear speech detected in the recording. Make sure your mic is unmuted and you speak audibly.',
+      )
+    }
+    if (transcript.length < MIN_TRANSCRIPT_CHARS) {
+      throw new Error(
+        `Transcript was too short to be a real session (${transcript.length} characters). Re-record with at least ~1 minute of speech.`,
+      )
+    }
 
     const usageMetadata =
       (generationPayload as { usageMetadata?: unknown } | null)?.usageMetadata ?? null
