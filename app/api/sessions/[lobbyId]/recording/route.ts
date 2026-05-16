@@ -46,7 +46,13 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
       if (data.candidateId !== caller.uid) {
         throw new TransitionError(403, 'not_candidate', 'Caller is not the session candidate.')
       }
-      if (data.status !== 'in_progress') {
+      // Accept both 'in_progress' and 'completed'. The interviewer can submit
+      // feedback (which transitions the session to 'completed') before the
+      // candidate finishes uploading the recording — both orderings are valid
+      // in practice and the recording subdoc is informational, not a state
+      // transition. Only reject on truly invalid prior states (e.g. 'waiting',
+      // before a case has been attached).
+      if (data.status !== 'in_progress' && data.status !== 'completed') {
         throw new TransitionError(
           409,
           'invalid_transition',
