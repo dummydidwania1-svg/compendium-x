@@ -30,14 +30,6 @@ type TranscriptRetryInfo = {
   storagePath: string
 }
 
-type TranscribeResponse = {
-  transcript?: string
-  model?: string
-  mimeType?: string
-  byteSize?: number
-  usageMetadata?: Record<string, unknown> | null
-}
-
 type RecordingMode = 'remote' | 'local'
 type RecordingState = 'idle' | 'starting' | 'recording' | 'stopping' | 'uploading' | 'uploaded' | 'failed'
 type WorkspaceToast = {
@@ -64,31 +56,6 @@ function pickSupportedMimeType(): string | null {
 function fileExtensionFromType(mimeType: string): string {
   if (mimeType.includes('ogg')) return 'ogg'
   return 'webm'
-}
-
-function formatTranscriptFailureMessage(message: string): string {
-  // Honest failure copy. Each branch points the user to the Retry Transcript
-  // button so a real recovery path is always visible. Previously this helper
-  // swallowed configuration failures behind "transcript insights are coming
-  // soon", making misconfigurations indistinguishable from success.
-  const normalized = message.toLowerCase()
-
-  if (normalized.includes('missing gemini_api_key') || normalized.includes('gemini_unconfigured')) {
-    return 'Transcript service is temporarily unavailable. Your audio is saved — try Retry Transcript below.'
-  }
-  if (normalized.includes('empty transcript')) {
-    return 'No speech detected in the recording. Use Retry Transcript if you spoke clearly.'
-  }
-  if (normalized.includes('timed out') || normalized.includes('timeout')) {
-    return 'Transcript generation timed out. Click Retry Transcript to try again.'
-  }
-  if (normalized.includes('too large')) {
-    return 'Recording is too long for AI transcription. Sessions over ~30 minutes may need to be split.'
-  }
-  if (normalized.length === 0) {
-    return 'Transcript generation failed. Click Retry Transcript below to try again.'
-  }
-  return `Transcript generation failed: ${message}. Click Retry Transcript below to try again.`
 }
 
 function getFriendlyRecoverableCaptureMessage(mode: RecordingMode, message: string): string {
@@ -337,32 +304,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     [readMicrophonePermissionState]
   )
 
-  // The server's /api/transcribe route writes transcript status/result fields
-  // to the session doc itself, so this client wrapper just initiates the call.
-  const requestTranscript = useCallback(
-    async (payload: { audioUrl: string; mimeType: string; storagePath: string }) => {
-      if (!currentUser) {
-        throw new Error('Please sign in to process transcript generation.')
-      }
-      if (!lobbyId) {
-        throw new Error('Session ID missing for transcript processing.')
-      }
-
-      const result = await apiPost<TranscribeResponse>('/api/transcribe', {
-        audioUrl: payload.audioUrl,
-        mimeType: payload.mimeType,
-        sessionId: lobbyId,
-        storagePath: payload.storagePath,
-      })
-
-      const transcriptText =
-        typeof result?.transcript === 'string' ? result.transcript.trim() : ''
-      if (transcriptText.length === 0) {
-        throw new Error('AI transcription did not return text.')
-      }
-    },
-    [currentUser, lobbyId]
-  )
+  // Transcription is now handled out-of-band by a Firestore-triggered Cloud
+  // Function (functions/src/index.ts). The client doesn't kick it off
+  // directly — the `transcriptStatus: 'pending'` field set by the
+  // /api/sessions/[id]/recording route IS the trigger. The retry button
+  // just flips that field back to 'pending' via the retry-transcript route.
+  const retryTranscriptOnServer = useCallback(async () => {
+    if (!lobbyId) throw new Error('Session ID missing for transcript retry.')
+    await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording/retry-transcript`, {})
+  }, [lobbyId])
 
   const uploadRecordingBlob = useCallback(
     async (blob: Blob, stopReason: string, routeAfterUpload: boolean) => {
@@ -399,17 +349,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           byteSize: blob.size,
         })
 
-        setRecordingNote('Audio uploaded. Starting AI transcription...')
-        try {
-          await requestTranscript({ audioUrl, mimeType, storagePath })
-          setRecordingNote('Audio uploaded and transcript generated successfully.')
-        } catch (transcriptionError) {
-          // /api/transcribe writes transcriptStatus='failed' on the session itself.
-          const transcriptErrorMessage =
-            transcriptionError instanceof Error ? transcriptionError.message : 'Unable to transcribe recording.'
-          setRecordingError(formatTranscriptFailureMessage(transcriptErrorMessage))
-          setRecordingNote('Audio uploaded, but transcript review could not finish this time.')
-        }
+        // Writing recording metadata sets transcriptStatus='pending'. The
+        // Cloud Function picks it up and writes back when done — no client
+        // wait, no HTTP timeout, candidate is free to navigate away.
+        setRecordingNote('Audio uploaded. Transcript will finish in the background — feel free to leave this page.')
 
         pendingBlobRef.current = null
         setCompletionPending(false)
@@ -435,7 +378,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         }
       }
     },
-    [currentUser, lobbyId, recordingMode, requestTranscript, router]
+    [currentUser, lobbyId, recordingMode, router]
   )
 
   const stopRecordingAndFinalize = useCallback(
@@ -765,10 +708,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     if (!transcriptRetryInfo || retryingTranscript) return
     setRetryingTranscript(true)
     setRecordingError('')
-    setRecordingNote('Retrying transcript generation...')
+    setRecordingNote('Re-queuing transcript generation — this runs in the background.')
     try {
-      await requestTranscript(transcriptRetryInfo)
-      setRecordingNote('Transcript generated successfully.')
+      await retryTranscriptOnServer()
+      setRecordingNote('Transcript queued. It will appear on your dashboard when ready.')
       setTranscriptRetryInfo(null)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to retry transcript.'
@@ -776,7 +719,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     } finally {
       setRetryingTranscript(false)
     }
-  }, [requestTranscript, retryingTranscript, transcriptRetryInfo])
+  }, [retryTranscriptOnServer, retryingTranscript, transcriptRetryInfo])
 
   const handleEnableCapture = useCallback(() => {
     if (preferredRecordingMode === 'local' && microphonePermissionState === 'denied') {

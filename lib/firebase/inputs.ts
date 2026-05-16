@@ -81,17 +81,9 @@ export const completeSessionInput = z.object({
 })
 export type CompleteSessionInput = z.infer<typeof completeSessionInput>
 
-/* -------------------------------------------------------------------------- */
-/* POST /api/transcribe                                                       */
-/* -------------------------------------------------------------------------- */
-
-export const transcribeInput = z.object({
-  audioUrl: z.string().url().max(2048),
-  mimeType: z.string().min(1).max(128).optional(),
-  sessionId: lobbyId,
-  storagePath: z.string().min(1).max(512),
-})
-export type TranscribeInput = z.infer<typeof transcribeInput>
+// /api/transcribe was removed. Transcription is now handled by a
+// Firestore-triggered Cloud Function (functions/src/index.ts) when
+// `recording.transcriptStatus` transitions to 'pending'.
 
 /* -------------------------------------------------------------------------- */
 /* POST /api/evaluations                                                      */

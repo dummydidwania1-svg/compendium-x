@@ -49,6 +49,7 @@ The Firebase project (`compendium-x`) is version-controlled from this repo:
 | `firestore.rules` | Security rules controlling who can read/write each Firestore collection. |
 | `storage.rules` | Security rules for uploaded files (recordings, workspace images). |
 | `firestore.indexes.json` | Composite indexes Firestore needs to answer multi-field queries. |
+| `functions/` | Firebase Cloud Functions — currently hosts the long-running transcription job. |
 | `serviceAccountKey.json` | Admin credentials for server-side scripts. **Never commit.** Gitignored. |
 
 ### One-time setup
@@ -66,6 +67,19 @@ The Firebase project (`compendium-x`) is version-controlled from this repo:
    - Add `FIREBASE_SERVICE_ACCOUNT_JSON` — paste the entire contents of `serviceAccountKey.json` as a single line, scoped to Production + Preview
    - Trigger a redeploy so it takes effect
    - Locally this variable is not needed — the file at the repo root is used automatically.
+4. **Upgrade Firebase to Blaze (pay-as-you-go)** — required to deploy Cloud Functions:
+   - Firebase Console → Project Settings → Usage and billing → Modify plan → Blaze
+   - Set a $5/month budget alert at the same time (Firebase Console → Usage and billing → Details and settings → Budget)
+5. **Store the Gemini API key as a Firebase secret** (used by the transcription Cloud Function):
+   ```bash
+   npx firebase functions:secrets:set GEMINI_API_KEY
+   # paste the same value you have in .env.local, hit enter
+   ```
+6. **Deploy the Cloud Function** (one-time + after function changes):
+   ```bash
+   cd functions && npm install && cd ..
+   npx firebase deploy --only functions
+   ```
 
 ### Local development with emulators (recommended)
 
@@ -87,6 +101,32 @@ The Emulator UI runs at <http://127.0.0.1:4000> — you can inspect Firestore do
 npm run rules:deploy       # deploys firestore.rules + storage.rules
 npm run indexes:deploy     # deploys firestore.indexes.json
 ```
+
+### Deploying the transcription Cloud Function
+
+```bash
+cd functions
+npm install
+npm run build
+cd ..
+npx firebase deploy --only functions
+```
+
+Function logs (last hour) when something's misbehaving in prod:
+
+```bash
+npx firebase functions:log
+```
+
+### How transcription works
+
+1. Candidate finishes recording → audio uploads to Firebase Storage.
+2. Client calls `POST /api/sessions/[lobbyId]/recording` with metadata. This writes `recording.transcriptStatus: 'pending'` to the session doc.
+3. Firestore-triggered Cloud Function `transcribeRecording` fires, downloads the audio, hands it to Gemini, and writes the transcript back to the session doc when done.
+4. Dashboard / evaluation pages display the transcript via existing real-time listeners — no client polling needed.
+5. If transcription fails, the candidate's workspace shows a Retry Transcript button that calls `POST /api/sessions/[lobbyId]/recording/retry-transcript` to re-queue.
+
+The function has a 9-minute timeout (plenty for 45-minute audio at Gemini Flash speeds), runs on Blaze pricing, and is regional `us-central1`. Logs live in Firebase Console → Functions → Logs.
 
 To inspect what's currently deployed in production (uses `serviceAccountKey.json`):
 
