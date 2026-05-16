@@ -10,7 +10,12 @@
  */
 import { z } from 'zod'
 
-const lobbyId = z.string().min(8).max(128)
+// Existing client generator uses `Math.random().toString(36).substring(7)` →
+// produces ~5 character strings. Loose lower bound so we don't reject legit
+// lobby IDs. TODO: tighten generator to use crypto.randomUUID() for remote
+// sessions (where the ID is shared over the network and must resist guessing),
+// then raise this minimum to 16.
+const lobbyId = z.string().min(4).max(128)
 const caseId = z.string().min(1).max(128)
 const sessionMode = z.enum(['remote', 'local'])
 const stopReason = z.string().min(1).max(64)
