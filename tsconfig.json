@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "_vertex-api-backup"]
+  "exclude": ["node_modules", "_vertex-api-backup", "functions"]
 }
