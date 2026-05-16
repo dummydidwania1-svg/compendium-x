@@ -67,18 +67,28 @@ function fileExtensionFromType(mimeType: string): string {
 }
 
 function formatTranscriptFailureMessage(message: string): string {
+  // Honest failure copy. Each branch points the user to the Retry Transcript
+  // button so a real recovery path is always visible. Previously this helper
+  // swallowed configuration failures behind "transcript insights are coming
+  // soon", making misconfigurations indistinguishable from success.
   const normalized = message.toLowerCase()
 
-  if (
-    normalized.includes('gemini') ||
-    normalized.includes('api key') ||
-    normalized.includes('generatecontent') ||
-    normalized.includes('missing gemini_api_key')
-  ) {
-    return 'Audio saved successfully. Transcript insights are coming soon.'
+  if (normalized.includes('missing gemini_api_key') || normalized.includes('gemini_unconfigured')) {
+    return 'Transcript service is temporarily unavailable. Your audio is saved — try Retry Transcript below.'
   }
-
-  return 'Audio saved successfully, but transcript review could not finish this time.'
+  if (normalized.includes('empty transcript')) {
+    return 'No speech detected in the recording. Use Retry Transcript if you spoke clearly.'
+  }
+  if (normalized.includes('timed out') || normalized.includes('timeout')) {
+    return 'Transcript generation timed out. Click Retry Transcript to try again.'
+  }
+  if (normalized.includes('too large')) {
+    return 'Recording is too long for AI transcription. Sessions over ~30 minutes may need to be split.'
+  }
+  if (normalized.length === 0) {
+    return 'Transcript generation failed. Click Retry Transcript below to try again.'
+  }
+  return `Transcript generation failed: ${message}. Click Retry Transcript below to try again.`
 }
 
 function getFriendlyRecoverableCaptureMessage(mode: RecordingMode, message: string): string {

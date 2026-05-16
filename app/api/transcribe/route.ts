@@ -271,44 +271,65 @@ export const POST = authenticatedRoute('/api/transcribe', async (request, caller
       throw new Error('Gemini returned a file without URI.')
     }
 
-    const generationResponse = await fetch(
-      `${GEMINI_API_BASE}/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
+    // generateContent is the main flaky step in practice — Gemini sometimes
+    // 503s or hits a deadline on long audio. Retry up to 3 times with
+    // exponential backoff before giving up; transient failures stop reaching
+    // the client (and the user no longer needs to hit Retry Transcript).
+    const generationRequestBody = JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [
             {
-              role: 'user',
-              parts: [
-                {
-                  text: [
-                    'Transcribe this interview audio verbatim.',
-                    'Use speaker labels where possible (for example: Speaker 1, Speaker 2).',
-                    'Keep it concise and clean for downstream feedback analysis.',
-                    'Do not include any timestamps, timecodes, or bracketed time markers.',
-                    'Return only the transcript text.',
-                  ].join(' '),
-                },
-                {
-                  file_data: {
-                    mime_type: readyFile.mimeType || sourceMimeType,
-                    file_uri: readyFile.uri,
-                  },
-                },
-              ],
+              text: [
+                'Transcribe this interview audio verbatim.',
+                'Use speaker labels where possible (for example: Speaker 1, Speaker 2).',
+                'Keep it concise and clean for downstream feedback analysis.',
+                'Do not include any timestamps, timecodes, or bracketed time markers.',
+                'Return only the transcript text.',
+              ].join(' '),
+            },
+            {
+              file_data: {
+                mime_type: readyFile.mimeType || sourceMimeType,
+                file_uri: readyFile.uri,
+              },
             },
           ],
-          generationConfig: {
-            temperature: 0,
-          },
-        }),
-      }
-    )
+        },
+      ],
+      generationConfig: {
+        temperature: 0,
+      },
+    })
 
-    const generationPayload = await generationResponse.json().catch(() => null)
+    let generationResponse: Response | null = null
+    let generationPayload: unknown = null
+    let lastError = ''
+    const MAX_ATTEMPTS = 3
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+      generationResponse = await fetch(
+        `${GEMINI_API_BASE}/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: generationRequestBody,
+        },
+      )
+      generationPayload = await generationResponse.json().catch(() => null)
+      if (generationResponse.ok) break
+
+      lastError = extractGeminiErrorMessage(generationPayload)
+      const retriable = generationResponse.status >= 500 || generationResponse.status === 429
+      if (!retriable || attempt === MAX_ATTEMPTS) break
+
+      // Exponential backoff: 500ms, 1500ms, 4500ms…
+      await sleep(500 * 3 ** (attempt - 1))
+    }
+
+    if (!generationResponse) {
+      throw new Error(lastError || 'Gemini request failed.')
+    }
     if (!generationResponse.ok) {
       throw new Error(extractGeminiErrorMessage(generationPayload))
     }
