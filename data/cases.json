@@ -360,22 +360,22 @@
     "difficulty": "Medium",
     "case_type": "Profitability",
     "company": "Curated by the Authors",
-    "round": "[FLAG] Round not visible in screenshots",
+    "round": "N/A",
     "prompt": "Your client is the owner of one of the Miniso stores in Delhi and the store has been facing declining product sales. You need to analyse why this is happening and also recommend solutions accordingly.",
     "frameworkTree": {
       "nodes": {
         "revenue": { "id": "revenue", "label": "Revenue", "tone": "root", "children": ["supply", "demand"] },
         "supply": { "id": "supply", "label": "Supply", "tone": "branch", "children": ["product-procurement", "distribution-push"] },
         "demand": { "id": "demand", "label": "Demand", "tone": "support", "children": [] },
-        "product-procurement": { "id": "product-procurement", "label": "Procurement", "tone": "support", "children": [] },
+        "product-procurement": { "id": "product-procurement", "label": "Product Procurement", "tone": "support", "children": [] },
         "distribution-push": { "id": "distribution-push", "label": "Distribution Push", "tone": "branch", "children": ["before-buying", "during-buying", "post-buying"] },
         "before-buying": { "id": "before-buying", "label": "Before Buying", "tone": "support", "children": ["discovery", "travel-and-parking", "physical-obstruction", "accessibility", "security-checks"] },
         "during-buying": { "id": "during-buying", "label": "During Buying", "tone": "branch", "children": ["during-procurement", "payment"] },
         "post-buying": { "id": "post-buying", "label": "Post Buying", "tone": "support", "children": [] },
-        "discovery": { "id": "discovery", "label": "Discovery / Google Maps Listing", "tone": "leaf", "children": [] },
+        "discovery": { "id": "discovery", "label": "Discovery", "tone": "leaf", "children": [] },
         "travel-and-parking": { "id": "travel-and-parking", "label": "Travel & Parking", "tone": "leaf", "children": [] },
         "physical-obstruction": { "id": "physical-obstruction", "label": "Physical Obstruction", "tone": "leaf", "children": [] },
-        "accessibility": { "id": "accessibility", "label": "Accessibility (Elevators / Steps)", "tone": "leaf", "children": [] },
+        "accessibility": { "id": "accessibility", "label": "Accessibility", "tone": "leaf", "children": [] },
         "security-checks": { "id": "security-checks", "label": "Security Checks", "tone": "leaf", "children": [] },
         "during-procurement": { "id": "during-procurement", "label": "Procurement", "tone": "support", "children": ["product-placement", "staff-quality", "shopping-aids", "directional-signage"] },
         "payment": { "id": "payment", "label": "Payment", "tone": "branch", "children": ["payment-methods", "operations"] },
@@ -385,7 +385,7 @@
         "directional-signage": { "id": "directional-signage", "label": "Directional Signage", "tone": "leaf", "children": [] },
         "payment-methods": { "id": "payment-methods", "label": "Payment Methods", "tone": "branch", "children": ["online", "offline"] },
         "operations": { "id": "operations", "label": "Operations", "tone": "support", "children": ["counter-efficiency", "no-of-counters", "carry-bags"] },
-        "online": { "id": "online", "label": "Online ↓", "tone": "leaf", "children": [] },
+        "online": { "id": "online", "label": "Online", "tone": "leaf", "children": [] },
         "offline": { "id": "offline", "label": "Offline", "tone": "leaf", "children": [] },
         "counter-efficiency": { "id": "counter-efficiency", "label": "Counter Efficiency", "tone": "leaf", "children": [] },
         "no-of-counters": { "id": "no-of-counters", "label": "No. of Counters", "tone": "leaf", "children": [] },
@@ -395,12 +395,10 @@
         "revenue",
         "supply",
         "distribution-push",
-        "before-buying",
         "during-buying",
         "during-procurement",
         "payment",
-        "payment-methods",
-        "operations"
+        "payment-methods"
       ],
       "defaultFocusedId": "online",
       "notes": [
@@ -409,7 +407,7 @@
           "items": [
             "Since when?",
             "What about other branches?",
-            "Has the decline been uniform across all product lines, or has a particular line been more affected?"
+            "Is the decline across a particular product line?"
           ]
         },
         {
@@ -449,8 +447,1099 @@
         }
       ]
     },
-    "framework": "Candidate: Sure, thank you for the case. I would like to begin by understanding the case better. Firstly, are we talking about the departmental store which sells a variety of products from stationery to cosmetics?\nInterviewer: Yes. That's right.\nCandidate: Since when have we been facing this problem and do we know the magnitude of the decline?\nInterviewer: We have been facing this problem since March 2020. So, roughly 4 months. There has been a 60% decline in revenues.\nCandidate: Alright. 60% seems like a huge decline. Do we have information on whether other Miniso stores and other competitors in our locality have faced a decline of a similar magnitude?\nInterviewer: Our competitors, as well as other Miniso stores, have faced a decline of about 30% in revenues.\nCandidate: Okay, so the market, in general, is not doing well. In addition, there is a factor that is affecting our firm more. The general decline could be because of the lockdown imposed in Delhi in March.\nInterviewer: Accurate observations.\nCandidate: Next, I would like to understand if a certain product line has been affected more, or if the decline is uniform?\nInterviewer: The decline is quite uniform across all lines.\nCandidate: Got it. So our revenues can be affected by:\n1) Supply-side constraints which seems more likely given our competitors are not affected by this factor\n2) Demand-side constraints\nInterviewer: Your hypothesis is correct. We have reason to believe it is a supply-side constraint.\nCandidate: Thank you. For a store like Miniso, the supply-side would consist of procurement and distribution. Do we have information on which of these has been an issue in the past 4 months?\nInterviewer: Sure. We have reason to believe that it's an issue with our distribution push.\nCandidate: Great. We can understand distribution push by mapping the customer journey.\nThe stages are-\nStage 1 - Before Entry\nStage 2 - After Entry\nStage 3 – Billing\nIn terms of 'Before Entry', we need to analyse if people are finding it difficult to enter the store. A few reasons could be -\n1) Construction work outside our store\n2) Our entry gate is blocked by an obstruction such as a tree or a barricade\n3) Accessibility in terms of non-functional elevators or broken steps\n4) Long security checks\n5) Parking facilities\n6) Listing on google maps\nComing to 'After Entry', we need to analyse what might stop them from buying the product.\n1) Sub-optimal placement of the products\n2) Unavailability of or untrained/unmotivated staff\n3) Unavailability of shopping bags/carts\n4) Lack of signage for direction\nFinally, coming to 'Billing Stage', we can look at the following -\n1) Number of counters and efficiency of the counters\n2) Payment methods offered - online and offline\n3) Availability of carry bags\nInterviewer: You have identified the reason correctly. Due to the pandemic, people prefer using online modes of payment. This branch has not implemented this yet. What would you suggest to the store?\nCandidate: The store needs to accept online modes of payment like Paytm, Google Pay, Bhim, etc. to tackle this specific problem in the long run. To immediately tackle the problem, the store manager can accept the payments on a personal number to not lose customers. The store can also implement home delivery to better deal with the lockdown imposed and make use of social media marketing through WhatsApp, Instagram, etc.\nInterviewer: These are all good suggestions, thank you!\n\nMax Problems at Mini-so Framework & Recommendations\nDECLINING REVENUES IN MINISO\nClarifying Questions: Since when? What about other branches?\nBrownie Points: Listing on Google Maps Contextualizing with respect to the pandemic\nKeep In Mind: It is important to segment the various branches of the store to isolate the problem\nRECOMMENDATIONS: Accept UPI on manager's personal mobile number\nIntegrate online payments formally at counters\nList store accurately on Google Maps\nRun WhatsApp and Instagram marketing campaigns\nOffer informal home delivery via WhatsApp\nPartner with delivery platforms for online orders"
+    "framework": "Candidate: Sure, thank you for the case. I would like to begin by understanding the case better. Firstly, are we talking about the departmental store which sells a variety of products from stationery to cosmetics?\nInterviewer: Yes. That's right.\nCandidate: Since when have we been facing this problem and do we know the magnitude of the decline?\nInterviewer: We have been facing this problem since March 2020. So, roughly 4 months. There has been a 60% decline in revenues.\nCandidate: Alright. 60% seems like a huge decline. Do we have information on whether other Miniso stores and other competitors in our locality have faced a decline of a similar magnitude?\nInterviewer: Our competitors, as well as other Miniso stores, have faced a decline of about 30% in revenues.\nCandidate: Okay, so the market, in general, is not doing well. In addition, there is a factor that is affecting our firm more. The general decline could be because of the lockdown imposed in Delhi in March.\nInterviewer: Accurate observations.\nCandidate: Next, I would like to understand if a certain product line has been affected more, or if the decline is uniform?\nInterviewer: The decline is quite uniform across all lines.\nCandidate: Got it. So our revenues can be affected by:\n1) Supply-side constraints which seems more likely given our competitors are not affected by this factor\n2) Demand-side constraints\nInterviewer: Your hypothesis is correct. We have reason to believe it is a supply-side constraint.\nCandidate: Thank you. For a store like Miniso, the supply-side would consist of procurement and distribution. Do we have information on which of these has been an issue in the past 4 months?\nInterviewer: Sure. We have reason to believe that it's an issue with our distribution push.\nCandidate: Great. We can understand distribution push by mapping the customer journey.\nThe stages are-\nStage 1 - Before Entry\nStage 2 - After Entry\nStage 3 – Billing\nIn terms of 'Before Entry', we need to analyse if people are finding it difficult to enter the store. A few reasons could be -\n1) Construction work outside our store\n2) Our entry gate is blocked by an obstruction such as a tree or a barricade\n3) Accessibility in terms of non-functional elevators or broken steps\n4) Long security checks\n5) Parking facilities\n6) Listing on google maps\nComing to 'After Entry', we need to analyse what might stop them from buying the product.\n1) Sub-optimal placement of the products\n2) Unavailability of or untrained/unmotivated staff\n3) Unavailability of shopping bags/carts\n4) Lack of signage for direction\nFinally, coming to 'Billing Stage', we can look at the following -\n1) Number of counters and efficiency of the counters\n2) Payment methods offered - online and offline\n3) Availability of carry bags\nInterviewer: You have identified the reason correctly. Due to the pandemic, people prefer using online modes of payment. This branch has not implemented this yet. What would you suggest to the store?\nCandidate: The store needs to accept online modes of payment like Paytm, Google Pay, Bhim, etc. to tackle this specific problem in the long run. To immediately tackle the problem, the store manager can accept the payments on a personal number to not lose customers. The store can also implement home delivery to better deal with the lockdown imposed and make use of social media marketing through WhatsApp, Instagram, etc.\nInterviewer: These are all good suggestions, thank you!\n\nMax Problems at Mini-so Framework & Recommendations\nDECLINING REVENUES IN MINISO\nClarifying Questions: Since when? What about other branches?\nBrownie Points: Listing on Google Maps Contextualizing with respect to the pandemic\nKeep In Mind: It is important to segment the various branches of the store to isolate the problem\nRECOMMENDATIONS: Immediately accepting payments on a personal number\nImplementing online payment modes\nHome delivery of products"
 },
+{
+  "id": 6,
+  "docId": "case-6",
+  "title": "Take Me to the Candy Shop",
+  "industry": "FMCG",
+  "difficulty": "Medium",
+  "case_type": "Profitability",
+  "company": "L.E.K. Consulting",
+  "round": "Buddy",
+  "prompt": "Hey! Your client is a toffee manufacturer and they have recently seen a decline in their profits. You have been hired by them to figure out the reasons for such a decline and give recommendations on the same.",
+  "frameworkTree": {
+    "nodes": {
+      "profits": {
+        "id": "profits",
+        "label": "Profits",
+        "tone": "root",
+        "children": ["revenue", "costs"]
+      },
+      "revenue": {
+        "id": "revenue",
+        "label": "Revenue",
+        "tone": "branch",
+        "children": ["toffees-sold", "price-per-toffee"]
+      },
+      "costs": {
+        "id": "costs",
+        "label": "Costs",
+        "tone": "support",
+        "children": []
+      },
+      "toffees-sold": {
+        "id": "toffees-sold",
+        "label": "Toffees Sold",
+        "tone": "branch",
+        "children": ["production", "distribution", "demand"]
+      },
+      "price-per-toffee": {
+        "id": "price-per-toffee",
+        "label": "Price per Toffee",
+        "tone": "support",
+        "children": []
+      },
+      "production": {
+        "id": "production",
+        "label": "Production",
+        "tone": "support",
+        "children": []
+      },
+      "distribution": {
+        "id": "distribution",
+        "label": "Distribution",
+        "tone": "branch",
+        "children": ["organised-retail", "unorganised-retail"]
+      },
+      "demand": {
+        "id": "demand",
+        "label": "Demand",
+        "tone": "support",
+        "children": []
+      },
+      "organised-retail": {
+        "id": "organised-retail",
+        "label": "Organised Retail",
+        "tone": "support",
+        "children": ["big-supermarkets", "small-and-medium-depots"]
+      },
+      "unorganised-retail": {
+        "id": "unorganised-retail",
+        "label": "Unorganised Retail",
+        "tone": "branch",
+        "children": ["mom-and-pop-stores", "paan-shops"]
+      },
+      "big-supermarkets": {
+        "id": "big-supermarkets",
+        "label": "Big Supermarkets",
+        "tone": "support",
+        "children": []
+      },
+      "small-and-medium-depots": {
+        "id": "small-and-medium-depots",
+        "label": "Small & Medium Depots",
+        "tone": "support",
+        "children": []
+      },
+      "mom-and-pop-stores": {
+        "id": "mom-and-pop-stores",
+        "label": "Mom & Pop Stores",
+        "tone": "support",
+        "children": []
+      },
+      "paan-shops": {
+        "id": "paan-shops",
+        "label": "Paan-Shops",
+        "tone": "branch",
+        "children": ["no-of-paan-shops", "avg-qty-sold"]
+      },
+      "no-of-paan-shops": {
+        "id": "no-of-paan-shops",
+        "label": "No. of Paan-Shops",
+        "tone": "support",
+        "children": []
+      },
+      "avg-qty-sold": {
+        "id": "avg-qty-sold",
+        "label": "Avg Qty Sold",
+        "tone": "branch",
+        "children": ["internal-reasons", "external-reasons"]
+      },
+      "internal-reasons": {
+        "id": "internal-reasons",
+        "label": "Internal Reasons",
+        "tone": "support",
+        "children": ["margins", "placement"]
+      },
+      "margins": {
+        "id": "margins",
+        "label": "Margins",
+        "tone": "support",
+        "children": []
+      },
+      "placement": {
+        "id": "placement",
+        "label": "Placement",
+        "tone": "support",
+        "children": []
+      },
+      "external-reasons": {
+        "id": "external-reasons",
+        "label": "External Reasons",
+        "tone": "branch",
+        "children": ["online-payments", "cigarette-pricing"]
+      },
+      "online-payments": {
+        "id": "online-payments",
+        "label": "Online Payments",
+        "tone": "support",
+        "children": []
+      },
+      "cigarette-pricing": {
+        "id": "cigarette-pricing",
+        "label": "Cigarette Pricing",
+        "tone": "leaf",
+        "children": []
+      }
+    },
+    "defaultExpanded": [
+      "profits",
+      "revenue",
+      "toffees-sold",
+      "distribution",
+      "unorganised-retail",
+      "paan-shops",
+      "avg-qty-sold",
+      "external-reasons"
+    ],
+    "defaultFocusedId": "cigarette-pricing",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "Duration and magnitude of decline?",
+          "Industry wide problem or company specific problem?"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "Eliminate company-specific hypotheses when decline is industry-wide",
+          "Paan-shops are key low-ticket impulse retail outlets"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Mentioning the possibility of a significant increase in online payments"
+        ]
+      }
+    ]
+  },
+  "framework": "Candidate: Can you please tell me a little bit more about the company? Where is the client located and where does it lie in the value chain?\nInterviewer: Sure. The client is one of the three companies in India that are solely involved in toffee manufacturing. It has pan-India operations; it manufactures a toffee similar to Alpenlibe and sells them to distributors which in turn sell them to end consumers.\nCandidate: How is the industry structured? Have the competitors also faced a similar decline and is this decline taking place in a specific geography?\nInterviewer: All three companies seem to command equal market share and sell a similar product. The decline is universal and the data suggests that it is an industry-wide problem occurring across the country.\nCandidate: Interesting! Before I move further, can you please tell me about the extent and duration of this decline?\nInterviewer: Profits seemed to have dipped by 10% in the last six months.\nCandidate: Got it. I believe the decline in profits can either be attributed to a decline in revenues or an increase in costs or a combination of both. Is there any specific element here that you would like me to probe?\nInterviewer: It looks like the revenues of our client have declined.\nCandidate: Understood. Revenues can be classified as a function of:\nRevenues = Number of toffees sold x Price per toffee\nHas there been any change in price per toffee in the past six months? This could be due to reasons like lower demand or a competitive response to new entrants.\nInterviewer: The price per toffee is ₹1 and has remained the same.\nCandidate: Then the number of toffees sold has gone down and since the decline has been uniform across companies, it is fair to assume that the overall market has shrunk.\nInterviewer: That is correct.\nCandidate: I would like to analyse three elements here: supply, distribution and demand. Any internal or external changes in these elements can lead to declining revenues.\nCandidate: Are the companies able to produce enough toffees to meet demand? A disruption in the global supply chain, union issues and the like can lead to the underutilization of factories all at once.\nInterviewer: Production and supply have been going fine.\nCandidate: Alright. I would like to now shift my focus to distribution. Can you please tell me the distribution channels that the client uses to push its products and their percentage split?\nInterviewer: Why don't you identify a few potential distribution channels that can be used?\nCandidate: Sure. Some of the popular distribution channels would include big supermarket chains, small and medium depots, mom-and-pop stores and other small shops where toffees of such kind are a prominent buy.\nInterviewer: Can you think of an example for these small shops, specifically the ones that are often located outside restaurants and eating places?\nCandidate: Oh! Paan-shops often have a huge collection of such toffees. Is that correct?\nInterviewer: Yes. The industry-wide decline in revenue seems to have been most prominent in such shops which sell low-ticket items.\nCandidate: Got it. Has there been a change in demand or are the paan-shops pushing out fewer toffees to customers?\nInterviewer: The overall organic demand has remained the same. Can you figure out why the paan-shops are not able to sell as many toffees now?\nCandidate: Toffees sold = Number of paan-shops x Average quantity sold\nThe number of paan-shops is unlikely to change drastically in just six months. Therefore, the average quantity sold by paan-shops must have been reduced. This can be either due to internal or external reasons. Internal reasons would include specific problems associated with toffees as a product (margins, placement, etc.) while external reasons could be non-product related. Would you like me to explore any specific bucket?\nInterviewer: Focus on non-product-related reasons.\nCandidate: Is it possible that online payments have grown significantly in the recent past?\nInterviewer: No. Try to think of the main reasons for buying a toffee at a paan-shops.\nCandidate: One can either wish to buy a toffee directly from a paan-shops or sometimes be given one in place of spare change when buying products whose prices are not rounded to the nearest multiple of 5 or 10.\nInterviewer: That is correct! Recently, the price of cigarettes has been revised and rounded down to the nearest multiple of 10 which has eliminated the need to give back toffees priced at ₹1 to customers in place of spare change. As the sales frequency of cigarettes is high, paan-shops are now able to sell fewer toffees which has adversely impacted the industry."
+},
+{
+    "id": 7,
+    "docId": "case-7",
+    "title": "Mall of Fame",
+    "industry": "Retail",
+    "difficulty": "Medium",
+    "case_type": "Profitability",
+    "company": "BCG",
+    "round": "Manager",
+    "prompt": "I have an interesting case for you. Your client is the owner of a mall in South Delhi. Over the last month, the mall has made higher than normal profits and is concerned about the same. He wants you to find out why this has been happening.",
+    "frameworkTree": {
+      "nodes": {
+        "profits": {
+          "id": "profits",
+          "label": "Profits",
+          "tone": "root",
+          "children": ["revenue", "costs"]
+        },
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "branch",
+          "children": ["rent", "ads-and-sponsorships", "food-and-beverages", "parking-fees", "events"]
+        },
+        "costs": {
+          "id": "costs",
+          "label": "Costs",
+          "tone": "support",
+          "children": []
+        },
+        "rent": {
+          "id": "rent",
+          "label": "Rent",
+          "tone": "support",
+          "children": []
+        },
+        "ads-and-sponsorships": {
+          "id": "ads-and-sponsorships",
+          "label": "Ads & Sponsorships",
+          "tone": "support",
+          "children": []
+        },
+        "food-and-beverages": {
+          "id": "food-and-beverages",
+          "label": "Food & Beverages",
+          "tone": "support",
+          "children": []
+        },
+        "events": {
+          "id": "events",
+          "label": "Events",
+          "tone": "support",
+          "children": []
+        },
+        "parking-fees": {
+          "id": "parking-fees",
+          "label": "Parking Fees",
+          "tone": "branch",
+          "children": ["working-days", "avg-cars-per-day", "flat-rate"]
+        },
+        "working-days": {
+          "id": "working-days",
+          "label": "Working Days",
+          "tone": "support",
+          "children": []
+        },
+        "avg-cars-per-day": {
+          "id": "avg-cars-per-day",
+          "label": "Avg. Cars/Day",
+          "tone": "branch",
+          "children": ["no-of-mall-goers", "percent-coming-in-cars", "people-per-car"]
+        },
+        "flat-rate": {
+          "id": "flat-rate",
+          "label": "Flat Rate",
+          "tone": "support",
+          "children": []
+        },
+        "no-of-mall-goers": {
+          "id": "no-of-mall-goers",
+          "label": "No. Of Mall-Goers",
+          "tone": "support",
+          "children": []
+        },
+        "percent-coming-in-cars": {
+          "id": "percent-coming-in-cars",
+          "label": "% Coming In Cars",
+          "tone": "branch",
+          "children": ["other-modes-less-convenient", "cars-more-convenient"]
+        },
+        "people-per-car": {
+          "id": "people-per-car",
+          "label": "People Per Car",
+          "tone": "support",
+          "children": []
+        },
+        "other-modes-less-convenient": {
+          "id": "other-modes-less-convenient",
+          "label": "Other Modes Less Convenient",
+          "tone": "branch",
+          "children": ["on-foot", "on-vehicles"]
+        },
+        "cars-more-convenient": {
+          "id": "cars-more-convenient",
+          "label": "Cars More Convenient",
+          "tone": "support",
+          "children": []
+        },
+        "on-foot": {
+          "id": "on-foot",
+          "label": "On Foot",
+          "tone": "support",
+          "children": []
+        },
+        "on-vehicles": {
+          "id": "on-vehicles",
+          "label": "On Vehicles",
+          "tone": "branch",
+          "children": ["private-other-than-cars", "public"]
+        },
+        "private-other-than-cars": {
+          "id": "private-other-than-cars",
+          "label": "Private (Other Than Cars)",
+          "tone": "support",
+          "children": []
+        },
+        "public": {
+          "id": "public",
+          "label": "Public",
+          "tone": "branch",
+          "children": ["bus", "auto", "metro"]
+        },
+        "bus": {
+          "id": "bus",
+          "label": "Bus",
+          "tone": "support",
+          "children": []
+        },
+        "auto": {
+          "id": "auto",
+          "label": "Auto",
+          "tone": "support",
+          "children": []
+        },
+        "metro": {
+          "id": "metro",
+          "label": "Metro",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "profits",
+        "revenue",
+        "parking-fees",
+        "avg-cars-per-day",
+        "percent-coming-in-cars",
+        "other-modes-less-convenient",
+        "on-vehicles",
+        "public"
+      ],
+      "defaultFocusedId": "metro",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Why is increase in revenues a cause of concern?",
+            "By how much have profits increased?",
+            "Have other malls seen a similar increase?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Express changed metrics by breaking it as a formula",
+            "Always question why higher profits concern owner"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Suggesting increasing rates in the short run",
+            "Proactively suggesting hourly over flat rate pricing"
+          ]
+        }
+      ]
+    },
+    "visualisations": [
+      {
+        "title": "Parking Revenue Formula Breakdown",
+        "type": "formula",
+        "content": "Revenue from Parking (Monthly) = Working Days \u00d7 Avg. Cars/Day \u00d7 Flat Rate. Where: Avg. Cars/Day = (No. of Mall-Goers \u00d7 % Coming in Cars) \u00f7 People per Car"
+      }
+    ],
+    "recommendationsTable": {
+      "headers": ["Horizon", "Recommendation"],
+      "rows": [
+        ["Short-Term", "Raise parking rate while metro stays shut"],
+        ["Short-Term", "Switch from flat rate to hourly pricing"]
+      ]
+    },
+    "framework": "Candidate: Sounds interesting. I would first like to know why the higher profits are a cause for concern?\nInterviewer: The owner wants to know whether the increase in profits is of a temporary or sustainable nature.\nCandidate: Got it. Do we know how much profits have increased by? Have other malls in South Delhi seen a similar increase in the last month?\nInterviewer: Profits are up by 4%. We don't have information about the other malls.\nCandidate: My approach would be to first find out what has been driving the higher profits and then figure out if this is of a sustainable nature. Let's break down profits into revenues and costs. Either there has been an increase in the mall's revenues or there has been a decrease in the mall's costs. It is also possible that there has been a change in both.\nInterviewer: The mall's revenues have seen an increase. There has been no significant change in the costs.\nCandidate: Understood. Malls have multiple revenue streams \u2013 Rent from leasing space, advertisements and sponsorships, proceeds from events and parking fees. I hope I have not missed out any significant revenue source. Do we have information on which of these revenue streams have seen an increase in the last month?\nInterviewer: Yes. There has been an increase in the revenue we make from our parking lot.\nCandidate: Before isolating the cause behind the same, I would like to understand the system a little better. Do we allow both two-wheelers and four-wheelers to park? How do we charge them? A flat rate or on a per-hour basis? Has there been a change in any of these? I would also like to understand if there has been a change in the capacity of the parking lot? Does the parking lot only cater to mall visitors or is it open to outsiders as well?\nInterviewer: Only four-wheelers can park. A flat rate of Rs 70 is charged. There has been no change in the above and the capacity too has remained the same. The parking lot is restricted to mall visitors only.\nCandidate: Okay, that is helpful. We can now use the following formula to isolate the cause:\nRevenue from parking in the month = Number of working days in the month * Average number of cars/day * Flat Rate\nCandidate: Since there has been no change in the rate, either the number of working days has been higher or there have been more cars entering our parking facility on an average.\nInterviewer: It is the latter.\nCandidate: Okay.\nAverage number of cars/day = (Number of mall-goers * % coming in cars)/(Number of people/car)\nCandidate: Do we know which of the above factors has seen a change?\nInterviewer: In fact, the % of mall-goers coming in cars has increased.\nCandidate: Hmm. Since the total number of mall-goers has remained the same but the % coming in cars has increased, there are two possibilities. One, they are forced to come in cars because some other mode of transport has become less convenient. Two, they choose to come in cars because it is more convenient for them now. Let's start by exploring the first possibility. The various ways in which people can arrive at the mall other than cars include \u2013 on foot, bus, auto and metro. Do we have information on whether the decrease has been uniform across these modes or if there's a specific mode that has seen a fall?\nInterviewer: You're right, other modes, specifically the metro, have become less convenient. The number of people coming by metro has reduced significantly. What are the some reasons you can think of that might be causing this?\nCandidate: Sure. I can think of the following reasons:\n1) Cost of commuting by metro has gone up\n2) Time taken to commute by metro has increased\n3) There have been recent apprehensions regarding the metro service due to incidents such as accidents and breakdowns\n4) The station may have been shut down temporarily or shifted to a different location\nInterviewer: You are right. This is because the station outside our mall has been shut for maintenance. The next closest metro station from our mall is 5 km away and is inconvenient for people. Why don't you conclude the case now?\nCandidate: Makes sense. The revenue from the mall's parking lot has seen an increase due to the increase in cars, owing to the unavailability of metro services in the area. Unfortunately, this increase is temporary as people may go back to using the metro once the maintenance is complete. The mall owner can consider increasing the parking rate until the metro station reopens to make even higher profits in the short run.\n\nMall of Fame Framework & Recommendations\nINCREASE IN THE PROFITS OF A MALL\nClarifying Questions: Why is increase in revenues a cause of concern?\nBrownie Points: Suggesting increasing rates in the short run\nKeep In Mind: Formulas are a great way of breaking down cases\nRECOMMENDATIONS: Raise parking rate while metro stays shut\nSwitch from flat rate to hourly pricing"
+},
+{
+    "id": 8,
+    "docId": "case-8",
+    "title": "Grey's Anatomy",
+    "industry": "Healthcare",
+    "difficulty": "Medium",
+    "case_type": "Profitability",
+    "company": "Kearney",
+    "round": "Buddy",
+    "prompt": "Let's start with a case. Your client is ABC Hospital in Kolkata. Over the last two months, they have been facing a decline in revenues and would like your help in figuring out why this may be happening.",
+    "frameworkTree": {
+      "nodes": {
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "root",
+          "children": [
+            "clinical-revenue",
+            "ancillary-revenue"
+          ]
+        },
+        "clinical-revenue": {
+          "id": "clinical-revenue",
+          "label": "Clinical Revenue",
+          "tone": "branch",
+          "children": [
+            "consultancy",
+            "diagnostics",
+            "treatment",
+            "pharmacy-sales"
+          ]
+        },
+        "ancillary-revenue": {
+          "id": "ancillary-revenue",
+          "label": "Ancillary Revenue",
+          "tone": "support",
+          "children": [
+            "advertisements",
+            "rent",
+            "parking",
+            "food-and-beverage"
+          ]
+        },
+        "consultancy": {
+          "id": "consultancy",
+          "label": "Consultancy",
+          "tone": "support",
+          "children": []
+        },
+        "diagnostics": {
+          "id": "diagnostics",
+          "label": "Diagnostics",
+          "tone": "branch",
+          "children": [
+            "in-patient-department",
+            "out-patient-department"
+          ]
+        },
+        "treatment": {
+          "id": "treatment",
+          "label": "Treatment",
+          "tone": "support",
+          "children": []
+        },
+        "pharmacy-sales": {
+          "id": "pharmacy-sales",
+          "label": "Pharmacy Sales",
+          "tone": "support",
+          "children": []
+        },
+        "advertisements": {
+          "id": "advertisements",
+          "label": "Advertisements",
+          "tone": "support",
+          "children": []
+        },
+        "rent": {
+          "id": "rent",
+          "label": "Rent",
+          "tone": "support",
+          "children": []
+        },
+        "parking": {
+          "id": "parking",
+          "label": "Parking",
+          "tone": "support",
+          "children": []
+        },
+        "food-and-beverage": {
+          "id": "food-and-beverage",
+          "label": "F&B",
+          "tone": "support",
+          "children": []
+        },
+        "in-patient-department": {
+          "id": "in-patient-department",
+          "label": "In-patient Department",
+          "tone": "support",
+          "children": []
+        },
+        "out-patient-department": {
+          "id": "out-patient-department",
+          "label": "Out-patient Department",
+          "tone": "branch",
+          "children": [
+            "capacity",
+            "demand"
+          ]
+        },
+        "capacity": {
+          "id": "capacity",
+          "label": "Capacity",
+          "tone": "support",
+          "children": []
+        },
+        "demand": {
+          "id": "demand",
+          "label": "Demand",
+          "tone": "branch",
+          "children": [
+            "no-of-out-patients",
+            "percent-requiring-tests",
+            "percent-opting-for-our-tests",
+            "no-of-tests-per-patient",
+            "charge-per-test"
+          ]
+        },
+        "no-of-out-patients": {
+          "id": "no-of-out-patients",
+          "label": "No. Of Out-patients",
+          "tone": "support",
+          "children": []
+        },
+        "percent-requiring-tests": {
+          "id": "percent-requiring-tests",
+          "label": "% Requiring Tests/Scans",
+          "tone": "support",
+          "children": []
+        },
+        "percent-opting-for-our-tests": {
+          "id": "percent-opting-for-our-tests",
+          "label": "% Opting For Our Tests/Scans",
+          "tone": "branch",
+          "children": [
+            "not-getting-tests-done",
+            "getting-tests-elsewhere"
+          ]
+        },
+        "no-of-tests-per-patient": {
+          "id": "no-of-tests-per-patient",
+          "label": "No. Of Tests per Patient",
+          "tone": "support",
+          "children": []
+        },
+        "charge-per-test": {
+          "id": "charge-per-test",
+          "label": "Charges per Test",
+          "tone": "support",
+          "children": []
+        },
+        "not-getting-tests-done": {
+          "id": "not-getting-tests-done",
+          "label": "Not Getting Tests Done",
+          "tone": "support",
+          "children": []
+        },
+        "getting-tests-elsewhere": {
+          "id": "getting-tests-elsewhere",
+          "label": "Getting Tests Elsewhere",
+          "tone": "branch",
+          "children": [
+            "self-administered",
+            "external-alternatives"
+          ]
+        },
+        "self-administered": {
+          "id": "self-administered",
+          "label": "Self-administered",
+          "tone": "support",
+          "children": []
+        },
+        "external-alternatives": {
+          "id": "external-alternatives",
+          "label": "External Alternatives",
+          "tone": "branch",
+          "children": [
+            "other-hospitals",
+            "home-collection-labs"
+          ]
+        },
+        "other-hospitals": {
+          "id": "other-hospitals",
+          "label": "Other Hospitals",
+          "tone": "support",
+          "children": []
+        },
+        "home-collection-labs": {
+          "id": "home-collection-labs",
+          "label": "Home Collection Labs",
+          "tone": "branch",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "revenue",
+        "clinical-revenue",
+        "diagnostics",
+        "out-patient-department",
+        "demand",
+        "percent-opting-for-our-tests",
+        "getting-tests-elsewhere",
+        "external-alternatives",
+        "home-collection-labs"
+      ],
+      "defaultFocusedId": "home-collection-labs",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Pre-Covid or during Covid?",
+            "Chain of hospitals or a standalone establishment?",
+            "Magnitude of decline?",
+            "Have other hospitals faced similar decline?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Clarify hospital type and COVID timing before drilling",
+            "COVID context unlocks home-services insights"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Mentioning increasing demand of home services."
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: Understood. Before we move into why the revenues may be declining, I would like to understand the situation better. Is ABC a chain of hospitals or are we talking about a single establishment? Are we talking about Pre-Covid times?\nInterviewer: There is only one hospital. It is located in East Kolkata. The year is 2020 and the pandemic is at its peak. What else would you like to know?\nCandidate: I would like to know how much revenues have declined by. Have other hospitals in the area seen a similar decline? This will help me understand if the issue is specific to our hospital and I can drive my hypothesis accordingly.\nInterviewer: Makes sense. Revenues have declined by 8%. A few other hospitals have reported a decline as well.\nCandidate: Interesting. As per my knowledge, hospitals have numerous revenue streams. These include medical services, advertisements, rent charged to vendors who have set up operations in the hospital and miscellaneous services like parking and refreshments. I would like to know if I'm missing anything. If not, we can identify the segments facing a decline and delve deeper into that.\nInterviewer: This seems quite comprehensive. Why don't we look at medical services?\nCandidate: Sure. We can further break down revenues from medical services into consultancy charges, diagnostics, treatment and pharmacy sales. I would like to understand which of these services has taken a hit in the last two months. Consultancy includes the preliminary meetings between the patient and the doctor. By diagnostics, I'm referring to all the pathological tests and scans conducted by the hospital. After the diagnostics stage, treatment would involve processes like surgeries. Here, I would also like to account for bed charges in the In Patient Department (IPD). Lastly, I would like to know if our in-house pharmacy is facing a decline in revenue.\nInterviewer: The revenue earned from diagnostics has seen a major decline.\nCandidate: Okay, that's interesting. Is the decline uniform across the In Patient Department (IPD) and Out Patient Department (OPD)? Also, do we have data on which tests and scans are facing this decline?\nInterviewer: Good question. We are facing this decline only among Out Patients. You can assume all tests and scans are facing this decline.\nCandidate: Makes sense. Now that we have a fair idea of the key driver of our revenue decline, I will now try to isolate the reason for the same.\nCandidate: I would first like to understand if there has been a change over the last couple of months in our capacity to cater to the Out Patients. However, since other hospitals have reported a similar decline, this seems unlikely.\nInterviewer: There has been no change in our facilities or capacity to cater to the demand.\nCandidate: That means we are facing a reduction in demand for our diagnostic services.\nRevenue from diagnostic services = Number of Out Patients * Percentage requiring tests/scans * Percentage opting for our diagnostic services * Number of tests/patient * Charge/test.\nCandidate: Do we know which of these factors has seen a decline?\nInterviewer: Yes, we do have data on that. The number of tests prescribed to our Out Patients has not seen a change. Our charges have remained the same as well.\nCandidate: Interesting. Either the patients are not getting the tests done at all or they are getting it done elsewhere. The latter seems more likely as medical tests are usually not skipped by individuals. This means they are getting their diagnosis done elsewhere. Again, there are two ways in which this may be happening:\n1) Self: Through easy-to-use equipment such as BP machines\n2) Externally: Through other hospitals or alternate establishments such as diagnostic laboratories\nCandidate: Since the pandemic, home services which are app-based have also caught on quickly.\nInterviewer: Spot on. Recently, our hospital introduced a tele-consulting service on its application. Hence, our patients were no longer required to come to our hospital to consult doctors. They are now getting tests done from laboratories which visit their houses and collect the samples. This is both convenient as well as safer. We can end the case here.\n\nGrey's Anatomy Framework & Recommendations\nDECLINING REVENUES IN ABC HOSPITAL\nClarifying Questions: Pre-Covid or during Covid? Chain of hospitals or a standalone establishment?\nBrownie Points: Mentioning increasing demand of home services.\nKeep In Mind: While asking for information, it is better to also tell the interviewer why you need that information.\nRECOMMENDATIONS: Partner with existing diagnostic labs for referral commission\nIntroduce in-house home collection of samples\nAcquire or build a diagnostic laboratory subsidiary"
+  },
+  {
+  "id": 9,
+  "docId": "case-9",
+  "title": "Make-Up for Lost Profits",
+  "industry": "Cosmetics",
+  "difficulty": "Medium",
+  "case_type": "Profitability",
+  "company": "Kearney",
+  "round": "Buddy",
+  "prompt": "Let's begin with the case. Zendaya is a cosmetics manufacturer. The Board of Directors (BOD) is worried about the company's declining sales. It wants you to diagnose the problem and come up with a turnaround strategy. How will you go about it?",
+  "frameworkTree": {
+    "nodes": {
+      "declining-profits": {
+        "id": "declining-profits",
+        "label": "Declining Profits",
+        "tone": "root",
+        "children": ["revenue", "costs"]
+      },
+      "revenue": {
+        "id": "revenue",
+        "label": "Revenue",
+        "tone": "branch",
+        "children": ["nail-polish", "perfumes", "skin-care", "hair-care"]
+      },
+      "costs": {
+        "id": "costs",
+        "label": "Costs",
+        "tone": "support",
+        "children": []
+      },
+      "nail-polish": {
+        "id": "nail-polish",
+        "label": "Nail Polish",
+        "tone": "support",
+        "children": []
+      },
+      "perfumes": {
+        "id": "perfumes",
+        "label": "Perfumes",
+        "tone": "branch",
+        "children": ["mass-segment", "premium-segment"]
+      },
+      "skin-care": {
+        "id": "skin-care",
+        "label": "Skin Care",
+        "tone": "support",
+        "children": []
+      },
+      "hair-care": {
+        "id": "hair-care",
+        "label": "Hair Care",
+        "tone": "support",
+        "children": []
+      },
+      "mass-segment": {
+        "id": "mass-segment",
+        "label": "Mass Segment",
+        "tone": "support",
+        "children": []
+      },
+      "premium-segment": {
+        "id": "premium-segment",
+        "label": "Premium Segment",
+        "tone": "branch",
+        "children": ["price-per-bottle", "bottles-sold"]
+      },
+      "price-per-bottle": {
+        "id": "price-per-bottle",
+        "label": "Price / Bottle",
+        "tone": "support",
+        "children": []
+      },
+      "bottles-sold": {
+        "id": "bottles-sold",
+        "label": "Bottles Sold",
+        "tone": "branch",
+        "children": ["production", "distribution", "demand"]
+      },
+      "production": {
+        "id": "production",
+        "label": "Production",
+        "tone": "support",
+        "children": []
+      },
+      "distribution": {
+        "id": "distribution",
+        "label": "Distribution",
+        "tone": "support",
+        "children": []
+      },
+      "demand": {
+        "id": "demand",
+        "label": "Demand",
+        "tone": "branch",
+        "children": ["need", "awareness", "accessibility", "affordability", "experience"]
+      },
+      "need": {
+        "id": "need",
+        "label": "Need",
+        "tone": "support",
+        "children": []
+      },
+      "awareness": {
+        "id": "awareness",
+        "label": "Awareness",
+        "tone": "support",
+        "children": []
+      },
+      "accessibility": {
+        "id": "accessibility",
+        "label": "Accessibility",
+        "tone": "support",
+        "children": []
+      },
+      "affordability": {
+        "id": "affordability",
+        "label": "Affordability",
+        "tone": "support",
+        "children": []
+      },
+      "experience": {
+        "id": "experience",
+        "label": "Experience",
+        "tone": "branch",
+        "children": ["pre-purchase", "during-purchase", "post-purchase"]
+      },
+      "pre-purchase": {
+        "id": "pre-purchase",
+        "label": "Pre-Purchase",
+        "tone": "support",
+        "children": []
+      },
+      "during-purchase": {
+        "id": "during-purchase",
+        "label": "During Purchase",
+        "tone": "support",
+        "children": []
+      },
+      "post-purchase": {
+        "id": "post-purchase",
+        "label": "Post-Purchase",
+        "tone": "branch",
+        "children": ["usage", "customer-service-and-feedback"]
+      },
+      "usage": {
+        "id": "usage",
+        "label": "Usage",
+        "tone": "branch",
+        "children": ["quantity", "quality"]
+      },
+      "customer-service-and-feedback": {
+        "id": "customer-service-and-feedback",
+        "label": "Customer Service & Feedback",
+        "tone": "support",
+        "children": []
+      },
+      "quantity": {
+        "id": "quantity",
+        "label": "Quantity",
+        "tone": "support",
+        "children": []
+      },
+      "quality": {
+        "id": "quality",
+        "label": "Quality",
+        "tone": "branch",
+        "children": ["fragrance", "packaging", "life-of-product", "defect-rate"]
+      },
+      "fragrance": {
+        "id": "fragrance",
+        "label": "Fragrance",
+        "tone": "support",
+        "children": []
+      },
+      "packaging": {
+        "id": "packaging",
+        "label": "Packaging",
+        "tone": "leaf",
+        "children": []
+      },
+      "life-of-product": {
+        "id": "life-of-product",
+        "label": "Life Of Product",
+        "tone": "support",
+        "children": []
+      },
+      "defect-rate": {
+        "id": "defect-rate",
+        "label": "Defect Rate",
+        "tone": "support",
+        "children": []
+      }
+    },
+    "defaultExpanded": [
+      "declining-profits",
+      "revenue",
+      "perfumes",
+      "premium-segment",
+      "bottles-sold",
+      "demand",
+      "experience",
+      "post-purchase",
+      "usage",
+      "quality"
+    ],
+    "defaultFocusedId": "packaging",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "What are the product lines?",
+          "What locations does Zendaya sell in?",
+          "Is the decline specific to certain product lines, geographies etc.?"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "Rule out production and distribution early given the 2-year timeframe",
+          "Clarify if packaging is in-house or procured"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Exploring metallic bottles as an alternative"
+        ]
+      }
+    ]
+  },
+  "visualisations": [
+    {
+      "type": "table",
+      "title": "Structured Recommendations",
+      "columns": ["Option", "Description", "Benefit", "Risk / Trade-off"],
+      "rows": [
+        [
+          "Return to Glass Bottles",
+          "Revert to glass packaging by renegotiating with glass suppliers to reduce input costs, or procuring finished glass bottles externally.",
+          "Fully restores premium perception; directly addresses root cause.",
+          "Higher cost; if passed on via price increase, may affect market share."
+        ],
+        [
+          "Refine Plastic Bottles",
+          "Redesign in-house plastic bottles to better mimic the weight, finish, and feel of glass, giving a premium aesthetic without switching materials.",
+          "Lower cost; leverages existing in-house manufacturing capability.",
+          "May not fully restore premium perception; customers may still perceive it as inferior."
+        ],
+        [
+          "Explore Metallic Bottles",
+          "Transition to metallic packaging as an alternative premium material; differentiates from both glass and plastic.",
+          "Unique positioning; durable and premium feel; potential brand refresh opportunity.",
+          "Higher R&D and retooling costs; requires consumer research to validate acceptance."
+        ]
+      ]
+    },
+    {
+      "type": "quadrant",
+      "title": "Feasibility vs. Brand Impact",
+      "xAxis": "Low Feasibility to High Feasibility",
+      "yAxis": "Low Brand Impact to High Brand Impact",
+      "points": [
+        { "label": "Return to Glass", "x": 0.45, "y": 0.92 },
+        { "label": "Refine Plastic Bottles", "x": 0.85, "y": 0.52 },
+        { "label": "Metallic Bottles", "x": 0.3, "y": 0.75 }
+      ],
+      "priorityOrder": [
+        "Return to Glass",
+        "Metallic Bottles",
+        "Refine Plastic Bottles"
+      ]
+    }
+  ],
+  "framework": "Candidate: Sounds like an interesting case. I would first like to understand the company better and then move on to the problem at hand. What are the product lines Zendaya is involved in? Does the company sell its products pan-India? Also, what are the distribution channels we use?\nInterviewer: The company has four product lines: Nail Polish, Perfumes, Skin Care and Hair Care. They sell their products pan-India and use their own as well as third-party distributors.\nCandidate: Interesting. It is possible that the decline in profits is specific to certain product lines, geographies or distribution channels. Do we have data on the same?\nInterviewer: Yes. In fact, there has been a decline in revenues only in our 'Perfumes' segment. However, the decline has been uniform across geographies and distribution channels.\nCandidate: Okay, that's helpful. Do we know the magnitude of decline? I would also like to know since when Zendaya has been facing the problem. This will help us understand the nature of decline better.\nInterviewer: Perfume sales have seen a decline of about 10% over the last 2 years. Is there anything else you would like to know?\nCandidate: Yes. Before I proceed with my analysis, I would like to know if other perfume companies have seen a similar decline as well. Also, do we have any segmentation in the perfumes we sell?\nInterviewer: Other perfume companies seem to be doing fine. We sell perfumes under 2 segments: 1) Mass segment: These perfumes are priced below Rs. 200 and constitute 20% of perfume sales. 2) Premium segment: These perfumes are priced more than Rs. 200 and constitute the remaining 80% of perfume sales. The decline is limited to our premium segment.\nCandidate: Understood. Revenues are a function of:\nRevenues = Number of Bottles Sold * Price/Bottle\nCandidate: Has Zendaya changed the price of its premium perfume in the last 2 years? If not, it means the number of bottles sold has seen a decline.\nInterviewer: Prices have not changed. Why don't you analyse the decline in the number of bottles sold?\nCandidate: Sure. I would like to analyse three aspects here: Production, Distribution and Demand. It is possible that we have been facing issues in production due to labour strikes, factory closure, etc. However, this is unlikely as the decline has been taking place for two years now.\nCandidate: Under distribution, it would be interesting to know if our distributors are pushing our competitors' perfumes over ours. This too is unlikely as all our distribution channels seem to be facing the decline. Lastly, I would like to see if demand for our perfumes has seen a decline. This may be due to reasons like unpopular fragrances, negative publicity, etc.\nInterviewer: You are right. We have reason to believe our competitors' perfumes are being preferred by customers. Why do you think this is happening?\nCandidate: There are several reasons why this may be happening. In order to further isolate the problem, I would like to look at 5 major drivers of demand: Need, Awareness, Accessibility, Affordability and Experience. Under need, I'm concerned with any change in customer preferences or requirements in the last couple of years. Under awareness, it is important to look at our promotional efforts and see how they compare to our competitors' in case we believe our target population is not aware of our perfumes. Under Accessibility, it is important that our perfumes are easily accessible to the end customers. Since we have multiple distribution channels, this should not be an issue. Affordability may not be very relevant in premium perfumes. However, I would still like to benchmark our prices with our competitors' prices and see if it is a concern. Finally, it is also important to analyse customer satisfaction and Experience. Do we know where we are facing an issue?\nInterviewer: Yes. Customers are not very satisfied with Zendaya's premium perfume. Why don't you analyse customer experience?\nCandidate: Sure. At this point, it makes sense to draw a customer journey and find out at what stage we're losing them. The first step undertaken by the customer is to make a decision to purchase our perfume. He/she then visits a shop or website where the perfume is available. Subsequently, the customer navigates the shop or website and locates the perfume. He/she then completes the purchase by going through the billing process. Now, we come to the usage stage and see how satisfied they are with the product itself. Finally, we must also look at the quality of our customer service and feedback mechanism. Do we know at what stage customers have been expressing dissatisfaction? If not, we can dive deeper into each stage.\nInterviewer: Excellent. You can limit your analysis to the usage stage.\nCandidate: Perfect. There are 4 things I would like to look at in this stage: Packaging, Fragrance, Life of the product and Defect rate. Under packaging, I would like to know if we or our competitors have made any changes to the type of packaging, size of the bottle/can and durability. Under fragrance, I am mainly concerned with changes made to the scents as well as ingredients used in the perfumes. For instance, it is possible that some ingredients may be inducing allergic reactions.\nCandidate: Life of the product includes both shelf life as well as number of uses of our perfume and if there has been any change observed. Lastly, it is possible that there is higher defect rate due to poor quality control.\nInterviewer: Great. You have identified the problem correctly. In order to cut costs, Zendaya decided to replace their glass bottles with plastic bottles. Customers no longer feel that they are using a 'premium' product. What would you recommend?\nCandidate: Before that, I would like to know if the bottles are procured or manufactured in-house.\nInterviewer: Raw materials are sourced from outside. However, manufacturing is done in-house.\nCandidate: Given that Zendaya has branded these perfumes as 'premium', the packaging will have to reflect the same.\nInterviewer: Good. We will pass on your suggestions to the company.\n\nMake-Up for Lost Profits Framework & Recommendations\nDECLINING PROFITS OF ZENDAYA\nClarifying Questions: What are the product lines? What locations does Zendaya sell in?\nBrownie Points: Exploring metallic bottles as an alternative\nKeep In Mind: Segment the problem wherever possible to arrive at the solution quicker\nRECOMMENDATIONS:\n Returning to the use of glass bottles either by negotiating with suppliers to bring down glass prices or procuring finished bottles; we can also consider recovering the added cost through our customers, though this will involve a price increase which may adversely affect our market share.\n Refine plastic bottles to mimic glass finish and give a 'premium' feel.\n Explore metallic bottles for premium differentiation."
+},
+{
+    "id": 10,
+    "docId": "case-10",
+    "title": "Habibi, Come to Dubai",
+    "industry": "BFSI",
+    "difficulty": "Hard",
+    "case_type": "Profitability",
+    "company": "BCG",
+    "round": "Principal",
+    "prompt": "Hey! Your client is a bank in the Middle East that has been facing a decline in its market share. You have been hired to consult them on this problem.",
+    "frameworkTree": {
+      "nodes": {
+        "market-share": {
+          "id": "market-share",
+          "label": "Market Share",
+          "tone": "root",
+          "children": ["customer-base"]
+        },
+        "customer-base": {
+          "id": "customer-base",
+          "label": "Customer Base",
+          "tone": "branch",
+          "children": ["domestic-customers", "ex-pat-customers"]
+        },
+        "domestic-customers": {
+          "id": "domestic-customers",
+          "label": "Domestic Customers",
+          "tone": "support",
+          "children": []
+        },
+        "ex-pat-customers": {
+          "id": "ex-pat-customers",
+          "label": "Ex-pat Customers",
+          "tone": "branch",
+          "children": ["need", "awareness", "affordability", "accessibility", "experience"]
+        },
+        "need": {
+          "id": "need",
+          "label": "Need",
+          "tone": "branch",
+          "children": []
+        },
+        "awareness": {
+          "id": "awareness",
+          "label": "Awareness",
+          "tone": "branch",
+          "children": []
+        },
+        "affordability": {
+          "id": "affordability",
+          "label": "Affordability",
+          "tone": "branch",
+          "children": []
+        },
+        "accessibility": {
+          "id": "accessibility",
+          "label": "Accessibility",
+          "tone": "branch",
+          "children": []
+        },
+        "experience": {
+          "id": "experience",
+          "label": "Experience",
+          "tone": "branch",
+          "children": ["onboarding", "transacting", "after-care"]
+        },
+        "onboarding": {
+          "id": "onboarding",
+          "label": "Onboarding",
+          "tone": "support",
+          "children": []
+        },
+        "transacting": {
+          "id": "transacting",
+          "label": "Transacting",
+          "tone": "branch",
+          "children": ["deposits", "transfers", "credit-loan-facility", "add-on-services"]
+        },
+        "after-care": {
+          "id": "after-care",
+          "label": "After-Care",
+          "tone": "support",
+          "children": []
+        },
+        "deposits": {
+          "id": "deposits",
+          "label": "Deposits",
+          "tone": "support",
+          "children": []
+        },
+        "transfers": {
+          "id": "transfers",
+          "label": "Transfers",
+          "tone": "branch",
+          "children": ["domestic-transfers", "foreign-remittances"]
+        },
+        "credit-loan-facility": {
+          "id": "credit-loan-facility",
+          "label": "Credit Facility",
+          "tone": "support",
+          "children": []
+        },
+        "add-on-services": {
+          "id": "add-on-services",
+          "label": "Add-on Services",
+          "tone": "support",
+          "children": []
+        },
+        "domestic-transfers": {
+          "id": "domestic-transfers",
+          "label": "Domestic Transfers",
+          "tone": "support",
+          "children": []
+        },
+        "foreign-remittances": {
+          "id": "foreign-remittances",
+          "label": "Foreign Remittances",
+          "tone": "branch",
+          "children": ["not-offered", "offered-inferior-quality"]
+        },
+        "not-offered": {
+          "id": "not-offered",
+          "label": "Not Offered",
+          "tone": "support",
+          "children": []
+        },
+        "offered-inferior-quality": {
+          "id": "offered-inferior-quality",
+          "label": "Offered but of Inferior Quality",
+          "tone": "branch",
+          "children": ["processing-time", "charges", "grievance-redressal"]
+        },
+        "processing-time": {
+          "id": "processing-time",
+          "label": "Processing Time",
+          "tone": "branch",
+          "children": []
+        },
+        "charges": {
+          "id": "charges",
+          "label": "Charges",
+          "tone": "support",
+          "children": []
+        },
+        "grievance-redressal": {
+          "id": "grievance-redressal",
+          "label": "Grievance Redressal",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "market-share",
+        "customer-base",
+        "ex-pat-customers",
+        "experience",
+        "transacting",
+        "transfers",
+        "foreign-remittances",
+        "offered-inferior-quality",
+        "processing-time"
+      ],
+      "defaultFocusedId": "processing-time",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "How is market share defined?",
+            "Different services that the bank provides?",
+            "Are our customers B2B, B2C, or both?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Bring Middle East context unprompted",
+            "Know SWIFT's role in cross-border transfers"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Making a mention of Islamic Banking in the context of the Middle East"
+          ]
+        }
+      ]
+  
+    },
+    "framework": "Candidate: What are the different services that the bank provides? Who are our customers? Is it B2B, B2C or both?\nInterviewer: We are a Retail Bank headquartered in Qatar and operational throughout the Middle East for more than 100 years, providing all banking services like loans, deposits, transfers and locker facilities (comparable to HDFC Bank and the likes in India). We only do consumer banking.\nCandidate: Okay. Do we have any information on the number of competitors? How is the industry structured?\nInterviewer: As a matter of fact, we do. There are five other main banks in the Middle East; all the banks have tapped into the growth in this sector and gained their market share at our expense.\nCandidate: How do we define market share? Since when has it been declining and by how much?\nInterviewer: Market share is defined in terms of the number of customers. We have seen a decline from 15% to 10% in the past 1 year.\nCandidate: Alright. Given that our market share has declined, I would like to further segment the customers in order to better understand why this is happening. Have we seen a decline in the bank's market share across any specific revenue stream: could be lending, deposits, brokerage or any other area?\nInterviewer: No. The decline across revenue streams has been uniform. Can you think of more ways to segment these customers?\nCandidate: Is there any pattern to the losing customers by means of their gender, profession, income category, age or location of residence?\nInterviewer: Not really. Can you think of this specifically in the context of the Middle East?\nCandidate: The Middle East predominantly has a Muslim population so it could have something to do with Islamic Banking where the banks do not charge or pay any interest.\nAlternatively, a huge chunk of this population has immigrated from other countries and that could also be a specific category of customers.\nInterviewer: You are right. We have specifically seen a decline in customers who are ex-pats even when the customers who are UAE nationals have grown! They comprise a sizeable portion of the overall population.\nCandidate: Interesting. In order to understand where exactly we are losing customers, I would like to trace the customer journey. I would like to look at need, awareness, affordability, accessibility and experience.\nUnder need, I would like to see if there is any fundamental change in customers' preferences and if we are not able to cater to that. Under awareness, I would like to deal with public perception and our client's outreach capabilities. Under affordability, I would like to analyse if there are cheaper alternatives or lesser prices offered by our competitors. Under accessibility, I would like to see if our service offerings are readily available across the globe for ex-pats. Under experience, I would like to analyse efficiencies that we are able to create for the customer across their life cycle: Onboarding - Transacting - After Care.\nInterviewer: That looks very comprehensive. Why don't we focus on the customer experience and deep dive into transacting? Like I said before, think of this in the context of the Middle East.\nCandidate: Oh! Given that we have specifically seen a decline among ex-pats, it could be something related to foreign exchange transactions of foreign remittances as they have to frequently transfer money to families abroad.\nInterviewer: That is correct!\nCandidate: I think there are two possibilities: either we do not offer these services or we don't offer them better than our competitors. I personally feel that the latter is more likely because we do have a lot of ex-pat clients who avail of these services. Which one is it?\nInterviewer: The latter. Can you think of some reasons why?\nCandidate: Sure. Some of the reasons could include a longer processing time, higher charges, hidden charges and a lack of efficient grievance redressal mechanism.\nInterviewer: You've figured it out. While we do all kinds of remittances, foreign remittances take a lot more time to process if routed through our bank. This is because we are cut off from the SWIFT network used for international transactions and employ an alternative mechanism. How should we deal with this?\nCandidate: We should first try and understand why we are cut off from the SWIFT system and if it is possible for us to adopt it. If not, we can either improve the alternative mechanism that we currently employ or choose to identify a new method.\nInterviewer: Thank you. That will be all.\n\nHabibi, Come to Dubai Framework & Recommendations\nDECLINING MARKET SHARE OF A BANK IN THE MIDDLE-EAST\nClarifying Questions: How is market share defined?\nBrownie Points: Making a mention of Islamic Banking in the context of the Middle East\nKeep In Mind: It is very important to segment at all steps exhaustively to determine the source of the problem\nRECOMMENDATIONS:\nExplore reasons for being cut off from the SWIFT system and if the bank can integrate with the same\nExplore ways of improving the current mechanism that the bank employs or identifying a new method"
+  },
 {
   "id": 23,
   "docId": "case-23",

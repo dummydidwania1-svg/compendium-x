@@ -70,11 +70,12 @@ service cloud.firestore {
           && request.resource.data.body.size() > 0
           && request.resource.data.body.size() <= 3000;
 
-        // Author can edit/delete own comment.
-        // Any signed-in user can only bump updatedAt (used when posting reply).
+        // Author can edit/delete own thread.
+        // Any signed-in user can update voteScore, lastReplyAt, or editedAt (side-effects of replies/votes/edits).
         allow update: if signedIn() && (
           resource.data.authorId == request.auth.uid ||
-          request.resource.data.diff(resource.data).changedKeys().hasOnly(['updatedAt'])
+          request.resource.data.diff(resource.data).changedKeys()
+            .hasOnly(['voteScore', 'lastReplyAt', 'updatedAt', 'editedAt'])
         );
 
         allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
@@ -88,7 +89,19 @@ service cloud.firestore {
             && request.resource.data.body.size() > 0
             && request.resource.data.body.size() <= 3000;
 
-          allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
+          allow update: if signedIn() && (
+            resource.data.authorId == request.auth.uid ||
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['voteScore'])
+          );
+          allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+
+          match /votes/{uid} {
+            allow read: if true;
+            allow create, update: if signedIn()
+              && request.auth.uid == uid
+              && request.resource.data.value in [-1, 1];
+            allow delete: if signedIn() && request.auth.uid == uid;
+          }
         }
 
         match /votes/{uid} {

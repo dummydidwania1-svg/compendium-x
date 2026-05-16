@@ -968,7 +968,7 @@ function DesktopChart({
   useEffect(() => {
     const el = outerRef.current; if (!el) return
     let fid = 0
-    const m = () => { if (fid) return; fid = requestAnimationFrame(() => { fid = 0; if (outerRef.current) setCW(Math.max(outerRef.current.clientWidth - 6, 900)) }) }
+    const m = () => { if (fid) return; fid = requestAnimationFrame(() => { fid = 0; if (outerRef.current) setCW(Math.max(outerRef.current.clientWidth - 6, 400)) }) }
     m()
     const ro = new ResizeObserver(m); ro.observe(el)
     return () => { if (fid) cancelAnimationFrame(fid); ro.disconnect() }
@@ -976,6 +976,22 @@ function DesktopChart({
 
   const layout = useMemo(() => layoutDesktop(visibleIds, cW, metrics.h, metrics.tp, metrics.bp), [visibleIds, cW, metrics])
   const { positions, nodeWidths } = layout
+
+  // Detect if any node overflows the right edge and compute a corrective scale
+  const chartScale = useMemo(() => {
+    let maxRight = 0
+    visibleIds.forEach(id => {
+      const p = positions.get(id)
+      const nw = nodeWidths.get(id) ?? estNodeW(id)
+      const hasCh = NODES[id]?.children.length > 0
+      // Right edge = centre x + half node width + chevron if has children
+      const rightEdge = (p?.x ?? 0) + nw / 2 + (hasCh ? 20 : 0)
+      maxRight = Math.max(maxRight, rightEdge)
+    })
+    const margin = 24 // extra breathing room from container edge
+    if (maxRight + margin <= cW) return 1
+    return Math.max(0.7, (cW - margin) / maxRight)
+  }, [positions, nodeWidths, visibleIds, cW])
 
   const labelFs = 12.25
   const labelMinH = 54
@@ -1002,7 +1018,7 @@ function DesktopChart({
   return (
     <div ref={outerRef} className="relative w-full transition-all duration-700"
       style={{ opacity: started ? 1 : 0, transform: started ? 'translateY(0)' : 'translateY(24px)', filter: started ? 'blur(0)' : 'blur(8px)' }}>
-      <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${metrics.h}px` }}>
+      <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${metrics.h}px`, transform: chartScale < 1 ? `scale(${chartScale})` : undefined, transformOrigin: 'top center' }}>
 
         <svg className="absolute inset-0 h-full w-full overflow-visible z-10" viewBox={`0 0 ${cW} ${metrics.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           {edges.map(({ pid, cid }) => {
@@ -1714,35 +1730,34 @@ export default function CasePreviewMaster({
     return () => obs.disconnect()
   }, [])
 
-  // ─── Chart reveal (depth-by-depth tree animation) ─
-  const [revealDepth, setRevealDepth] = useState(-1)
-  const treeFullyRevealed = revealDepth >= maxTreeDepth
+  const revealDepth = maxTreeDepth
+  const treeFullyRevealed = true
+  const [chartVisible, setChartVisible] = useState(false)
+  const chartVisibleRef = useRef(false)
+  const visitedForumRef = useRef(false)
   const [activeStep, setActiveStep] = useState(0)
   const inForum = activeStep === 2
   useEffect(() => { activeStepRef.current = activeStep }, [activeStep])
 
+  useEffect(() => {
+    const el = chartRef.current; if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { chartVisibleRef.current = true; setChartVisible(true); obs.disconnect() } },
+      { rootMargin: '0px 0px -60px 0px', threshold: 0.1 }
+    )
+    obs.observe(el); return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (activeStep === 2) { visitedForumRef.current = true; return }
+    if (visitedForumRef.current && !chartVisibleRef.current) { chartVisibleRef.current = true; setChartVisible(true) }
+  }, [activeStep])
 
   const STEPS = [
     { label: 'Walkthrough', number: 1 },
     { label: 'Drill Down', number: 2 },
     ...(ForumSection ? [{ label: 'Forum', number: 3 }] : []),
   ]
-
-  // ─── Chart reveal — fires once when chart scrolls into view ─
-  useEffect(() => {
-    const el = chartRef.current; if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setRevealDepth(0); obs.disconnect() } },
-      { rootMargin: '0px 0px -60px 0px', threshold: 0.05 }
-    )
-    obs.observe(el); return () => obs.disconnect()
-  }, [])
-
-useEffect(() => {
-  if (revealDepth < 0 || revealDepth >= maxTreeDepth) return
-  const timer = setTimeout(() => setRevealDepth(d => d + 1), 420)
-  return () => clearTimeout(timer)
-}, [revealDepth])
 
   // ─── Chart state ─────────────────────────────
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
@@ -2279,7 +2294,13 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       <div
                         ref={chartRef}
                         className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')}
-                        style={shouldUseVerticalLayout('preview') ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }}
+                        style={{
+                          ...(shouldUseVerticalLayout('preview') ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
+                          opacity: chartVisible ? 1 : 0,
+                          transform: `${shouldUseVerticalLayout('preview') ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
+                          filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
+                          transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
+                        }}
                       >
                         {shouldUseVerticalLayout('preview') ? (
                           <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds}
@@ -2425,10 +2446,27 @@ export function CaseInterviewerMaster({
     return () => mq.removeEventListener('change', sync)
   }, [])
 
-  const [revealDepth, setRevealDepth] = useState(-1)
-  const treeFullyRevealed = revealDepth >= maxTreeDepth
+  const revealDepth = maxTreeDepth
+  const treeFullyRevealed = true
+  const [chartVisible, setChartVisible] = useState(false)
+  const chartVisibleRef = useRef(false)
+  const visitedForumRef = useRef(false)
   const [activeStep, setActiveStep] = useState(0)
   useEffect(() => { activeStepRef.current = activeStep }, [activeStep])
+
+  useEffect(() => {
+    const el = chartRef.current; if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { chartVisibleRef.current = true; setChartVisible(true); obs.disconnect() } },
+      { rootMargin: '0px 0px -60px 0px', threshold: 0.1 }
+    )
+    obs.observe(el); return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (activeStep === 2) { visitedForumRef.current = true; return }
+    if (visitedForumRef.current && !chartVisibleRef.current) { chartVisibleRef.current = true; setChartVisible(true) }
+  }, [activeStep])
 
   const STEPS = [
     { label: 'Walkthrough', number: 1 },
@@ -2440,21 +2478,6 @@ export function CaseInterviewerMaster({
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
   const [mobileFocId, setMobileFocId]   = useState(() => tree.defaultFocusedId || '')
-
-  useEffect(() => {
-    const el = chartRef.current; if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setRevealDepth(0); obs.disconnect() } },
-      { rootMargin: '0px 0px -60px 0px', threshold: 0.05 }
-    )
-    obs.observe(el); return () => obs.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (revealDepth < 0 || revealDepth >= maxTreeDepth) return
-    const timer = setTimeout(() => setRevealDepth(d => d + 1), 420)
-    return () => clearTimeout(timer)
-  }, [revealDepth, maxTreeDepth])
 
   const HEADER_OFFSET = 144
   const visibleIds = useMemo(() => { const s = new Set<string>(); if (ROOT_ID) collectVisible(ROOT_ID, expandedIds, s); return [...s] }, [expandedIds])
@@ -2691,7 +2714,13 @@ export function CaseInterviewerMaster({
                         {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.88) 40%, rgba(255,248,240,0) 100%)', backdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`, WebkitBackdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`, WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
-                        <div ref={chartRef} className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')} style={shouldUseVerticalLayout('interviewer') ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }}>
+                        <div ref={chartRef} className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')} style={{
+                          ...(shouldUseVerticalLayout('interviewer') ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
+                          opacity: chartVisible ? 1 : 0,
+                          transform: `${shouldUseVerticalLayout('interviewer') ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
+                          filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
+                          transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
+                        }}>
                           {shouldUseVerticalLayout('interviewer') ? (
                             <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                           ) : (
