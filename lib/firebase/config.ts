@@ -7,6 +7,7 @@ import {
   indexedDBLocalPersistence,
   initializeAuth,
   onAuthStateChanged,
+  signInAnonymously,
   type User,
 } from 'firebase/auth'
 import {
@@ -83,4 +84,24 @@ export function waitForAuthUser(): Promise<User | null> {
       resolve(user)
     })
   })
+}
+
+/**
+ * Ensure there is *some* Firebase user available — used by interviewer-entry
+ * pages so guests can act without going through signup.
+ *
+ * Order:
+ *   1. Wait for IndexedDB auth rehydration (avoids race on first paint).
+ *   2. If a user already exists (real or anonymous), return it.
+ *   3. Otherwise sign in anonymously. Anonymous users still receive a real
+ *      Firebase UID and ID token, so every authenticated /api route and
+ *      Firestore rule keeps working without changes.
+ *
+ * Interviewer pages should `await` this once before touching the API.
+ */
+export async function signInAnonymouslyIfNeeded(): Promise<User> {
+  const existing = await waitForAuthUser()
+  if (existing) return existing
+  const credential = await signInAnonymously(auth)
+  return credential.user
 }

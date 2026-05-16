@@ -8,7 +8,7 @@ import { collection, getDocs } from 'firebase/firestore'
 import { X } from 'lucide-react'
 import Footer from '@/components/dashboard/Footer'
 import Navbar from '@/components/dashboard/Navbar'
-import { db } from '@/lib/firebase/config'
+import { db, signInAnonymouslyIfNeeded } from '@/lib/firebase/config'
 import { FILTER_TYPES, FILTER_LEVELS } from '@/lib/constants'
 import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown'
 import { apiPost } from '@/lib/api/client'
@@ -49,6 +49,17 @@ function RepositoryContent() {
 
   const hasActiveFilters = typeFilter.length > 0 || levelFilter.length > 0
   const clearAllFilters = () => { setTypeFilter([]); setLevelFilter([]) }
+
+  // Interviewers arriving in select-mode (via shared invite link) may not be
+  // signed in. Silently provision an anonymous Firebase user so the /api
+  // select-case call has a valid bearer token. Real signed-in interviewers
+  // are a no-op (the helper returns the existing user).
+  useEffect(() => {
+    if (!selectionMode || !lobbyId) return
+    void signInAnonymouslyIfNeeded().catch(() => {
+      // Surface error via actionError if it actually blocks a click.
+    })
+  }, [selectionMode, lobbyId])
 
   useEffect(() => {
     const fetchCases = async () => {

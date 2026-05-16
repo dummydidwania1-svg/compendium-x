@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { getDoc, onSnapshot } from 'firebase/firestore'
-import { waitForAuthUser } from '@/lib/firebase/config'
+import { signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
@@ -869,6 +869,19 @@ export default function LobbyPage() {
   const [checkingCandidate, setCheckingCandidate] = useState(!isInterviewer)
   const [sessionIssue, setSessionIssue] = useState('')
   const [candidateActionStatus, setCandidateActionStatus] = useState('')
+
+  // Interviewers arrive via shared invite links. Silently provision an
+  // anonymous Firebase user so they can call /api routes (which all require
+  // a valid bearer token) without ever needing to sign up. Anonymous users
+  // get a real UID — the server-side identity check and rules-scoped reads
+  // both work as if they were a regular signed-in user.
+  useEffect(() => {
+    if (!isInterviewer) return
+    void signInAnonymouslyIfNeeded().catch(() => {
+      // Auth failure here will surface later as an /api 401 — let that path
+      // own the user-facing error rather than blocking the page now.
+    })
+  }, [isInterviewer])
 
   const isLocalSession = requestedSessionMode === 'local'
   const interviewerLink =
