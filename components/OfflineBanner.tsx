@@ -72,8 +72,8 @@ export default function OfflineBanner() {
           >
             No connection right now
           </h2>
-          <p className="mt-1 max-w-[300px] text-[13px] leading-relaxed text-[#5C4033]/55">
-            That&rsquo;s okay — your case library is saved and ready to browse, even without wifi.
+          <p className="mt-1 max-w-[260px] text-[13px] leading-relaxed text-[#5C4033]/55">
+            Your case library is saved. Head there and start browsing.
           </p>
         </div>
 

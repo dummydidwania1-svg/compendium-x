@@ -38,12 +38,9 @@ interface CasesCacheEnvelope {
   data: CaseListItem[]
 }
 
-function readCasesCache(): CaseListItem[] | null {
+function parseCacheEnvelope(raw: string): { data: CaseListItem[]; stale: boolean } | null {
   try {
-    const raw = localStorage.getItem(CASES_CACHE_KEY)
-    if (!raw) return null
     const parsed = JSON.parse(raw) as Partial<CasesCacheEnvelope> | unknown
-    // Reject legacy bare-array caches and version-mismatched envelopes.
     if (
       !parsed ||
       typeof parsed !== 'object' ||
@@ -51,24 +48,39 @@ function readCasesCache(): CaseListItem[] | null {
       (parsed as CasesCacheEnvelope).version !== CASES_CACHE_VERSION ||
       !Array.isArray((parsed as CasesCacheEnvelope).data)
     ) {
-      localStorage.removeItem(CASES_CACHE_KEY)
       return null
     }
     const envelope = parsed as CasesCacheEnvelope
-    const stale = Date.now() - envelope.savedAt > CASES_CACHE_TTL_MS
-    if (stale && navigator.onLine) {
-      // Stale and online: don't flash old data, wait for fresh Firestore fetch.
-      // Keep on disk as offline fallback.
-      return null
-    }
-    // Offline or fresh: always show cached data
-    return envelope.data
+    return { data: envelope.data, stale: Date.now() - envelope.savedAt > CASES_CACHE_TTL_MS }
   } catch {
-    try {
-      localStorage.removeItem(CASES_CACHE_KEY)
-    } catch {
-      // localStorage unavailable; nothing we can do.
-    }
+    return null
+  }
+}
+
+// Returns cached data only if fresh enough to optimistically flash on screen.
+// Always keeps data on disk as an offline fallback — use readCacheForFallback when offline.
+function readCasesCache(): CaseListItem[] | null {
+  try {
+    const raw = localStorage.getItem(CASES_CACHE_KEY)
+    if (!raw) return null
+    const result = parseCacheEnvelope(raw)
+    if (!result) { localStorage.removeItem(CASES_CACHE_KEY); return null }
+    // Stale: don't flash on screen when online, but keep as offline fallback
+    if (result.stale) return null
+    return result.data
+  } catch {
+    return null
+  }
+}
+
+// Always returns cached data regardless of staleness — used when Firestore fails.
+function readCacheForFallback(): CaseListItem[] | null {
+  try {
+    const raw = localStorage.getItem(CASES_CACHE_KEY)
+    if (!raw) return null
+    const result = parseCacheEnvelope(raw)
+    return result ? result.data : null
+  } catch {
     return null
   }
 }
@@ -133,8 +145,7 @@ function RepositoryContent() {
 
   useEffect(() => {
     const fetchCases = async () => {
-      // Optimistic flash from cache if it's fresh enough — readCasesCache()
-      // returns null for missing, malformed, version-bumped, or stale caches.
+      // Optimistic flash from cache if fresh enough
       const cached = readCasesCache()
       if (cached) {
         setCases(cached)
@@ -171,19 +182,21 @@ function RepositoryContent() {
         writeCasesCache(data)
       } catch (error) {
         setFirestoreFailed(true)
-        if (cached) {
-          // We have cached data showing — show a quiet offline banner instead
-          // of a hard error. User can still browse everything they've seen before.
+        // Always try the full cache (including stale) as fallback when Firestore fails —
+        // navigator.onLine is unreliable (true on WiFi with no internet uplink)
+        const fallback = readCacheForFallback()
+        if (fallback) {
+          setCases(fallback)
           setOfflineBanner(true)
-        } else if (!navigator.onLine) {
-          // Offline with no cache — repository shows its own offline empty state
-        } else {
+        } else if (navigator.onLine) {
+          // Online but Firestore genuinely errored (not a connectivity issue)
           setActionError(
             error instanceof Error
               ? `Unable to load case library: ${error.message}`
               : 'Unable to load case library. Check your connection and refresh.',
           )
         }
+        // else: offline + no cache — firestoreFailed=true + cases=[] shows the inline message
       }
 
       setLoading(false)
@@ -509,8 +522,8 @@ function RepositoryContent() {
                     <path d="M32 24 27 32h10l-5-8Z" fill="#3D5A35" />
                   </svg>
                   <p className="text-[13px] font-medium text-[#5c4033]/60">You&rsquo;re offline</p>
-                  <p className="max-w-[280px] text-[12px] leading-relaxed text-[#5c4033]/38">
-                    The case library will appear here once you&rsquo;ve visited this page with a connection at least once.
+                  <p className="max-w-[240px] text-[12px] leading-relaxed text-[#5c4033]/38">
+                    Visit once with a connection and the whole library stays with you.
                   </p>
                 </div>
               ) : filteredCases.length === 0 ? (
