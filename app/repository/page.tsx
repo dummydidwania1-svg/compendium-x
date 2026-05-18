@@ -162,6 +162,18 @@ function RepositoryContent() {
         console.log('[CCX] calling getDocs...')
         const snapshot = await getDocs(collection(db, 'cases'))
         console.log('[CCX] getDocs success, count=', snapshot.docs.length)
+
+        // Firestore returns 0 docs when offline (SDK internal cache miss) instead
+        // of throwing. If we have cached data and got 0 back, trust the cache.
+        if (snapshot.docs.length === 0 && (cached ?? readCacheForFallback())) {
+          console.log('[CCX] 0 docs from Firestore but cache exists — keeping cache, showing banner')
+          const fallback = cached ?? readCacheForFallback()!
+          setCases(fallback)
+          setFirestoreFailed(true)
+          setOfflineBanner(true)
+          return
+        }
+
         const data = snapshot.docs.map((caseDoc) => {
           const value = caseDoc.data()
           return {
