@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import GlobalStyles from '@/components/GlobalStyles'
 import Analytics from '@/components/Analytics';
 import OfflineSetup from '@/components/OfflineSetup'
+import OfflineBanner from '@/components/OfflineBanner'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ export default function RootLayout({
         <Analytics />
         <GlobalStyles />
         <OfflineSetup />
+        <OfflineBanner />
         {children}
       </body>
     </html>

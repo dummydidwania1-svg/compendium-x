@@ -638,16 +638,23 @@ function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 				setResolvedCaseId(caseId)
 				const cacheKey = `compendium-case-${caseId}`
 				const cachedValue = localStorage.getItem(cacheKey)
+				let hasValidCache = false
 				if (cachedValue) {
 					try {
 						const parsed = JSON.parse(cachedValue) as CaseDocument
 						if (parsed && typeof parsed.title === 'string') {
 							setCaseData(parsed)
 							setLoading(false)
+							hasValidCache = true
 						}
 					} catch {
 						localStorage.removeItem(cacheKey)
 					}
+				}
+
+				// Offline with cached data — show case read-only, skip auth + Firestore
+				if (!navigator.onLine && hasValidCache) {
+					return
 				}
 
 				if (!previewMode && !lobbyId) {
@@ -667,6 +674,8 @@ function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 					setCaseData(null)
 				}
 			} catch (error) {
+				// If we already have cached data showing, swallow Firestore errors silently
+				if (caseData) return
 				const message = error instanceof Error ? error.message : 'Unable to load case.'
 				if (message.includes('Missing or insufficient permissions')) {
 					setLoadError('Case access is blocked by Firebase rules for this route.')

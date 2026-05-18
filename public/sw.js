@@ -1,9 +1,9 @@
 // Service worker for Case CompendiumX
 // Caches app shell on install, serves offline for repository + case pages.
 
-const CACHE = 'ccx-shell-v1'
+const CACHE = 'ccx-shell-v2'
 
-// App shell: pages and assets that must work offline
+// App shell: pages that must survive offline
 const SHELL = [
   '/',
   '/repository',
@@ -62,8 +62,8 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Navigation requests (HTML pages) — network-first, fall back to cache,
-  // fall back to offline.html for unknown routes
+  // Navigation requests (HTML pages) — network-first, fall back to cached
+  // shell at '/' so the React app loads and shows the OfflineBanner overlay.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -76,8 +76,10 @@ self.addEventListener('fetch', (event) => {
           return response
         })
         .catch(() =>
+          // Try exact URL cache first, then fall back to '/' (app shell)
+          // so the React app boots and OfflineBanner takes over from there.
           caches.match(request).then(cached =>
-            cached ?? caches.match('/offline.html')
+            cached ?? caches.match('/')
           )
         )
     )

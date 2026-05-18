@@ -173,6 +173,9 @@ function RepositoryContent() {
           // We have cached data showing — show a quiet offline banner instead
           // of a hard error. User can still browse everything they've seen before.
           setOfflineBanner(true)
+        } else if (!navigator.onLine) {
+          // Offline with no cache — nothing to show, OfflineBanner overlay handles UX
+          setOfflineBanner(true)
         } else {
           setActionError(
             error instanceof Error
