@@ -831,15 +831,15 @@ function InterviewerLobby({
               </div>
             </div>
 
-            {/* Horizontal steps */}
+            {/* Horizontal steps — interviewer's role only stops at "Rate and feedback".
+                Steps 4 (AI evaluation) and 5 (Insights delivered) belong to the
+                candidate's post-session flow and aren't visible to the interviewer. */}
             <div className="px-6 py-6">
-              <div className="grid grid-cols-5 gap-5">
+              <div className="grid grid-cols-3 gap-5">
                 {[
                   { num: '01', text: 'Pick a case', active: true },
                   { num: '02', text: 'Run the session' },
                   { num: '03', text: 'Rate and feedback' },
-                  { num: '04', text: 'AI evaluation' },
-                  { num: '05', text: 'Insights delivered' },
                 ].map((step, i) => (
                   <div
                     key={step.num}
