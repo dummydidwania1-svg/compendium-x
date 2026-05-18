@@ -131,12 +131,16 @@ function CandidateLobby({
   interviewerLink,
   sessionIssue,
   candidateActionStatus,
+  waitingNudgeVisible,
+  onCancelSession,
   onPrimaryAction,
 }: {
   requestedSessionMode: 'remote' | 'local'
   interviewerLink: string
   sessionIssue: string
   candidateActionStatus: string
+  waitingNudgeVisible: boolean
+  onCancelSession: () => void
   onPrimaryAction: () => void
 }) {
   const isLocalSession = requestedSessionMode === 'local'
@@ -564,6 +568,26 @@ function CandidateLobby({
                 </div>
               )}
 
+              {waitingNudgeVisible ? (
+                <div className="mt-5 rounded-[22px] border border-[#b48a57]/22 bg-[rgba(255,245,233,0.92)] px-4 py-4 text-left">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-[#5c4033]">
+                    Still waiting
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-[#5c4033]">
+                    {isLocalSession
+                      ? "Your interviewer window hasn't picked a case yet. If it's stuck, you can cancel and start again."
+                      : "Your interviewer hasn't joined yet. Make sure you've shared the invite link — or cancel and come back later."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onCancelSession}
+                    className="mt-3 inline-flex items-center justify-center rounded-full border border-[#5c4033]/25 bg-white/60 px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#5c4033] transition hover:border-[#5c4033]/50 hover:bg-white/90"
+                  >
+                    Cancel session
+                  </button>
+                </div>
+              ) : null}
+
               {sessionIssue ? (
                 <div className="mt-5 rounded-[22px] border border-[#b48a57]/18 bg-[rgba(255,245,233,0.85)] px-4 py-4 text-left">
                   <p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
@@ -869,6 +893,12 @@ export default function LobbyPage() {
   const [checkingCandidate, setCheckingCandidate] = useState(!isInterviewer)
   const [sessionIssue, setSessionIssue] = useState('')
   const [candidateActionStatus, setCandidateActionStatus] = useState('')
+  // After ~5 min in 'waiting' status (interviewer hasn't joined yet) we show
+  // a nudge with a "Cancel" button so the candidate isn't stuck staring at
+  // the same screen forever. We don't auto-redirect — the interviewer could
+  // still be on their way and a surprise redirect would be worse than a stale
+  // tab.
+  const [waitingNudgeVisible, setWaitingNudgeVisible] = useState(false)
 
   // Interviewers arrive via shared invite links. Silently provision an
   // anonymous Firebase user so they can call /api routes (which all require
@@ -933,11 +963,26 @@ export default function LobbyPage() {
 
     let unsubscribeSession = () => {}
     let pollTimer: ReturnType<typeof setInterval> | null = null
+    let waitingNudgeTimer: ReturnType<typeof setTimeout> | null = null
+    const WAITING_NUDGE_DELAY_MS = 5 * 60 * 1000
     const sessionRef = sessionDoc(lobbyId)
     const clearPoll = () => {
       if (!pollTimer) return
       clearInterval(pollTimer)
       pollTimer = null
+    }
+    const armWaitingNudge = () => {
+      if (waitingNudgeTimer) return
+      waitingNudgeTimer = setTimeout(() => {
+        setWaitingNudgeVisible(true)
+      }, WAITING_NUDGE_DELAY_MS)
+    }
+    const disarmWaitingNudge = () => {
+      if (waitingNudgeTimer) {
+        clearTimeout(waitingNudgeTimer)
+        waitingNudgeTimer = null
+      }
+      setWaitingNudgeVisible(false)
     }
 
     const workspaceRoute = (caseId: string, mode?: SessionState['sessionMode']) => {
@@ -948,11 +993,17 @@ export default function LobbyPage() {
     const routeFromSessionData = (data: SessionState | null) => {
       if (!data) return
       if (data.status === 'in_progress' && data.caseId) {
+        disarmWaitingNudge()
         router.replace(workspaceRoute(data.caseId, data.sessionMode))
         return
       }
       if (data.status === 'completed') {
+        disarmWaitingNudge()
         router.replace('/dashboard')
+        return
+      }
+      if (data.status === 'waiting') {
+        armWaitingNudge()
       }
     }
 
@@ -1075,6 +1126,10 @@ export default function LobbyPage() {
     return () => {
       unsubscribeSession()
       clearPoll()
+      if (waitingNudgeTimer) {
+        clearTimeout(waitingNudgeTimer)
+        waitingNudgeTimer = null
+      }
       window.removeEventListener('storage', handleStorageEvent)
     }
   }, [isInterviewer, lobbyId, requestedSessionMode, router])
@@ -1117,6 +1172,8 @@ export default function LobbyPage() {
       interviewerLink={interviewerLink}
       sessionIssue={sessionIssue}
       candidateActionStatus={candidateActionStatus}
+      waitingNudgeVisible={waitingNudgeVisible}
+      onCancelSession={() => router.push('/practice')}
       onPrimaryAction={() => {
         void handleCandidatePrimaryAction()
       }}
