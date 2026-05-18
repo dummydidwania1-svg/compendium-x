@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import GlobalStyles from '@/components/GlobalStyles'
-import Analytics from '@/components/Analytics';   // ← add at the top with other imports
+import Analytics from '@/components/Analytics';
+import OfflineSetup from '@/components/OfflineSetup'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -41,8 +42,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Analytics /> 
+        <Analytics />
         <GlobalStyles />
+        <OfflineSetup />
         {children}
       </body>
     </html>

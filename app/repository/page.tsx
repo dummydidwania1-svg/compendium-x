@@ -55,12 +55,13 @@ function readCasesCache(): CaseListItem[] | null {
       return null
     }
     const envelope = parsed as CasesCacheEnvelope
-    if (Date.now() - envelope.savedAt > CASES_CACHE_TTL_MS) {
-      // Don't delete — keep on disk in case Firestore fetch fails and we
-      // need any cache as a last-resort fallback — but don't show it as
-      // optimistic UI either; the user should see a loading state.
+    const stale = Date.now() - envelope.savedAt > CASES_CACHE_TTL_MS
+    if (stale && navigator.onLine) {
+      // Stale and online: don't flash old data, wait for fresh Firestore fetch.
+      // Keep on disk as offline fallback.
       return null
     }
+    // Offline or fresh: always show cached data
     return envelope.data
   } catch {
     try {
@@ -101,6 +102,7 @@ function RepositoryContent() {
   const [typeFilter, setTypeFilter] = useState<string[]>([])
   const [levelFilter, setLevelFilter] = useState<string[]>([])
   const [actionError, setActionError] = useState('')
+  const [offlineBanner, setOfflineBanner] = useState(false)
   // ID of the case the user just clicked, while the API call + navigation
   // resolve. The row dims and the button switches to a spinner-like label
   // so the click doesn't feel like it was dropped. Cleared on error so the
@@ -167,11 +169,11 @@ function RepositoryContent() {
         setCases(data)
         writeCasesCache(data)
       } catch (error) {
-        // Fetch failed. If we already painted from cache, keep showing it
-        // (better than a blank screen). If we had nothing to paint, surface
-        // a load error so the user knows the library is unavailable rather
-        // than empty.
-        if (!cached) {
+        if (cached) {
+          // We have cached data showing — show a quiet offline banner instead
+          // of a hard error. User can still browse everything they've seen before.
+          setOfflineBanner(true)
+        } else {
           setActionError(
             error instanceof Error
               ? `Unable to load case library: ${error.message}`
@@ -421,6 +423,13 @@ function RepositoryContent() {
                 : 'Browse available cases, search and filter by type or level, and preview before practicing.'}
             </p>
           </div>
+
+          {offlineBanner && (
+            <div className="mb-5 flex items-center gap-3 rounded-xl border border-[#3D5A35]/12 bg-[rgba(255,248,240,0.9)] px-5 py-3 text-[12px] text-[#5C4033]/60">
+              <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-[#3D5A35]/40" />
+              Showing cached library. Connect to refresh.
+            </div>
+          )}
 
           {actionError ? (
             <div className="mb-5 rounded-xl border border-[#b4543e]/15 bg-[rgba(255,244,239,0.9)] px-5 py-3.5 text-[13px] text-[#92400e]">
