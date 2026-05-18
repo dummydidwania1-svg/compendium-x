@@ -55,11 +55,11 @@ export function scheduleCasePrefetch() {
   }
 
   if ('requestIdleCallback' in window) {
-    // Wait for browser to be idle, then run
+    // Run at idle but with a short timeout so it fires within ~2s even on busy pages
     ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: object) => void })
-      .requestIdleCallback(run, { timeout: 8000 })
+      .requestIdleCallback(run, { timeout: 2000 })
   } else {
-    // Fallback: run after 3s so it doesn't block initial render
-    setTimeout(run, 3000)
+    // Fallback: run after 1.5s so it doesn't block initial render
+    setTimeout(run, 1500)
   }
 }

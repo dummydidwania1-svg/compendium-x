@@ -103,6 +103,7 @@ function RepositoryContent() {
   const [levelFilter, setLevelFilter] = useState<string[]>([])
   const [actionError, setActionError] = useState('')
   const [offlineBanner, setOfflineBanner] = useState(false)
+  const [firestoreFailed, setFirestoreFailed] = useState(false)
   // ID of the case the user just clicked, while the API call + navigation
   // resolve. The row dims and the button switches to a spinner-like label
   // so the click doesn't feel like it was dropped. Cleared on error so the
@@ -169,13 +170,13 @@ function RepositoryContent() {
         setCases(data)
         writeCasesCache(data)
       } catch (error) {
+        setFirestoreFailed(true)
         if (cached) {
           // We have cached data showing — show a quiet offline banner instead
           // of a hard error. User can still browse everything they've seen before.
           setOfflineBanner(true)
         } else if (!navigator.onLine) {
-          // Offline with no cache — nothing to show, OfflineBanner overlay handles UX
-          setOfflineBanner(true)
+          // Offline with no cache — repository shows its own offline empty state
         } else {
           setActionError(
             error instanceof Error
@@ -500,6 +501,17 @@ function RepositoryContent() {
               {loading ? (
                 <div className="px-6 py-14 text-center text-[13px] text-[#5c4033]/45">
                   Loading library...
+                </div>
+              ) : firestoreFailed && cases.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+                  <svg viewBox="0 0 64 64" fill="none" width="28" height="28" style={{ opacity: 0.35 }}>
+                    <path d="M16 10h32l-8 14 5 8-13 22-13-22 5-8-8-14Z" fill="#5C4033" />
+                    <path d="M32 24 27 32h10l-5-8Z" fill="#3D5A35" />
+                  </svg>
+                  <p className="text-[13px] font-medium text-[#5c4033]/60">You&rsquo;re offline</p>
+                  <p className="max-w-[280px] text-[12px] leading-relaxed text-[#5c4033]/38">
+                    The case library will appear here once you&rsquo;ve visited this page with a connection at least once.
+                  </p>
                 </div>
               ) : filteredCases.length === 0 ? (
                 <div className="px-6 py-14 text-center text-[13px] text-[#5c4033]/45">

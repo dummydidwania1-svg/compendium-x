@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 export default function OfflineBanner() {
   const [offline, setOffline] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const check = () => setOffline(!navigator.onLine)
@@ -18,7 +19,8 @@ export default function OfflineBanner() {
     }
   }, [])
 
-  if (!offline) return null
+  // Repository handles its own offline state inline — don't cover it
+  if (!offline || pathname === '/repository') return null
 
   return (
     <div
