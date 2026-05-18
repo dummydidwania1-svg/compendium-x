@@ -92,6 +92,7 @@ export function buildPreviewDashboardData(): {
       transcript,
       transcriptPreview,
       transcriptStatus: transcript ? 'completed' : null,
+      transcriptError: null,
       audioUrl: null,
       workspaceImageUrls,
       hasTranscript: Boolean(transcript),

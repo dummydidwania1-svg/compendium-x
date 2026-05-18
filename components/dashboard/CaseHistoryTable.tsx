@@ -2,9 +2,10 @@
 
 import { createPortal } from 'react-dom';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { Eye, ImageUp, Image, ChevronDown, ChevronUp, ArrowUpDown, X, FileText, Headphones, AlignLeft } from 'lucide-react';
+import { Eye, ImageUp, Image, ChevronDown, ChevronUp, ArrowUpDown, X, FileText, Headphones, AlignLeft, RefreshCw } from 'lucide-react';
 import { filterDashboardEntries } from '@/lib/dashboard/live';
 import { useDashboard } from './DashboardContext';
+import { apiPost } from '@/lib/api/client';
 
 // ── Utility: format date as "Mar 12, 2026" ──
 const formatDate = (dateStr: string): string => {
@@ -68,7 +69,27 @@ return (
 const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void }) => {
   const [showTranscript, setShowTranscript] = useState(false);
   const [showAudioPlayer, setShowAudioPlayer] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [retryQueued, setRetryQueued] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
   const transcriptText = stripTranscriptTimestamps(entry.transcript || entry.transcriptPreview || '');
+  const transcriptStatus: string | null = entry.transcriptStatus ?? null;
+  const transcriptError: string | null = entry.transcriptError ?? null;
+  const lobbyId: string | null = entry.lobbyId ?? null;
+
+  const handleRetryTranscript = async () => {
+    if (!lobbyId || retrying) return;
+    setRetrying(true);
+    setRetryError(null);
+    try {
+      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording/retry-transcript`, {});
+      setRetryQueued(true);
+    } catch (err) {
+      setRetryError(err instanceof Error ? err.message : 'Could not queue transcript retry.');
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -150,6 +171,44 @@ const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void
                 </div>
               ) : null}
             </div>
+          ) : transcriptStatus === 'processing' || transcriptStatus === 'pending' ? (
+            <div className="rounded-lg border border-[#CFC2B1] bg-[#EEE6DA] p-3">
+              <p className="text-xs italic text-[#5C4033]/70">
+                Transcript is still being generated. Check back in a minute — it appears here automatically when ready.
+              </p>
+            </div>
+          ) : transcriptStatus === 'failed' ? (
+            <div className="rounded-lg border border-[#D9C2A8] bg-[#FBF1E1] p-3">
+              <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-[#92400e]">
+                {retryQueued ? 'Transcript queued' : 'Transcript not generated'}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[#5C4033]/80">
+                {retryQueued
+                  ? 'Your retry is processing in the background. The transcript will appear here automatically when ready.'
+                  : transcriptError
+                    ? transcriptError
+                    : 'We couldn’t generate a transcript for this recording. The audio may have been too short or mostly silent.'}
+              </p>
+              {!retryQueued && entry.hasAudio && lobbyId ? (
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    onClick={() => void handleRetryTranscript()}
+                    disabled={retrying}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#D7CABA] bg-[#FBF6EF] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5C4033]/78 transition hover:border-[#B7A387] hover:bg-[#F3EBDF] hover:text-[#3D5A35] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${retrying ? 'animate-spin' : ''}`} />
+                    {retrying ? 'Queuing…' : 'Retry transcript'}
+                  </button>
+                  {retryError ? (
+                    <span className="text-[10px] text-[#92400e]">{retryError}</span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : entry.hasAudio ? (
+            <p className="text-xs text-[#5C4033]/55 italic">
+              Transcript not generated for this recording.
+            </p>
           ) : (
             <p className="text-xs text-[#5C4033]/40">No transcript recorded.</p>
           )}

@@ -34,6 +34,7 @@ export type DashboardCaseEntry = {
   transcript: string | null
   transcriptPreview: string | null
   transcriptStatus: string | null
+  transcriptError: string | null
   audioUrl: string | null
   workspaceImageUrls: string[]
   hasTranscript: boolean
@@ -56,6 +57,7 @@ export type DashboardSessionMeta = {
   transcript: string | null
   transcriptPreview: string | null
   transcriptStatus: string | null
+  transcriptError: string | null
   audioUrl: string | null
 }
 
@@ -138,6 +140,7 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     transcript: asString(source.transcript),
     transcriptPreview: asString(source.transcriptPreview),
     transcriptStatus: asString(source.transcriptStatus),
+    transcriptError: asString(source.transcriptError),
     audioUrl: asString(source.audioUrl),
   }
 }
@@ -175,6 +178,7 @@ export function mapDashboardEntry(
     transcript,
     transcriptPreview,
     transcriptStatus: sessionMeta?.transcriptStatus ?? null,
+    transcriptError: sessionMeta?.transcriptError ?? null,
     audioUrl: sessionMeta?.audioUrl ?? null,
     workspaceImageUrls,
     hasTranscript: Boolean(transcript || transcriptPreview),

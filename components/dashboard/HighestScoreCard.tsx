@@ -112,6 +112,12 @@ const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void
             <div className="bg-[#D9D0C4]/20 rounded-lg p-3">
               <p className="text-xs text-[#5C4033]/70 italic">Transcript available — click to expand in full view.</p>
             </div>
+          ) : entry.transcriptStatus === 'processing' || entry.transcriptStatus === 'pending' ? (
+            <p className="text-xs text-[#5C4033]/55 italic">Transcript still generating.</p>
+          ) : entry.transcriptStatus === 'failed' ? (
+            <p className="text-xs text-[#92400e]/80 italic">
+              {entry.transcriptError || 'Transcript not generated — recording may have been too short or silent.'}
+            </p>
           ) : (
             <p className="text-xs text-[#5C4033]/40">No transcript recorded.</p>
           )}
