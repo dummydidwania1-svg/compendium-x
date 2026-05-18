@@ -10,6 +10,11 @@ const SHELL = [
   '/offline.html',
 ]
 
+function isCacheable(response) {
+  // Cannot cache: partial responses (206), opaque cross-origin, errors
+  return response.ok && response.status !== 206 && response.type !== 'opaque'
+}
+
 // ── Install: cache the shell ────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -51,9 +56,9 @@ self.addEventListener('fetch', (event) => {
       caches.match(request).then(cached => {
         if (cached) return cached
         return fetch(request).then(response => {
-          if (response.ok) {
+          if (isCacheable(response)) {
             const clone = response.clone()
-            caches.open(CACHE).then(cache => cache.put(request, clone))
+            caches.open(CACHE).then(cache => cache.put(request, clone)).catch(() => {})
           }
           return response
         })
@@ -68,16 +73,13 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then(response => {
-          // Cache successful navigations so they work offline next time
-          if (response.ok) {
+          if (isCacheable(response)) {
             const clone = response.clone()
-            caches.open(CACHE).then(cache => cache.put(request, clone))
+            caches.open(CACHE).then(cache => cache.put(request, clone)).catch(() => {})
           }
           return response
         })
         .catch(() =>
-          // Try exact URL cache first, then fall back to '/' (app shell)
-          // so the React app boots and OfflineBanner takes over from there.
           caches.match(request).then(cached =>
             cached ?? caches.match('/')
           )
@@ -91,9 +93,9 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then(cached => {
       if (cached) return cached
       return fetch(request).then(response => {
-        if (response.ok) {
+        if (isCacheable(response)) {
           const clone = response.clone()
-          caches.open(CACHE).then(cache => cache.put(request, clone))
+          caches.open(CACHE).then(cache => cache.put(request, clone)).catch(() => {})
         }
         return response
       }).catch(() => new Response('', { status: 503 }))
