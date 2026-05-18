@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { getDoc, onSnapshot } from 'firebase/firestore'
+import { MicPermissionCard } from '@/components/permissions/MicPermissionCard'
 import { signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
@@ -567,6 +568,8 @@ function CandidateLobby({
                   </button>
                 </div>
               )}
+
+              <MicPermissionCard />
 
               {waitingNudgeVisible ? (
                 <div className="mt-5 rounded-[22px] border border-[#b48a57]/22 bg-[rgba(255,245,233,0.92)] px-4 py-4 text-left">

@@ -10,6 +10,8 @@ import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage
 import { storage, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
+import { useMicPermission } from '@/lib/permissions/microphone'
+import { MicSoftWarningBanner } from '@/components/permissions/MicSoftWarningBanner'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed'
@@ -39,7 +41,6 @@ type WorkspaceToast = {
 type CaptureControllerLike = {
   setFocusBehavior?: (behavior: string) => void
 }
-type BrowserPermissionState = 'granted' | 'denied' | 'prompt' | 'unknown'
 
 const MIME_TYPE_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
 
@@ -67,7 +68,7 @@ function getFriendlyRecoverableCaptureMessage(mode: RecordingMode, message: stri
       normalized.includes('notallowed') ||
       normalized.includes('denied')
     ) {
-      return 'Microphone access is blocked. Allow it in the address bar. This page will refresh automatically.'
+      return 'Microphone is blocked. Click the lock icon in your address bar and set Microphone to Allow.'
     }
 
     return 'Allow microphone access to continue.'
@@ -191,9 +192,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [remotePrepStep, setRemotePrepStep] = useState(0)
   const [localPrepVisible, setLocalPrepVisible] = useState(false)
   const [localPrepStep, setLocalPrepStep] = useState(0)
-  const [microphonePermissionState, setMicrophonePermissionState] = useState<BrowserPermissionState>('unknown')
   const [transcriptRetryInfo, setTranscriptRetryInfo] = useState<TranscriptRetryInfo | null>(null)
   const [retryingTranscript, setRetryingTranscript] = useState(false)
+
+  // Reactive microphone permission tracking. The hook subscribes to
+  // PermissionStatus.onchange under the hood, so this state updates the
+  // moment the user grants or revokes mic in their browser — no reload.
+  const {
+    state: microphonePermissionState,
+    request: requestMicrophone,
+    retry: retryMicrophonePermission,
+  } = useMicPermission()
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const displayStreamRef = useRef<MediaStream | null>(null)
@@ -211,9 +220,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const toastTimeoutRef = useRef<number | null>(null)
   const remotePrepTimersRef = useRef<number[]>([])
   const localPrepTimersRef = useRef<number[]>([])
-  const previousMicrophonePermissionRef = useRef<BrowserPermissionState | null>(null)
-  const microphonePermissionReloadingRef = useRef(false)
-
   const canStartRecording = useMemo(
     () => recordingState === 'idle' || recordingState === 'failed' || recordingState === 'uploaded',
     [recordingState]
@@ -259,50 +265,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     setLocalPrepVisible(false)
     setLocalPrepStep(0)
   }, [])
-
-  const readMicrophonePermissionState = useCallback(async (): Promise<BrowserPermissionState> => {
-    if (typeof navigator === 'undefined' || !('permissions' in navigator)) {
-      setMicrophonePermissionState('unknown')
-      return 'unknown'
-    }
-
-    try {
-      const status = await navigator.permissions.query({
-        name: 'microphone' as PermissionName,
-      })
-
-      const nextState = status.state as BrowserPermissionState
-      setMicrophonePermissionState(nextState)
-      return nextState
-    } catch {
-      setMicrophonePermissionState('unknown')
-      return 'unknown'
-    }
-  }, [])
-
-  const refreshWhenMicrophonePermissionChanges = useCallback(
-    async (reloadOnResolved: boolean) => {
-      const nextState = await readMicrophonePermissionState()
-      const previousState = previousMicrophonePermissionRef.current
-      previousMicrophonePermissionRef.current = nextState
-
-      if (
-        reloadOnResolved &&
-        previousState === 'denied' &&
-        nextState !== 'denied' &&
-        nextState !== 'unknown' &&
-        !microphonePermissionReloadingRef.current
-      ) {
-        microphonePermissionReloadingRef.current = true
-        window.setTimeout(() => {
-          window.location.reload()
-        }, 120)
-      }
-
-      return nextState
-    },
-    [readMicrophonePermissionState]
-  )
 
   // Transcription is now handled out-of-band by a Firestore-triggered Cloud
   // Function (functions/src/index.ts). The client doesn't kick it off
@@ -590,9 +552,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
         recorder.start(1000)
         setRecordingState('recording')
-        if (mode === 'local') {
-          setMicrophonePermissionState('granted')
-        }
+        // microphonePermissionState is now reactive (via useMicPermission);
+        // no manual sync needed — the browser fires onchange when getUserMedia
+        // succeeds.
         setRecordingNote(mode === 'remote'
           ? 'Recording tab/system audio + microphone. Keep this tab open until feedback submission.'
           : 'Recording microphone audio. Keep this tab open until feedback submission.')
@@ -613,11 +575,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             normalized.includes('permission') ||
             normalized.includes('denied')
           ) {
-            setMicrophonePermissionState('denied')
             setCaptureWarning(getFriendlyRecoverableCaptureMessage(mode, message))
-          } else {
-            void readMicrophonePermissionState()
           }
+          // Re-query permission state from the browser truthfully — the
+          // hook is reactive, but a manual nudge after a failure helps if
+          // the onchange event didn't fire (some Safari/Firefox edge cases).
+          void retryMicrophonePermission()
         }
         if (mode === 'remote') {
           const normalized = message.toLowerCase()
@@ -641,7 +604,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         setRecordingError(message)
       }
     },
-    [canStartRecording, currentUser, lobbyId, readMicrophonePermissionState, stopRecordingAndFinalize, teardownMedia]
+    [canStartRecording, currentUser, lobbyId, retryMicrophonePermission, stopRecordingAndFinalize, teardownMedia]
   )
 
   const startCaptureFlow = useCallback(
@@ -654,10 +617,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         setCaptureWarning('')
         setWorkspaceToast(null)
 
-        const permissionState = await readMicrophonePermissionState()
+        const permissionState = await retryMicrophonePermission()
         if (permissionState === 'denied') {
           setRecordingState('failed')
-          setCaptureWarning('Microphone access is blocked. Allow it in the address bar. This page will refresh automatically.')
+          setCaptureWarning('Microphone is blocked. Click the lock icon in your address bar to enable, then try again.')
           return
         }
 
@@ -693,7 +656,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         }, 2450),
       ]
     },
-    [clearLocalPrep, clearRemotePrep, localPrepVisible, readMicrophonePermissionState, recordingState, remotePrepVisible, startRecording]
+    [clearLocalPrep, clearRemotePrep, localPrepVisible, recordingState, remotePrepVisible, retryMicrophonePermission, startRecording]
   )
 
   const handleRetryUpload = useCallback(async () => {
@@ -721,14 +684,37 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
   }, [retryTranscriptOnServer, retryingTranscript, transcriptRetryInfo])
 
-  const handleEnableCapture = useCallback(() => {
+  // Single capture-start entry point invoked by the workspace's primary
+  // button and by the soft-warning banner. If mic is still denied, we
+  // ask the hook to try anyway — getUserMedia rejects silently, which
+  // we surface via captureWarning so the user knows what to fix.
+  const handleEnableCapture = useCallback(async () => {
     if (preferredRecordingMode === 'local' && microphonePermissionState === 'denied') {
-      setCaptureWarning('Microphone access is blocked. Allow it in the address bar. This page will refresh automatically.')
-      void refreshWhenMicrophonePermissionChanges(true)
-      return
+      const stream = await requestMicrophone()
+      if (!stream) {
+        setCaptureWarning('Microphone is blocked. Click the lock icon in your address bar to enable.')
+        return
+      }
+      // Got a stream; release it — startCaptureFlow will reacquire as part
+      // of the normal flow now that the browser has granted us access.
+      stream.getTracks().forEach((track) => track.stop())
     }
     void startCaptureFlow(preferredRecordingMode)
-  }, [microphonePermissionState, preferredRecordingMode, refreshWhenMicrophonePermissionChanges, startCaptureFlow])
+  }, [microphonePermissionState, preferredRecordingMode, requestMicrophone, startCaptureFlow])
+
+  // Allow-mic handler used by MicSoftWarningBanner. Tries to get the
+  // microphone; on success, kicks off the capture flow. We reset the
+  // auto-start guard so the effect can re-fire if it skipped earlier.
+  const handleBannerAllow = useCallback(async () => {
+    const stream = await requestMicrophone()
+    if (!stream) {
+      // Still denied. Banner stays visible; user must use address bar.
+      return
+    }
+    stream.getTracks().forEach((track) => track.stop())
+    autoStartAttemptedRef.current = false
+    void startCaptureFlow(preferredRecordingMode)
+  }, [preferredRecordingMode, requestMicrophone, startCaptureFlow])
 
   const handleCandidateEndSession = useCallback(async () => {
     if (endingSession) return
@@ -881,62 +867,37 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [handleSessionCompleted, lobbyId, params, requestedMode, resolveSessionMode, router])
 
   useEffect(() => {
+    // useMicPermission already subscribes to PermissionStatus.onchange, so
+    // most state syncing is automatic. We still re-query on focus and
+    // visibility because some browsers don't fire the change event when
+    // the user grants permission via the address-bar lock icon (the
+    // canonical way to recover from a previous denial).
     if (preferredRecordingMode !== 'local' || typeof window === 'undefined') return
 
-    let active = true
-    let permissionStatus: PermissionStatus | null = null
-
-    const syncOnChange = () => {
-      void refreshWhenMicrophonePermissionChanges(true)
-    }
-
-    const handleWindowFocus = () => {
-      void refreshWhenMicrophonePermissionChanges(true)
-    }
-
+    const handleWindowFocus = () => void retryMicrophonePermission()
     const handleVisibilityChange = () => {
       if (document.visibilityState !== 'visible') return
-      void refreshWhenMicrophonePermissionChanges(true)
-    }
-
-    void refreshWhenMicrophonePermissionChanges(false)
-
-    if (typeof navigator !== 'undefined' && 'permissions' in navigator) {
-      void navigator.permissions
-        .query({ name: 'microphone' as PermissionName })
-        .then((status) => {
-          if (!active) return
-
-          permissionStatus = status
-          const nextState = status.state as BrowserPermissionState
-          setMicrophonePermissionState(nextState)
-          previousMicrophonePermissionRef.current = nextState
-
-          status.addEventListener('change', syncOnChange)
-        })
-        .catch(() => {
-          setMicrophonePermissionState('unknown')
-          previousMicrophonePermissionRef.current = 'unknown'
-        })
+      void retryMicrophonePermission()
     }
 
     window.addEventListener('focus', handleWindowFocus)
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      active = false
       window.removeEventListener('focus', handleWindowFocus)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-
-      if (!permissionStatus) return
-      permissionStatus.removeEventListener('change', syncOnChange)
     }
-  }, [preferredRecordingMode, refreshWhenMicrophonePermissionChanges])
+  }, [preferredRecordingMode, retryMicrophonePermission])
 
   useEffect(() => {
     if (autoStartAttemptedRef.current) return
     if (!lobbyId || !resolvedCaseId || !currentUser) return
     if (!canStartRecording) return
+    // Skip auto-start when mic is denied — calling getUserMedia would fail
+    // silently, leaving the user staring at a frozen UI. The soft-warning
+    // banner surfaces the situation and lets them recover; once permission
+    // flips to granted we reset autoStartAttemptedRef and try again.
+    if (microphonePermissionState === 'denied') return
 
     autoStartAttemptedRef.current = true
     setRecordingNote(
@@ -945,7 +906,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         : 'Auto-starting microphone capture...'
     )
     void startCaptureFlow(preferredRecordingMode)
-  }, [canStartRecording, currentUser, lobbyId, preferredRecordingMode, resolvedCaseId, startCaptureFlow])
+  }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, resolvedCaseId, startCaptureFlow])
 
   useEffect(() => {
     if (!activeBeforeUnloadState(recordingState)) return
@@ -1355,6 +1316,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       </header>
 
       <main className="relative flex min-h-[calc(100vh-70px)] flex-1 flex-col justify-center px-4 pb-20 pt-[90px] md:px-8 md:pb-24">
+        <MicSoftWarningBanner state={microphonePermissionState} onAllow={handleBannerAllow} />
         <div className="mx-auto max-w-4xl w-full">
           <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
             <div
@@ -1582,7 +1544,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                     disabled={!canStartRecording || !resolvedCaseId || prepVisible}
                     className="workspace-btn workspace-btn-primary rounded-full px-5 py-3 text-[10px] uppercase tracking-[0.22em] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {prepVisible ? 'Opening Prompt...' : localPermissionBlocked ? 'Allow In Browser' : 'Allow Recording'}
+                    {prepVisible
+                      ? 'Opening Prompt...'
+                      : localPermissionBlocked
+                        ? 'Allow Microphone'
+                        : 'Allow Recording'}
                   </button>
                 ) : null}
                 {!completionPending ? (
