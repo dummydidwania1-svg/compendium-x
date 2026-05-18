@@ -550,6 +550,11 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 	const [notes, setNotes] = useState('')
 	const [submitting, setSubmitting] = useState(false)
 	const [submitError, setSubmitError] = useState('')
+	// Locked-by-default review screen: the interviewer fills scores/notes
+	// during the case (sidebar in CaseInterviewerMaster), then this view
+	// confirms what they have before submission. Toggle to false to edit
+	// in place; submit finalizes from either mode.
+	const [editingFeedback, setEditingFeedback] = useState(false)
 
 	const normalizedTitle = useMemo(() => (caseData?.title ?? '').trim().toLowerCase(), [caseData?.title])
 	const caseTypeLabel = useMemo(() => (caseData?.caseType ?? caseData?.case_type ?? 'General').trim(), [
@@ -1068,18 +1073,31 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 
 	if (currentView === 'success') {
 		return (
-			<div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 text-center">
-				<div className="max-w-md w-full bg-white border border-slate-200 shadow-xl rounded-2xl p-12">
-					<div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-						<svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+			<div
+				className="relative flex min-h-screen flex-col items-center justify-center bg-[#fff8f0] p-4 text-center antialiased"
+				style={{ fontFamily: "'Work Sans', sans-serif", color: '#1e1b15' }}
+			>
+				<div className="pointer-events-none absolute inset-0">
+					<div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(61,90,53,0.08),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(92,64,51,0.08),transparent_32%),linear-gradient(180deg,#fff8f0_0%,#fbf4ea_100%)]" />
+				</div>
+				<div className="relative z-10 w-full max-w-md rounded-2xl border border-[#b48a57]/16 bg-[rgba(255,248,240,0.78)] px-8 py-12 backdrop-blur" style={{ boxShadow: '0 6px 22px rgba(59,47,47,0.05)' }}>
+					<div
+						className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-[#3D5A35]/25 bg-[rgba(174,208,161,0.18)] text-[#3D5A35]"
+					>
+						<svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
 						</svg>
 					</div>
-					<h2 className="text-2xl font-bold text-slate-900 mb-2">Thank You</h2>
-					<p className="text-slate-500 mb-8">Feedback submitted successfully. You can close this tab now.</p>
+					<h2 style={{ fontFamily: "'Newsreader', serif" }} className="text-4xl font-light tracking-tight text-[#453a2a]">
+						Thank you
+					</h2>
+					<p className="mt-3 text-[13px] leading-relaxed text-[#5c4033]/68">
+						Feedback submitted successfully. You can close this tab now.
+					</p>
 					<button
 						onClick={closeOrExit}
-						className="inline-block w-full py-3 rounded-lg font-bold bg-slate-900 hover:bg-slate-800 text-white transition"
+						className="mt-8 w-full rounded-full bg-[#3D5A35] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-[#34502d]"
+						style={{ boxShadow: '0 6px 16px rgba(61,90,53,0.18), inset 0 1px 0 rgba(255,255,255,0.18)' }}
 					>
 						Close Window
 					</button>
@@ -1088,85 +1106,186 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 		)
 	}
 
+	const allScored = LIVE_EVALUATION_CRITERIA.every((c) => scores[c.id] >= 1)
+
 	return (
-		<div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex items-center justify-center p-4">
-			<div className="max-w-2xl w-full bg-white border border-slate-200 shadow-xl rounded-2xl p-8 md:p-12">
-				<div className="mb-8 border-b border-slate-100 pb-6">
-					<button
-						onClick={() => setCurrentView('case')}
-						className="text-sm font-medium text-slate-400 hover:text-slate-800 mb-4 inline-block"
-					>
-						← Back to Case Document
-					</button>
-					<h1 className="text-3xl font-bold text-slate-900">Candidate Evaluation</h1>
-					<p className="text-slate-500 mt-2">
-						Rate the candidate&apos;s performance for:{' '}
-						<span className="font-bold text-slate-700">{caseData!.title}</span>
-					</p>
-				</div>
-
-				<div className="space-y-8">
-					{[
-						{ id: 'structure', label: 'Framework & Structure' },
-						{ id: 'understanding', label: 'Problem Understanding' },
-						{ id: 'delivery', label: 'Delivery & Communication' },
-						{ id: 'creativity', label: 'Creativity' },
-					].map((criteria) => {
-						const score = scores[criteria.id as keyof ScoreState]
-						return (
-							<div key={criteria.id}>
-								<div className="flex justify-between text-sm mb-3">
-									<label className="font-bold text-slate-800 text-base">{criteria.label}</label>
-									<span className="font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-										{score > 0 ? `${score} / 5` : 'Not Rated'}
-									</span>
-								</div>
-
-								<input
-									type="range"
-									min="0"
-									max="5"
-									step="1"
-									value={score}
-									onChange={(e) =>
-										setScores({
-											...scores,
-											[criteria.id]: Number.parseInt(e.target.value, 10),
-										})
-									}
-									className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-								/>
-
-								<div className="flex justify-between text-xs text-slate-400 mt-2 uppercase font-medium">
-									<span>1 - Poor</span>
-									<span>5 - Excellent</span>
-								</div>
-							</div>
-						)
-					})}
-
-					<div className="pt-6 border-t border-slate-100">
-						<label className="block font-bold text-slate-800 text-base mb-3">Detailed Notes</label>
-						<textarea
-							rows={6}
-							value={notes}
-							onChange={(e) => setNotes(e.target.value)}
-							placeholder="Provide specific feedback. What did they do well? What should they improve?"
-							className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700 transition"
-						/>
-					</div>
-
-					<button
-						onClick={handleSubmitFeedback}
-						disabled={submitting}
-						className="w-full py-4 rounded-xl font-bold text-lg bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-lg disabled:opacity-50"
-					>
-						{submitting ? 'Submitting...' : 'Submit Final Feedback'}
-					</button>
-
-					{submitError && <p className="text-sm text-red-600 font-medium">{submitError}</p>}
-				</div>
+		<div
+			className="relative min-h-screen bg-[#fff8f0] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
+			style={{ fontFamily: "'Work Sans', sans-serif", color: '#1e1b15' }}
+		>
+			<div className="pointer-events-none absolute inset-0">
+				<div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(61,90,53,0.08),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(92,64,51,0.08),transparent_32%),linear-gradient(180deg,#fff8f0_0%,#fbf4ea_100%)]" />
 			</div>
+
+			<main className="relative z-10 mx-auto flex min-h-screen max-w-[760px] flex-col px-4 py-10 md:px-6 md:py-14">
+				<button
+					onClick={() => setCurrentView('case')}
+					className="self-start text-[11px] font-medium uppercase tracking-[0.22em] text-[#5c4033]/55 transition hover:text-[#5c4033]"
+				>
+					← Back to Case Document
+				</button>
+
+				<header className="mt-6 flex items-start justify-between gap-4">
+					<div>
+						<span className="text-[10px] uppercase tracking-[0.32em] text-[#3D5A35]/55 font-semibold">
+							Final Review
+						</span>
+						<h1
+							style={{ fontFamily: "'Newsreader', serif" }}
+							className="mt-2 text-4xl font-light leading-[0.96] tracking-tight text-[#453a2a] md:text-5xl"
+						>
+							Candidate Evaluation
+						</h1>
+						<p className="mt-3 max-w-[480px] text-[13px] leading-relaxed text-[#5c4033]/68">
+							{editingFeedback ? 'Edit and lock your review before submitting.' : 'Review locked. Submit when you’re happy, or edit to change anything.'}
+							{caseData ? (
+								<>
+									{' '}Case: <span className="font-semibold text-[#453a2a]">{caseData.title}</span>
+								</>
+							) : null}
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() => setEditingFeedback((v) => !v)}
+						aria-label={editingFeedback ? 'Lock review' : 'Edit review'}
+						className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-[#b48a57]/22 bg-[rgba(255,248,240,0.7)] text-[#5c4033] transition hover:border-[#5c4033]/40 hover:bg-white/85"
+						title={editingFeedback ? 'Lock review' : 'Edit review'}
+					>
+						{editingFeedback ? (
+							<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+							</svg>
+						) : (
+							<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+							</svg>
+						)}
+					</button>
+				</header>
+
+				<section
+					className="mt-8 rounded-2xl border border-[#b48a57]/16 bg-[rgba(255,248,240,0.72)] px-6 py-7 backdrop-blur md:px-9 md:py-9"
+					style={{ boxShadow: '0 6px 22px rgba(59,47,47,0.04)' }}
+				>
+					<div className="space-y-7">
+						{LIVE_EVALUATION_CRITERIA.map((criteria) => {
+							const score = scores[criteria.id]
+							const filledDots = score > 0 ? score : 0
+							return (
+								<div key={criteria.id}>
+									<div className="flex items-center justify-between gap-3">
+										<label className="text-[14px] font-semibold tracking-tight text-[#453a2a]">
+											{criteria.label}
+										</label>
+										<span
+											className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+												score > 0
+													? 'border-[#3D5A35]/35 bg-[rgba(174,208,161,0.22)] text-[#3D5A35]'
+													: 'border-[#b48a57]/30 bg-[rgba(255,245,233,0.7)] text-[#92400e]'
+											}`}
+										>
+											{score > 0 ? `${score} / 5` : 'Not Rated'}
+										</span>
+									</div>
+
+									{editingFeedback ? (
+										<>
+											<input
+												type="range"
+												min="0"
+												max="5"
+												step="1"
+												value={score}
+												onChange={(e) =>
+													setScores({
+														...scores,
+														[criteria.id]: Number.parseInt(e.target.value, 10),
+													})
+												}
+												className="mt-3 w-full cursor-pointer appearance-none rounded-full bg-[#cec5b9]/50 accent-[#3D5A35]"
+												style={{ height: '6px' }}
+											/>
+											<div className="mt-1.5 flex justify-between text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5c4033]/55">
+												<span>1 — Poor</span>
+												<span>5 — Excellent</span>
+											</div>
+										</>
+									) : (
+										<div className="mt-3 flex items-center gap-2">
+											{[1, 2, 3, 4, 5].map((position) => (
+												<span
+													key={position}
+													className={`h-2.5 w-2.5 rounded-full ${
+														position <= filledDots
+															? 'bg-[#3D5A35]'
+															: 'bg-[#5c4033]/14'
+													}`}
+												/>
+											))}
+											<span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5c4033]/45">
+												{score > 0 ? `${score} of 5` : 'Pending'}
+											</span>
+										</div>
+									)}
+								</div>
+							)
+						})}
+
+						<div className="border-t border-[#b48a57]/16 pt-6">
+							<label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5c4033]/70">
+								Detailed Notes
+							</label>
+							{editingFeedback ? (
+								<textarea
+									rows={6}
+									value={notes}
+									onChange={(e) => setNotes(e.target.value)}
+									placeholder="Provide specific feedback. What did they do well? What should they improve?"
+									className="mt-3 w-full rounded-xl border border-[#b48a57]/22 bg-[rgba(255,249,242,0.78)] px-4 py-3 text-[13px] leading-relaxed text-[#1e1b15] outline-none transition placeholder:text-[#5c4033]/40 focus:border-[#3D5A35]/40 focus:ring-2 focus:ring-[#3D5A35]/15"
+								/>
+							) : (
+								<div className="mt-3 rounded-xl border border-[#b48a57]/16 bg-[rgba(255,249,242,0.55)] px-4 py-3 text-[13px] leading-relaxed text-[#1e1b15]">
+									{notes.trim().length > 0 ? (
+										<p className="whitespace-pre-wrap">{notes}</p>
+									) : (
+										<p className="italic text-[#5c4033]/45">No notes added.</p>
+									)}
+								</div>
+							)}
+						</div>
+					</div>
+				</section>
+
+				{!allScored ? (
+					<div className="mt-5 rounded-xl border border-[#92400e]/22 bg-[rgba(255,245,233,0.92)] px-4 py-3">
+						<p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
+							Missing rating
+						</p>
+						<p className="mt-1 text-[12px] leading-relaxed text-[#5c4033]">
+							Rate all four criteria before submitting. Click the edit icon above to adjust scores.
+						</p>
+					</div>
+				) : null}
+
+				{submitError ? (
+					<div className="mt-5 rounded-xl border border-[#92400e]/22 bg-[rgba(255,245,233,0.92)] px-4 py-3">
+						<p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
+							Could not submit
+						</p>
+						<p className="mt-1 text-[12px] leading-relaxed text-[#5c4033]">{submitError}</p>
+					</div>
+				) : null}
+
+				<button
+					onClick={handleSubmitFeedback}
+					disabled={submitting || !allScored}
+					className="mt-6 w-full rounded-full bg-[#3D5A35] px-4 py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-[#34502d] disabled:cursor-not-allowed disabled:opacity-55"
+					style={{ boxShadow: '0 6px 16px rgba(61,90,53,0.18), inset 0 1px 0 rgba(255,255,255,0.18)' }}
+				>
+					{submitting ? 'Submitting…' : 'Submit & Close Case'}
+				</button>
+			</main>
 		</div>
 	)
 }
