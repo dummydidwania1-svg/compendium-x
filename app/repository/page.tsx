@@ -145,15 +145,23 @@ function RepositoryContent() {
 
   useEffect(() => {
     const fetchCases = async () => {
+      console.log('[CCX] fetchCases start, onLine=', navigator.onLine)
+
       // Optimistic flash from cache if fresh enough
       const cached = readCasesCache()
+      console.log('[CCX] readCasesCache =', cached ? `${cached.length} items` : null)
       if (cached) {
         setCases(cached)
         setLoading(false)
       }
 
+      const fallbackRaw = localStorage.getItem('compendium_cases_v2')
+      console.log('[CCX] raw localStorage key present =', !!fallbackRaw)
+
       try {
+        console.log('[CCX] calling getDocs...')
         const snapshot = await getDocs(collection(db, 'cases'))
+        console.log('[CCX] getDocs success, count=', snapshot.docs.length)
         const data = snapshot.docs.map((caseDoc) => {
           const value = caseDoc.data()
           return {
@@ -181,22 +189,20 @@ function RepositoryContent() {
         setCases(data)
         writeCasesCache(data)
       } catch (error) {
+        console.log('[CCX] getDocs threw:', error)
         setFirestoreFailed(true)
-        // Always try the full cache (including stale) as fallback when Firestore fails —
-        // navigator.onLine is unreliable (true on WiFi with no internet uplink)
         const fallback = readCacheForFallback()
+        console.log('[CCX] readCacheForFallback =', fallback ? `${fallback.length} items` : null)
         if (fallback) {
           setCases(fallback)
           setOfflineBanner(true)
         } else if (navigator.onLine) {
-          // Online but Firestore genuinely errored (not a connectivity issue)
           setActionError(
             error instanceof Error
               ? `Unable to load case library: ${error.message}`
               : 'Unable to load case library. Check your connection and refresh.',
           )
         }
-        // else: offline + no cache — firestoreFailed=true + cases=[] shows the inline message
       }
 
       setLoading(false)
