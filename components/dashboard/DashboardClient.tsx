@@ -2,6 +2,7 @@
 
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { useState } from 'react'
+import PlatformLoader from '@/components/PlatformLoader'
 import Link from 'next/link'
 import CaseHistoryTable from './CaseHistoryTable'
 import CaseScoreCard from './CaseScoreCard'
@@ -55,18 +56,7 @@ function DashboardContent() {
           : filters.time,
   }
 
-  if (!authResolved || loading) {
-    return (
-      <>
-        <Navbar currentPage="dashboard" />
-        <div className="relative min-h-screen overflow-x-hidden bg-[#fff8f0] font-sans text-[#5C4033]">
-          <main className="mx-auto flex min-h-screen max-w-[1440px] items-center justify-center px-4 pt-[70px] lg:px-6">
-            Preparing your dashboard...
-          </main>
-        </div>
-      </>
-    )
-  }
+  if (!authResolved || loading) return <PlatformLoader message="Preparing your dashboard" />
 
   return (
     <>

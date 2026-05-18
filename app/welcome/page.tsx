@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+import PlatformLoader from '@/components/PlatformLoader'
 import { useRouter } from 'next/navigation'
 import { signOut, type User } from 'firebase/auth'
 import { collection, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from 'firebase/firestore'
@@ -140,13 +141,7 @@ export default function WelcomePage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#020b17] text-slate-200 flex items-center justify-center">
-        Preparing your launchpad...
-      </div>
-    )
-  }
+  if (loading) return <PlatformLoader message="Preparing your launchpad" />
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#020b17] text-white">

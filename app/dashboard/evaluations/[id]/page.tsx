@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react'
+import PlatformLoader from '@/components/PlatformLoader'
 import { useParams, useRouter } from 'next/navigation'
 import { arrayUnion, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
@@ -267,13 +268,7 @@ export default function EvaluationDetailPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [activeWorkspaceImage])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#020b17] text-slate-300 flex items-center justify-center">
-        Loading feedback details...
-      </div>
-    )
-  }
+  if (loading) return <PlatformLoader message="Loading your feedback" />
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#020b17] text-slate-100">

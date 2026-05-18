@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
 import { waitForAuthUser } from '@/lib/firebase/config'
+import PlatformLoader from '@/components/PlatformLoader'
 
 export default function PracticeModeSelection() {
   const [loading, setLoading] = useState(true)
@@ -97,13 +98,7 @@ export default function PracticeModeSelection() {
     router.push(`/lobby/${lobbyId}?mode=local`)
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fff8f0] text-[#5c4033]">
-        Loading...
-      </div>
-    )
-  }
+  if (loading) return <PlatformLoader message="Getting things ready" />
 
   return (
     <div

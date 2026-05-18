@@ -10,36 +10,7 @@ import { apiPost } from '@/lib/api/client'
 import { CaseForumSection } from '@/components/forum/CaseForumSection'
 import CasePreviewView from '@/components/case/CasePreviewView'
 import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
-
-/* ── Platform-styled loading overlay ───────────────────────────── */
-function CaseLoadingOverlay() {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#fff8f0]" style={{ fontFamily: "'Work Sans', sans-serif" }}>
-      <style>{`
-        @keyframes case-tie-swing {
-          0%   { transform: rotate(-5deg) }
-          50%  { transform: rotate(5deg) }
-          100% { transform: rotate(-5deg) }
-        }
-        @keyframes case-breathe {
-          0%,100% { opacity: 0.45 }
-          50%      { opacity: 0.85 }
-        }
-      `}</style>
-      <div className="flex flex-col items-center gap-5">
-        <div style={{ transformOrigin: 'top center', animation: 'case-tie-swing 2.4s cubic-bezier(0.37,0,0.63,1) infinite' }}>
-          <svg viewBox="0 0 64 64" fill="none" style={{ width: 32, height: 32 }}>
-            <path d="M16 10h32l-8 14 5 8-13 22-13-22 5-8-8-14Z" fill="#5C4033" opacity="0.18" />
-            <path d="M32 24 27 32h10l-5-8Z" fill="#3D5A35" opacity="0.5" style={{ animation: 'case-breathe 2.4s ease-in-out infinite' }} />
-          </svg>
-        </div>
-        <p style={{ fontSize: 13, fontWeight: 500, color: 'rgba(92,64,51,0.45)', letterSpacing: '0.01em', animation: 'case-breathe 3s ease-in-out infinite' }}>
-          Getting your case ready
-        </p>
-      </div>
-    </div>
-  )
-}
+import PlatformLoader from '@/components/PlatformLoader'
 
 /* ── Error boundary — catches client-side crashes, auto-reloads ── */
 class CaseErrorBoundary extends Component<{ children: ReactNode }, { crashed: boolean }> {
@@ -52,7 +23,7 @@ class CaseErrorBoundary extends Component<{ children: ReactNode }, { crashed: bo
     setTimeout(() => window.location.reload(), 400)
   }
   render() {
-    if (this.state.crashed) return <CaseLoadingOverlay />
+    if (this.state.crashed) return <PlatformLoader message="Getting your case ready" />
     return this.props.children
   }
 }
@@ -760,7 +731,7 @@ function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 		setSubmitting(false)
 	}
 
-	if (loading) return <CaseLoadingOverlay />
+	if (loading) return <PlatformLoader message="Getting your case ready" />
 
 	if (loadError) {
 		return (
