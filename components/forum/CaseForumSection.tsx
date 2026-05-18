@@ -404,8 +404,8 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
           0%   { transform: translateX(-100%) }
           100% { transform: translateX(200%) }
         }
-        .f-rise  { animation: forum-rise 0.56s cubic-bezier(0.16,1,0.3,1) both; will-change:transform,opacity,filter }
-        .f-drop  { animation: forum-drop 0.38s cubic-bezier(0.16,1,0.3,1) both; will-change:transform,opacity,filter }
+        .f-rise  { animation: forum-rise 0.56s cubic-bezier(0.16,1,0.3,1) both }
+        .f-drop  { animation: forum-drop 0.38s cubic-bezier(0.16,1,0.3,1) both }
         .f-pop   { animation: forum-pop  0.32s cubic-bezier(0.34,1.56,0.64,1) }
         .f-row   { border-radius:12px; transition: background 0.22s cubic-bezier(0.16,1,0.3,1), box-shadow 0.22s cubic-bezier(0.16,1,0.3,1) }
         .f-row:hover { background: rgba(61,90,53,0.035); box-shadow: inset 0 -1px 0 rgba(61,90,53,0.06) }

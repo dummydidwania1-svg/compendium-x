@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
@@ -136,7 +136,7 @@ function nodeDepth(id: string) { return pathTo(id).length - 1 }
    ═══════════════════════════════════════════════════════════ */
 
 function isSectionHeading(v: string) { return /^[A-Z][A-Z0-9\s&'/-]{6,}$/.test(v) }
-function isEquation(v: string) { return v.includes('=') && /[*xX×]/.test(v) }
+function isEquation(v: string) { return v.includes('=') && (/[*xX×]/.test(v) || /–.+–/.test(v)) }
 function fmtEquation(v: string) { return v.replace(/\s+/g, ' ').trim().replace(/\s*\*\s*/g, ' × ') }
 
 function buildBlocks(lines: TranscriptDisplayLine[]): WalkthroughBlock[] {
@@ -704,10 +704,11 @@ function VerticalChart({
 }) {
   const outerRef = useRef<HTMLDivElement>(null)
   const [cW, setCW] = useState(0)
+  const [cWReady, setCWReady] = useState(false)
   const started = revealDepth >= 0
   const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
 
-  // Measure container width so we can fill it
+  // Measure container width — hide chart until first real measurement
   useEffect(() => {
     const el = outerRef.current; if (!el) return
     let fid = 0
@@ -715,7 +716,7 @@ function VerticalChart({
       if (fid) return
       fid = requestAnimationFrame(() => {
         fid = 0
-        if (outerRef.current) setCW(outerRef.current.clientWidth)
+        if (outerRef.current) { setCW(outerRef.current.clientWidth); setCWReady(true) }
       })
     }
     measure()
@@ -769,9 +770,9 @@ function VerticalChart({
       ref={outerRef}
       className="relative w-full transition-all duration-700"
       style={{
-        opacity: started ? 1 : 0,
-        transform: started ? 'translateY(0)' : 'translateY(24px)',
-        filter: started ? 'blur(0)' : 'blur(8px)',
+        opacity: (started && cWReady) ? 1 : 0,
+        transform: (started && cWReady) ? 'translateY(0)' : 'translateY(24px)',
+        filter: (started && cWReady) ? 'blur(0)' : 'blur(8px)',
       }}
     >
       <div
@@ -939,6 +940,7 @@ function DesktopChart({
 }) {
   const outerRef = useRef<HTMLDivElement>(null)
   const [cW, setCW] = useState(980)
+  const [cWReady, setCWReady] = useState(false)
   const started = revealDepth >= 0
   const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
   const maxD = useMemo(() => Math.max(...visibleIds.map(nodeDepth), 0), [visibleIds])
@@ -968,7 +970,7 @@ function DesktopChart({
   useEffect(() => {
     const el = outerRef.current; if (!el) return
     let fid = 0
-    const m = () => { if (fid) return; fid = requestAnimationFrame(() => { fid = 0; if (outerRef.current) setCW(Math.max(outerRef.current.clientWidth - 6, 400)) }) }
+    const m = () => { if (fid) return; fid = requestAnimationFrame(() => { fid = 0; if (outerRef.current) { setCW(Math.max(outerRef.current.clientWidth - 6, 400)); setCWReady(true) } }) }
     m()
     const ro = new ResizeObserver(m); ro.observe(el)
     return () => { if (fid) cancelAnimationFrame(fid); ro.disconnect() }
@@ -1017,7 +1019,7 @@ function DesktopChart({
 
   return (
     <div ref={outerRef} className="relative w-full transition-all duration-700"
-      style={{ opacity: started ? 1 : 0, transform: started ? 'translateY(0)' : 'translateY(24px)', filter: started ? 'blur(0)' : 'blur(8px)' }}>
+      style={{ opacity: (started && cWReady) ? 1 : 0, transform: (started && cWReady) ? 'translateY(0)' : 'translateY(24px)', filter: (started && cWReady) ? 'blur(0)' : 'blur(8px)' }}>
       <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${metrics.h}px`, transform: chartScale < 1 ? `scale(${chartScale})` : undefined, transformOrigin: 'top center' }}>
 
         <svg className="absolute inset-0 h-full w-full overflow-visible z-10" viewBox={`0 0 ${cW} ${metrics.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
@@ -1604,7 +1606,7 @@ function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[]
       >
         {/* Ambient glow */}
         <div className="pointer-events-none absolute inset-0 z-0"
-          style={{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)', animation: 'cpm-sidebar-glow 14s ease-in-out infinite'}} />
+          style={{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)'}} />
 
         {notes.map((n, idx) => {
           const isLast = idx === notes.length - 1
@@ -1880,45 +1882,53 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
     [expandedIds]
   )
 
+  // Computed once — tree structure is static, no need to recompute per render
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const useVerticalLayout = useMemo(() => shouldUseVerticalLayout('preview'), [])
+
+  const [, startChartTransition] = useTransition()
+
   const handleSelect = (id: string) => {
-setFocusedId(id)
-const node = NODES[id]
-if (node?.children.length && expandedIds.has(id)) {
-// Already expanded — collapse it (same as toggle)
-setExpandedIds(prev => {
-const next = new Set(prev)
-next.delete(id)
-descendants(id).forEach(d => next.delete(d))
-return next
-})
-} else {
-// Expand path to this node
-setExpandedIds(prev => {
-const next = new Set(prev)
-pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
-return next
-})
-}
-setEdgeAnimKey(k => k + 1)   
-}
+    setFocusedId(id)
+    const node = NODES[id]
+    startChartTransition(() => {
+      if (node?.children.length && expandedIds.has(id)) {
+        setExpandedIds(prev => {
+          const next = new Set(prev)
+          next.delete(id)
+          descendants(id).forEach(d => next.delete(d))
+          return next
+        })
+      } else {
+        setExpandedIds(prev => {
+          const next = new Set(prev)
+          pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
+          return next
+        })
+      }
+      setEdgeAnimKey(k => k + 1)
+    })
+  }
 
   const handleToggle = (id: string) => {
     const node = NODES[id]; if (!node?.children.length) return
-    setExpandedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id); descendants(id).forEach(d => next.delete(d))
-              if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
-      } else {
-        next.add(id)
-        const parent = PARENTS[id]
-        if (parent) NODES[parent].children.forEach(sib => {
-          if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
-        })
-      }
-      return next
+    startChartTransition(() => {
+      setExpandedIds(prev => {
+        const next = new Set(prev)
+        if (next.has(id)) {
+          next.delete(id); descendants(id).forEach(d => next.delete(d))
+          if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
+        } else {
+          next.add(id)
+          const parent = PARENTS[id]
+          if (parent) NODES[parent].children.forEach(sib => {
+            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+          })
+        }
+        return next
+      })
+      setEdgeAnimKey(k => k + 1)
     })
-      setEdgeAnimKey(k => k + 1)   // ← ADD THIS LINE
   }
 
   const handleMobileSelect = (id: string) => {
@@ -2131,7 +2141,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
     {/* ── B: Ambient green glow behind sidebar ── */}
     <div
       className="pointer-events-none absolute inset-0 z-0"
-      style={{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)', animation: 'cpm-sidebar-glow 14s ease-in-out infinite'}}
+      style={{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)'}}
     />
 
     {[
@@ -2208,9 +2218,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
     top: 'calc(100vh - 120px)',
     height: '120px',
     marginBottom: '-120px',
-    background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.88) 40%, rgba(255,248,240,0) 100%)',
-    backdropFilter: 'blur(6px)',
-    WebkitBackdropFilter: 'blur(6px)',
+    background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)',
     WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)',
     maskImage: 'linear-gradient(to top, black 20%, transparent)',
   }}
@@ -2248,7 +2256,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
           {/* ══════════════════════════════════════
              FRAMEWORK & RECOMMENDATIONS
              ══════════════════════════════════════ */}
-          <section ref={drilldownRef} className="relative z-10 mt-12">
+          <section ref={drilldownRef} className="relative z-10 mt-12" style={{ contentVisibility: 'auto', containIntrinsicSize: '0 800px' }}>
 
             <div className="hidden lg:block">
 
@@ -2280,9 +2288,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                             top: 'calc(100vh - 110px)',
                             height: '110px',
                             marginBottom: '-110px',
-                            background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.88) 40%, rgba(255,248,240,0) 100%)',
-                            backdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`,
-                            WebkitBackdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`,
+                            background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)',
                             WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)',
                             maskImage: 'linear-gradient(to top, black 20%, transparent)',
                             transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)',
@@ -2295,14 +2301,14 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         ref={chartRef}
                         className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')}
                         style={{
-                          ...(shouldUseVerticalLayout('preview') ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
+                          ...(useVerticalLayout ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
                           opacity: chartVisible ? 1 : 0,
-                          transform: `${shouldUseVerticalLayout('preview') ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
+                          transform: `${useVerticalLayout ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
                           filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
                           transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
                         }}
                       >
-                        {shouldUseVerticalLayout('preview') ? (
+                        {useVerticalLayout ? (
                           <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds}
                             focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                         ) : (
@@ -2483,6 +2489,8 @@ export function CaseInterviewerMaster({
   const visibleIds = useMemo(() => { const s = new Set<string>(); if (ROOT_ID) collectVisible(ROOT_ID, expandedIds, s); return [...s] }, [expandedIds])
   const chartMaxDepth = useMemo(() => Math.max(...visibleIds.map(nodeDepth), 0), [visibleIds])
   const isChartFullyExpanded = useMemo(() => [...DEFAULT_EXPANDED].every(id => expandedIds.has(id)), [expandedIds])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const useVerticalLayout = useMemo(() => shouldUseVerticalLayout('interviewer'), [])
   const recommendations = parsedFramework.recommendations
   const promptDisplayLines = useMemo<TranscriptDisplayLine[]>(
     () => promptLines.map(text => ({ text, speaker: 'interviewer' as const })),
@@ -2541,34 +2549,39 @@ export function CaseInterviewerMaster({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const [, startChartTransition] = useTransition()
+
   // Node select — collapse if already expanded, expand path otherwise
   const handleSelect = (id: string) => {
     setFocusedId(id)
     const node = NODES[id]
-    if (node?.children.length && expandedIds.has(id)) {
-      setExpandedIds(prev => {
-        const next = new Set(prev)
-        next.delete(id); descendants(id).forEach(d => next.delete(d))
-        return next
-      })
-    } else {
-      setExpandedIds(prev => {
-        const next = new Set(prev)
-        pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
-        return next
-      })
-    }
-    setEdgeAnimKey(k => k + 1)
-  }
-  const handleToggle  = (id: string) => {
-    setEdgeAnimKey(k => k + 1)
-    setExpandedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)) }
-      else { next.add(id); const parent = PARENTS[id]; if (parent) NODES[parent].children.forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
-      return next
+    startChartTransition(() => {
+      if (node?.children.length && expandedIds.has(id)) {
+        setExpandedIds(prev => {
+          const next = new Set(prev)
+          next.delete(id); descendants(id).forEach(d => next.delete(d))
+          return next
+        })
+      } else {
+        setExpandedIds(prev => {
+          const next = new Set(prev)
+          pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
+          return next
+        })
+      }
+      setEdgeAnimKey(k => k + 1)
     })
-    setEdgeAnimKey(k => k + 1)
+  }
+  const handleToggle = (id: string) => {
+    startChartTransition(() => {
+      setExpandedIds(prev => {
+        const next = new Set(prev)
+        if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)) }
+        else { next.add(id); const parent = PARENTS[id]; if (parent) NODES[parent].children.forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
+        return next
+      })
+      setEdgeAnimKey(k => k + 1)
+    })
   }
   const handleMobileSelect = (id: string) => { setMobileFocId(id); setMobileExpIds(prev => { const next = new Set(prev); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
   const handleMobileToggle = (id: string) => {
@@ -2675,7 +2688,7 @@ export function CaseInterviewerMaster({
                       <div className="sticky top-[128px] w-full" style={{ height: 'calc(100vh - 168px)', background: 'linear-gradient(180deg, transparent 0%, rgba(92,64,51,0.14) 12%, rgba(92,64,51,0.14) 88%, transparent 100%)' }} />
                     </div>
                     <div className="custom-scrollbar relative pl-7 pr-5 py-6">
-                      <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 120px)', height: '120px', marginBottom: '-120px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.88) 40%, rgba(255,248,240,0) 100%)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)' }} />
+                      <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 120px)', height: '120px', marginBottom: '-120px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)' }} />
                       <div>
                         {blocks.map((block, index) => (
                           <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
@@ -2712,16 +2725,16 @@ export function CaseInterviewerMaster({
                       </div>
                       <div className={`relative flex flex-col pl-7 pr-5 py-6${recommendations.length === 0 ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
                         {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
-                          <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.88) 40%, rgba(255,248,240,0) 100%)', backdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`, WebkitBackdropFilter: `blur(${treeFullyRevealed ? 3 : 6}px)`, WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
+                          <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
                         <div ref={chartRef} className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')} style={{
-                          ...(shouldUseVerticalLayout('interviewer') ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
+                          ...(useVerticalLayout ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
                           opacity: chartVisible ? 1 : 0,
-                          transform: `${shouldUseVerticalLayout('interviewer') ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
+                          transform: `${useVerticalLayout ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
                           filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
                           transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
                         }}>
-                          {shouldUseVerticalLayout('interviewer') ? (
+                          {useVerticalLayout ? (
                             <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                           ) : (
                             <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />

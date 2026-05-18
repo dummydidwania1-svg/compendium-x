@@ -1,6 +1,6 @@
 'use client'
 import Image from 'next/image'
-import { useEffect, useMemo, useState, useRef, ReactNode } from 'react'
+import { useEffect, useMemo, useState, useRef, ReactNode, Component } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getDoc } from 'firebase/firestore'
@@ -10,6 +10,52 @@ import { apiPost } from '@/lib/api/client'
 import { CaseForumSection } from '@/components/forum/CaseForumSection'
 import CasePreviewView from '@/components/case/CasePreviewView'
 import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
+
+/* ── Platform-styled loading overlay ───────────────────────────── */
+function CaseLoadingOverlay() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#fff8f0]" style={{ fontFamily: "'Work Sans', sans-serif" }}>
+      <style>{`
+        @keyframes case-tie-swing {
+          0%   { transform: rotate(-5deg) }
+          50%  { transform: rotate(5deg) }
+          100% { transform: rotate(-5deg) }
+        }
+        @keyframes case-breathe {
+          0%,100% { opacity: 0.45 }
+          50%      { opacity: 0.85 }
+        }
+      `}</style>
+      <div className="flex flex-col items-center gap-5">
+        <div style={{ transformOrigin: 'top center', animation: 'case-tie-swing 2.4s cubic-bezier(0.37,0,0.63,1) infinite' }}>
+          <svg viewBox="0 0 64 64" fill="none" style={{ width: 32, height: 32 }}>
+            <path d="M16 10h32l-8 14 5 8-13 22-13-22 5-8-8-14Z" fill="#5C4033" opacity="0.18" />
+            <path d="M32 24 27 32h10l-5-8Z" fill="#3D5A35" opacity="0.5" style={{ animation: 'case-breathe 2.4s ease-in-out infinite' }} />
+          </svg>
+        </div>
+        <p style={{ fontSize: 13, fontWeight: 500, color: 'rgba(92,64,51,0.45)', letterSpacing: '0.01em', animation: 'case-breathe 3s ease-in-out infinite' }}>
+          Getting your case ready
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* ── Error boundary — catches client-side crashes, auto-reloads ── */
+class CaseErrorBoundary extends Component<{ children: ReactNode }, { crashed: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { crashed: false }
+  }
+  static getDerivedStateFromError() { return { crashed: true } }
+  componentDidCatch() {
+    setTimeout(() => window.location.reload(), 400)
+  }
+  render() {
+    if (this.state.crashed) return <CaseLoadingOverlay />
+    return this.props.children
+  }
+}
 
 type CaseDocument = {
 	title: string
@@ -528,7 +574,7 @@ function DefaultFramework({ framework }: { framework: ParsedFramework }) {
 	)
 }
 
-export default function InterviewerPage({ params }: { params: Promise<{ id: string }> }) {
+function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 	const [caseData, setCaseData] = useState<CaseDocument | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [loadError, setLoadError] = useState('')
@@ -714,32 +760,30 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 		setSubmitting(false)
 	}
 
-	if (loading) {
-		return (
-			<div className="min-h-screen bg-[#FDFDFD] flex items-center justify-center text-slate-400 font-sans">
-				Loading Case Packet...
-			</div>
-		)
-	}
+	if (loading) return <CaseLoadingOverlay />
 
 	if (loadError) {
 		return (
-			<div className="min-h-screen bg-[#FDFDFD] flex items-center justify-center p-6">
-				<div className="max-w-lg w-full rounded-xl border border-red-200 bg-red-50 p-5 text-red-700 shadow-md">
-					<p className="font-semibold text-lg">Unable to load case</p>
-					<p className="mt-2 text-sm text-red-600/90">{loadError}</p>
-					<div className="mt-6 flex gap-3">
+			<div className="min-h-screen bg-[#fff8f0] flex items-center justify-center p-6" style={{ fontFamily: "'Work Sans', sans-serif" }}>
+				<div className="max-w-md w-full rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.9)] shadow-[0_4px_24px_rgba(59,47,47,0.06)] p-8 flex flex-col items-center gap-4 text-center">
+					<svg viewBox="0 0 64 64" fill="none" style={{ width: 28, height: 28, opacity: 0.22 }}>
+						<path d="M16 10h32l-8 14 5 8-13 22-13-22 5-8-8-14Z" fill="#5C4033" />
+						<path d="M32 24 27 32h10l-5-8Z" fill="#3D5A35" />
+					</svg>
+					<p className="text-[15px] font-medium text-[#3B2F2F]">Could not load this case</p>
+					<p className="text-[12px] text-[#5C4033]/50 leading-relaxed">{loadError}</p>
+					<div className="flex gap-3 mt-2">
 						<button
 							onClick={() => setReloadTick((current) => current + 1)}
-							className="rounded-lg bg-red-700 px-4 py-2 text-sm font-bold text-white hover:bg-red-800 transition"
+							className="rounded-full bg-[#3D5A35] px-5 py-2 text-[12px] font-semibold text-white hover:bg-[#4a6e40] transition"
 						>
-							Retry Connection
+							Try again
 						</button>
 						<button
 							onClick={() => router.push('/repository')}
-							className="rounded-lg border-2 border-red-200 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100 transition"
+							className="rounded-full border border-[#3D5A35]/20 px-5 py-2 text-[12px] font-semibold text-[#5C4033]/70 hover:border-[#3D5A35]/40 transition"
 						>
-							Back to Repository
+							Back to library
 						</button>
 					</div>
 				</div>
@@ -1287,5 +1331,13 @@ export default function InterviewerPage({ params }: { params: Promise<{ id: stri
 				</button>
 			</main>
 		</div>
+	)
+}
+
+export default function InterviewerPage({ params }: { params: Promise<{ id: string }> }) {
+	return (
+		<CaseErrorBoundary>
+			<InterviewerPageInner params={params} />
+		</CaseErrorBoundary>
 	)
 }

@@ -1540,6 +1540,1214 @@
     },
     "framework": "Candidate: What are the different services that the bank provides? Who are our customers? Is it B2B, B2C or both?\nInterviewer: We are a Retail Bank headquartered in Qatar and operational throughout the Middle East for more than 100 years, providing all banking services like loans, deposits, transfers and locker facilities (comparable to HDFC Bank and the likes in India). We only do consumer banking.\nCandidate: Okay. Do we have any information on the number of competitors? How is the industry structured?\nInterviewer: As a matter of fact, we do. There are five other main banks in the Middle East; all the banks have tapped into the growth in this sector and gained their market share at our expense.\nCandidate: How do we define market share? Since when has it been declining and by how much?\nInterviewer: Market share is defined in terms of the number of customers. We have seen a decline from 15% to 10% in the past 1 year.\nCandidate: Alright. Given that our market share has declined, I would like to further segment the customers in order to better understand why this is happening. Have we seen a decline in the bank's market share across any specific revenue stream: could be lending, deposits, brokerage or any other area?\nInterviewer: No. The decline across revenue streams has been uniform. Can you think of more ways to segment these customers?\nCandidate: Is there any pattern to the losing customers by means of their gender, profession, income category, age or location of residence?\nInterviewer: Not really. Can you think of this specifically in the context of the Middle East?\nCandidate: The Middle East predominantly has a Muslim population so it could have something to do with Islamic Banking where the banks do not charge or pay any interest.\nAlternatively, a huge chunk of this population has immigrated from other countries and that could also be a specific category of customers.\nInterviewer: You are right. We have specifically seen a decline in customers who are ex-pats even when the customers who are UAE nationals have grown! They comprise a sizeable portion of the overall population.\nCandidate: Interesting. In order to understand where exactly we are losing customers, I would like to trace the customer journey. I would like to look at need, awareness, affordability, accessibility and experience.\nUnder need, I would like to see if there is any fundamental change in customers' preferences and if we are not able to cater to that. Under awareness, I would like to deal with public perception and our client's outreach capabilities. Under affordability, I would like to analyse if there are cheaper alternatives or lesser prices offered by our competitors. Under accessibility, I would like to see if our service offerings are readily available across the globe for ex-pats. Under experience, I would like to analyse efficiencies that we are able to create for the customer across their life cycle: Onboarding - Transacting - After Care.\nInterviewer: That looks very comprehensive. Why don't we focus on the customer experience and deep dive into transacting? Like I said before, think of this in the context of the Middle East.\nCandidate: Oh! Given that we have specifically seen a decline among ex-pats, it could be something related to foreign exchange transactions of foreign remittances as they have to frequently transfer money to families abroad.\nInterviewer: That is correct!\nCandidate: I think there are two possibilities: either we do not offer these services or we don't offer them better than our competitors. I personally feel that the latter is more likely because we do have a lot of ex-pat clients who avail of these services. Which one is it?\nInterviewer: The latter. Can you think of some reasons why?\nCandidate: Sure. Some of the reasons could include a longer processing time, higher charges, hidden charges and a lack of efficient grievance redressal mechanism.\nInterviewer: You've figured it out. While we do all kinds of remittances, foreign remittances take a lot more time to process if routed through our bank. This is because we are cut off from the SWIFT network used for international transactions and employ an alternative mechanism. How should we deal with this?\nCandidate: We should first try and understand why we are cut off from the SWIFT system and if it is possible for us to adopt it. If not, we can either improve the alternative mechanism that we currently employ or choose to identify a new method.\nInterviewer: Thank you. That will be all.\n\nHabibi, Come to Dubai Framework & Recommendations\nDECLINING MARKET SHARE OF A BANK IN THE MIDDLE-EAST\nClarifying Questions: How is market share defined?\nBrownie Points: Making a mention of Islamic Banking in the context of the Middle East\nKeep In Mind: It is very important to segment at all steps exhaustively to determine the source of the problem\nRECOMMENDATIONS:\nExplore reasons for being cut off from the SWIFT system and if the bank can integrate with the same\nExplore ways of improving the current mechanism that the bank employs or identifying a new method"
   },
+  {
+    "id": 11,
+    "docId": "case-11",
+    "title": "I Knew You Were Trouble When I Walked in",
+    "industry": "Retail",
+    "difficulty": "Hard",
+    "case_type": "Profitability",
+    "company": "McKinsey & Co.",
+    "round": "Partner",
+    "prompt": "Your client owns a chain of departmental stores and has been facing a problem of declining revenue. You have been hired to analyse the situation and recommend solutions accordingly.",
+    "frameworkTree": {
+      "nodes": {
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "root",
+          "children": ["quantity-sold", "product-mix", "price-of-products"]
+        },
+        "quantity-sold": {
+          "id": "quantity-sold",
+          "label": "Quantity Sold",
+          "tone": "branch",
+          "children": ["supply", "demand"]
+        },
+        "product-mix": {
+          "id": "product-mix",
+          "label": "Product Mix",
+          "tone": "support",
+          "children": []
+        },
+        "price-of-products": {
+          "id": "price-of-products",
+          "label": "Price Of Products",
+          "tone": "support",
+          "children": []
+        },
+        "supply": {
+          "id": "supply",
+          "label": "Supply",
+          "tone": "support",
+          "children": []
+        },
+        "demand": {
+          "id": "demand",
+          "label": "Demand",
+          "tone": "branch",
+          "children": ["footfall", "percent-purchasing", "quantity-per-person"]
+        },
+        "footfall": {
+          "id": "footfall",
+          "label": "Footfall",
+          "tone": "support",
+          "children": ["need", "awareness", "accessibility"]
+        },
+        "percent-purchasing": {
+          "id": "percent-purchasing",
+          "label": "% Purchasing",
+          "tone": "branch",
+          "children": ["before-entry", "shopping-experience", "after-selection"]
+        },
+        "quantity-per-person": {
+          "id": "quantity-per-person",
+          "label": "Qty / Person",
+          "tone": "support",
+          "children": []
+        },
+        "need": {
+          "id": "need",
+          "label": "Need",
+          "tone": "support",
+          "children": []
+        },
+        "awareness": {
+          "id": "awareness",
+          "label": "Awareness",
+          "tone": "support",
+          "children": []
+        },
+        "accessibility": {
+          "id": "accessibility",
+          "label": "Accessibility",
+          "tone": "support",
+          "children": []
+        },
+        "before-entry": {
+          "id": "before-entry",
+          "label": "Before Entry",
+          "tone": "support",
+          "children": ["parking", "security-check", "baggage-deposit"]
+        },
+        "shopping-experience": {
+          "id": "shopping-experience",
+          "label": "Shopping Experience",
+          "tone": "branch",
+          "children": ["products", "assistance", "ambience", "layout-and-facilities"]
+        },
+        "after-selection": {
+          "id": "after-selection",
+          "label": "After Selection",
+          "tone": "support",
+          "children": ["payment-and-billing", "packaging-and-carry-bags", "product-performance-and-returns"]
+        },
+        "parking": {
+          "id": "parking",
+          "label": "Parking",
+          "tone": "support",
+          "children": []
+        },
+        "security-check": {
+          "id": "security-check",
+          "label": "Security Check",
+          "tone": "support",
+          "children": []
+        },
+        "baggage-deposit": {
+          "id": "baggage-deposit",
+          "label": "Baggage Deposit",
+          "tone": "support",
+          "children": []
+        },
+        "products": {
+          "id": "products",
+          "label": "Products",
+          "tone": "support",
+          "children": ["range-and-brands", "freshness-and-quality", "product-placement"]
+        },
+        "assistance": {
+          "id": "assistance",
+          "label": "Assistance",
+          "tone": "support",
+          "children": ["staff", "navigation-aids", "shopping-aids"]
+        },
+        "ambience": {
+          "id": "ambience",
+          "label": "Ambience",
+          "tone": "branch",
+          "children": ["sight", "sound", "smell", "touch", "taste"]
+        },
+        "layout-and-facilities": {
+          "id": "layout-and-facilities",
+          "label": "Layout & Facilities",
+          "tone": "support",
+          "children": ["lifts", "cart-ramps", "stairways"]
+        },
+        "payment-and-billing": {
+          "id": "payment-and-billing",
+          "label": "Payment & Billing",
+          "tone": "support",
+          "children": []
+        },
+        "packaging-and-carry-bags": {
+          "id": "packaging-and-carry-bags",
+          "label": "Packaging & Carry Bags",
+          "tone": "support",
+          "children": []
+        },
+        "product-performance-and-returns": {
+          "id": "product-performance-and-returns",
+          "label": "Product Performance & Returns",
+          "tone": "support",
+          "children": []
+        },
+        "range-and-brands": {
+          "id": "range-and-brands",
+          "label": "Range & Brands",
+          "tone": "support",
+          "children": []
+        },
+        "freshness-and-quality": {
+          "id": "freshness-and-quality",
+          "label": "Freshness & Quality",
+          "tone": "support",
+          "children": []
+        },
+        "product-placement": {
+          "id": "product-placement",
+          "label": "Product Placement",
+          "tone": "support",
+          "children": []
+        },
+        "staff": {
+          "id": "staff",
+          "label": "Staff",
+          "tone": "support",
+          "children": []
+        },
+        "navigation-aids": {
+          "id": "navigation-aids",
+          "label": "Navigation Aids",
+          "tone": "support",
+          "children": []
+        },
+        "shopping-aids": {
+          "id": "shopping-aids",
+          "label": "Shopping Aids",
+          "tone": "support",
+          "children": []
+        },
+        "sight": {
+          "id": "sight",
+          "label": "Sight",
+          "tone": "support",
+          "children": []
+        },
+        "sound": {
+          "id": "sound",
+          "label": "Sound",
+          "tone": "support",
+          "children": []
+        },
+        "smell": {
+          "id": "smell",
+          "label": "Smell",
+          "tone": "branch",
+          "children": []
+        },
+        "touch": {
+          "id": "touch",
+          "label": "Touch",
+          "tone": "support",
+          "children": []
+        },
+        "taste": {
+          "id": "taste",
+          "label": "Taste",
+          "tone": "support",
+          "children": []
+        },
+        "lifts": {
+          "id": "lifts",
+          "label": "Lifts",
+          "tone": "support",
+          "children": []
+        },
+        "cart-ramps": {
+          "id": "cart-ramps",
+          "label": "Cart Ramps",
+          "tone": "support",
+          "children": []
+        },
+        "stairways": {
+          "id": "stairways",
+          "label": "Stairways",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "revenue",
+        "quantity-sold",
+        "demand",
+        "percent-purchasing",
+        "shopping-experience",
+        "ambience",
+        "smell"
+      ],
+      "defaultFocusedId": "smell",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Whether other stores are facing a similar problem?",
+            "Are all stores affected equally?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Clarify whether problem is store-specific or chain-wide",
+            "Ambience & sensory factors are easy to overlook"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "'After selecting the product' has been looked at as this affects repeat sales"
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: Sure. I would like to begin by understanding the problem a little better. Since when have we been facing this problem? Do we have any information on the magnitude of decline?\nInterviewer: We have been facing this problem for the past 3 months. However, we don't have the specific numbers in this case.\nCandidate: Seems like a rather recent problem. Do we have information about the decline in revenue in our departmental stores across different locations? Are all stores affected equally?\nInterviewer: We have 20 stores across India and 2 stores in Delhi out of which one has been significantly contributing to this problem.\nCandidate: Interesting, do we have any information on whether other stores in the same locality have been facing similar declines as well?\nInterviewer: Good question. No other stores have been facing a similar issue.\nCandidate: Thank you. Next, I would like to understand the business better. Given that it is a departmental store, can I assume it to be similar to Big Bazaar? Out of the multiple departments we have, is there a particular department (eg \u2013 clothing) that has faced a greater decline?\nInterviewer: Yes, you can assume it to be similar to Big Bazaar. The decline has been fairly uniform across all departments.\nCandidate: Sure, thank you! The Revenue can be affected by\n1) The quantity sold\n2) Price of the products\nCandidate: It is also possible that the product mix has changed and this has resulted in lower revenues. Do we have any information on what has changed in the past 3 months?\nInterviewer: Alright. So, we have seen a change in the quantity sold, you can analyse this further.\nCandidate: Quantity sold can be affected by\n1) Supply-side issues\n2) Demand-side issues\nInterviewer: There has not been any change on the supply side, you can analyse the demand.\nCandidate: Sure, the demand of our product can be broken down into:\nQuantity sold = Footfall * % that make purchases * Quantity purchased per person\nCandidate: Under footfall, we will be analysing factors like the 'Needs' of the customers, 'Awareness' among the customers and 'Accessibility' to our store. Under '% that make purchases', we will be looking at their journey after they have entered the store.\nInterviewer: Great. The percentage that make purchases has changed.\nCandidate: At this point, we can look at 3 stages: Before entering the store - Shopping Experience - After selecting products\nA. Before entering the store\n1) Parking\n2) Security check and baggage deposit\nB. Shopping experience\n1) Product-related factors\n2) Assistance\n3) Ambience\n4) Layout/Infrastructure\nUnder product-related factors, we can look at:\n\u2022 Brands that we are offering compared to that of our competitors\n\u2022 Shelf-life of our products\n\u2022 Product placement - Products may be kept at higher shelves. Certain products may be placed near billing counters.\nUnder Assistance, we can look at:\n\u2022 Availability and quality of staff\n\u2022 Availability of shopping bags and carts\n\u2022 Signs and Symbols for direction\nUnder Ambience, we can look at:\n\u2022 Music \u2013 whether it is loud or unpleasant\n\u2022 Smell \u2013 whether there is a change in fragrance\n\u2022 Hygiene and cleanliness\n\u2022 Temperature - too cold or too hot\nUnder Layout and facilities, we can look at:\n\u2022 Non-functioning lifts\n\u2022 No ramps for the carts\n\u2022 Steep stairs\nC. After selecting products\n1) Number of billing counters\n2) Carry bags provided\nInterviewer: You have covered everything, as it turns out the store recently changed its cleaning detergent which has a distinct fragrance. This has not been well-received by certain customers. Hence, they leave the store hastily without purchasing anything.\nCandidate: Thank you sir. Yes, makes sense.\n\nI Knew You Were Trouble When I Walked in Framework & Recommendations\nDECLINING REVENUES OF A DEPARTMENTAL STORE\nClarifying Questions: Whether other stores are facing a similar problem?\nBrownie Points: 'After selecting the product' has been looked at as this affects repeat sales\nKeep In Mind: Mapping the process helps in isolating the problem faster\nRECOMMENDATIONS:\nSwitch back to original cleaning detergent immediately\nReschedule cleaning to non-working hours\nRun customer surveys to understand their preferences before operational changes"
+  },
+  {
+    "id": 12,
+    "docId": "case-12",
+    "title": "As You Sow, So Shall You Reap",
+    "industry": "Automobile",
+    "difficulty": "Hard",
+    "case_type": "Profitability",
+    "company": "Kearney",
+    "round": "Buddy",
+    "prompt": "Hey. Your client is an Automobile manufacturer that has been facing a decline in profits over the last 2 years. They want you to analyse why this is happening and then give solutions.",
+    "frameworkTree": {
+      "nodes": {
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "root",
+          "children": [
+            "sale-of-tractors",
+            "rent-of-tractors",
+            "value-added-services-other-parts"
+          ]
+        },
+        "sale-of-tractors": {
+          "id": "sale-of-tractors",
+          "label": "Sale Of Tractors",
+          "tone": "branch",
+          "children": [
+            "average-price",
+            "number-of-tractors"
+          ]
+        },
+        "rent-of-tractors": {
+          "id": "rent-of-tractors",
+          "label": "Rent Of Tractors",
+          "tone": "support",
+          "children": []
+        },
+        "value-added-services-other-parts": {
+          "id": "value-added-services-other-parts",
+          "label": "Value Added Services/ Other Parts",
+          "tone": "support",
+          "children": []
+        },
+        "average-price": {
+          "id": "average-price",
+          "label": "Average Price",
+          "tone": "support",
+          "children": []
+        },
+        "number-of-tractors": {
+          "id": "number-of-tractors",
+          "label": "Number of Tractors",
+          "tone": "branch",
+          "children": [
+            "production",
+            "distribution",
+            "demand"
+          ]
+        },
+        "production": {
+          "id": "production",
+          "label": "Production",
+          "tone": "support",
+          "children": []
+        },
+        "distribution": {
+          "id": "distribution",
+          "label": "Distribution",
+          "tone": "support",
+          "children": []
+        },
+        "demand": {
+          "id": "demand",
+          "label": "Demand",
+          "tone": "branch",
+          "children": [
+            "need",
+            "awareness",
+            "accessibility",
+            "affordability",
+            "experience"
+          ]
+        },
+        "need": {
+          "id": "need",
+          "label": "Need",
+          "tone": "support",
+          "children": []
+        },
+        "awareness": {
+          "id": "awareness",
+          "label": "Awareness",
+          "tone": "support",
+          "children": []
+        },
+        "accessibility": {
+          "id": "accessibility",
+          "label": "Accessibility",
+          "tone": "support",
+          "children": []
+        },
+        "affordability": {
+          "id": "affordability",
+          "label": "Affordability",
+          "tone": "support",
+          "children": []
+        },
+        "experience": {
+          "id": "experience",
+          "label": "Experience",
+          "tone": "branch",
+          "children": [
+            "pre-purchase",
+            "in-store-experience",
+            "delivery",
+            "usage",
+            "after-sales"
+          ]
+        },
+        "pre-purchase": {
+          "id": "pre-purchase",
+          "label": "Pre-Purchase",
+          "tone": "support",
+          "children": []
+        },
+        "in-store-experience": {
+          "id": "in-store-experience",
+          "label": "In-Store Experience",
+          "tone": "leaf",
+          "children": []
+        },
+        "delivery": {
+          "id": "delivery",
+          "label": "Delivery",
+          "tone": "support",
+          "children": []
+        },
+        "usage": {
+          "id": "usage",
+          "label": "Usage",
+          "tone": "support",
+          "children": []
+        },
+        "after-sales": {
+          "id": "after-sales",
+          "label": "After-Sales",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "revenue",
+        "sale-of-tractors",
+        "number-of-tractors",
+        "demand",
+        "experience"
+      ],
+      "defaultFocusedId": "after-sales",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Where does the client lie on the value chain?",
+            "Is the tractor a commoditized product?",
+            "Segmentation of problem based on geography"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Make sure to never stop immediately after reaching the problem. Try to analyse why the problem occurred as it would help in your recommendations later on."
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Importance of EMIs in rural markets",
+            "Giving recommendations in a 2x2 matrix"
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: Okay, so our client is an automobile manufacturer. Does that mean they manufacture cars and 2 wheelers?\nInterviewer: No. In fact, they manufacture only tractors.\nCandidate: That's interesting. Do we have information on where the client is located and what the customer segments are? Have we faced a decline in any particular segment?\nInterviewer: The client is located pan India and caters mainly to farmers. It has faced a decline across the country.\nCandidate: Where does our client lie in the value chain? Does it just manufacture and distribute the tractors?\nInterviewer: Our client manufactures and then sells the tractors in its own stores. It also does marketing for the same.\nCandidate: Finally, do we have any segmentation on the type of tractors we sell and if our competitors have also faced a decline in profits in the last 2 years? Also, are our tractors a commoditized product?\nInterviewer: For the purpose of this case, assume that the client sells only one type of tractor and that competitors have been seeing an increase in profits in the last 2 years. Yes, all tractors in the market are commoditized.\nCandidate: Great! It is a company-specific problem then. I believe that the decline in profits can be attributed to either a decline in revenues or an increase in costs or a combination of both.\nInterviewer: Could you quickly list out the revenue streams and major costs that the company would be facing?\nCandidate: Sure. The revenue streams would be sale of tractors, rent from tractors, value-added services, after sales services and sale of parts and spares. The major costs would be variable costs such as raw materials, processing, transportation, storage, labour and marketing and fixed costs such as land, interest, machines, stores and labour.\nInterviewer: Is there any Fixed Cost you might be missing?\nCandidate: Oh yes! Considering we are an end-to-end manufacturer, we must be incurring significant R&D expenditure.\nInterviewer: Perfect. Let's now look at our revenue from the sale of tractors. This has gone down. Revenue from value-added services and after sales services has in fact gone up. We shall analyse that later on. Everything else has remained constant.\nCandidate: Sure. Revenues from tractors can be down due to number of tractors sold or due to a reduction in average price charged per tractor. Considering this is a commoditized product, my hypothesis is that the number of tractors sold has gone down and price has remained constant.\nInterviewer: Yes. That is right.\nCandidate: Analysing the steps of the value chain (candidate ignores market size since it is not an industry-wide problem), do we know if there has been a fall in the production, distribution or demand of our tractors?\nInterviewer: Demand has gone down.\nCandidate: Sure. For some reason customers have been preferring our competitors' products over ours. I would like to analyse the following buckets:\n1) Need: Maybe there has been a reduction in the need for the tractors we sell, probably due to substitutes. However, since it is not an industry-wide problem, I do not think this is the cause.\n2) Awareness: This would entail both positive promotion and publicity we're undertaking that might have gone down or negative publicity that we've received. Our competitors might also be aggressively pushing their products.\n3) Affordability: Maybe our competitors have reduced prices or they have been offering more lucrative payment schemes like EMI's that we do not. This is especially important in the context of our customers – primarily farmers – that have seasonal incomes.\n4) Accessibility: Here, I will benchmark how many stores our competitors' tractors are sold in and also look at how dispersed we are compared to them to ensure that we're accessible to all customers.\n5) Experience: Here, I will analyse the entire experience, from buying our product to its day-to-day use.\nInterviewer: That's comprehensive! Let's look at experience.\nCandidate: (Draws a customer journey) First, I will look at the pre-buying stage where the consumer gets to know about our tractors through marketing, word-of-mouth, etc. Next, I will look at In-Store experiences, since we operate our own retail outlets. Following this, I will analyse the method of delivery of the tractor once the order is placed (This is an important step as the tractor should not arrive at the place of delivery in a sub-standard quality or at an inconvenient time). I think the most important step in the experience would be the day-to-day use of the tractor and its various qualities. I'd also like to add the possibility of sending a company representative to familiarise the customer with the tractor. Lastly, I'd like to look at after-sales services.\nInterviewer: Perfect! Let's further analyse In-Store experiences and after-sales services. The rest seems to be at par with competitors.\nCandidate: Beginning with In-Store experiences, I'd like to divide the factors into staff-related, store-related and miscellaneous. Staff-related would include training, uniform, competence, quality of service and availability. Store-related factors would include sufficient space, ambience (odour, colours used, background music), layout and related factors. Miscellaneous factors include the atmosphere outside the store – for example, some construction or drainage site right outside the store and anything else that diminishes the in-store experience.\nInterviewer: Great job. It was observed that the staff was often rude and unwelcoming to the customers leading to reduced sales and poor satisfaction levels.\nCandidate: Oh okay. Would you like me to analyse reasons for the same?\nInterviewer: In fact, it was observed that the number of perks we are offering to our sales staff has gone down recently due to a change in management.\nCandidate: Sure, I'll keep that in mind. I would first like to analyse after-sales services. I would divide the after-sales segment into – Types of services offered, ease of booking service, quality of service, time taken to complete service, location of service and grievance-handling.\nInterviewer: Is there anything you are missing out on?\nCandidate: Oh yes, indeed. Cost of after-sales servicing.\nInterviewer: Exactly. Go ahead.\nCandidate: Can you tell me the cost structure of our after-sales services?\nInterviewer: Sure. For the first 3 years, all servicing is done free of cost, post which, we charge an average of Rs. 5,000 per service.\nCandidate: Interesting. Is this comparable to our competitors?\nInterviewer: In fact, our competitors offer 5 years of free service and then charge an average of Rs. 3000 per service.\nCandidate: Aha! This explains the increase in revenue from after-sales services. However, the marginal increase is clearly not enough to compensate for the loss from the sale of tractors. To justify the higher price, we would require a higher quality of service. Is that so?\nInterviewer: No, in fact, after-sales service too is commoditized. We charge a high price because we were unaware of the prevailing rate in the market. Let's move on to recommendations.\nCandidate: Sure! Recommendations can be divided into a 2x2 matrix with high and low feasibility on one axis and high and low impact on the other axis (Refer to diagram). The recommendations are: Improved perks to staff based on sales, training of staff, non-monetary incentives like employee of the month, routine checks of performance. Coming to after-sales services, a simple reduction of price would be most feasible with an extension of the free servicing period. Else, we can improve the quality of service and keep the rate same therein targeting high-end customers.\nInterviewer: Perfect. We can close the case here. Thank you!\n\nAs You Sow, So Shall You Reap Framework & Recommendations\nDECLINING REVENUE OF AUTOMOBILE MANUFACTURER\nClarifying Questions: Where does the client lie on the value chain? Is the tractor a commoditized product? Segmentation of problem based on geography\nBrownie Points: Importance of EMIs in rural markets Giving recommendations in a 2x2 matrix\nKeep In Mind: Make sure to never stop immediately after reaching the problem. Try to analyse why the problem occurred as it would help in your recommendations later on.\nRECOMMENDATIONS: Low feasibility, Low impact: Improving quality of service for higher price.\nLow feasibility, High impact: Monthly checks of performance.\nHigh feasibility, Low impact: Reduction of price for same quality.\nHigh feasibility, High impact: Improved perks and re-training of staff, Marketing of changed after-sales service prices."
+  },
+  {
+    "id": 13,
+    "docId": "case-13",
+    "title": "Charlie and the Candy Factory",
+    "industry": "FMCG",
+    "difficulty": "Hard",
+    "case_type": "Profitability",
+    "company": "Authors",
+    "round": "N/A",
+    "prompt": "Hey. Your client is Mr. Wonka, CEO of Wonka Industries. Wonka Industries has been facing declining profits in the last 2 months. He has hired you, a famous connoisseur of candy, to solve his woes.",
+    "frameworkTree": {
+      "nodes": {
+        "profits": {
+          "id": "profits",
+          "label": "Profits",
+          "tone": "root",
+          "children": [
+            "revenue",
+            "costs"
+          ]
+        },
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "branch",
+          "children": [
+            "midget-wonka",
+            "premium-wonka"
+          ]
+        },
+        "costs": {
+          "id": "costs",
+          "label": "Costs",
+          "tone": "support",
+          "children": []
+        },
+        "midget-wonka": {
+          "id": "midget-wonka",
+          "label": "Midget Wonka",
+          "tone": "support",
+          "children": []
+        },
+        "premium-wonka": {
+          "id": "premium-wonka",
+          "label": "Premium Wonka",
+          "tone": "branch",
+          "children": [
+            "price",
+            "volume"
+          ]
+        },
+        "price": {
+          "id": "price",
+          "label": "Price",
+          "tone": "support",
+          "children": []
+        },
+        "volume": {
+          "id": "volume",
+          "label": "Volume",
+          "tone": "branch",
+          "children": [
+            "market-size",
+            "market-share"
+          ]
+        },
+        "market-size": {
+          "id": "market-size",
+          "label": "Market Size",
+          "tone": "support",
+          "children": []
+        },
+        "market-share": {
+          "id": "market-share",
+          "label": "Market Share",
+          "tone": "branch",
+          "children": [
+            "production",
+            "distribution",
+            "demand"
+          ]
+        },
+        "production": {
+          "id": "production",
+          "label": "Production",
+          "tone": "support",
+          "children": []
+        },
+        "distribution": {
+          "id": "distribution",
+          "label": "Distribution",
+          "tone": "support",
+          "children": []
+        },
+        "demand": {
+          "id": "demand",
+          "label": "Demand",
+          "tone": "branch",
+          "children": [
+            "need",
+            "awareness",
+            "affordability",
+            "accessibility",
+            "experience"
+          ]
+        },
+        "need": {
+          "id": "need",
+          "label": "Need",
+          "tone": "support",
+          "children": []
+        },
+        "awareness": {
+          "id": "awareness",
+          "label": "Awareness",
+          "tone": "support",
+          "children": []
+        },
+        "affordability": {
+          "id": "affordability",
+          "label": "Affordability",
+          "tone": "branch",
+          "children": [
+            "own-price",
+            "rim-rams-price",
+            "payment-terms"
+          ]
+        },
+        "accessibility": {
+          "id": "accessibility",
+          "label": "Accessibility",
+          "tone": "support",
+          "children": []
+        },
+        "experience": {
+          "id": "experience",
+          "label": "Experience",
+          "tone": "support",
+          "children": []
+        },
+        "own-price": {
+          "id": "own-price",
+          "label": "Own Price",
+          "tone": "support",
+          "children": []
+        },
+        "rim-rams-price": {
+          "id": "rim-rams-price",
+          "label": "Rim Rams Price",
+          "tone": "branch",
+          "children": [
+            "raw-material-percent",
+            "other-costs",
+            "markup-percent",
+            "candy-size"
+          ]
+        },
+        "payment-terms": {
+          "id": "payment-terms",
+          "label": "Payment Terms",
+          "tone": "support",
+          "children": []
+        },
+        "raw-material-percent": {
+          "id": "raw-material-percent",
+          "label": "Raw Material %",
+          "tone": "support",
+          "children": []
+        },
+        "other-costs": {
+          "id": "other-costs",
+          "label": "Other Costs",
+          "tone": "support",
+          "children": []
+        },
+        "markup-percent": {
+          "id": "markup-percent",
+          "label": "Markup %",
+          "tone": "support",
+          "children": []
+        },
+        "candy-size": {
+          "id": "candy-size",
+          "label": "Candy Size",
+          "tone": "branch",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "profits",
+        "revenue",
+        "premium-wonka",
+        "volume",
+        "market-share",
+        "demand",
+        "affordability",
+        "rim-rams-price"
+      ],
+      "defaultFocusedId": "candy-size",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Location of client",
+            "Segmentation of products",
+            "Competitor benchmarking"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Compare per-unit cost, not just composition",
+            "Take time to analyse tabular data"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Under affordability, considering not just the fact that our products might be more expensive, but also that competitors might have reduced prices while ours have remained constant."
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: Interesting. I'd like to understand the problem a little better. Where exactly is Wonka Industries located? How much is the decline in profits? What are the various types of candy he sells?\nInterviewer: Sure, he sells across Australia. He has seen a 15% dip in profits. He offers two types of candy, the Premium Wonka and the Midget Wonka.\nCandidate: Okay. Has this decline been across Australia or restricted to a particular part of Australia? Have both types of candy seen a decline?\nInterviewer: The problem has been across Australia. No, in fact only the Premium Wonka has seen a dip in profits while the Midget Wonka has continued to grow.\nCandidate: Interesting. Lastly, I'd like to understand the competitive landscape and if any competitor has seen a similar decline in profits?\nInterviewer: No, they haven't. You can assume it to be a client-specific issue.\nCandidate: Great! We shall focus only on the Premium Wonka segment. I believe that the decline in profits can be attributed to either a decline in revenues or an increase in costs or a combination of both?\nInterviewer: Focus on revenues.\nCandidate: Sure. Revenues from Premium Wonka can be down due to the volume of candy sold or due to the average price charged per candy. Do we know whether the volume sold has gone down or if the price has changed?\nInterviewer: Sure, let's look at the volume sold.\nCandidate: Analysing the steps of the value chain (candidate ignores market size since it is not an industry-wide problem), do we know if there has been a fall in either the production, distribution or demand of our Premium Wonka?\nInterviewer: There has been a fall in Demand.\nCandidate: Sure. So, for some reason customers have been preferring our competitors' products over ours. I would like to analyse the following buckets. 1) Need: Maybe, there has been a reduction in the need for the type of Premium Wonkas we sell, probably due to substitutes. However, since it is not an industry-wide problem, I do not think this is the cause. 2) Awareness: This would entail both positive promotion and publicity we're undertaking that might have gone down or negative publicity that we've received. It is also possible that our competitors have been aggressively pushing their products. 3) Affordability: This would include any reduction in prices by our competitors or lucrative payment schemes offered. 4) Accessibility: Here, I would benchmark how many stores our competitors are present in and also look at how dispersed we are compared to them ensuring we're accessible to all customers. 5) Experience: Here, I would analyse the entire experience, from buying our product to its taste and quality.\nInterviewer: Brilliant. Let's look at Affordability.\nCandidate: That's interesting. I know that we have not changed our prices in the last 2 months. This means that the competitors are either offering their products at a cheaper price or are offering payment methods that are more convenient.\nInterviewer: Good observation. From now on, let us assume that there is just one competitor, Rim Rams, that are offering their premium candy at a lower price.\nCandidate: I would like to understand how Rim Rams are able to offer their premium product at a lower price. Here, I would like to look at the size of their premium candy, the cost of raw materials and the percentage composition of the raw materials. It is possible that they are providing the same raw materials but are including a smaller percentage of the more expensive raw materials. Lastly, I'd also like to look at the cost of other factors of production to compare the overall costs and the markup over the cost they are charging as this might be lower than ours too.\nInterviewer: Sure. Here's some information for you.\nCandidate: (Analyses table) There seems to be nothing here that suggests a reason for a difference in price. Small differences in composition would not result in such a big drop in profitability. Maybe there's something I'm missing.\nInterviewer: What other information would you require?\nCandidate: (Thinks) Ahaa. It is possible that though the size of packaging is similar, the actual candy itself is much bigger than our competitor's. Therefore, we are using more raw materials per candy resulting in a higher cost! This explains how composition, cost and markup are similar.\nInterviewer: Brilliant! You're spot on. It has been identified that our competitor's candy weighs 175 grams while our candy weighs 200 grams. You can now proceed to give recommendations.\n\nCharlie and the Candy Factory Framework & Recommendations\nDECLINING PROFITS OF WONKA INDUSTRIES\nClarifying Questions: Location of client Segmentation of products Competitor benchmarking\nBrownie Points: Under affordability, considering not just the fact that our products might be more expensive, but also that competitors might have reduced prices while ours have remained constant.\nKeep In Mind: Take time to analyse tabular data. Admit to the interviewer when you need a nudge.\nRECOMMENDATIONS: We could follow the same strategy and increase the size of our packaging; this will lead to customers knowing that our product is bigger.\nWe could advertise the difference in quantity in subtle manners communicating the larger candy size.\nWe could ourselves reduce the size of the candy, resulting in a reduction in cost.\nWe could reduce our markup percentage in order to be competitive."
+  },
+  {
+    "id": 14,
+    "docId": "case-14",
+    "title": "Look Ma, I Can Fly",
+    "industry": "Airlines",
+    "difficulty": "Hard",
+    "case_type": "Profitability",
+    "company": "McKinsey & Co.",
+    "round": "Buddy",
+    "prompt": "Your client is the Airport Authority of India. They are concerned about declining revenues in the Bangalore Airport. They would like you to analyse why this may be happening and give suitable suggestions.",
+    "frameworkTree": {
+      "nodes": {
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "root",
+          "children": [
+            "airline-companies",
+            "shops",
+            "parking",
+            "advertisements",
+            "other-services"
+          ]
+        },
+        "airline-companies": {
+          "id": "airline-companies",
+          "label": "Airline Companies",
+          "tone": "support",
+          "children": []
+        },
+        "shops": {
+          "id": "shops",
+          "label": "Shops",
+          "tone": "branch",
+          "children": [
+            "rent",
+            "commission"
+          ]
+        },
+        "parking": {
+          "id": "parking",
+          "label": "Parking",
+          "tone": "support",
+          "children": []
+        },
+        "advertisements": {
+          "id": "advertisements",
+          "label": "Advertisements",
+          "tone": "support",
+          "children": []
+        },
+        "other-services": {
+          "id": "other-services",
+          "label": "Other Services",
+          "tone": "support",
+          "children": []
+        },
+        "rent": {
+          "id": "rent",
+          "label": "Rent",
+          "tone": "support",
+          "children": []
+        },
+        "commission": {
+          "id": "commission",
+          "label": "Commission",
+          "tone": "branch",
+          "children": [
+            "no-of-shops",
+            "commission-per-shop"
+          ]
+        },
+        "no-of-shops": {
+          "id": "no-of-shops",
+          "label": "No. of Shops",
+          "tone": "support",
+          "children": []
+        },
+        "commission-per-shop": {
+          "id": "commission-per-shop",
+          "label": "Commission/Shop",
+          "tone": "branch",
+          "children": [
+            "no-of-customers",
+            "basket-size",
+            "commission-rate"
+          ]
+        },
+        "no-of-customers": {
+          "id": "no-of-customers",
+          "label": "No. of Customers",
+          "tone": "branch",
+          "children": [
+            "supply",
+            "distribution",
+            "demand"
+          ]
+        },
+        "basket-size": {
+          "id": "basket-size",
+          "label": "Average Basket Size",
+          "tone": "support",
+          "children": []
+        },
+        "commission-rate": {
+          "id": "commission-rate",
+          "label": "Commission Rate",
+          "tone": "support",
+          "children": []
+        },
+        "supply": {
+          "id": "supply",
+          "label": "Supply",
+          "tone": "support",
+          "children": []
+        },
+        "distribution": {
+          "id": "distribution",
+          "label": "Distribution",
+          "tone": "branch",
+          "children": [
+            "means-of-payment",
+            "time",
+            "visibility",
+            "accessibility"
+          ]
+        },
+        "demand": {
+          "id": "demand",
+          "label": "Demand",
+          "tone": "support",
+          "children": []
+        },
+        "means-of-payment": {
+          "id": "means-of-payment",
+          "label": "Means Of Payment",
+          "tone": "support",
+          "children": []
+        },
+        "time": {
+          "id": "time",
+          "label": "Time",
+          "tone": "branch",
+          "children": [
+            "reach-airport",
+            "enter-gate",
+            "check-in",
+            "security",
+            "boarding"
+          ]
+        },
+        "visibility": {
+          "id": "visibility",
+          "label": "Visibility",
+          "tone": "support",
+          "children": []
+        },
+        "accessibility": {
+          "id": "accessibility",
+          "label": "Accessibility",
+          "tone": "support",
+          "children": []
+        },
+        "reach-airport": {
+          "id": "reach-airport",
+          "label": "Reach Airport",
+          "tone": "branch",
+          "children": []
+        },
+        "enter-gate": {
+          "id": "enter-gate",
+          "label": "Enter Gate",
+          "tone": "branch",
+          "children": []
+        },
+        "check-in": {
+          "id": "check-in",
+          "label": "Check-in",
+          "tone": "branch",
+          "children": []
+        },
+        "security": {
+          "id": "security",
+          "label": "Security",
+          "tone": "branch",
+          "children": [
+            "no-of-flyers",
+            "turnover-time-per-flyer",
+            "no-of-lanes"
+          ]
+        },
+        "no-of-flyers": {
+          "id": "no-of-flyers",
+          "label": "No. of Flyers",
+          "tone": "support",
+          "children": []
+        },
+        "turnover-time-per-flyer": {
+          "id": "turnover-time-per-flyer",
+          "label": "Turnover Time/Flyer",
+          "tone": "support",
+          "children": []
+        },
+        "no-of-lanes": {
+          "id": "no-of-lanes",
+          "label": "No. of Lanes",
+          "tone": "branch",
+          "children": []
+        },
+        "boarding": {
+          "id": "boarding",
+          "label": "Boarding",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "revenue",
+        "shops",
+        "commission",
+        "commission-per-shop",
+        "no-of-customers",
+        "distribution",
+        "time",
+        "security"
+      ],
+      "defaultFocusedId": "no-of-lanes",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Have other airports faced a similar decline?",
+            "Where are the shops located?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Locate shops first, inside or outside terminal",
+            "Rule out shop count as a branch quickly due to rent not seeing a decline"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Possibility of shops cheating the authorities",
+            "Means of payment – ATM that can affect customer purchasing behaviour"
+          ]
+        }
+      ]
+    },
+    "recommendationsTable": {
+      "framework": "Short-Term / Long-Term",
+      "shortTerm": [
+        {
+          "title": "Rehire / Replace Security Personnel",
+          "action": "Recruit and onboard new security staff to reopen closed lanes",
+          "impact": "Reduces security wait time and restores flyer dwell time near shops"
+        },
+        {
+          "title": "Temporary Technology Deployment",
+          "action": "Deploy portable X-ray machines and metal detectors to compensate for reduced lanes",
+          "impact": "Bridges the gap before full staffing is restored"
+        }
+      ],
+      "longTerm": [
+        {
+          "title": "Mandatory Behaviour Training",
+          "action": "Run structured training on professional conduct, de-escalation and passenger interaction",
+          "impact": "Prevents repeat complaints that triggered the original layoffs"
+        },
+        {
+          "title": "Technology Upgrade",
+          "action": "Invest in advanced X-ray and body scanners for higher throughput per lane",
+          "impact": "Structurally lowers security check time and reduces headcount dependence"
+        },
+        {
+          "title": "Performance & Grievance Mechanism",
+          "action": "Set up a formal review process for passenger complaints",
+          "impact": "Protects operational capacity while keeping accountability"
+        }
+      ]
+    },
+    "framework": "Candidate: Do we know how much revenues have declined by and since when this has been happening? Also, have other airports in the country faced a similar decline?\nInterviewer: Revenues are down by 4% since the last year. Other airports are doing fine.\nCandidate: Got it. The main revenue streams of an airport are:\n1) Fee paid by airline companies to use the airport facilities, runways, etc.\n2) Advertisements\n3) Rent for space allocated to shops and stalls\n4) Parking\n5) Other services\nIs this right?\nInterviewer: Yes. What would you like to know now?\nCandidate: I am interested in knowing which revenue streams have faced a decline in the last year.\nInterviewer: The decline has been observed in the revenue from shops.\nCandidate: Interesting. I have not been to Bangalore in a long time. Can I know whether these shops are located inside the airport terminal or outside?\nInterviewer: There are a few shops outside the building. However, the decline has been in revenue from the shops located inside the airport. These shops are located near the boarding gates.\nCandidate: Okay, that is useful information. As per my understanding, there are 2 ways in which the Airport can make money from these shops – 'Rent' and 'Commission on Sales'. Have both gone down?\nInterviewer: The total commission received has reduced.\nTotal commission = Number of shops * Commission/shop\nCandidate: Since rent received has not seen a decline, it is unlikely that the number of shops has reduced. However, it is possible a few shops are closed for some reason. Alternatively, the commission/shop could have gone down.\nInterviewer: The commission/shop has reduced.\nCandidate: Is this the case with all shops present near the boarding gate? Perhaps, there are only a few shops which have not been doing well.\nInterviewer: That is not the case. All shops have been turning in less commission.\nCommission/shop = Number of customers * Basket Size * Commission Rate\nCandidate: My hypothesis is that one or more of the above factors has seen a decline. However, it is also possible that the above factors have remained the same, but the shops are now under-reporting their sales figures and cheating the authorities.\nInterviewer: Interesting insight. We are confident about our system and have no reason to believe that we are being cheated. Shops have reported a decline in the number of customers.\nCandidate: Okay. Since all types of shops have seen a decline, it is unlikely that the problem is with the shops. Either the customers no longer wish to buy products from the shops or they are unable to for some reason. The latter seems more likely.\nInterviewer: We have no indication that demand has gone down. You're right. There must be something hindering the customers from making the purchases.\nCandidate: Okay. In order for customers to make purchases, they require the following:\n1) Means of payment: Maybe an ATM inside has closed and the shops do not accept digital payments.\n2) Time: The customers no longer have enough time to stop and make purchases.\n3) Visibility: It is possible that customers aren't able to see the shops. Maybe there is some repair work going on and the area has been barricaded, reducing the visibility of the shops. Maybe I would also like to know if there is adequate signage inside the airport directing the flyers to the shops.\n4) Accessibility: Maybe there has been a limit placed on the number of people entering shops at a point of time.\nInterviewer: Apparently, the flyers no longer have enough time to visit shops.\nCandidate: That is strange. It would make sense to analyse the flyer's journey at this point. The flyers first arrive at the airport. It is possible that they are arriving later than before due to factors like increased traffic, unavailability of cabs, etc. After this, they make a queue for preliminary verification at the main gate. Once they are inside, they proceed to the check-in counters. It is possible that this step is taking longer due to reduced check-in counters or some other reason. Next, they must complete their security check and baggage scan. Depending on how much time is left at this point, they may choose to visit certain shops before they board the flight. Do we know whether there has been an increase in time in any of the above steps?\nInterviewer: The security check time has increased significantly. Why do you think this may be happening?\nCandidate: The following formula will give us the security check time:\nSecurity check time = (Number of flyers at a point of time * Turnover time/flyer)/(Number of lanes)\nHas there been a change in any of these factors?\nInterviewer: Good. We laid off a few security personnel last year. Thus, some lanes have been closed. This was done because some flyers had complained of rude behaviour by the personnel. What should be done?\nCandidate: The authorities can explore the following recommendations:\n1) Replacing laid off personnel with new personnel\n2) Training personnel to make sure such incidents do not happen in the future\n3) Using technology to reduce security time. This includes better and more efficient X-ray machines and metal detectors\nInterviewer: We will incorporate the same. Thank you!\n\nLook Ma, I Can Fly Framework & Recommendations\nDECLINING REVENUES OF THE BANGALORE AIRPORT\nClarifying Questions: Have other airports faced a similar decline? Where are the shops located?\nBrownie Points: Possibility of shops cheating the authorities Means of payment – ATM that can affect customer purchasing behaviour\nKeep In Mind: Make sure that the customer journey is comprehensive, otherwise you may miss out on the solution"
+},
+{
+    "id": 15,
+    "docId": "case-15",
+    "title": "Terrible Times",
+    "industry": "Media",
+    "difficulty": "Easy",
+    "case_type": "Profitability",
+    "company": "Bain & Company",
+    "round": "Partner",
+    "prompt": "Hey, let's begin with a quick case. Your client is a famous newspaper publisher in India. Their cost structure seems to be below par. They have asked you to consult them on the same.",
+    "frameworkTree": {
+      "nodes": {
+        "costs": {
+          "id": "costs",
+          "label": "Costs",
+          "tone": "root",
+          "children": [
+            "variable",
+            "fixed"
+          ]
+        },
+        "variable": {
+          "id": "variable",
+          "label": "Variable",
+          "tone": "branch",
+          "children": [
+            "raw-materials",
+            "inbound-logistics",
+            "content-production",
+            "printing-and-processing",
+            "packaging",
+            "outbound-distribution",
+            "marketing-and-sales"
+          ]
+        },
+        "fixed": {
+          "id": "fixed",
+          "label": "Fixed",
+          "tone": "support",
+          "children": []
+        },
+        "raw-materials": {
+          "id": "raw-materials",
+          "label": "Raw Materials",
+          "tone": "support",
+          "children": []
+        },
+        "inbound-logistics": {
+          "id": "inbound-logistics",
+          "label": "Inbound Logistics",
+          "tone": "support",
+          "children": []
+        },
+        "content-production": {
+          "id": "content-production",
+          "label": "Content Production",
+          "tone": "support",
+          "children": []
+        },
+        "printing-and-processing": {
+          "id": "printing-and-processing",
+          "label": "Printing & Processing",
+          "tone": "support",
+          "children": []
+        },
+        "packaging": {
+          "id": "packaging",
+          "label": "Packaging",
+          "tone": "support",
+          "children": []
+        },
+        "outbound-distribution": {
+          "id": "outbound-distribution",
+          "label": "Outbound Distribution",
+          "tone": "branch",
+          "children": [
+            "vendors-30",
+            "agents-70"
+          ]
+        },
+        "marketing-and-sales": {
+          "id": "marketing-and-sales",
+          "label": "Marketing & Sales",
+          "tone": "support",
+          "children": []
+        },
+        "vendors-30": {
+          "id": "vendors-30",
+          "label": "Vendors 30%",
+          "tone": "support",
+          "children": []
+        },
+        "agents-70": {
+          "id": "agents-70",
+          "label": "Agents 70%",
+          "tone": "branch",
+          "children": [
+            "no-of-agents",
+            "cost-per-agent"
+          ]
+        },
+        "no-of-agents": {
+          "id": "no-of-agents",
+          "label": "No. Of Agents",
+          "tone": "support",
+          "children": []
+        },
+        "cost-per-agent": {
+          "id": "cost-per-agent",
+          "label": "Cost/Agent",
+          "tone": "branch",
+          "children": [
+            "service-scope",
+            "contract-structure"
+          ]
+        },
+        "service-scope": {
+          "id": "service-scope",
+          "label": "Service Scope",
+          "tone": "branch",
+          "children": [
+            "geographic-reach",
+            "delivery-window",
+            "handling-standards",
+            "sales-and-promotion"
+          ]
+        },
+        "contract-structure": {
+          "id": "contract-structure",
+          "label": "Contract Structure",
+          "tone": "support",
+          "children": []
+        },
+        "geographic-reach": {
+          "id": "geographic-reach",
+          "label": "Geographic Reach",
+          "tone": "support",
+          "children": []
+        },
+        "delivery-window": {
+          "id": "delivery-window",
+          "label": "Delivery Window",
+          "tone": "leaf",
+          "children": []
+        },
+        "handling-standards": {
+          "id": "handling-standards",
+          "label": "Handling Standards",
+          "tone": "support",
+          "children": []
+        },
+        "sales-and-promotion": {
+          "id": "sales-and-promotion",
+          "label": "Sales & Promotion",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "costs",
+        "variable",
+        "outbound-distribution",
+        "agents-70",
+        "cost-per-agent",
+        "service-scope"
+      ],
+      "defaultFocusedId": "delivery-window",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "What is below par?",
+            "What type of newspaper?",
+            "Time period of problem?",
+            "Specific to certain geographies?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Segment exact business before drilling cost structure",
+            "Split distribution by channel: agents vs vendors"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Larger area covered by agents for our newspaper",
+            "Preferential treatment"
+          ]
+        }
+      ]
+    },
+    "recommendationsMatrix": {
+      "title": "Recommendations Matrix",
+      "xAxis": {
+        "start": "Short-Term",
+        "end": "Long-Term"
+      },
+      "yAxis": {
+        "start": "Supply-Side",
+        "end": "Demand-Side"
+      },
+      "items": [
+        {
+          "label": "Survey WTP & Charge Surcharge",
+          "x": 0.25,
+          "y": 0.78,
+          "quadrant": "Short-Term / Demand-Side"
+        },
+        {
+          "label": "Market 5AM Delivery as USP",
+          "x": 0.75,
+          "y": 0.78,
+          "quadrant": "Long-Term / Demand-Side"
+        },
+        {
+          "label": "Revert to Standard Delivery",
+          "x": 0.25,
+          "y": 0.28,
+          "quadrant": "Short-Term / Supply-Side"
+        },
+        {
+          "label": "Renegotiate Agent SLA",
+          "x": 0.75,
+          "y": 0.28,
+          "quadrant": "Long-Term / Supply-Side"
+        }
+      ]
+    },
+    "framework": "Candidate: What do you mean by below par? Since when have they been facing this problem? Is the problem specific to certain areas?\nInterviewer: It means they are performing below industry standards. The problem has persisted for 6 months now across the country.\nCandidate: Sure. A little bit more about the client. What are the different segments they are present in \u2013 Daily newspapers, Online news, Editorials, Journals etc.?\nInterviewer: Good question. They are involved only in the daily newspaper segment.\nCandidate: Sure. I can proceed now. I would first like to know if the fixed or variable costs are not comparable with the industry?\nInterviewer: Fixed costs are comparable.\nCandidate: Then it must be variable costs. It would make sense to break the costs down into the value chain to see where the cost issue lies. Should I go ahead with the same?\nInterviewer: Sure.\nCandidate: I believe this would be the value chain for a newspaper publisher:\nValue Chain = Raw materials \u2013 Transportation \u2013 Content \u2013 Processing and Printing \u2013 Packaging \u2013 Distribution - Marketing\nLet me know if I have missed out on anything?\nInterviewer: This seems fine. There has been an increase in the distribution costs.\nCandidate: Okay. I would like to understand the distribution model the client follows. I would also like to compare this model with the industry model.\nInterviewer: Sure. They use agents (_door-to-door sellers_) and vendors (_shops_) to distribute their newspapers. Agents are the primary source comprising around 70% of the newspapers sold. This is uniform throughout the industry.\nCandidate: Great. I want to understand if our costs have increased for both distribution channels or just one?\nInterviewer: The cost incurred on agents has gone up.\nCandidate: Total cost of agents = Number of Agents * Cost per Agent\nCandidate: Do we know which one has been the problem?\nInterviewer: We have a high cost per agent. Analyse why.\nCandidate: Sure. The agents provide a fairly standard service of delivering newspapers. The only difference could be because of quality in service demanded from these agents or contractual particulars such as lock-in period.\nInterviewer: Good observation. Analyse the quality in service.\nCandidate: I can think of the following factors:\n1) We might be expecting our agents to cover a larger area than our competitors\n2) We might be expecting our agents to deliver the newspapers at an earlier time\n3) We might be expecting our agents for preferential treatment regarding delivery of newspapers (not ruining quality by rolling,\n4) We might be expecting our agents to also market and push our newspapers more\nInterviewer: Spot on. You have correctly identified the reason. We are paying our agents a higher price because we recently started an initiative to be the earliest newspaper to be delivered by 5:00 AM every day. Due to this special request, agents have started charging us extra. You may give recommendations _(On next page)_ and leave. Thank you.\n\nTerrible Times Framework & Recommendations\nCOST STRUCTURE OF A NEWSPAPER\nClarifying Questions: What is below par? What type of newspaper? Time period of problem?\nBrownie Points: Larger area covered by agents for our newspaper Preferential treatment\nKeep In Mind: Developing the process map is an easy way to identify various costs Always benchmark with competitors or previous performance to understand where the deviation is.\nRECOMMENDATIONS:\nAsk customers if they would be willing to pay extra if newspapers are delivered early; If yes, charge them an additional fee and thereby pass the burden on to them; If they say no, newspapers can be delivered at the usual time.\nWe should also heavily market our new USP of early delivery to increase revenues and offset the costs."
+  },
 {
   "id": 23,
   "docId": "case-23",
