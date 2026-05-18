@@ -9,6 +9,10 @@ import { waitForAuthUser } from '@/lib/firebase/config'
 export default function PracticeModeSelection() {
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
+  // Set when window.open() returns null because the browser blocked the
+  // interviewer popup. We hold the user on this page (no navigation) so
+  // they can unblock popups and retry without losing context.
+  const [popupBlocked, setPopupBlocked] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -49,15 +53,22 @@ export default function PracticeModeSelection() {
       `popup=yes,resizable=yes,width=${popupWidth},height=${popupHeight},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
     )
 
-    if (interviewerWindow) {
-      popupHost.__compendiumInterviewerWindow = interviewerWindow
-      try {
-        interviewerWindow.resizeTo(popupWidth, popupHeight)
-      } catch {
-        // Some browsers ignore programmatic resizing.
-      }
-      interviewerWindow.focus()
+    if (!interviewerWindow) {
+      // Browser blocked the popup. Stay on this page, surface the issue,
+      // and let the user fix popup permissions then retry. Navigating to
+      // the lobby anyway would leave a candidate with no interviewer side.
+      setPopupBlocked(true)
+      return
     }
+
+    setPopupBlocked(false)
+    popupHost.__compendiumInterviewerWindow = interviewerWindow
+    try {
+      interviewerWindow.resizeTo(popupWidth, popupHeight)
+    } catch {
+      // Some browsers ignore programmatic resizing.
+    }
+    interviewerWindow.focus()
 
     router.push(`/lobby/${lobbyId}?mode=local`)
   }
@@ -337,9 +348,20 @@ export default function PracticeModeSelection() {
                     onClick={(e) => { e.stopPropagation(); startLocalSession() }}
                     className="practice-btn w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em]"
                   >
-                    Launch Split Screen
+                    {popupBlocked ? 'Retry — Allow Popups & Try Again' : 'Launch Split Screen'}
                   </button>
                 </div>
+                {popupBlocked ? (
+                  <div className="mt-3 rounded-lg border border-[#b48a57]/30 bg-[rgba(255,245,233,0.92)] px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
+                      Popup blocked
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-[#5c4033]">
+                      Your browser blocked the interviewer popup. Click the popup-blocked icon in your
+                      address bar to allow popups for this site, then click <strong className="font-semibold">Retry</strong> above.
+                    </p>
+                  </div>
+                ) : null}
               </div>
             </article>
 

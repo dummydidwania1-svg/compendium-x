@@ -14,6 +14,14 @@ import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown'
 import { apiPost } from '@/lib/api/client'
 
 const CASES_CACHE_KEY = 'compendium_cases_v2'
+// Bump when the cached shape (CaseListItem) changes — old envelopes get
+// rejected automatically so users don't render stale, type-mismatched data.
+const CASES_CACHE_VERSION = 1
+// Optimistic-render cache window. Beyond this the cache is treated as too
+// stale to flash on screen and we wait for fresh data instead. Firestore is
+// fetched on every load regardless; this just controls "do we show
+// something immediately or render a brief loading state."
+const CASES_CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
 
 type CaseListItem = {
   id: string
@@ -22,6 +30,59 @@ type CaseListItem = {
   industry: string | null
   case_type: string | null
   difficulty: string | null
+}
+
+interface CasesCacheEnvelope {
+  version: number
+  savedAt: number
+  data: CaseListItem[]
+}
+
+function readCasesCache(): CaseListItem[] | null {
+  try {
+    const raw = localStorage.getItem(CASES_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<CasesCacheEnvelope> | unknown
+    // Reject legacy bare-array caches and version-mismatched envelopes.
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !('version' in parsed) ||
+      (parsed as CasesCacheEnvelope).version !== CASES_CACHE_VERSION ||
+      !Array.isArray((parsed as CasesCacheEnvelope).data)
+    ) {
+      localStorage.removeItem(CASES_CACHE_KEY)
+      return null
+    }
+    const envelope = parsed as CasesCacheEnvelope
+    if (Date.now() - envelope.savedAt > CASES_CACHE_TTL_MS) {
+      // Don't delete — keep on disk in case Firestore fetch fails and we
+      // need any cache as a last-resort fallback — but don't show it as
+      // optimistic UI either; the user should see a loading state.
+      return null
+    }
+    return envelope.data
+  } catch {
+    try {
+      localStorage.removeItem(CASES_CACHE_KEY)
+    } catch {
+      // localStorage unavailable; nothing we can do.
+    }
+    return null
+  }
+}
+
+function writeCasesCache(data: CaseListItem[]) {
+  try {
+    const envelope: CasesCacheEnvelope = {
+      version: CASES_CACHE_VERSION,
+      savedAt: Date.now(),
+      data,
+    }
+    localStorage.setItem(CASES_CACHE_KEY, JSON.stringify(envelope))
+  } catch {
+    // Quota exceeded or storage disabled. Best-effort only.
+  }
 }
 
 function formatDifficultyLabel(value: string | null) {
@@ -63,14 +124,12 @@ function RepositoryContent() {
 
   useEffect(() => {
     const fetchCases = async () => {
-      const cached = localStorage.getItem(CASES_CACHE_KEY)
+      // Optimistic flash from cache if it's fresh enough — readCasesCache()
+      // returns null for missing, malformed, version-bumped, or stale caches.
+      const cached = readCasesCache()
       if (cached) {
-        try {
-          setCases(JSON.parse(cached) as CaseListItem[])
-          setLoading(false)
-        } catch {
-          localStorage.removeItem(CASES_CACHE_KEY)
-        }
+        setCases(cached)
+        setLoading(false)
       }
 
       try {
@@ -100,10 +159,19 @@ function RepositoryContent() {
         })
 
         setCases(data)
-        localStorage.setItem(CASES_CACHE_KEY, JSON.stringify(data))
-      } catch {
-        setLoading(false)
-        return
+        writeCasesCache(data)
+      } catch (error) {
+        // Fetch failed. If we already painted from cache, keep showing it
+        // (better than a blank screen). If we had nothing to paint, surface
+        // a load error so the user knows the library is unavailable rather
+        // than empty.
+        if (!cached) {
+          setActionError(
+            error instanceof Error
+              ? `Unable to load case library: ${error.message}`
+              : 'Unable to load case library. Check your connection and refresh.',
+          )
+        }
       }
 
       setLoading(false)
