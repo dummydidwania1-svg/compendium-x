@@ -13,13 +13,18 @@
  */
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMicPermission } from '@/lib/permissions/microphone'
 
 export function MicPermissionCard() {
   const { state, request, retry, isSupported } = useMicPermission()
   const [requesting, setRequesting] = useState(false)
   const [stillBlocked, setStillBlocked] = useState(false)
+  // Auto-trigger the browser prompt the first time we see state='prompt'
+  // so users don't have to click a button before the native dialog
+  // appears. We only do this once per mount; if the user dismisses
+  // without choosing, they can re-trigger via the button.
+  const autoPromptedRef = useRef(false)
 
   const handleAllow = async () => {
     setRequesting(true)
@@ -35,6 +40,17 @@ export function MicPermissionCard() {
     }
     setRequesting(false)
   }
+
+  useEffect(() => {
+    if (autoPromptedRef.current) return
+    if (!isSupported) return
+    if (state !== 'prompt') return
+    autoPromptedRef.current = true
+    void handleAllow()
+    // handleAllow is stable enough across renders; we intentionally only
+    // depend on the trigger conditions and not the handler identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSupported, state])
 
   if (!isSupported) {
     return null

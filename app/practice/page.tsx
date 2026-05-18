@@ -13,6 +13,10 @@ export default function PracticeModeSelection() {
   // interviewer popup. We hold the user on this page (no navigation) so
   // they can unblock popups and retry without losing context.
   const [popupBlocked, setPopupBlocked] = useState(false)
+  // Set while we're awaiting the browser's mic permission prompt before
+  // opening the interviewer popup. Shows a transient "Setting up..." state
+  // on the local card so the user knows their click registered.
+  const [localPreparing, setLocalPreparing] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -33,13 +37,34 @@ export default function PracticeModeSelection() {
     router.push(`/lobby/${lobbyId}?mode=remote`)
   }
 
-  const startLocalSession = () => {
+  const startLocalSession = async () => {
+    if (localPreparing) return
+    setLocalPreparing(true)
+    setPopupBlocked(false)
+
     const lobbyId = Math.random().toString(36).substring(7)
-    const popupWidth = 800
-    const popupHeight = 800
     const popupHost = window as Window & {
       __compendiumInterviewerWindow?: Window | null
     }
+
+    // CRITICAL: ask for mic permission BEFORE opening the interviewer popup
+    // and navigating. In local mode the device may be handed to the
+    // interviewer the moment the popup pops; the candidate must answer the
+    // browser prompt while they're still in front of the screen. We don't
+    // hard-block on denial — the workspace's soft-warning handles that —
+    // but we put the choice in front of them at the right moment.
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        stream.getTracks().forEach((track) => track.stop())
+      } catch {
+        // User denied or no mic. Continue anyway — the workspace banner will
+        // surface the consequence and let them recover via address-bar lock.
+      }
+    }
+
+    const popupWidth = 800
+    const popupHeight = 800
     const left = Math.max(0, window.screenX + Math.round((window.outerWidth - popupWidth) / 2))
     const top = Math.max(0, window.screenY + Math.round((window.outerHeight - popupHeight) / 2))
 
@@ -54,14 +79,13 @@ export default function PracticeModeSelection() {
     )
 
     if (!interviewerWindow) {
-      // Browser blocked the popup. Stay on this page, surface the issue,
-      // and let the user fix popup permissions then retry. Navigating to
-      // the lobby anyway would leave a candidate with no interviewer side.
+      // Browser blocked the popup. Hold the user here so they can fix it
+      // and retry — navigating to the lobby anyway would strand them.
       setPopupBlocked(true)
+      setLocalPreparing(false)
       return
     }
 
-    setPopupBlocked(false)
     popupHost.__compendiumInterviewerWindow = interviewerWindow
     try {
       interviewerWindow.resizeTo(popupWidth, popupHeight)
@@ -319,7 +343,7 @@ export default function PracticeModeSelection() {
                 animation: mounted ? 'practice-card-in 0.6s cubic-bezier(0.22,1,0.36,1) 0.25s both' : 'none',
                 opacity: mounted ? undefined : 0,
               }}
-              onClick={startLocalSession}
+              onClick={() => void startLocalSession()}
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#3D5A35]/6">
                 <div>
@@ -345,12 +369,22 @@ export default function PracticeModeSelection() {
                 <div className="mt-5">
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); startLocalSession() }}
-                    className="practice-btn w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em]"
+                    onClick={(e) => { e.stopPropagation(); void startLocalSession() }}
+                    disabled={localPreparing}
+                    className="practice-btn w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {popupBlocked ? 'Retry — Allow Popups & Try Again' : 'Launch Split Screen'}
+                    {localPreparing
+                      ? 'Setting Up Microphone…'
+                      : popupBlocked
+                        ? 'Retry — Allow Popups & Try Again'
+                        : 'Launch Split Screen'}
                   </button>
                 </div>
+                {localPreparing ? (
+                  <p className="mt-3 text-[10px] leading-relaxed text-[#5c4033]/60">
+                    Allow microphone in the browser prompt — the interviewer window opens once you decide.
+                  </p>
+                ) : null}
                 {popupBlocked ? (
                   <div className="mt-3 rounded-lg border border-[#b48a57]/30 bg-[rgba(255,245,233,0.92)] px-3 py-2">
                     <p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
