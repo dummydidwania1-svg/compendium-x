@@ -101,6 +101,12 @@ function RepositoryContent() {
   const [typeFilter, setTypeFilter] = useState<string[]>([])
   const [levelFilter, setLevelFilter] = useState<string[]>([])
   const [actionError, setActionError] = useState('')
+  // ID of the case the user just clicked, while the API call + navigation
+  // resolve. The row dims and the button switches to a spinner-like label
+  // so the click doesn't feel like it was dropped. Cleared on error so the
+  // user can retry; on success the page navigates away before clearing is
+  // needed.
+  const [pendingCaseId, setPendingCaseId] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -198,7 +204,9 @@ function RepositoryContent() {
   )
 
   const handleSelectCase = async (caseId: string) => {
+    if (pendingCaseId) return // ignore double-clicks while one is in flight
     setActionError('')
+    setPendingCaseId(caseId)
 
     if (selectionMode && lobbyId) {
       const eventData = { lobbyId, caseId, mode: sessionMode }
@@ -213,16 +221,22 @@ function RepositoryContent() {
         router.push(
           `/case/${caseId}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`
         )
+        // Intentionally do NOT clear pendingCaseId — the navigation is in
+        // flight and the next page's loading state takes over from here.
+        // Clearing now would let the button flicker back to "Select" right
+        // before the route changes.
       } catch (error) {
         setActionError(
           error instanceof Error ? error.message : 'Unable to start this session right now.'
         )
+        setPendingCaseId(null)
       }
 
       return
     }
 
     router.push(`/case/${caseId}/interviewer?preview=1`)
+    // Same reasoning as above — don't clear; the route change unmounts us.
   }
 
   const resultsLabel = loading
@@ -509,9 +523,16 @@ function RepositoryContent() {
                           <button
                             type="button"
                             onClick={() => handleSelectCase(caseItem.id)}
-                            className="repo-preview-button w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em]"
+                            disabled={pendingCaseId !== null}
+                            className="repo-preview-button w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {selectionMode ? 'Select' : 'Preview'}
+                            {pendingCaseId === caseItem.id
+                              ? selectionMode
+                                ? 'Starting…'
+                                : 'Opening…'
+                              : selectionMode
+                                ? 'Select'
+                                : 'Preview'}
                           </button>
                         </div>
                       </div>
@@ -548,9 +569,16 @@ function RepositoryContent() {
                         <button
                           type="button"
                           onClick={() => handleSelectCase(caseItem.id)}
-                          className="repo-preview-button w-full rounded-full px-5 py-2 text-[9px] font-medium uppercase tracking-[0.16em]"
+                          disabled={pendingCaseId !== null}
+                          className="repo-preview-button w-full rounded-full px-5 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {selectionMode ? 'Select Case' : 'Preview Case'}
+                          {pendingCaseId === caseItem.id
+                            ? selectionMode
+                              ? 'Starting…'
+                              : 'Opening…'
+                            : selectionMode
+                              ? 'Select Case'
+                              : 'Preview Case'}
                         </button>
                       </article>
                     ))}

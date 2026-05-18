@@ -20,26 +20,17 @@ type MarketingAuthPanelProps = {
 
 const AUTH_FALLBACK_PREFERENCE_KEY = 'compendiumx-prefer-auth-fallback'
 
-const INPUT_STYLE: CSSProperties = {
-  display: 'block',
-  width: '100%',
-  height: '48px',
-  padding: '12px 16px',
-  border: '1px solid #c3c8bd',
-  background: '#faf3e9',
-  fontFamily: "'Work Sans', sans-serif",
-  fontSize: '14px',
-  lineHeight: '20px',
-  color: '#1e1b15',
-  outline: 'none',
-  transition: 'border-color 0.2s',
-  boxSizing: 'border-box',
-  borderRadius: 0,
-  appearance: 'none',
-  WebkitAppearance: 'none',
-  position: 'relative',
-  zIndex: 2,
-}
+// Field styling lives in the <style> block below with !important rather than
+// here as inline style. Browser extensions that hijack the email input (Temp
+// Mail, certain password managers, Google Tag Manager interaction trackers)
+// rewrite inline `style` attributes on the input element after React mounts —
+// effectively stripping our border/background/padding to nothing and leaving
+// users staring at an invisible field. !important class-level rules beat
+// non-important inline styles (including those injected by extensions), so
+// the visible affordance survives. This empty object is kept only so the
+// existing `style={INPUT_STYLE}` JSX attributes stay legal during the
+// migration; everything that matters now lives in `.marketing-auth-field`.
+const INPUT_STYLE: CSSProperties = {}
 
 const FIELD_WRAPPER_STYLE: CSSProperties = {
   position: 'relative',
@@ -250,6 +241,34 @@ export default function MarketingAuthPanel({
         }
         .marketing-auth-input-wrap > :not(.marketing-auth-field) {
           display: none !important;
+        }
+        /* All visible styling on the input lives here with !important so
+         * inline overrides injected by browser extensions (Temp Mail,
+         * password helpers, GTM trackers) can't strip the affordance away.
+         * Inline-style writes from extensions lose against !important
+         * class-level rules in the cascade. */
+        .marketing-auth-field {
+          display: block !important;
+          width: 100% !important;
+          height: 48px !important;
+          padding: 12px 16px !important;
+          border: 1px solid #c3c8bd !important;
+          background: #faf3e9 !important;
+          font-family: 'Work Sans', sans-serif !important;
+          font-size: 14px !important;
+          line-height: 20px !important;
+          color: #1e1b15 !important;
+          outline: none !important;
+          box-sizing: border-box !important;
+          border-radius: 0 !important;
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          position: relative !important;
+          z-index: 2 !important;
+          transition: border-color 0.2s !important;
+        }
+        .marketing-auth-field:focus {
+          border-color: #3D5A35 !important;
         }
         .marketing-auth-field::placeholder {
           color: #9b8f81;
