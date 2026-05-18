@@ -281,10 +281,6 @@ function OnboardingForm() {
               >
                 {loading ? 'Saving...' : 'Continue'}
               </button>
-
-              <p className="pt-1 text-center text-[10px] leading-relaxed text-[#5c4033]/45">
-                We&apos;ll ask for microphone access when you start your first practice session — not now.
-              </p>
             </form>
           </section>
         </div>
