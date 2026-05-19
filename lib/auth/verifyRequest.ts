@@ -34,7 +34,8 @@ function readBearer(authorizationHeader: string | null): string | null {
 
 /**
  * Pull the bearer token off the request, verify with the Admin SDK
- * (including the revocation check), and return the caller's identity.
+ * (signature + expiry, no revocation roundtrip), and return the caller's
+ * identity.
  */
 export async function verifyRequest(request: Request): Promise<VerifiedCaller> {
   const token = readBearer(request.headers.get('authorization'))
@@ -43,7 +44,15 @@ export async function verifyRequest(request: Request): Promise<VerifiedCaller> {
   }
 
   try {
-    const decoded = await adminAuth.verifyIdToken(token, true)
+    // verifyIdToken(token) without the `checkRevoked` second arg verifies
+    // signature + expiry locally using the cached public keys (~5-10ms).
+    // Passing `true` would force a round-trip to Google's identitytoolkit
+    // API on every authenticated request, adding 300-800ms of latency. For
+    // this app, revocation events (sign-out, password change) are rare
+    // enough that the 1hr token lifetime is an acceptable upper bound on
+    // the window where a revoked token could still hit our routes, and
+    // Firestore rules are the real defense anyway.
+    const decoded = await adminAuth.verifyIdToken(token)
     return {
       uid: decoded.uid,
       email: decoded.email ?? null,

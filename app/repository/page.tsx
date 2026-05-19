@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { collection, getDocs } from 'firebase/firestore'
 import { X } from 'lucide-react'
@@ -124,6 +124,9 @@ function RepositoryContent() {
   const [pendingCaseId, setPendingCaseId] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
+  // Track which case destinations we've already asked Next.js to prefetch
+  // so we don't fire the same prefetch call on every mouseenter event.
+  const prefetchedCasesRef = useRef<Set<string>>(new Set())
 
   const selectionMode = searchParams.get('mode') === 'select'
   const lobbyId = searchParams.get('lobby')
@@ -239,6 +242,20 @@ function RepositoryContent() {
       }),
     [cases, filter, typeFilter, levelFilter]
   )
+
+  // On row hover (or focus) ask Next.js to download the destination page
+  // bundle so click → navigation feels closer to instant. We mirror the
+  // exact URLs handleSelectCase will router.push to, including the lobby
+  // params, so the prefetched route hydrates correctly.
+  const prefetchCase = (caseId: string) => {
+    if (prefetchedCasesRef.current.has(caseId)) return
+    prefetchedCasesRef.current.add(caseId)
+    const destination =
+      selectionMode && lobbyId
+        ? `/case/${caseId}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`
+        : `/case/${caseId}/interviewer?preview=1`
+    router.prefetch(destination)
+  }
 
   const handleSelectCase = async (caseId: string) => {
     if (pendingCaseId) return // ignore double-clicks while one is in flight
@@ -555,6 +572,8 @@ function RepositoryContent() {
                     {filteredCases.map((caseItem) => (
                       <div
                         key={caseItem.id}
+                        onMouseEnter={() => prefetchCase(caseItem.id)}
+                        onFocus={() => prefetchCase(caseItem.id)}
                         className="repo-table-row grid grid-cols-[56px_minmax(0,1.28fr)_minmax(0,0.95fr)_minmax(0,0.95fr)_96px_150px] items-center"
                       >
                         <div className="px-4 py-3.5 text-[11px] text-[#5c4033]/34 font-medium tabular-nums">
@@ -597,7 +616,12 @@ function RepositoryContent() {
                   {/* Mobile cards */}
                   <div className="md:hidden">
                     {filteredCases.map((caseItem) => (
-                      <article key={caseItem.id} className="repo-mobile-card px-4 py-4 space-y-2.5">
+                      <article
+                        key={caseItem.id}
+                        onMouseEnter={() => prefetchCase(caseItem.id)}
+                        onFocus={() => prefetchCase(caseItem.id)}
+                        className="repo-mobile-card px-4 py-4 space-y-2.5"
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <span className="text-[10px] text-[#5c4033]/30 font-medium">
