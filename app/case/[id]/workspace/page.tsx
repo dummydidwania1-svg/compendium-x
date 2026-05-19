@@ -596,7 +596,16 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             normalized.includes('screen') ||
             normalized.includes('monitor') ||
             normalized.includes('display surface') ||
-            normalized.includes('audio source')
+            normalized.includes('audio source') ||
+            // Chrome/Edge throw a bare DOMException "Invalid state" when
+            // getDisplayMedia is invoked without a fresh user activation —
+            // the candidate-side auto-start always hits this because the
+            // route into workspace is triggered by the interviewer's
+            // onSnapshot event, not a click on the candidate's tab. Treat
+            // it as a recoverable "user needs to click Allow Recording"
+            // case rather than surfacing the raw string.
+            normalized.includes('invalid state') ||
+            normalized === 'invalidstateerror'
           ) {
             setCaptureWarning(getFriendlyRecoverableCaptureMessage(mode, message))
           }
@@ -988,7 +997,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       normalizedRecordingError.includes('share audio') ||
       normalizedRecordingError.includes('audio was captured') ||
       normalizedRecordingError.includes('audio source') ||
-      normalizedRecordingError.includes('gesture'))
+      normalizedRecordingError.includes('gesture') ||
+      // Auto-start without a fresh user activation throws this — never the
+      // user's fault, never a state worth showing as a hard error.
+      normalizedRecordingError.includes('invalid state'))
   const recoverableCaptureMessage = isRecoverableCaptureError
     ? getFriendlyRecoverableCaptureMessage(
         preferredRecordingMode,
