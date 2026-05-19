@@ -6,6 +6,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { getDoc, onSnapshot } from 'firebase/firestore'
 import { MicPermissionCard } from '@/components/permissions/MicPermissionCard'
+import { MeetingTabShareCard } from '@/components/permissions/MeetingTabShareCard'
 import { signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
@@ -570,6 +571,11 @@ function CandidateLobby({
               )}
 
               <MicPermissionCard />
+
+              {/* Remote mode also needs screen-share (tab audio) — capture
+                  it here while the candidate is idle, so the workspace
+                  starts recording immediately without a mid-case prompt. */}
+              {!isLocalSession ? <MeetingTabShareCard /> : null}
 
               {waitingNudgeVisible ? (
                 <div className="mt-5 rounded-[22px] border border-[#b48a57]/22 bg-[rgba(255,245,233,0.92)] px-4 py-4 text-left">

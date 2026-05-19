@@ -12,6 +12,10 @@ import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { MicSoftWarningBanner } from '@/components/permissions/MicSoftWarningBanner'
+import {
+  getActiveDisplayStream,
+  releaseDisplayMedia,
+} from '@/lib/permissions/displayMedia'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed'
@@ -239,6 +243,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     displayStreamRef.current = null
     micStreamRef.current = null
     mixedStreamRef.current = null
+    // Also clear the cross-route display-media slot. The stream stored there
+    // shares track refs with displayStreamRef so we already stopped them
+    // above, but the slot needs to be nulled so a fresh session can acquire
+    // again later.
+    releaseDisplayMedia()
 
     if (audioContextRef.current) {
       void audioContextRef.current.close().catch(() => {
@@ -452,43 +461,56 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         let displayStream: MediaStream | null = null
         let captureController: CaptureControllerLike | null = null
         if (mode === 'remote') {
-          const CaptureControllerCtor =
-            typeof window !== 'undefined'
-              ? (
-                  window as Window & {
-                    CaptureController?: new () => CaptureControllerLike
-                  }
-                ).CaptureController
-              : undefined
-          captureController = CaptureControllerCtor ? new CaptureControllerCtor() : null
-          displayStream = await navigator.mediaDevices.getDisplayMedia(
-            captureController
-              ? ({ video: true, audio: true, controller: captureController } as DisplayMediaStreamOptions & {
-                  controller: CaptureControllerLike
-                })
-              : { video: true, audio: true }
-          )
-          displayStreamRef.current = displayStream
+          // Prefer the stream the candidate already authorized on the lobby
+          // page. Without this we'd re-prompt mid-case which forces a
+          // context-switch off the case prompt onto Chrome's tab picker.
+          const preAcquired = getActiveDisplayStream()
+          if (preAcquired) {
+            displayStream = preAcquired
+            displayStreamRef.current = displayStream
+            // No captureController on a pre-acquired stream — its focus
+            // behaviour was already settled when it was first granted.
+            // No displaySurface validation either: acquireDisplayMedia()
+            // on the lobby side already enforced that audio tracks exist.
+          } else {
+            const CaptureControllerCtor =
+              typeof window !== 'undefined'
+                ? (
+                    window as Window & {
+                      CaptureController?: new () => CaptureControllerLike
+                    }
+                  ).CaptureController
+                : undefined
+            captureController = CaptureControllerCtor ? new CaptureControllerCtor() : null
+            displayStream = await navigator.mediaDevices.getDisplayMedia(
+              captureController
+                ? ({ video: true, audio: true, controller: captureController } as DisplayMediaStreamOptions & {
+                    controller: CaptureControllerLike
+                  })
+                : { video: true, audio: true }
+            )
+            displayStreamRef.current = displayStream
 
-          const displayTrack = displayStream.getVideoTracks()[0]
-          const displaySurface = displayTrack?.getSettings?.().displaySurface
+            const displayTrack = displayStream.getVideoTracks()[0]
+            const displaySurface = displayTrack?.getSettings?.().displaySurface
 
-          if (displaySurface === 'browser' && captureController?.setFocusBehavior) {
-            try {
-              captureController.setFocusBehavior('focus-capturing-application')
-            } catch {
-              // Ignore unsupported focus behavior APIs and continue recording.
+            if (displaySurface === 'browser' && captureController?.setFocusBehavior) {
+              try {
+                captureController.setFocusBehavior('focus-capturing-application')
+              } catch {
+                // Ignore unsupported focus behavior APIs and continue recording.
+              }
             }
-          }
 
-          if (displaySurface && displaySurface !== 'browser') {
-            const unsupportedSurfaceMessage = 'Share the meeting tab with Share audio turned on.'
-            for (const track of displayStream.getTracks()) {
-              track.stop()
+            if (displaySurface && displaySurface !== 'browser') {
+              const unsupportedSurfaceMessage = 'Share the meeting tab with Share audio turned on.'
+              for (const track of displayStream.getTracks()) {
+                track.stop()
+              }
+              displayStreamRef.current = null
+              setCaptureWarning(unsupportedSurfaceMessage)
+              throw new Error(unsupportedSurfaceMessage)
             }
-            displayStreamRef.current = null
-            setCaptureWarning(unsupportedSurfaceMessage)
-            throw new Error(unsupportedSurfaceMessage)
           }
         }
 
