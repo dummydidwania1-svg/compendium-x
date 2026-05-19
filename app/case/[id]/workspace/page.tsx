@@ -958,30 +958,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [captureWarning, completionPending, localPrepVisible, recordingError, recordingState, remotePrepVisible, sessionIssue])
 
   const sessionModeLabel = isLocalSession ? 'Same Device' : 'Remote Partner'
-  const statusPillLabel =
-    recordingState === 'recording'
-      ? 'Live'
-      : recordingState === 'starting'
-        ? 'Preparing'
-        : recordingState === 'stopping'
-          ? 'Wrapping up'
-          : recordingState === 'uploading'
-            ? 'Syncing'
-            : recordingState === 'uploaded'
-              ? 'Ready'
-              : recordingState === 'failed'
-                ? 'Needs attention'
-                : 'Waiting'
-  const statusPillTone =
-    recordingState === 'failed'
-      ? 'warn'
-      : recordingState === 'recording'
-        ? 'live'
-        : recordingState === 'starting' || recordingState === 'stopping' || recordingState === 'uploading'
-          ? 'working'
-          : recordingState === 'uploaded'
-          ? 'success'
-            : 'idle'
   const normalizedRecordingError = recordingError.toLowerCase()
   const isRecoverableCaptureError =
     recordingState === 'failed' &&
@@ -1001,6 +977,37 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       // Auto-start without a fresh user activation throws this — never the
       // user's fault, never a state worth showing as a hard error.
       normalizedRecordingError.includes('invalid state'))
+  // For the pill we treat "recoverable failure" the same as idle from the
+  // user's perspective: they haven't done anything wrong, they just need to
+  // press the button. Only show "Needs attention" for genuine non-recoverable
+  // errors (Firebase / network / unknown DOMException paths the catch
+  // doesn't recognise).
+  const isWaitingForUserStart =
+    recordingState === 'idle' || (recordingState === 'failed' && isRecoverableCaptureError)
+  const statusPillLabel =
+    recordingState === 'recording'
+      ? 'Live'
+      : recordingState === 'starting'
+        ? 'Preparing'
+        : recordingState === 'stopping'
+          ? 'Wrapping up'
+          : recordingState === 'uploading'
+            ? 'Syncing'
+            : recordingState === 'uploaded'
+              ? 'Ready'
+              : isWaitingForUserStart
+                ? 'Ready when you are'
+                : 'Needs attention'
+  const statusPillTone =
+    recordingState === 'recording'
+      ? 'live'
+      : recordingState === 'starting' || recordingState === 'stopping' || recordingState === 'uploading'
+        ? 'working'
+        : recordingState === 'uploaded'
+          ? 'success'
+          : isWaitingForUserStart
+            ? 'idle'
+            : 'warn'
   const recoverableCaptureMessage = isRecoverableCaptureError
     ? getFriendlyRecoverableCaptureMessage(
         preferredRecordingMode,
@@ -1022,38 +1029,41 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         { num: '03', text: 'Allow recording' },
         { num: '04', text: 'Review dashboard' },
       ]
+  // Idle and failed-but-recoverable both mean the same thing from the user's
+  // POV — they need to click Allow Recording to start. Phrase the copy that
+  // way (an instruction, not a status diagnosis) so a candidate on their
+  // first view isn't told "needs attention" or "try again" for a thing they
+  // never actually tried. Reuses isWaitingForUserStart defined above.
   const workspaceStatusTitle =
-    recordingState === 'idle'
-      ? 'Waiting for recording access'
-      : recordingState === 'starting'
-        ? 'Preparing capture permission'
-        : recordingState === 'recording'
-          ? 'Session capture is live'
-          : recordingState === 'stopping'
-            ? 'Ending this session'
-            : recordingState === 'uploading'
-              ? 'Uploading session audio'
+    recordingState === 'starting'
+      ? 'Preparing capture permission'
+      : recordingState === 'recording'
+        ? 'Session capture is live'
+        : recordingState === 'stopping'
+          ? 'Ending this session'
+          : recordingState === 'uploading'
+            ? 'Uploading session audio'
             : recordingState === 'uploaded'
-                ? 'Review is ready'
-                : isRecoverableCaptureError
-                  ? 'Permission needed to continue'
-                  : 'Capture needs attention'
+              ? 'Review is ready'
+              : isWaitingForUserStart
+                ? 'Click Allow Recording to start'
+                : 'Recording couldn’t start'
   const workspaceStatusDescription =
-    recordingState === 'idle'
-      ? 'We will open the Chrome prompt in a moment.'
-      : recordingState === 'starting'
-        ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
-        : recordingState === 'recording'
-          ? 'Keep this tab open while the session runs.'
-          : recordingState === 'stopping'
-            ? 'Saving your recording before you leave this page.'
-            : recordingState === 'uploading'
-              ? 'Finishing the recording and transcript in the background.'
-              : recordingState === 'uploaded'
-                ? 'You can move to the dashboard now.'
-                : isRecoverableCaptureError
-                  ? recoverableCaptureMessage
-                  : 'Try recording again from this screen.'
+    recordingState === 'starting'
+      ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
+      : recordingState === 'recording'
+        ? 'Keep this tab open while the session runs.'
+        : recordingState === 'stopping'
+          ? 'Saving your recording before you leave this page.'
+          : recordingState === 'uploading'
+            ? 'Finishing the recording and transcript in the background.'
+            : recordingState === 'uploaded'
+              ? 'You can move to the dashboard now.'
+              : isWaitingForUserStart
+                ? (isLocalSession
+                    ? 'When you press the button below, Chrome will ask for microphone access.'
+                    : 'When you press the button below, Chrome will ask you to choose a meeting tab — turn on Share audio.')
+                : recoverableCaptureMessage || 'Use the Allow Recording button below to try again.'
 
   return (
     <div
