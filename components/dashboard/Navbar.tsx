@@ -32,7 +32,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
     return () => unsubscribe();
   }, []);
 
-  const redirectTarget = pathname && pathname.startsWith('/') ? pathname : '/welcome';
+  const redirectTarget = pathname && pathname.startsWith('/') ? pathname : '/dashboard';
 
   const handleLogout = async () => {
     await signOut(auth);

@@ -18,7 +18,7 @@ function OnboardingForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const requestedRedirect = searchParams.get('redirect')
-  const redirectTarget = requestedRedirect && requestedRedirect.startsWith('/') ? requestedRedirect : '/welcome'
+  const redirectTarget = requestedRedirect && requestedRedirect.startsWith('/') ? requestedRedirect : '/dashboard'
 
   useEffect(() => {
     const checkUser = async () => {

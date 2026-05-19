@@ -10,7 +10,7 @@ function LoginScreen() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const requestedRedirect = searchParams.get('redirect')
-  const redirectTarget = requestedRedirect && requestedRedirect.startsWith('/') ? requestedRedirect : '/welcome'
+  const redirectTarget = requestedRedirect && requestedRedirect.startsWith('/') ? requestedRedirect : '/dashboard'
   const [checkingSession, setCheckingSession] = useState(true)
 
   useEffect(() => {
