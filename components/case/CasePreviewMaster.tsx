@@ -1987,10 +1987,10 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
       const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
       if (lines.length === 0) return null
       return (
-        <ul className="space-y-2.5">
+        <ul className="space-y-1.5">
           {lines.map((line, li) => (
             <li key={li} className="flex items-start gap-2">
-              <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+              <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
               <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{line}</span>
             </li>
           ))}
@@ -2023,7 +2023,7 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
               {d.rows.map((row, ri) => (
                 <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
                   {!hideDimension && (
-                    <td className="px-5 py-5 align-middle text-center"
+                    <td className="px-5 py-3 align-middle text-center"
                       style={matrixMode ? {
                         // Matrix mode: dimension cell = same green header styling
                         ...headerStyle,
@@ -2039,14 +2039,14 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
                       {row.dimension}
                     </td>
                   )}
-                  <td className="px-5 py-5 align-top"
+                  <td className="px-5 py-3 align-top"
                     style={{
                       borderLeft: !hideDimension ? '1px solid rgba(61,90,53,0.10)' : undefined,
                       borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                     }}>
                     {renderBullets(row.shortTerm)}
                   </td>
-                  <td className="px-5 py-5 align-top"
+                  <td className="px-5 py-3 align-top"
                     style={{
                       borderLeft: '1px solid rgba(61,90,53,0.10)',
                       borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
