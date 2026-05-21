@@ -1760,25 +1760,23 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
 
   const serif: React.CSSProperties = { fontFamily: "'Newsreader', serif" }
   const termColor = '#3B2F2F'
-  const opColor = '#3D5A35'
 
   /* Renders a formula string, styling ×, ÷, (, ) distinctly */
   function FormulaLine({ text, size = 15, weight = 400 }: { text: string; size?: number; weight?: number }) {
-    // Split on operator characters, keeping them as tokens
     const tokens = text.split(/(×|÷|\(|\))/)
     return (
       <>
         {tokens.map((tok, i) => {
           if (tok === '×' || tok === '÷') {
             return (
-              <span key={i} style={{ ...serif, color: opColor, fontSize: size + 1, fontWeight: 300, margin: '0 5px', verticalAlign: 'middle' }}>
+              <span key={i} style={{ ...serif, color: termColor, fontSize: size + 1, fontWeight: 300, margin: '0 5px', opacity: 0.55, verticalAlign: 'middle' }}>
                 {tok}
               </span>
             )
           }
           if (tok === '(' || tok === ')') {
             return (
-              <span key={i} style={{ ...serif, color: termColor, fontSize: size + 2, fontWeight: 200, opacity: 0.5 }}>
+              <span key={i} style={{ ...serif, color: termColor, fontSize: size + 2, fontWeight: 200, opacity: 0.35 }}>
                 {tok}
               </span>
             )
@@ -1798,28 +1796,25 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
       <div
         className="w-full rounded-[4px] px-8 py-6"
         style={{
-          background: 'rgba(255,248,240,0.60)',
-          border: '1.5px dashed rgba(61,90,53,0.30)',
+          background: 'rgba(255,248,240,0.8)',
+          border: '1px solid rgba(61,90,53,0.18)',
+          boxShadow: '0 4px 16px -4px rgba(61,90,53,0.10)',
         }}
       >
         {/* Primary equation — single line, centered */}
         <p className="text-center whitespace-nowrap overflow-x-auto leading-relaxed">
           <span style={{ ...serif, color: termColor, fontSize: 15, fontWeight: 600 }}>{primaryLhs}</span>
-          <span style={{ ...serif, color: opColor, fontSize: 17, fontWeight: 300, margin: '0 10px' }}>=</span>
+          <span style={{ ...serif, color: termColor, fontSize: 17, fontWeight: 300, margin: '0 10px' }}>=</span>
           <FormulaLine text={primaryRhs} size={15} weight={400} />
-          {derivations.length > 0 && (
-            <sup style={{ fontSize: 9, color: opColor, fontWeight: 600, marginLeft: 3, verticalAlign: 'super', fontFamily: "'Work Sans', sans-serif" }}>1</sup>
-          )}
         </p>
 
-        {/* Derivations — each on its own line, smaller, left-indented */}
+        {/* Derivations — smaller, centered, no divider */}
         {derivations.length > 0 && (
-          <div className="mt-4 pt-4 flex flex-col gap-2.5" style={{ borderTop: '1px solid rgba(61,90,53,0.10)' }}>
+          <div className="mt-3 flex flex-col gap-2">
             {derivations.map((d, i) => (
-              <p key={i} className="text-center leading-relaxed">
-                <sup style={{ fontSize: 9, color: opColor, fontWeight: 600, marginRight: 4, fontFamily: "'Work Sans', sans-serif" }}>{i + 1}</sup>
-                <span style={{ ...serif, color: termColor, fontSize: 13, fontWeight: 500, fontStyle: 'italic' }}>{d.lhs}</span>
-                <span style={{ ...serif, color: opColor, fontSize: 15, fontWeight: 300, margin: '0 8px' }}>=</span>
+              <p key={i} className="text-center whitespace-nowrap overflow-x-auto leading-relaxed">
+                <span style={{ ...serif, color: termColor, fontSize: 13, fontWeight: 500, fontStyle: 'italic', opacity: 0.7 }}>{d.lhs}</span>
+                <span style={{ ...serif, color: termColor, fontSize: 15, fontWeight: 300, margin: '0 8px', opacity: 0.5 }}>=</span>
                 <FormulaLine text={d.rhs} size={13} weight={400} />
               </p>
             ))}
