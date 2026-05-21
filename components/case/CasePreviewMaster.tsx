@@ -1807,7 +1807,7 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
             {/* Primary equation */}
             <span style={{ whiteSpace: 'nowrap', display: 'block' }}>
               <FormulaTokens text={primaryLhs} />
-              <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 600, margin: '0 8px', lineHeight: 1 }}>=</span>
+              <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 8px', lineHeight: 1 }}>=</span>
               <FormulaTokens text={primaryRhs} />
             </span>
             {/* Derivations — same font/size/color as primary, prefixed with "where" */}
@@ -1817,7 +1817,7 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
                   {i === 0 ? 'where, ' : 'and, '}
                 </span>
                 <FormulaTokens text={d.lhs} />
-                <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 600, margin: '0 8px', lineHeight: 1 }}>=</span>
+                <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 8px', lineHeight: 1 }}>=</span>
                 <FormulaTokens text={d.rhs} />
               </span>
             ))}
