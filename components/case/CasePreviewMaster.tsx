@@ -620,6 +620,7 @@ function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
 function walkthroughSpacingClass(block: WalkthroughBlock, previous?: WalkthroughBlock) {
   if (!previous) return ''
 
+  if (block.kind === 'vis-inline' || previous.kind === 'vis-inline') return 'mt-[18px]'
   if (block.kind === 'heading') return 'mt-6'
   if (previous.kind === 'heading') return block.kind === 'equation' ? 'mt-3.5' : 'mt-3'
 
@@ -1833,6 +1834,52 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Visualization: Inline table (walkthrough transcript)
+   No header, no divider — spacing handled by walkthroughSpacingClass
+   ═══════════════════════════════════════════════════════════ */
+function VisTableInline({ vis }: { vis: VisTable }) {
+  const rows: string[][] = typeof vis.rows === 'string' ? JSON.parse(vis.rows) : vis.rows
+  const headerStyle: React.CSSProperties = {
+    fontFamily: "'Work Sans', sans-serif",
+    fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
+    color: '#f0f5ee', background: '#3D5A35',
+  }
+  return (
+    <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            {vis.columns.map((col, i) => (
+              <th key={i} className="px-4 py-2.5 text-left"
+                style={{ ...headerStyle, borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined }}>
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
+              {row.map((cell, ci) => (
+                <td key={ci} className="px-4 py-2.5 align-top"
+                  style={{
+                    fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: ci === 0 ? 500 : 400,
+                    color: '#3B2F2F', lineHeight: 1.5,
+                    borderTop: '1px solid rgba(61,90,53,0.08)',
+                    borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
+                  }}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    Visualization: Generic table
    ═══════════════════════════════════════════════════════════ */
 function VisTableBlock({ vis }: { vis: VisTable }) {
@@ -2736,7 +2783,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                           <Reveal>
                             {block.kind === 'vis-inline'
-                              ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableBlock vis={v as VisTable} /> : null })()
+                              ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableInline vis={v as VisTable} /> : null })()
                               : <WalkthroughBlockView block={block} />}
                           </Reveal>
                         </div>
@@ -2755,7 +2802,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                   <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                     <Reveal>
                       {block.kind === 'vis-inline'
-                        ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableBlock vis={v as VisTable} /> : null })()
+                        ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableInline vis={v as VisTable} /> : null })()
                         : <WalkthroughBlockView block={block} />}
                     </Reveal>
                   </div>
@@ -3247,7 +3294,7 @@ export function CaseInterviewerMaster({
                           <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                             <Reveal>
                               {block.kind === 'vis-inline'
-                                ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableBlock vis={v as VisTable} /> : null })()
+                                ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableInline vis={v as VisTable} /> : null })()
                                 : <WalkthroughBlockView block={block} />}
                             </Reveal>
                           </div>
@@ -3264,7 +3311,7 @@ export function CaseInterviewerMaster({
                   <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                     <Reveal>
                       {block.kind === 'vis-inline'
-                        ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableBlock vis={v as VisTable} /> : null })()
+                        ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableInline vis={v as VisTable} /> : null })()
                         : <WalkthroughBlockView block={block} />}
                     </Reveal>
                   </div>
