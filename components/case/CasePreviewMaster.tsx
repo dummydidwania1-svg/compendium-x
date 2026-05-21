@@ -23,6 +23,7 @@ type WalkthroughBlock =
   | { key: string; kind: 'equation'; text: string; speaker: TranscriptSpeaker }
   | { key: string; kind: 'bullet'; marker: string; text: string; speaker: TranscriptSpeaker }
   | { key: string; kind: 'line'; text: string; speaker: TranscriptSpeaker }
+  | { key: string; kind: 'vis-inline'; visIndex: number }
 
 export type FrameworkNode = {
   id: string
@@ -174,6 +175,8 @@ function buildBlocks(lines: TranscriptDisplayLine[]): WalkthroughBlock[] {
   return lines.flatMap((e, i): WalkthroughBlock[] => {
     const n = e.text.trim()
     if (!n) return []
+    const visMatch = n.match(/^\[VIS:(\d+)\]$/)
+    if (visMatch) return [{ key: `vis-${i}`, kind: 'vis-inline', visIndex: parseInt(visMatch[1], 10) }]
     if (isSectionHeading(n)) return [{ key: `h-${i}`, kind: 'heading', text: n }]
     if (isEquation(n)) return [{ key: `eq-${i}`, kind: 'equation', text: fmtEquation(n), speaker: e.speaker }]
     const bm = n.match(/^(\d+[\).]|[-•])\s*(.+)$/)
@@ -583,6 +586,7 @@ function renderInline(text: string) {
 }
 
 function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
+  if (block.kind === 'vis-inline') return null
   if (block.kind === 'heading') {
     return (
       <div className="pt-3 pb-0.5">
@@ -2731,7 +2735,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       {blocks.map((block, index) => (
                         <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                           <Reveal>
-                            <WalkthroughBlockView block={block} />
+                            {block.kind === 'vis-inline'
+                              ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableBlock vis={v as VisTable} /> : null })()
+                              : <WalkthroughBlockView block={block} />}
                           </Reveal>
                         </div>
                       ))}
@@ -2748,7 +2754,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 {blocks.map((block, index) => (
                   <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                     <Reveal>
-                      <WalkthroughBlockView block={block} />
+                      {block.kind === 'vis-inline'
+                        ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableBlock vis={v as VisTable} /> : null })()
+                        : <WalkthroughBlockView block={block} />}
                     </Reveal>
                   </div>
                 ))}
@@ -3237,7 +3245,11 @@ export function CaseInterviewerMaster({
                       <div>
                         {blocks.map((block, index) => (
                           <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
-                            <Reveal><WalkthroughBlockView block={block} /></Reveal>
+                            <Reveal>
+                              {block.kind === 'vis-inline'
+                                ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableBlock vis={v as VisTable} /> : null })()
+                                : <WalkthroughBlockView block={block} />}
+                            </Reveal>
                           </div>
                         ))}
                       </div>
@@ -3250,7 +3262,11 @@ export function CaseInterviewerMaster({
               <div className="lg:hidden">
                 {blocks.map((block, index) => (
                   <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
-                    <Reveal><WalkthroughBlockView block={block} /></Reveal>
+                    <Reveal>
+                      {block.kind === 'vis-inline'
+                        ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableBlock vis={v as VisTable} /> : null })()
+                        : <WalkthroughBlockView block={block} />}
+                    </Reveal>
                   </div>
                 ))}
               </div>
