@@ -636,7 +636,7 @@ function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview'): b
   return false
 }
 
-const V_GAP_V = 2      // vertical gap between leaf rows — needs room for above-node chevron
+const V_GAP_V = 16     // vertical gap between leaf rows
 const H_PAD_V = 16     // left/right padding inside canvas
 
 /** Compute node dimensions that always fit within containerWidth — no scrolling.
@@ -653,27 +653,86 @@ function verticalNodeMetrics(maxDepth: number, containerWidth: number) {
   return { nodeW, nodeH, hStep, fontSize }
 }
 
+/** Estimate how many lines a label will wrap to inside nodeW px. */
+function estimateLabelLines(label: string, nodeW: number, fontSize: number): number {
+  // Work Sans medium: generous ratio to account for wide glyphs (M, W, S, m, w)
+  // and browser wrapping earlier than strict math — err on the side of more lines
+  const charW = fontSize * 0.68
+  const innerW = nodeW - 16 // px-2 = 8px each side
+  const charsPerLine = Math.max(1, Math.floor(innerW / charW))
+  const words = label.split(/\s+/)
+  let lines = 1, lineLen = 0
+  for (const w of words) {
+    const wLen = w.length
+    if (lineLen === 0) { lineLen = wLen; continue }
+    if (lineLen + 1 + wLen <= charsPerLine) { lineLen += 1 + wLen }
+    else { lines++; lineLen = wLen }
+  }
+  return lines
+}
+
+/** Compute actual pixel height a node will render at. */
+function estimateNodeH(label: string, nodeW: number, nodeH: number, fontSize: number): number {
+  const lines = estimateLabelLines(label, nodeW, fontSize)
+  const lineH = fontSize * 1.35   // line-height: 1.3 + small rounding buffer
+  const textH = Math.ceil(lines * lineH)
+  const padV  = 16                // py-2 = 8px top + 8px bottom
+  return Math.max(nodeH, textH + padV)
+}
+
 function layoutVertical(
   visibleIds: string[],
   hStep: number,
   nodeW: number,
   nodeH: number,
+  fontSize: number,
 ): {
   positions: Map<string, { x: number; y: number }>
+  rowHeights: Map<number, number>   // cursor-row → actual height used
   totalHeight: number
   totalWidth: number
 } {
   const vis = new Set(visibleIds)
   const positions = new Map<string, { x: number; y: number }>()
-  let cursor = 0
-  const ROW = nodeH + V_GAP_V
+  // cursor → actual pixel height of that row (may exceed nodeH for long labels)
+  const rowHeights = new Map<number, number>()
+  // cursor → cumulative Y offset
+  const rowY: number[] = []
 
+  // First pass: place leaf rows and record which cursor slot each leaf occupies
+  const leafRow = new Map<string, number>() // id → cursor slot
+  let cursor = 0
+
+  const placeLeaves = (id: string) => {
+    if (!vis.has(id)) return
+    const vc = (NODES[id]?.children ?? []).filter(c => vis.has(c))
+    if (!vc.length) {
+      leafRow.set(id, cursor)
+      const actualH = estimateNodeH(NODES[id]?.label ?? '', nodeW, nodeH, fontSize)
+      const prev = rowHeights.get(cursor) ?? 0
+      rowHeights.set(cursor, Math.max(prev, actualH))
+      cursor++
+      return
+    }
+    vc.forEach(c => placeLeaves(c))
+  }
+  placeLeaves(ROOT_ID)
+
+  // Build cumulative Y from row heights + gap
+  let cumY = 0
+  for (let r = 0; r < cursor; r++) {
+    rowY[r] = cumY
+    cumY += (rowHeights.get(r) ?? nodeH) + V_GAP_V
+  }
+  const totalHeight = cumY + 24
+
+  // Second pass: assign positions using cumulative Y
   const place = (id: string, depth: number) => {
     if (!vis.has(id)) return
     const vc = (NODES[id]?.children ?? []).filter(c => vis.has(c))
     if (!vc.length) {
-      positions.set(id, { x: H_PAD_V + depth * hStep, y: cursor * ROW })
-      cursor++
+      const row = leafRow.get(id) ?? 0
+      positions.set(id, { x: H_PAD_V + depth * hStep, y: rowY[row] })
       return
     }
     vc.forEach(c => place(c, depth + 1))
@@ -681,14 +740,12 @@ function layoutVertical(
     const lastY  = positions.get(vc[vc.length - 1])?.y ?? 0
     positions.set(id, { x: H_PAD_V + depth * hStep, y: (firstY + lastY) / 2 })
   }
-
   place(ROOT_ID, 0)
 
   const maxD = Math.max(...visibleIds.map(nodeDepth), 0)
-  const totalWidth  = H_PAD_V + (maxD + 1) * hStep + nodeW + H_PAD_V
-  const totalHeight = cursor * ROW + 24
+  const totalWidth = H_PAD_V + (maxD + 1) * hStep + nodeW + H_PAD_V
 
-  return { positions, totalHeight, totalWidth }
+  return { positions, rowHeights, totalHeight, totalWidth }
 }
 
 function VerticalChart({
@@ -730,9 +787,9 @@ function VerticalChart({
 
   const { nodeW, nodeH, hStep, fontSize } = metrics
 
-  const { positions, totalHeight, totalWidth } = useMemo(
-    () => layoutVertical(visibleIds, hStep, nodeW, nodeH),
-    [visibleIds, hStep, nodeW, nodeH]
+  const { positions, rowHeights, totalHeight, totalWidth } = useMemo(
+    () => layoutVertical(visibleIds, hStep, nodeW, nodeH, fontSize),
+    [visibleIds, hStep, nodeW, nodeH, fontSize]
   )
 
   // Centre the tree: totalWidth already includes H_PAD_V on both sides,
@@ -796,10 +853,13 @@ function VerticalChart({
             const edgeRevealed = childDepth <= revealDepth
             const stagger = (depthStagger.get(cid) ?? 0) * 30
             // Connector exits from right edge of parent, enters left edge of child
+            // Use estimated actual height so connectors hit the visual centre of tall nodes
+            const parentH = estimateNodeH(NODES[pid]?.label ?? '', nodeW, nodeH, fontSize)
+            const childH  = estimateNodeH(NODES[cid]?.label ?? '', nodeW, nodeH, fontSize)
             const px = leftOffset + pp.x + nodeW
-            const py = TOP_PAD + pp.y + nodeH / 2
+            const py = TOP_PAD + pp.y + parentH / 2
             const cx = leftOffset + cp.x
-            const cy = TOP_PAD + cp.y + nodeH / 2
+            const cy = TOP_PAD + cp.y + childH / 2
             const midX = px + (cx - px) / 2
             return (
               <path
@@ -867,7 +927,7 @@ function VerticalChart({
                   className={`flex items-center justify-center rounded-[4px] border px-2 py-2 text-center font-medium tracking-[0.01em] transition-all duration-300 hover:-translate-y-0.5 ${cls}`}
                   style={{
                     width: `${nodeW}px`,
-                    minHeight: `${nodeH}px`,
+                    minHeight: `${estimateNodeH(node.label, nodeW, nodeH, fontSize)}px`,
                     fontSize: `${fontSize}px`,
                     lineHeight: '1.3',
                     whiteSpace: 'normal',
@@ -894,12 +954,14 @@ function VerticalChart({
                       if (!op) return false
                       const otherDepth = nodeDepth(other)
                       // Same depth column, positioned below within danger zone
-                      return otherDepth === depth && op.y > p.y && op.y < p.y + nodeH + V_GAP_V + 16
+                      const thisH = estimateNodeH(node.label, nodeW, nodeH, fontSize)
+                      return otherDepth === depth && op.y > p.y && op.y < p.y + thisH + V_GAP_V + 16
                     })
+                    const thisNodeH = estimateNodeH(node.label, nodeW, nodeH, fontSize)
                     const hasNodeBelow = siblingsBelow.length > 0
                     chevronStyle = hasNodeBelow
                       ? { top: '-20px', left: '50%', transform: 'translateX(-50%)' }   // above — clear of node border
-                      : { top: `${nodeH + 4}px`, left: '50%', transform: 'translateX(-50%)' } // below
+                      : { top: `${thisNodeH + 4}px`, left: '50%', transform: 'translateX(-50%)' } // below
                   }
                   return (
                   <button
