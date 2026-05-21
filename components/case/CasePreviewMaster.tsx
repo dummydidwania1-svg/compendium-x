@@ -315,7 +315,7 @@ function layoutDesktop(
         children.length > 1
           ? parentId === ROOT_ID
             ? Math.max(defaultGap, (rowWidth - footprintSum) / (children.length - 1))
-            : Math.max(defaultGap, (rowWidth - footprintSum) / (children.length - 1))
+            : Math.max(8, Math.min(defaultGap, (rowWidth - footprintSum) / (children.length - 1)))
           : defaultGap
       const groupWidth = footprintSum + packedGap * Math.max(children.length - 1, 0)
       const desiredLeft =
