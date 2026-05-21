@@ -1904,34 +1904,36 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
     const cols = d.columns ?? (hideDimension ? ['Short-Term', 'Long-Term'] : ['Dimension', 'Short-Term', 'Long-Term'])
     const renderBullets = (text: string) => {
       const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-      if (lines.length <= 1) return <span className="text-[13px] leading-relaxed text-[#3B2F2F]" style={{ fontFamily: "'Work Sans', sans-serif" }}>{text}</span>
+      if (lines.length <= 1) return (
+        <span className="text-[14px] leading-relaxed text-[#3B2F2F] font-medium" style={{ fontFamily: "'Newsreader', serif" }}>{text}</span>
+      )
       return (
         <ul className="space-y-2.5">
           {lines.map((line, li) => (
             <li key={li} className="flex items-start gap-2">
-              <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-              <span className="flex-1 text-[13px] leading-relaxed text-[#3B2F2F]" style={{ fontFamily: "'Work Sans', sans-serif" }}>{line}</span>
+              <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+              <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{line}</span>
             </li>
           ))}
         </ul>
       )
     }
     return (
-      <div className="pt-16">
-        <VisDivider label={d.framework ?? 'Recommendations'} />
-        <div className="inline-block max-w-full overflow-x-auto rounded-2xl border border-[#3D5A35]/10 shadow-[0_4px_12px_rgba(59,47,47,0.04)]" style={{ background: 'rgba(255,248,240,0.8)' }}>
-          <table className="text-[13px] border-collapse" style={{ tableLayout: 'auto' }}>
+      <div className="pt-10">
+        <VisDivider label="Recommendations" />
+        <div className="w-full overflow-hidden rounded-[4px] border border-[#3D5A35]/15">
+          <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
             <thead>
               <tr>
                 {cols.map((col, i) => (
-                  <th key={i} className="px-5 py-3 text-left"
+                  <th key={i}
+                    className="px-5 py-2.5 text-left"
                     style={{
                       fontFamily: "'Work Sans', sans-serif",
-                      fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.18em',
-                      color: '#3B2F2F',
-                      borderBottom: '1px solid rgba(61,90,53,0.12)',
-                      borderLeft: i > 0 ? '1px solid rgba(61,90,53,0.10)' : undefined,
-                      background: 'rgba(61,90,53,0.05)',
+                      fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
+                      color: '#f0f5ee',
+                      background: '#3D5A35',
+                      borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined,
                       whiteSpace: 'nowrap',
                     }}>
                     {col}
@@ -1941,30 +1943,27 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
             </thead>
             <tbody>
               {d.rows.map((row, ri) => (
-                <tr key={ri}>
+                <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
                   {!hideDimension && (
-                    <td className="px-5 py-4 align-top"
+                    <td className="px-5 py-5 align-top"
                       style={{
                         fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500, color: '#3B2F2F',
-                        borderBottom: ri < d.rows.length - 1 ? '1px solid rgba(61,90,53,0.08)' : undefined,
-                        verticalAlign: 'top',
+                        borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                       }}>
                       {row.dimension}
                     </td>
                   )}
-                  <td className="px-5 py-4 align-top"
+                  <td className="px-5 py-5 align-top"
                     style={{
                       borderLeft: !hideDimension ? '1px solid rgba(61,90,53,0.10)' : undefined,
-                      borderBottom: ri < d.rows.length - 1 ? '1px solid rgba(61,90,53,0.08)' : undefined,
-                      verticalAlign: 'top', maxWidth: '340px',
+                      borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                     }}>
                     {renderBullets(row.shortTerm)}
                   </td>
-                  <td className="px-5 py-4 align-top"
+                  <td className="px-5 py-5 align-top"
                     style={{
                       borderLeft: '1px solid rgba(61,90,53,0.10)',
-                      borderBottom: ri < d.rows.length - 1 ? '1px solid rgba(61,90,53,0.08)' : undefined,
-                      verticalAlign: 'top', maxWidth: '340px',
+                      borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                     }}>
                     {renderBullets(row.longTerm)}
                   </td>
@@ -2728,7 +2727,13 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       {/* Desktop chart — centers vertically when no recommendations */}
                       <div
                         ref={chartRef}
-                        className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')}
+                        className={(() => {
+                          const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant'))
+                          const hasContent = recommendations.length > 0 || hasViz
+                          if (!hasContent) return 'flex items-center'
+                          if (chartMaxDepth === 0) return 'flex-1 flex items-center'
+                          return hasViz ? '' : 'flex-1'
+                        })()}
                         style={{
                           ...(useVerticalLayout ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
                           opacity: chartVisible ? 1 : 0,
@@ -3189,7 +3194,13 @@ export function CaseInterviewerMaster({
                         {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
-                        <div ref={chartRef} className={recommendations.length === 0 ? 'flex items-center' : (chartMaxDepth === 0 ? 'flex-1 flex items-center' : 'flex-1')} style={{
+                        <div ref={chartRef} className={(() => {
+                          const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant'))
+                          const hasContent = recommendations.length > 0 || hasViz
+                          if (!hasContent) return 'flex items-center'
+                          if (chartMaxDepth === 0) return 'flex-1 flex items-center'
+                          return hasViz ? '' : 'flex-1'
+                        })()} style={{
                           ...(useVerticalLayout ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
                           opacity: chartVisible ? 1 : 0,
                           transform: `${useVerticalLayout ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
