@@ -3092,6 +3092,7 @@
       {
         "type": "table",
         "title": "Specifications Comparison",
+        "inlineOnly": true,
         "columns": [
           "Specifications",
           "Premium Wonkas",

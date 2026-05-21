@@ -47,7 +47,7 @@ export type VisFormula = {
   rhs?: string
   derivations?: { lhs: string; rhs: string }[]
 }
-export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string }
+export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean }
 export type VisQuadrant = {
   type: 'quadrant'; title: string; xAxis: string; yAxis: string
   points: { label: string; x: number; y: number }[]
@@ -2909,7 +2909,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         </div>
                       )}
                       {/* Drilldown visualizations */}
-                      {visualisations?.filter(v => v.type === 'table').map((v, i) => (
+                      {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                         <Reveal key={`vis-tbl-d-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
                       ))}
                       {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -2968,7 +2968,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 </div>
               )}
               {/* Mobile drilldown visualizations */}
-              {visualisations?.filter(v => v.type === 'table').map((v, i) => (
+              {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                 <Reveal key={`vis-tbl-m-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
               ))}
               {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3380,7 +3380,7 @@ export function CaseInterviewerMaster({
                           </div>
                         )}
                         {/* Drilldown visualizations */}
-                        {visualisations?.filter(v => v.type === 'table').map((v, i) => (
+                        {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                           <Reveal key={`vis-tbl-id-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
                         ))}
                         {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3432,7 +3432,7 @@ export function CaseInterviewerMaster({
                   </div>
                 )}
                 {/* Mobile drilldown visualizations */}
-                {visualisations?.filter(v => v.type === 'table').map((v, i) => (
+                {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                   <Reveal key={`vis-tbl-im-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
                 ))}
                 {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
