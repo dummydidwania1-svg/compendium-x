@@ -1759,76 +1759,72 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
   })()
 
   const serif: React.CSSProperties = { fontFamily: "'Newsreader', serif" }
+  const sans: React.CSSProperties = { fontFamily: "'Work Sans', sans-serif" }
   const termColor = '#3B2F2F'
-  const SIZE = 15
-  const OP   = 21   // operators rendered noticeably larger + heavier
+  const SIZE = 14
+  const OP = 20
 
-  function FormulaLine({ text, weight = 600 }: { text: string; weight?: number }) {
+  /* Inline formula renderer — bold terms, heavy operators */
+  function FormulaTokens({ text }: { text: string }) {
     const tokens = text.split(/(×|÷|\(|\))/)
     return (
       <>
         {tokens.map((tok, i) => {
           if (tok === '×' || tok === '÷') {
-            return (
-              <span key={i} style={{ ...serif, color: termColor, fontSize: OP, fontWeight: 700, margin: '0 8px', lineHeight: 1 }}>
-                {tok}
-              </span>
-            )
+            return <span key={i} style={{ ...serif, color: termColor, fontSize: OP, fontWeight: 700, margin: '0 7px', lineHeight: 1 }}>{tok}</span>
           }
           if (tok === '(' || tok === ')') {
-            return (
-              <span key={i} style={{ ...serif, color: termColor, fontSize: OP, fontWeight: 300, opacity: 0.40 }}>
-                {tok}
-              </span>
-            )
+            return <span key={i} style={{ ...serif, color: termColor, fontSize: OP, fontWeight: 300, opacity: 0.38 }}>{tok}</span>
           }
-          return (
-            <span key={i} style={{ ...serif, color: termColor, fontSize: SIZE, fontWeight: weight }}>
-              {tok}
-            </span>
-          )
+          return <span key={i} style={{ ...serif, color: termColor, fontSize: SIZE, fontWeight: 600 }}>{tok}</span>
         })}
       </>
     )
   }
 
+  const primaryFormula = (
+    <span>
+      <span style={{ ...serif, color: termColor, fontSize: SIZE, fontWeight: 600 }}>{primaryLhs}</span>
+      <span style={{ ...serif, color: termColor, fontSize: OP, fontWeight: 700, margin: '0 9px', lineHeight: 1 }}>=</span>
+      <FormulaTokens text={primaryRhs} />
+    </span>
+  )
+
   return (
     <div className="pt-16">
+      {/* Card — identical structure to sidebar notes cards */}
       <div
-        className="w-full rounded-[4px] px-8 py-7"
-        style={{
-          background: 'rgba(255,248,240,0.8)',
-          border: '1px solid rgba(61,90,53,0.18)',
-          boxShadow: '0 4px 16px -4px rgba(61,90,53,0.10)',
-        }}
+        className="w-full rounded-[4px] border border-[rgba(61,90,53,0.10)]"
+        style={{ background: 'rgba(255,248,240,0.80)' }}
       >
-        {/* Primary equation — bold throughout */}
-        <p className="text-center whitespace-nowrap overflow-x-auto" style={{ lineHeight: 1.7 }}>
-          <span style={{ ...serif, color: termColor, fontSize: SIZE, fontWeight: 600 }}>{primaryLhs}</span>
-          <span style={{ ...serif, color: termColor, fontSize: OP, fontWeight: 700, margin: '0 10px', lineHeight: 1 }}>=</span>
-          <FormulaLine text={primaryRhs} weight={600} />
+        {/* Header — same as sidebar card title row */}
+        <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center pt-3 pb-2 px-3"
+          style={sans}>
+          Key Equations
         </p>
 
-        {/* Derivations — same line rhythm, subtle underline accent, muted weight */}
-        {derivations.length > 0 && (
-          <div className="mt-4 flex flex-col gap-2">
-            {derivations.map((d, i) => (
-              <p key={i} className="text-center whitespace-nowrap overflow-x-auto" style={{ lineHeight: 1.7 }}>
-                <span
-                  style={{
-                    ...serif, color: termColor, fontSize: SIZE, fontWeight: 400, opacity: 0.72,
-                    textDecoration: 'underline',
-                    textDecorationColor: 'rgba(61,90,53,0.20)',
-                    textUnderlineOffset: '4px',
-                    textDecorationThickness: '1px',
-                  }}
-                >{d.lhs}</span>
-                <span style={{ ...serif, color: termColor, fontSize: OP, fontWeight: 500, margin: '0 10px', lineHeight: 1, opacity: 0.55 }}>=</span>
-                <FormulaLine text={d.rhs} weight={400} />
-              </p>
-            ))}
-          </div>
-        )}
+        {/* Bullet list */}
+        <ul className="w-full px-5 pb-4">
+          {/* Primary equation as first bullet */}
+          <li className="flex items-start gap-2.5 mb-3 last:mb-0">
+            <span className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+            <span className="flex-1 whitespace-nowrap overflow-x-auto" style={{ lineHeight: 1.8 }}>
+              {primaryFormula}
+            </span>
+          </li>
+
+          {/* Derived equations as subsequent bullets with superscript marker */}
+          {derivations.map((d, i) => (
+            <li key={i} className="flex items-start gap-2.5 mb-3 last:mb-0">
+              <span className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/30" />
+              <span className="flex-1 whitespace-nowrap overflow-x-auto" style={{ lineHeight: 1.8 }}>
+                <span style={{ ...serif, color: termColor, fontSize: SIZE, fontWeight: 600 }}>{d.lhs}</span>
+                <span style={{ ...serif, color: termColor, fontSize: OP, fontWeight: 700, margin: '0 9px', lineHeight: 1 }}>=</span>
+                <FormulaTokens text={d.rhs} />
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   )
