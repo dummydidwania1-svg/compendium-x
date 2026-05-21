@@ -1747,73 +1747,48 @@ function VisDivider({ label }: { label: string }) {
    Visualization: Formula block (drilldown, between chart and recs)
    ═══════════════════════════════════════════════════════════ */
 function VisFormulaBlock({ vis }: { vis: VisFormula }) {
-  // Prefer structured lhs/rhs/derivations; fall back to parsing content string
   const primaryLhs = vis.lhs ?? vis.content.split('=')[0]?.trim() ?? ''
   const primaryRhs = vis.rhs ?? vis.content.split('=').slice(1).join('=').split(/\.\s*Where:/i)[0]?.trim() ?? ''
   const derivations = vis.derivations ?? (() => {
     const whereMatch = vis.content.match(/\.\s*Where:\s*(.+)/i)
     if (!whereMatch) return []
-    const parts = whereMatch[1].split(/;\s*/)
-    return parts.map(p => {
+    return whereMatch[1].split(/;\s*/).map(p => {
       const [l, ...rest] = p.split('=')
       return { lhs: l?.trim() ?? '', rhs: rest.join('=').trim() }
     })
   })()
 
+  const eqStyle: React.CSSProperties = { fontFamily: "'Newsreader', serif" }
+
   return (
-    <div className="py-10">
+    <div className="pt-16">
       <div
-        className="w-full rounded-[4px] px-8 py-7"
+        className="mx-auto max-w-[600px] rounded-[4px] px-7 py-5 text-center"
         style={{
           background: 'rgba(255,248,240,0.60)',
-          border: '1.5px solid rgba(61,90,53,0.18)',
-          boxShadow: '0 0 0 3px rgba(61,90,53,0.06), 0 0 16px 0 rgba(61,90,53,0.08)',
+          border: '1.5px dashed rgba(61,90,53,0.28)',
         }}
       >
-        {/* Primary equation */}
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-            <span
-              className="text-[15px] font-semibold text-[#3B2F2F]"
-              style={{ fontFamily: "'Newsreader', serif", letterSpacing: '-0.01em' }}
-            >
-              {primaryLhs}
-            </span>
-            <span className="text-[15px] font-light text-[#5C4033]/50" style={{ fontFamily: "'Newsreader', serif" }}>=</span>
-            <span
-              className="text-[15px] font-medium text-[#3B2F2F]"
-              style={{ fontFamily: "'Newsreader', serif", letterSpacing: '-0.01em' }}
-            >
-              {primaryRhs}
-            </span>
-          </div>
-        </div>
+        {/* Primary equation — centered */}
+        <p className="text-[15px] font-medium text-[#3B2F2F] leading-snug" style={eqStyle}>
+          <span className="font-semibold">{primaryLhs}</span>
+          <span className="mx-2.5 font-light text-[#5C4033]/50">=</span>
+          <span>{primaryRhs}</span>
+        </p>
 
-        {/* Derivations */}
-        {derivations.length > 0 && (
-          <>
-            <div className="my-5 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(61,90,53,0.14), transparent)' }} />
-            <div className="flex flex-col gap-3">
-              {derivations.map((d, i) => (
-                <div key={i} className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span
-                    className="text-[13px] font-medium"
-                    style={{ fontFamily: "'Newsreader', serif", color: '#5C4033', fontStyle: 'italic' }}
-                  >
-                    {d.lhs}
-                  </span>
-                  <span className="text-[12px] font-light text-[#5C4033]/40" style={{ fontFamily: "'Newsreader', serif" }}>=</span>
-                  <span
-                    className="text-[13px]"
-                    style={{ fontFamily: "'Newsreader', serif", color: '#5C4033/80' }}
-                  >
-                    {d.rhs}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        {/* Derivations — smaller, italic, indented below */}
+        {derivations.map((d, i) => (
+          <p
+            key={i}
+            className="mt-3 text-[12.5px] leading-snug"
+            style={{ ...eqStyle, color: '#5C4033', fontStyle: 'italic' }}
+          >
+            <span className="not-italic text-[#5C4033]/40 mr-1.5 text-[11px]">∴</span>
+            <span className="font-medium not-italic">{d.lhs}</span>
+            <span className="mx-2 font-light text-[#5C4033]/40 not-italic">=</span>
+            <span className="not-italic">{d.rhs}</span>
+          </p>
+        ))}
       </div>
     </div>
   )
