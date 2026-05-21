@@ -47,7 +47,13 @@ function buildPayload(rawCase) {
     payload.frameworkTree = rawCase.frameworkTree
   }
   if (rawCase.visualisations && Array.isArray(rawCase.visualisations)) {
-    payload.visualisations = rawCase.visualisations
+    // Firestore rejects arrays-of-arrays; serialize VisTable rows as a JSON string.
+    payload.visualisations = rawCase.visualisations.map(v => {
+      if (v.type === 'table' && Array.isArray(v.rows)) {
+        return { ...v, rows: JSON.stringify(v.rows) }
+      }
+      return v
+    })
   }
   if (rawCase.recommendationsTable && typeof rawCase.recommendationsTable === 'object') {
     payload.recommendationsTable = rawCase.recommendationsTable

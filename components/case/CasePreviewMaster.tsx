@@ -39,7 +39,7 @@ export type FrameworkTree = {
 }
 
 export type VisFormula = { type: 'formula'; title: string; content: string }
-export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] }
+export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string }
 export type VisQuadrant = {
   type: 'quadrant'; title: string; xAxis: string; yAxis: string
   points: { label: string; x: number; y: number }[]
@@ -1775,6 +1775,8 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
    Visualization: Generic table
    ═══════════════════════════════════════════════════════════ */
 function VisTableBlock({ vis }: { vis: VisTable }) {
+  // rows may be serialized as a JSON string by the Firestore import (Firestore rejects arrays-of-arrays)
+  const rows: string[][] = typeof vis.rows === 'string' ? JSON.parse(vis.rows) : vis.rows
   return (
     <div className="pt-16">
       <VisDivider label={vis.title} />
@@ -1791,7 +1793,7 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
             </tr>
           </thead>
           <tbody>
-            {vis.rows.map((row, ri) => (
+            {rows.map((row, ri) => (
               <tr key={ri} style={{ background: ri % 2 === 1 ? 'rgba(59,47,47,0.025)' : 'transparent' }}>
                 {row.map((cell, ci) => (
                   <td key={ci} className="px-3 py-2.5 border-b border-[#3D5A35]/06 text-[#3B2F2F] leading-relaxed align-top"
