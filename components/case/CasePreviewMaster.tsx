@@ -1737,21 +1737,36 @@ function VisDivider({ label }: { label: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Visualization: Formula callout
+   Visualization: Formula block (drilldown, between chart and recs)
    ═══════════════════════════════════════════════════════════ */
 function VisFormulaBlock({ vis }: { vis: VisFormula }) {
   const parts = vis.content.split(/\.\s*Where:/i)
   const equation = parts[0]?.trim() ?? vis.content
   const breakdown = parts[1]?.trim()
   return (
-    <div className="rounded-xl border border-[#3D5A35]/15 px-5 py-4 my-1" style={{ background: 'rgba(61,90,53,0.04)' }}>
-      <p className="text-[10px] uppercase tracking-[0.18em] font-semibold mb-2.5" style={{ color: 'rgba(61,90,53,0.70)' }}>{vis.title}</p>
-      <p className="text-[15px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{equation}</p>
-      {breakdown && (
-        <p className="mt-2 text-[13px] leading-relaxed text-[#5C4033]/70" style={{ fontFamily: "'Work Sans', sans-serif" }}>
-          Where: {breakdown}
-        </p>
-      )}
+    <div className="pt-10">
+      <div className="w-full overflow-hidden rounded-[4px] border border-[#3D5A35]/15">
+        {/* Header bar — matches flowchart active node colour */}
+        <div className="px-5 py-2.5" style={{ background: '#3D5A35' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none" style={{ fontFamily: "'Work Sans', sans-serif", color: '#f0f5ee' }}>
+            {vis.title}
+          </p>
+        </div>
+        {/* Equation row */}
+        <div className="px-5 py-4" style={{ background: 'rgba(61,90,53,0.04)' }}>
+          <p className="text-[14px] font-medium leading-relaxed text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>
+            {equation}
+          </p>
+          {breakdown && (
+            <>
+              <div className="my-3 h-px" style={{ background: 'rgba(61,90,53,0.10)' }} />
+              <p className="text-[13px] leading-relaxed text-[#5C4033]/80" style={{ fontFamily: "'Work Sans', sans-serif" }}>
+                <span className="font-semibold text-[#3D5A35] mr-1">Where:</span>{breakdown}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -2649,12 +2664,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                           </Reveal>
                         </div>
                       ))}
-                      {/* Formula visualizations — end of walkthrough */}
-                      {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
-                        <Reveal key={`formula-d-${i}`}>
-                          <VisFormulaBlock vis={v as VisFormula} />
-                        </Reveal>
-                      ))}
                     </div>
 
                   </div>
@@ -2671,11 +2680,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       <WalkthroughBlockView block={block} />
                     </Reveal>
                   </div>
-                ))}
-                {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
-                  <Reveal key={`formula-m-${i}`}>
-                    <VisFormulaBlock vis={v as VisFormula} />
-                  </Reveal>
                 ))}
               </div>
               </div>
@@ -2751,6 +2755,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         )}
                       </div>
 
+                      {/* ── Formula visualizations — between chart and recs ── */}
+                      {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
+                        <Reveal key={`formula-dd-${i}`}><VisFormulaBlock vis={v as VisFormula} /></Reveal>
+                      ))}
+
                       {/* ── Recommendations ─────────────── */}
                       {recommendations.length > 0 && (
                         <div className="pt-16">
@@ -2807,6 +2816,10 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                     onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                 </div>
               </Reveal>
+              {/* Formula — mobile, between chart and recs */}
+              {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
+                <Reveal key={`formula-dm-${i}`}><VisFormulaBlock vis={v as VisFormula} /></Reveal>
+              ))}
               {recommendations.length > 0 && (
                 <div className="mt-12">
                   <Reveal>
@@ -3156,9 +3169,6 @@ export function CaseInterviewerMaster({
                             <Reveal><WalkthroughBlockView block={block} /></Reveal>
                           </div>
                         ))}
-                        {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
-                          <Reveal key={`formula-id-${i}`}><VisFormulaBlock vis={v as VisFormula} /></Reveal>
-                        ))}
                       </div>
                     </div>
                   </div>
@@ -3171,9 +3181,6 @@ export function CaseInterviewerMaster({
                   <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                     <Reveal><WalkthroughBlockView block={block} /></Reveal>
                   </div>
-                ))}
-                {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
-                  <Reveal key={`formula-im-${i}`}><VisFormulaBlock vis={v as VisFormula} /></Reveal>
                 ))}
               </div>
             </section>
@@ -3213,6 +3220,10 @@ export function CaseInterviewerMaster({
                             <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                           )}
                         </div>
+                        {/* ── Formula — between chart and recs ── */}
+                        {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
+                          <Reveal key={`formula-idd-${i}`}><VisFormulaBlock vis={v as VisFormula} /></Reveal>
+                        ))}
                         {recommendations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
