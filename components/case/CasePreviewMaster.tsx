@@ -55,7 +55,7 @@ export type VisQuadrant = {
 export type Visualisation = VisFormula | VisTable | VisQuadrant
 
 export type RecommendationsTableA = { headers: string[]; rows: string[][] }
-export type RecommendationsTableB = { framework: string; columns: string[]; rows: { dimension: string; shortTerm: string; longTerm: string }[] }
+export type RecommendationsTableB = { framework: string; columns: string[]; dimensionHeader?: string; rows: { dimension: string; shortTerm: string; longTerm: string }[] }
 export type RecommendationsTableC = { framework: string; shortTerm: { title: string; action: string; impact: string }[]; longTerm: { title: string; action: string; impact: string }[] }
 export type RecommendationsTable  = RecommendationsTableA | RecommendationsTableB | RecommendationsTableC
 
@@ -1975,7 +1975,14 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
   if (isB) {
     const d = data as RecommendationsTableB
     const hideDimension = d.rows.every(r => !r.dimension?.trim())
-    const cols = d.columns ?? (hideDimension ? ['Short-Term', 'Long-Term'] : ['Dimension', 'Short-Term', 'Long-Term'])
+    // dimensionHeader present → dimension column gets full header styling (matrix mode)
+    const matrixMode = !hideDimension && !!d.dimensionHeader
+    const cols = d.columns ?? ['Short-Term', 'Long-Term']
+    const headerStyle: React.CSSProperties = {
+      fontFamily: "'Work Sans', sans-serif",
+      fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
+      color: '#f0f5ee', background: '#3D5A35', whiteSpace: 'nowrap',
+    }
     const renderBullets = (text: string) => {
       const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
       if (lines.length === 0) return null
@@ -1997,17 +2004,16 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
           <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
             <thead>
               <tr>
+                {/* Top-left corner header cell in matrix mode */}
+                {!hideDimension && (
+                  <th className="px-5 py-2.5 text-left"
+                    style={{ ...headerStyle, borderRight: '1px solid rgba(240,245,238,0.15)' }}>
+                    {matrixMode ? (d.dimensionHeader ?? '') : ''}
+                  </th>
+                )}
                 {cols.map((col, i) => (
-                  <th key={i}
-                    className="px-5 py-2.5 text-left"
-                    style={{
-                      fontFamily: "'Work Sans', sans-serif",
-                      fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
-                      color: '#f0f5ee',
-                      background: '#3D5A35',
-                      borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined,
-                      whiteSpace: 'nowrap',
-                    }}>
+                  <th key={i} className="px-5 py-2.5 text-left"
+                    style={{ ...headerStyle, borderLeft: (hideDimension && i === 0) ? undefined : '1px solid rgba(240,245,238,0.15)' }}>
                     {col}
                   </th>
                 ))}
@@ -2017,8 +2023,14 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
               {d.rows.map((row, ri) => (
                 <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
                   {!hideDimension && (
-                    <td className="px-5 py-5 align-top"
-                      style={{
+                    <td className="px-5 py-2.5 align-middle"
+                      style={matrixMode ? {
+                        // Matrix mode: dimension cell = same green header styling
+                        ...headerStyle,
+                        borderTop: '1px solid rgba(240,245,238,0.15)',
+                        borderRight: '1px solid rgba(240,245,238,0.15)',
+                        whiteSpace: 'normal',
+                      } : {
                         fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500, color: '#3B2F2F',
                         borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                       }}>
