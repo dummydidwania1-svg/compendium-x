@@ -2023,13 +2023,15 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
               {d.rows.map((row, ri) => (
                 <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
                   {!hideDimension && (
-                    <td className="px-5 py-2.5 align-middle"
+                    <td className="px-5 py-5 align-middle text-center"
                       style={matrixMode ? {
                         // Matrix mode: dimension cell = same green header styling
                         ...headerStyle,
                         borderTop: '1px solid rgba(240,245,238,0.15)',
                         borderRight: '1px solid rgba(240,245,238,0.15)',
                         whiteSpace: 'nowrap',
+                        textAlign: 'center',
+                        verticalAlign: 'middle',
                       } : {
                         fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500, color: '#3B2F2F',
                         borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
