@@ -148,27 +148,20 @@ function RepositoryContent() {
 
   useEffect(() => {
     const fetchCases = async () => {
-      console.log('[CCX] fetchCases start, onLine=', navigator.onLine)
-
       // Optimistic flash from cache if fresh enough
       const cached = readCasesCache()
-      const rawEnvelope = localStorage.getItem('compendium_cases_v2')
-      console.log('[CCX] raw localStorage key present =', !!rawEnvelope)
-      if (rawEnvelope) {
-        try { console.log('[CCX] raw envelope data.length =', JSON.parse(rawEnvelope)?.data?.length) } catch {}
+      if (cached) {
+        setCases(cached)
+        setLoading(false)
       }
-      console.log('[CCX] readCasesCache =', cached ? `${cached.length} items` : null)
 
       try {
-        console.log('[CCX] calling getDocs...')
         const snapshot = await getDocs(collection(db, 'cases'))
-        console.log('[CCX] getDocs success, count=', snapshot.docs.length)
 
         // Firestore returns 0 docs when offline (SDK internal cache miss) instead
         // of throwing. If we have cached data and got 0 back, trust the cache.
         if (snapshot.docs.length === 0) {
           const fallback = readCacheForFallback()
-          console.log('[CCX] 0 docs — fallback cache =', fallback ? `${fallback.length} items` : null)
           if (fallback && fallback.length > 0) {
             setCases(fallback)
             setFirestoreFailed(true)
@@ -204,10 +197,8 @@ function RepositoryContent() {
         setCases(data)
         writeCasesCache(data)
       } catch (error) {
-        console.log('[CCX] getDocs threw:', error)
         setFirestoreFailed(true)
         const fallback = readCacheForFallback()
-        console.log('[CCX] readCacheForFallback =', fallback ? `${fallback.length} items` : null)
         if (fallback) {
           setCases(fallback)
           setOfflineBanner(true)
