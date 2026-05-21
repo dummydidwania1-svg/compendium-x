@@ -1758,37 +1758,73 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
     })
   })()
 
-  const eqStyle: React.CSSProperties = { fontFamily: "'Newsreader', serif" }
+  const serif: React.CSSProperties = { fontFamily: "'Newsreader', serif" }
+  const termColor = '#3B2F2F'
+  const opColor = '#3D5A35'
+
+  /* Renders a formula string, styling ×, ÷, (, ) distinctly */
+  function FormulaLine({ text, size = 15, weight = 400 }: { text: string; size?: number; weight?: number }) {
+    // Split on operator characters, keeping them as tokens
+    const tokens = text.split(/(×|÷|\(|\))/)
+    return (
+      <>
+        {tokens.map((tok, i) => {
+          if (tok === '×' || tok === '÷') {
+            return (
+              <span key={i} style={{ ...serif, color: opColor, fontSize: size + 1, fontWeight: 300, margin: '0 5px', verticalAlign: 'middle' }}>
+                {tok}
+              </span>
+            )
+          }
+          if (tok === '(' || tok === ')') {
+            return (
+              <span key={i} style={{ ...serif, color: termColor, fontSize: size + 2, fontWeight: 200, opacity: 0.5 }}>
+                {tok}
+              </span>
+            )
+          }
+          return (
+            <span key={i} style={{ ...serif, color: termColor, fontSize: size, fontWeight: weight }}>
+              {tok}
+            </span>
+          )
+        })}
+      </>
+    )
+  }
 
   return (
     <div className="pt-16">
       <div
-        className="mx-auto max-w-[600px] rounded-[4px] px-7 py-5 text-center"
+        className="w-full rounded-[4px] px-8 py-6"
         style={{
           background: 'rgba(255,248,240,0.60)',
-          border: '1.5px dashed rgba(61,90,53,0.28)',
+          border: '1.5px dashed rgba(61,90,53,0.30)',
         }}
       >
-        {/* Primary equation — centered */}
-        <p className="text-[15px] font-medium text-[#3B2F2F] leading-snug" style={eqStyle}>
-          <span className="font-semibold">{primaryLhs}</span>
-          <span className="mx-2.5 font-light text-[#5C4033]/50">=</span>
-          <span>{primaryRhs}</span>
+        {/* Primary equation — single line, centered */}
+        <p className="text-center whitespace-nowrap overflow-x-auto leading-relaxed">
+          <span style={{ ...serif, color: termColor, fontSize: 15, fontWeight: 600 }}>{primaryLhs}</span>
+          <span style={{ ...serif, color: opColor, fontSize: 17, fontWeight: 300, margin: '0 10px' }}>=</span>
+          <FormulaLine text={primaryRhs} size={15} weight={400} />
+          {derivations.length > 0 && (
+            <sup style={{ fontSize: 9, color: opColor, fontWeight: 600, marginLeft: 3, verticalAlign: 'super', fontFamily: "'Work Sans', sans-serif" }}>1</sup>
+          )}
         </p>
 
-        {/* Derivations — smaller, italic, indented below */}
-        {derivations.map((d, i) => (
-          <p
-            key={i}
-            className="mt-3 text-[12.5px] leading-snug"
-            style={{ ...eqStyle, color: '#5C4033', fontStyle: 'italic' }}
-          >
-            <span className="not-italic text-[#5C4033]/40 mr-1.5 text-[11px]">∴</span>
-            <span className="font-medium not-italic">{d.lhs}</span>
-            <span className="mx-2 font-light text-[#5C4033]/40 not-italic">=</span>
-            <span className="not-italic">{d.rhs}</span>
-          </p>
-        ))}
+        {/* Derivations — each on its own line, smaller, left-indented */}
+        {derivations.length > 0 && (
+          <div className="mt-4 pt-4 flex flex-col gap-2.5" style={{ borderTop: '1px solid rgba(61,90,53,0.10)' }}>
+            {derivations.map((d, i) => (
+              <p key={i} className="text-center leading-relaxed">
+                <sup style={{ fontSize: 9, color: opColor, fontWeight: 600, marginRight: 4, fontFamily: "'Work Sans', sans-serif" }}>{i + 1}</sup>
+                <span style={{ ...serif, color: termColor, fontSize: 13, fontWeight: 500, fontStyle: 'italic' }}>{d.lhs}</span>
+                <span style={{ ...serif, color: opColor, fontSize: 15, fontWeight: 300, margin: '0 8px' }}>=</span>
+                <FormulaLine text={d.rhs} size={13} weight={400} />
+              </p>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
