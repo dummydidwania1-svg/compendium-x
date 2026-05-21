@@ -1800,23 +1800,30 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
         <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
       </div>
 
-      <div className="space-y-1">
-        {/* Primary equation */}
-        <p className="text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ ...serif, whiteSpace: 'nowrap', overflowX: 'auto' }}>
-          <FormulaTokens text={primaryLhs} />
-          <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 600, margin: '0 8px', lineHeight: 1 }}>=</span>
-          <FormulaTokens text={primaryRhs} />
-        </p>
-
-        {/* Derived equations — indented, muted, same line rhythm */}
-        {derivations.map((d, i) => (
-          <p key={i} className="text-[14px] leading-relaxed" style={{ ...serif, whiteSpace: 'nowrap', overflowX: 'auto', paddingLeft: '1.5rem' }}>
-            <FormulaTokens text={d.lhs} muted />
-            <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 500, margin: '0 8px', lineHeight: 1, opacity: 0.4 }}>=</span>
-            <FormulaTokens text={d.rhs} muted />
-          </p>
-        ))}
-      </div>
+      <ul className="space-y-2">
+        <li className="flex items-start gap-2">
+          <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+          <span className="flex-1" style={{ ...serif, fontSize: 14, color: termColor, fontWeight: 500, lineHeight: 1.7, overflowX: 'auto' }}>
+            {/* Primary equation */}
+            <span style={{ whiteSpace: 'nowrap', display: 'block' }}>
+              <FormulaTokens text={primaryLhs} />
+              <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 600, margin: '0 8px', lineHeight: 1 }}>=</span>
+              <FormulaTokens text={primaryRhs} />
+            </span>
+            {/* Derivations on new lines within the same bullet, prefixed with "where" */}
+            {derivations.map((d, i) => (
+              <span key={i} style={{ whiteSpace: 'nowrap', display: 'block', paddingTop: '2px' }}>
+                <span style={{ ...serif, color: termColor, fontSize: 13, fontWeight: 400, fontStyle: 'italic', opacity: 0.55, marginRight: 6 }}>
+                  {i === 0 ? 'where' : 'and'}
+                </span>
+                <FormulaTokens text={d.lhs} muted />
+                <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 500, margin: '0 8px', lineHeight: 1, opacity: 0.45 }}>=</span>
+                <FormulaTokens text={d.rhs} muted />
+              </span>
+            ))}
+          </span>
+        </li>
+      </ul>
     </div>
   )
 }
