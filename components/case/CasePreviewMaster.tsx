@@ -1810,15 +1810,15 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
               <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 600, margin: '0 8px', lineHeight: 1 }}>=</span>
               <FormulaTokens text={primaryRhs} />
             </span>
-            {/* Derivations on new lines within the same bullet, prefixed with "where" */}
+            {/* Derivations — same font/size/color as primary, prefixed with "where" */}
             {derivations.map((d, i) => (
-              <span key={i} style={{ whiteSpace: 'nowrap', display: 'block', paddingTop: '2px' }}>
-                <span style={{ ...serif, color: termColor, fontSize: 13, fontWeight: 400, fontStyle: 'italic', opacity: 0.55, marginRight: 6 }}>
+              <span key={i} style={{ whiteSpace: 'nowrap', display: 'block' }}>
+                <span style={{ ...serif, color: termColor, fontSize: 14, fontWeight: 500, marginRight: 6 }}>
                   {i === 0 ? 'where' : 'and'}
                 </span>
-                <FormulaTokens text={d.lhs} muted />
-                <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 500, margin: '0 8px', lineHeight: 1, opacity: 0.45 }}>=</span>
-                <FormulaTokens text={d.rhs} muted />
+                <FormulaTokens text={d.lhs} />
+                <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 600, margin: '0 8px', lineHeight: 1 }}>=</span>
+                <FormulaTokens text={d.rhs} />
               </span>
             ))}
           </span>
