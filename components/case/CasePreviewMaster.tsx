@@ -2001,19 +2001,19 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
       <div className="pt-10">
         <VisDivider label="Recommendations" />
         <div className="w-full overflow-hidden rounded-[4px] border border-[#3D5A35]/15">
-          <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+          <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
             <thead>
               <tr>
-                {/* Top-left corner header cell in matrix mode */}
+                {/* Top-left corner header cell in matrix mode — shrinks to content */}
                 {!hideDimension && (
                   <th className="px-5 py-2.5 text-left"
-                    style={{ ...headerStyle, borderRight: '1px solid rgba(240,245,238,0.15)' }}>
+                    style={{ ...headerStyle, whiteSpace: 'nowrap', width: '1%', borderRight: '1px solid rgba(240,245,238,0.15)' }}>
                     {matrixMode ? (d.dimensionHeader ?? '') : ''}
                   </th>
                 )}
                 {cols.map((col, i) => (
                   <th key={i} className="px-5 py-2.5 text-left"
-                    style={{ ...headerStyle, borderLeft: (hideDimension && i === 0) ? undefined : '1px solid rgba(240,245,238,0.15)' }}>
+                    style={{ ...headerStyle, width: '50%', borderLeft: (hideDimension && i === 0) ? undefined : '1px solid rgba(240,245,238,0.15)' }}>
                     {col}
                   </th>
                 ))}
@@ -2029,7 +2029,7 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
                         ...headerStyle,
                         borderTop: '1px solid rgba(240,245,238,0.15)',
                         borderRight: '1px solid rgba(240,245,238,0.15)',
-                        whiteSpace: 'normal',
+                        whiteSpace: 'nowrap',
                       } : {
                         fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500, color: '#3B2F2F',
                         borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
