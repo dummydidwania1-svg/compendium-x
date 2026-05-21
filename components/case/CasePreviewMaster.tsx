@@ -1813,8 +1813,8 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
             {/* Derivations — same font/size/color as primary, prefixed with "where" */}
             {derivations.map((d, i) => (
               <span key={i} style={{ whiteSpace: 'nowrap', display: 'block' }}>
-                <span style={{ ...serif, color: termColor, fontSize: 14, fontWeight: 500, marginRight: 0 }}>
-                  {i === 0 ? 'where, ' : 'and, '}
+                <span style={{ ...serif, color: termColor, fontSize: 14, fontWeight: 500, marginRight: 4 }}>
+                  {i === 0 ? 'where, ' : 'and, '}
                 </span>
                 <FormulaTokens text={d.lhs} />
                 <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 600, margin: '0 8px', lineHeight: 1 }}>=</span>
