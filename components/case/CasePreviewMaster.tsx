@@ -38,7 +38,14 @@ export type FrameworkTree = {
   notes: { title: string; items: string[] }[]
 }
 
-export type VisFormula = { type: 'formula'; title: string; content: string }
+export type VisFormula = {
+  type: 'formula'
+  title: string
+  content: string
+  lhs?: string
+  rhs?: string
+  derivations?: { lhs: string; rhs: string }[]
+}
 export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string }
 export type VisQuadrant = {
   type: 'quadrant'; title: string; xAxis: string; yAxis: string
@@ -1740,32 +1747,73 @@ function VisDivider({ label }: { label: string }) {
    Visualization: Formula block (drilldown, between chart and recs)
    ═══════════════════════════════════════════════════════════ */
 function VisFormulaBlock({ vis }: { vis: VisFormula }) {
-  const parts = vis.content.split(/\.\s*Where:/i)
-  const equation = parts[0]?.trim() ?? vis.content
-  const breakdown = parts[1]?.trim()
+  // Prefer structured lhs/rhs/derivations; fall back to parsing content string
+  const primaryLhs = vis.lhs ?? vis.content.split('=')[0]?.trim() ?? ''
+  const primaryRhs = vis.rhs ?? vis.content.split('=').slice(1).join('=').split(/\.\s*Where:/i)[0]?.trim() ?? ''
+  const derivations = vis.derivations ?? (() => {
+    const whereMatch = vis.content.match(/\.\s*Where:\s*(.+)/i)
+    if (!whereMatch) return []
+    const parts = whereMatch[1].split(/;\s*/)
+    return parts.map(p => {
+      const [l, ...rest] = p.split('=')
+      return { lhs: l?.trim() ?? '', rhs: rest.join('=').trim() }
+    })
+  })()
+
   return (
-    <div className="pt-10">
-      <div className="w-full overflow-hidden rounded-[4px] border border-[#3D5A35]/15">
-        {/* Header bar — matches flowchart active node colour */}
-        <div className="px-5 py-2.5" style={{ background: '#3D5A35' }}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none" style={{ fontFamily: "'Work Sans', sans-serif", color: '#f0f5ee' }}>
-            {vis.title}
-          </p>
+    <div className="py-10">
+      <div
+        className="w-full rounded-[4px] px-8 py-7"
+        style={{
+          background: 'rgba(255,248,240,0.60)',
+          border: '1.5px solid rgba(61,90,53,0.18)',
+          boxShadow: '0 0 0 3px rgba(61,90,53,0.06), 0 0 16px 0 rgba(61,90,53,0.08)',
+        }}
+      >
+        {/* Primary equation */}
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <span
+              className="text-[15px] font-semibold text-[#3B2F2F]"
+              style={{ fontFamily: "'Newsreader', serif", letterSpacing: '-0.01em' }}
+            >
+              {primaryLhs}
+            </span>
+            <span className="text-[15px] font-light text-[#5C4033]/50" style={{ fontFamily: "'Newsreader', serif" }}>=</span>
+            <span
+              className="text-[15px] font-medium text-[#3B2F2F]"
+              style={{ fontFamily: "'Newsreader', serif", letterSpacing: '-0.01em' }}
+            >
+              {primaryRhs}
+            </span>
+          </div>
         </div>
-        {/* Equation row */}
-        <div className="px-5 py-4" style={{ background: 'rgba(61,90,53,0.04)' }}>
-          <p className="text-[14px] font-medium leading-relaxed text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>
-            {equation}
-          </p>
-          {breakdown && (
-            <>
-              <div className="my-3 h-px" style={{ background: 'rgba(61,90,53,0.10)' }} />
-              <p className="text-[13px] leading-relaxed text-[#5C4033]/80" style={{ fontFamily: "'Work Sans', sans-serif" }}>
-                <span className="font-semibold text-[#3D5A35] mr-1">Where:</span>{breakdown}
-              </p>
-            </>
-          )}
-        </div>
+
+        {/* Derivations */}
+        {derivations.length > 0 && (
+          <>
+            <div className="my-5 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(61,90,53,0.14), transparent)' }} />
+            <div className="flex flex-col gap-3">
+              {derivations.map((d, i) => (
+                <div key={i} className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span
+                    className="text-[13px] font-medium"
+                    style={{ fontFamily: "'Newsreader', serif", color: '#5C4033', fontStyle: 'italic' }}
+                  >
+                    {d.lhs}
+                  </span>
+                  <span className="text-[12px] font-light text-[#5C4033]/40" style={{ fontFamily: "'Newsreader', serif" }}>=</span>
+                  <span
+                    className="text-[13px]"
+                    style={{ fontFamily: "'Newsreader', serif", color: '#5C4033/80' }}
+                  >
+                    {d.rhs}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
