@@ -1769,7 +1769,7 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
         {tokens.map((tok, i) => {
           if (tok === '×' || tok === '÷') {
             return (
-              <span key={i} style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 600, margin: '0 6px', lineHeight: 1, opacity: muted ? 0.5 : 1 }}>
+              <span key={i} style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 6px', lineHeight: 1, opacity: muted ? 0.5 : 1 }}>
                 {tok}
               </span>
             )
