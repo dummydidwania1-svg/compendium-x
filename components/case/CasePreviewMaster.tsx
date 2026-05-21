@@ -1978,9 +1978,7 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
     const cols = d.columns ?? (hideDimension ? ['Short-Term', 'Long-Term'] : ['Dimension', 'Short-Term', 'Long-Term'])
     const renderBullets = (text: string) => {
       const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-      if (lines.length <= 1) return (
-        <span className="text-[14px] leading-relaxed text-[#3B2F2F] font-medium" style={{ fontFamily: "'Newsreader', serif" }}>{text}</span>
-      )
+      if (lines.length === 0) return null
       return (
         <ul className="space-y-2.5">
           {lines.map((line, li) => (
