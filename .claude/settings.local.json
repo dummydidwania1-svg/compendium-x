@@ -14,7 +14,26 @@
       "Bash(echo \"EXIT: $?\")",
       "Bash(echo \"EXIT:$?\")",
       "Bash(npm run:*)",
-      "Bash(awk 'NR==849{found=1} found && /^\\\\t\\\\}$/{print; found=0; skip=0; next} found{next} !found{print}' /Users/sakshamd/Desktop/compendiumx_testing-1/app/case/[id]/interviewer/page.tsx)"
+      "Bash(awk 'NR==849{found=1} found && /^\\\\t\\\\}$/{print; found=0; skip=0; next} found{next} !found{print}' /Users/sakshamd/Desktop/compendiumx_testing-1/app/case/[id]/interviewer/page.tsx)",
+      "Bash(firebase --version)",
+      "Bash(npx firebase *)",
+      "Bash(git stash *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'Total cases: {len\\(d\\)}'\\); print\\('IDs:', [c.get\\('id','?'\\) for c in d[:5]], '...'\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(git revert *)",
+      "Bash(python3 -m json.tool)",
+      "Bash(awk '/^  \\\\{$/{start=NR} /\"id\":/{if\\(start && NR-start<20\\) print NR\": \"$0}' /Users/sakshamd/Desktop/compendium-x-fresh/data/cases.json)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(xargs ls -la)",
+      "Bash(node -e ' *)",
+      "Bash(node scripts/import-cases.mjs /tmp/case4.json)",
+      "Bash(xargs kill -9)",
+      "Bash(npm run dev > /tmp/dev.log 2>&1 & *)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(pkill -9 -f \"next\")"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   }
 }

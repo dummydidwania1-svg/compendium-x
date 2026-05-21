@@ -46,6 +46,15 @@ function buildPayload(rawCase) {
   if (rawCase.frameworkTree && typeof rawCase.frameworkTree === 'object') {
     payload.frameworkTree = rawCase.frameworkTree
   }
+  if (rawCase.visualisations && Array.isArray(rawCase.visualisations)) {
+    payload.visualisations = rawCase.visualisations
+  }
+  if (rawCase.recommendationsTable && typeof rawCase.recommendationsTable === 'object') {
+    payload.recommendationsTable = rawCase.recommendationsTable
+  }
+  if (rawCase.recommendationsMatrix && typeof rawCase.recommendationsMatrix === 'object') {
+    payload.recommendationsMatrix = rawCase.recommendationsMatrix
+  }
   return payload
 }
 
