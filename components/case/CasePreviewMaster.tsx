@@ -2079,20 +2079,20 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
     return (
       <div className="pt-10">
         <VisDivider label="Recommendations" />
-        <div className="w-full overflow-hidden rounded-[4px] border border-[#3D5A35]/15">
-          <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
+        <div className="overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
+          <table className="border-collapse" style={{ tableLayout: 'auto', width: 'fit-content', maxWidth: '100%' }}>
             <thead>
               <tr>
                 {/* Top-left corner header cell in matrix mode — shrinks to content */}
                 {!hideDimension && (
-                  <th className="px-5 py-2.5 text-left"
+                  <th className="px-4 py-2.5 text-left"
                     style={{ ...headerStyle, whiteSpace: 'nowrap', width: '1%', borderRight: '1px solid rgba(240,245,238,0.15)' }}>
                     {matrixMode ? (d.dimensionHeader ?? '') : ''}
                   </th>
                 )}
                 {cols.map((col, i) => (
-                  <th key={i} className="px-5 py-2.5 text-left"
-                    style={{ ...headerStyle, width: '50%', borderLeft: (hideDimension && i === 0) ? undefined : '1px solid rgba(240,245,238,0.15)' }}>
+                  <th key={i} className="px-4 py-2.5 text-left"
+                    style={{ ...headerStyle, whiteSpace: 'nowrap', borderLeft: (hideDimension && i === 0) ? undefined : '1px solid rgba(240,245,238,0.15)' }}>
                     {col}
                   </th>
                 ))}
@@ -2102,15 +2102,13 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
               {d.rows.map((row, ri) => (
                 <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
                   {!hideDimension && (
-                    <td className="px-5 py-3 align-middle text-center"
+                    <td className="px-4 py-3 align-middle text-center"
                       style={matrixMode ? {
-                        // Matrix mode: dimension cell = same green header styling
+                        // Matrix mode: dimension cell — same green header styling
                         ...headerStyle,
+                        whiteSpace: 'nowrap', textAlign: 'center', verticalAlign: 'middle',
                         borderTop: '1px solid rgba(240,245,238,0.15)',
                         borderRight: '1px solid rgba(240,245,238,0.15)',
-                        whiteSpace: 'nowrap',
-                        textAlign: 'center',
-                        verticalAlign: 'middle',
                       } : {
                         fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500, color: '#3B2F2F',
                         borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
@@ -2118,18 +2116,10 @@ function RecTableBlock({ data }: { data: RecommendationsTable }) {
                       {row.dimension}
                     </td>
                   )}
-                  <td className="px-5 py-3 align-top"
-                    style={{
-                      borderLeft: !hideDimension ? '1px solid rgba(61,90,53,0.10)' : undefined,
-                      borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
-                    }}>
+                  <td className="px-4 py-3 align-top" style={{ borderLeft: !hideDimension ? '1px solid rgba(61,90,53,0.10)' : undefined, borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined }}>
                     {renderBullets(row.shortTerm)}
                   </td>
-                  <td className="px-5 py-3 align-top"
-                    style={{
-                      borderLeft: '1px solid rgba(61,90,53,0.10)',
-                      borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
-                    }}>
+                  <td className="px-4 py-3 align-top" style={{ borderLeft: '1px solid rgba(61,90,53,0.10)', borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined }}>
                     {renderBullets(row.longTerm)}
                   </td>
                 </tr>
