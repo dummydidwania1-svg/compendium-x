@@ -55,10 +55,14 @@ function buildPayload(rawCase) {
       return v
     })
   }
-  if (rawCase.recommendationsTable && typeof rawCase.recommendationsTable === 'object') {
+  if (rawCase.recommendationsTable === null) {
+    payload.recommendationsTable = admin.firestore.FieldValue.delete()
+  } else if (rawCase.recommendationsTable && typeof rawCase.recommendationsTable === 'object') {
     payload.recommendationsTable = rawCase.recommendationsTable
   }
-  if (rawCase.recommendationsMatrix && typeof rawCase.recommendationsMatrix === 'object') {
+  if (rawCase.recommendationsMatrix === null) {
+    payload.recommendationsMatrix = admin.firestore.FieldValue.delete()
+  } else if (rawCase.recommendationsMatrix && typeof rawCase.recommendationsMatrix === 'object') {
     payload.recommendationsMatrix = rawCase.recommendationsMatrix
   }
   return payload
@@ -106,11 +110,23 @@ async function main() {
 
     if (docId) {
       const ref = db.collection('cases').doc(docId)
-      // Merge all fields EXCEPT frameworkTree — that gets fully replaced to avoid stale nodes
+      // Separate delete sentinels — they must go via update(), not set()
       const { frameworkTree, ...rest } = payload
-      await ref.set(rest, { merge: true })
+      const deleteFields = {}
+      const setFields = {}
+      for (const [k, v] of Object.entries(rest)) {
+        if (v && typeof v === 'object' && v.isEqual === undefined && '_methodName' in v) {
+          deleteFields[k] = v  // FieldValue.delete() sentinel
+        } else {
+          setFields[k] = v
+        }
+      }
+      await ref.set(setFields, { merge: true })
       if (frameworkTree !== undefined) {
         await ref.update({ frameworkTree })
+      }
+      if (Object.keys(deleteFields).length > 0) {
+        await ref.update(deleteFields)
       }
       upsertedCount += 1
       console.log(`Upserted case: ${payload.title} (${docId})`)
