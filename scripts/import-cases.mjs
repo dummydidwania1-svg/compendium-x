@@ -46,7 +46,9 @@ function buildPayload(rawCase) {
   if (rawCase.frameworkTree && typeof rawCase.frameworkTree === 'object') {
     payload.frameworkTree = rawCase.frameworkTree
   }
-  if (rawCase.visualisations && Array.isArray(rawCase.visualisations)) {
+  if (rawCase.visualisations === null) {
+    payload.visualisations = admin.firestore.FieldValue.delete()
+  } else if (Array.isArray(rawCase.visualisations)) {
     // Firestore rejects arrays-of-arrays; serialize VisTable rows as a JSON string.
     payload.visualisations = rawCase.visualisations.map(v => {
       if (v.type === 'table' && Array.isArray(v.rows)) {

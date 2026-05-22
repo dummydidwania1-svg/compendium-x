@@ -2033,67 +2033,8 @@
         }
       ]
     },
-    "visualisations": [
-      {
-        "type": "table",
-        "title": "Structured Recommendations",
-        "columns": [
-          "Option",
-          "Description",
-          "Benefit",
-          "Risk / Trade-off"
-        ],
-        "rows": [
-          [
-            "Return to Glass Bottles",
-            "Revert to glass packaging by renegotiating with glass suppliers to reduce input costs, or procuring finished glass bottles externally.",
-            "Fully restores premium perception; directly addresses root cause.",
-            "Higher cost; if passed on via price increase, may affect market share."
-          ],
-          [
-            "Refine Plastic Bottles",
-            "Redesign in-house plastic bottles to better mimic the weight, finish, and feel of glass, giving a premium aesthetic without switching materials.",
-            "Lower cost; leverages existing in-house manufacturing capability.",
-            "May not fully restore premium perception; customers may still perceive it as inferior."
-          ],
-          [
-            "Explore Metallic Bottles",
-            "Transition to metallic packaging as an alternative premium material; differentiates from both glass and plastic.",
-            "Unique positioning; durable and premium feel; potential brand refresh opportunity.",
-            "Higher R&D and retooling costs; requires consumer research to validate acceptance."
-          ]
-        ]
-      },
-      {
-        "type": "quadrant",
-        "title": "Feasibility vs. Brand Impact",
-        "xAxis": "Low Feasibility to High Feasibility",
-        "yAxis": "Low Brand Impact to High Brand Impact",
-        "points": [
-          {
-            "label": "Return to Glass",
-            "x": 0.45,
-            "y": 0.92
-          },
-          {
-            "label": "Refine Plastic Bottles",
-            "x": 0.85,
-            "y": 0.52
-          },
-          {
-            "label": "Metallic Bottles",
-            "x": 0.3,
-            "y": 0.75
-          }
-        ],
-        "priorityOrder": [
-          "Return to Glass",
-          "Metallic Bottles",
-          "Refine Plastic Bottles"
-        ]
-      }
-    ],
-    "framework": "Candidate: Sounds like an interesting case. I would first like to understand the company better and then move on to the problem at hand. What are the product lines Zendaya is involved in? Does the company sell its products pan-India? Also, what are the distribution channels we use?\nInterviewer: The company has four product lines: Nail Polish, Perfumes, Skin Care and Hair Care. They sell their products pan-India and use their own as well as third-party distributors.\nCandidate: Interesting. It is possible that the decline in profits is specific to certain product lines, geographies or distribution channels. Do we have data on the same?\nInterviewer: Yes. In fact, there has been a decline in revenues only in our 'Perfumes' segment. However, the decline has been uniform across geographies and distribution channels.\nCandidate: Okay, that's helpful. Do we know the magnitude of decline? I would also like to know since when Zendaya has been facing the problem. This will help us understand the nature of decline better.\nInterviewer: Perfume sales have seen a decline of about 10% over the last 2 years. Is there anything else you would like to know?\nCandidate: Yes. Before I proceed with my analysis, I would like to know if other perfume companies have seen a similar decline as well. Also, do we have any segmentation in the perfumes we sell?\nInterviewer: Other perfume companies seem to be doing fine. We sell perfumes under 2 segments: 1) Mass segment: These perfumes are priced below Rs. 200 and constitute 20% of perfume sales. 2) Premium segment: These perfumes are priced more than Rs. 200 and constitute the remaining 80% of perfume sales. The decline is limited to our premium segment.\nCandidate: Understood. Revenues are a function of:\nRevenues = Number of Bottles Sold * Price/Bottle\nCandidate: Has Zendaya changed the price of its premium perfume in the last 2 years? If not, it means the number of bottles sold has seen a decline.\nInterviewer: Prices have not changed. Why don't you analyse the decline in the number of bottles sold?\nCandidate: Sure. I would like to analyse three aspects here: Production, Distribution and Demand. It is possible that we have been facing issues in production due to labour strikes, factory closure, etc. However, this is unlikely as the decline has been taking place for two years now.\nCandidate: Under distribution, it would be interesting to know if our distributors are pushing our competitors' perfumes over ours. This too is unlikely as all our distribution channels seem to be facing the decline. Lastly, I would like to see if demand for our perfumes has seen a decline. This may be due to reasons like unpopular fragrances, negative publicity, etc.\nInterviewer: You are right. We have reason to believe our competitors' perfumes are being preferred by customers. Why do you think this is happening?\nCandidate: There are several reasons why this may be happening. In order to further isolate the problem, I would like to look at 5 major drivers of demand: Need, Awareness, Accessibility, Affordability and Experience. Under need, I'm concerned with any change in customer preferences or requirements in the last couple of years. Under awareness, it is important to look at our promotional efforts and see how they compare to our competitors' in case we believe our target population is not aware of our perfumes. Under Accessibility, it is important that our perfumes are easily accessible to the end customers. Since we have multiple distribution channels, this should not be an issue. Affordability may not be very relevant in premium perfumes. However, I would still like to benchmark our prices with our competitors' prices and see if it is a concern. Finally, it is also important to analyse customer satisfaction and Experience. Do we know where we are facing an issue?\nInterviewer: Yes. Customers are not very satisfied with Zendaya's premium perfume. Why don't you analyse customer experience?\nCandidate: Sure. At this point, it makes sense to draw a customer journey and find out at what stage we're losing them. The first step undertaken by the customer is to make a decision to purchase our perfume. He/she then visits a shop or website where the perfume is available. Subsequently, the customer navigates the shop or website and locates the perfume. He/she then completes the purchase by going through the billing process. Now, we come to the usage stage and see how satisfied they are with the product itself. Finally, we must also look at the quality of our customer service and feedback mechanism. Do we know at what stage customers have been expressing dissatisfaction? If not, we can dive deeper into each stage.\nInterviewer: Excellent. You can limit your analysis to the usage stage.\nCandidate: Perfect. There are 4 things I would like to look at in this stage: Packaging, Fragrance, Life of the product and Defect rate. Under packaging, I would like to know if we or our competitors have made any changes to the type of packaging, size of the bottle/can and durability. Under fragrance, I am mainly concerned with changes made to the scents as well as ingredients used in the perfumes. For instance, it is possible that some ingredients may be inducing allergic reactions.\nCandidate: Life of the product includes both shelf life as well as number of uses of our perfume and if there has been any change observed. Lastly, it is possible that there is higher defect rate due to poor quality control.\nInterviewer: Great. You have identified the problem correctly. In order to cut costs, Zendaya decided to replace their glass bottles with plastic bottles. Customers no longer feel that they are using a 'premium' product. What would you recommend?\nCandidate: Before that, I would like to know if the bottles are procured or manufactured in-house.\nInterviewer: Raw materials are sourced from outside. However, manufacturing is done in-house.\nCandidate: Given that Zendaya has branded these perfumes as 'premium', the packaging will have to reflect the same.\nInterviewer: Good. We will pass on your suggestions to the company.\n\nMake-Up for Lost Profits Framework & Recommendations\nDECLINING PROFITS OF ZENDAYA\nClarifying Questions: What are the product lines? What locations does Zendaya sell in?\nBrownie Points: Exploring metallic bottles as an alternative\nKeep In Mind: Segment the problem wherever possible to arrive at the solution quicker\nRECOMMENDATIONS:\n Returning to the use of glass bottles either by negotiating with suppliers to bring down glass prices or procuring finished bottles; we can also consider recovering the added cost through our customers, though this will involve a price increase which may adversely affect our market share.\n Refine plastic bottles to mimic glass finish and give a 'premium' feel.\n Explore metallic bottles for premium differentiation."
+    "framework": "Candidate: Sounds like an interesting case. I would first like to understand the company better and then move on to the problem at hand. What are the product lines Zendaya is involved in? Does the company sell its products pan-India? Also, what are the distribution channels we use?\nInterviewer: The company has four product lines: Nail Polish, Perfumes, Skin Care and Hair Care. They sell their products pan-India and use their own as well as third-party distributors.\nCandidate: Interesting. It is possible that the decline in profits is specific to certain product lines, geographies or distribution channels. Do we have data on the same?\nInterviewer: Yes. In fact, there has been a decline in revenues only in our 'Perfumes' segment. However, the decline has been uniform across geographies and distribution channels.\nCandidate: Okay, that's helpful. Do we know the magnitude of decline? I would also like to know since when Zendaya has been facing the problem. This will help us understand the nature of decline better.\nInterviewer: Perfume sales have seen a decline of about 10% over the last 2 years. Is there anything else you would like to know?\nCandidate: Yes. Before I proceed with my analysis, I would like to know if other perfume companies have seen a similar decline as well. Also, do we have any segmentation in the perfumes we sell?\nInterviewer: Other perfume companies seem to be doing fine. We sell perfumes under 2 segments: 1) Mass segment: These perfumes are priced below Rs. 200 and constitute 20% of perfume sales. 2) Premium segment: These perfumes are priced more than Rs. 200 and constitute the remaining 80% of perfume sales. The decline is limited to our premium segment.\nCandidate: Understood. Revenues are a function of:\nRevenues = Number of Bottles Sold * Price/Bottle\nCandidate: Has Zendaya changed the price of its premium perfume in the last 2 years? If not, it means the number of bottles sold has seen a decline.\nInterviewer: Prices have not changed. Why don't you analyse the decline in the number of bottles sold?\nCandidate: Sure. I would like to analyse three aspects here: Production, Distribution and Demand. It is possible that we have been facing issues in production due to labour strikes, factory closure, etc. However, this is unlikely as the decline has been taking place for two years now.\nCandidate: Under distribution, it would be interesting to know if our distributors are pushing our competitors' perfumes over ours. This too is unlikely as all our distribution channels seem to be facing the decline. Lastly, I would like to see if demand for our perfumes has seen a decline. This may be due to reasons like unpopular fragrances, negative publicity, etc.\nInterviewer: You are right. We have reason to believe our competitors' perfumes are being preferred by customers. Why do you think this is happening?\nCandidate: There are several reasons why this may be happening. In order to further isolate the problem, I would like to look at 5 major drivers of demand: Need, Awareness, Accessibility, Affordability and Experience. Under need, I'm concerned with any change in customer preferences or requirements in the last couple of years. Under awareness, it is important to look at our promotional efforts and see how they compare to our competitors' in case we believe our target population is not aware of our perfumes. Under Accessibility, it is important that our perfumes are easily accessible to the end customers. Since we have multiple distribution channels, this should not be an issue. Affordability may not be very relevant in premium perfumes. However, I would still like to benchmark our prices with our competitors' prices and see if it is a concern. Finally, it is also important to analyse customer satisfaction and Experience. Do we know where we are facing an issue?\nInterviewer: Yes. Customers are not very satisfied with Zendaya's premium perfume. Why don't you analyse customer experience?\nCandidate: Sure. At this point, it makes sense to draw a customer journey and find out at what stage we're losing them. The first step undertaken by the customer is to make a decision to purchase our perfume. He/she then visits a shop or website where the perfume is available. Subsequently, the customer navigates the shop or website and locates the perfume. He/she then completes the purchase by going through the billing process. Now, we come to the usage stage and see how satisfied they are with the product itself. Finally, we must also look at the quality of our customer service and feedback mechanism. Do we know at what stage customers have been expressing dissatisfaction? If not, we can dive deeper into each stage.\nInterviewer: Excellent. You can limit your analysis to the usage stage.\nCandidate: Perfect. There are 4 things I would like to look at in this stage: Packaging, Fragrance, Life of the product and Defect rate. Under packaging, I would like to know if we or our competitors have made any changes to the type of packaging, size of the bottle/can and durability. Under fragrance, I am mainly concerned with changes made to the scents as well as ingredients used in the perfumes. For instance, it is possible that some ingredients may be inducing allergic reactions.\nCandidate: Life of the product includes both shelf life as well as number of uses of our perfume and if there has been any change observed. Lastly, it is possible that there is higher defect rate due to poor quality control.\nInterviewer: Great. You have identified the problem correctly. In order to cut costs, Zendaya decided to replace their glass bottles with plastic bottles. Customers no longer feel that they are using a 'premium' product. What would you recommend?\nCandidate: Before that, I would like to know if the bottles are procured or manufactured in-house.\nInterviewer: Raw materials are sourced from outside. However, manufacturing is done in-house.\nCandidate: Given that Zendaya has branded these perfumes as 'premium', the packaging will have to reflect the same.\nInterviewer: Good. We will pass on your suggestions to the company.\n\nMake-Up for Lost Profits Framework & Recommendations\nDECLINING PROFITS OF ZENDAYA\nClarifying Questions: What are the product lines? What locations does Zendaya sell in?\nBrownie Points: Exploring metallic bottles as an alternative\nKeep In Mind: Segment the problem wherever possible to arrive at the solution quicker\nRECOMMENDATIONS:\n Returning to the use of glass bottles either by negotiating with suppliers to bring down glass prices or procuring finished bottles; we can also consider recovering the added cost through our customers, though this will involve a price increase which may adversely affect our market share.\n Refine plastic bottles to mimic glass finish and give a 'premium' feel.\n Explore metallic bottles for premium differentiation.",
+    "visualisations": null
   },
   {
     "id": 10,
@@ -3399,18 +3340,16 @@
         }
       ]
     },
-        "visualisations": [
+    "visualisations": [
       {
         "title": "Security Check Time Formula",
         "type": "formula",
         "lhs": "Security Check Time",
         "rhs": "(Number of Flyers × Turnover Time per Flyer) ÷ Number of Lanes",
-        "derivations": [
-        ],
+        "derivations": [],
         "content": "Security Check Time = (Number of Flyers × Turnover Time per Flyer) ÷ Number of Lanes"
       }
     ],
-    "recommendationsTable": null,
     "framework": "Candidate: Do we know how much revenues have declined by and since when this has been happening? Also, have other airports in the country faced a similar decline?\nInterviewer: Revenues are down by 4% since the last year. Other airports are doing fine.\nCandidate: Got it. The main revenue streams of an airport are:\n1) Fee paid by airline companies to use the airport facilities, runways, etc.\n2) Advertisements\n3) Rent for space allocated to shops and stalls\n4) Parking\n5) Other services\nIs this right?\nInterviewer: Yes. What would you like to know now?\nCandidate: I am interested in knowing which revenue streams have faced a decline in the last year.\nInterviewer: The decline has been observed in the revenue from shops.\nCandidate: Interesting. I have not been to Bangalore in a long time. Can I know whether these shops are located inside the airport terminal or outside?\nInterviewer: There are a few shops outside the building. However, the decline has been in revenue from the shops located inside the airport. These shops are located near the boarding gates.\nCandidate: Okay, that is useful information. As per my understanding, there are 2 ways in which the Airport can make money from these shops – 'Rent' and 'Commission on Sales'. Have both gone down?\nInterviewer: The total commission received has reduced.\nTotal commission = Number of shops * Commission/shop\nCandidate: Since rent received has not seen a decline, it is unlikely that the number of shops has reduced. However, it is possible a few shops are closed for some reason. Alternatively, the commission/shop could have gone down.\nInterviewer: The commission/shop has reduced.\nCandidate: Is this the case with all shops present near the boarding gate? Perhaps, there are only a few shops which have not been doing well.\nInterviewer: That is not the case. All shops have been turning in less commission.\nCommission/shop = Number of customers * Basket Size * Commission Rate\nCandidate: My hypothesis is that one or more of the above factors has seen a decline. However, it is also possible that the above factors have remained the same, but the shops are now under-reporting their sales figures and cheating the authorities.\nInterviewer: Interesting insight. We are confident about our system and have no reason to believe that we are being cheated. Shops have reported a decline in the number of customers.\nCandidate: Okay. Since all types of shops have seen a decline, it is unlikely that the problem is with the shops. Either the customers no longer wish to buy products from the shops or they are unable to for some reason. The latter seems more likely.\nInterviewer: We have no indication that demand has gone down. You're right. There must be something hindering the customers from making the purchases.\nCandidate: Okay. In order for customers to make purchases, they require the following:\n1) Means of payment: Maybe an ATM inside has closed and the shops do not accept digital payments.\n2) Time: The customers no longer have enough time to stop and make purchases.\n3) Visibility: It is possible that customers aren't able to see the shops. Maybe there is some repair work going on and the area has been barricaded, reducing the visibility of the shops. Maybe I would also like to know if there is adequate signage inside the airport directing the flyers to the shops.\n4) Accessibility: Maybe there has been a limit placed on the number of people entering shops at a point of time.\nInterviewer: Apparently, the flyers no longer have enough time to visit shops.\nCandidate: That is strange. It would make sense to analyse the flyer's journey at this point. The flyers first arrive at the airport. It is possible that they are arriving later than before due to factors like increased traffic, unavailability of cabs, etc. After this, they make a queue for preliminary verification at the main gate. Once they are inside, they proceed to the check-in counters. It is possible that this step is taking longer due to reduced check-in counters or some other reason. Next, they must complete their security check and baggage scan. Depending on how much time is left at this point, they may choose to visit certain shops before they board the flight. Do we know whether there has been an increase in time in any of the above steps?\nInterviewer: The security check time has increased significantly. Why do you think this may be happening?\nCandidate: The following formula will give us the security check time:\nSecurity check time = (Number of flyers at a point of time * Turnover time/flyer)/(Number of lanes)\nHas there been a change in any of these factors?\nInterviewer: Good. We laid off a few security personnel last year. Thus, some lanes have been closed. This was done because some flyers had complained of rude behaviour by the personnel. What should be done?\nCandidate: The authorities can explore the following recommendations:\n1) Replacing laid off personnel with new personnel\n2) Training personnel to make sure such incidents do not happen in the future\n3) Using technology to reduce security time. This includes better and more efficient X-ray machines and metal detectors\nInterviewer: We will incorporate the same. Thank you!\n\nLook Ma, I Can Fly Framework & Recommendations\nDECLINING REVENUES OF THE BANGALORE AIRPORT\nClarifying Questions: Have other airports faced a similar decline? Where are the shops located?\nBrownie Points: Possibility of shops cheating the authorities Means of payment – ATM that can affect customer purchasing behaviour\nKeep In Mind: Make sure that the customer journey is comprehensive, otherwise you may miss out on the solution"
   },
   {
@@ -3603,43 +3542,6 @@
             "Larger area covered by agents for our newspaper",
             "Preferential treatment"
           ]
-        }
-      ]
-    },
-    "recommendationsMatrix": {
-      "title": "Recommendations Matrix",
-      "xAxis": {
-        "start": "Short-Term",
-        "end": "Long-Term"
-      },
-      "yAxis": {
-        "start": "Supply-Side",
-        "end": "Demand-Side"
-      },
-      "items": [
-        {
-          "label": "Survey WTP & Charge Surcharge",
-          "x": 0.25,
-          "y": 0.78,
-          "quadrant": "Short-Term / Demand-Side"
-        },
-        {
-          "label": "Market 5AM Delivery as USP",
-          "x": 0.75,
-          "y": 0.78,
-          "quadrant": "Long-Term / Demand-Side"
-        },
-        {
-          "label": "Revert to Standard Delivery",
-          "x": 0.25,
-          "y": 0.28,
-          "quadrant": "Short-Term / Supply-Side"
-        },
-        {
-          "label": "Renegotiate Agent SLA",
-          "x": 0.75,
-          "y": 0.28,
-          "quadrant": "Long-Term / Supply-Side"
         }
       ]
     },
@@ -3944,155 +3846,7 @@
         }
       ]
     },
-    "visualisations": [
-      {
-        "id": "financial-feasibility-table",
-        "type": "table",
-        "title": "Financial Feasibility - Comparative Table",
-        "columns": [
-          "Particulars",
-          "Brazil",
-          "Australia",
-          "South Africa"
-        ],
-        "rows": [
-          [
-            "No. of tourists/year (A)",
-            "2 million",
-            "4 million",
-            "5 million"
-          ],
-          [
-            "Avg stay - nights (B)",
-            "3",
-            "5",
-            "4"
-          ],
-          [
-            "Total nights/year (C = A x B)",
-            "6 million",
-            "20 million",
-            "20 million"
-          ],
-          [
-            "Proposed market share (D)",
-            "30%",
-            "25%",
-            "25%"
-          ],
-          [
-            "Revenue/night/customer",
-            "$550",
-            "$650",
-            "$600"
-          ],
-          [
-            "Variable cost/night/customer",
-            "$350",
-            "$450",
-            "$450"
-          ],
-          [
-            "Profit/night/customer (E)",
-            "$200",
-            "$200",
-            "$150"
-          ],
-          [
-            "Potential profit - pre-fixed (F = C x D x E)",
-            "$360 Million",
-            "$1 Billion",
-            "$750 Million"
-          ],
-          [
-            "Fixed investment (G)",
-            "$100 Million",
-            "$300 Million",
-            "$350 Million"
-          ],
-          [
-            "Proposed profit - pre-adj (H = F - G)",
-            "$260 Million",
-            "$700 Million",
-            "$400 Million"
-          ],
-          [
-            "Market growth rate",
-            "10%",
-            "15%",
-            "15%"
-          ]
-        ]
-      },
-      {
-        "id": "profit-adjustments-table",
-        "type": "table",
-        "title": "Profit Adjustments Post-Operational Constraints",
-        "columns": [
-          "Parameter",
-          "Brazil",
-          "Australia",
-          "South Africa"
-        ],
-        "rows": [
-          [
-            "Proposed profit (pre-adj)",
-            "$260 Million",
-            "$700 Million",
-            "$400 Million"
-          ],
-          [
-            "Adjustment",
-            "None",
-            "50% land only, so 50% of $700M",
-            "Additional license: -$50M"
-          ],
-          [
-            "Revised profit",
-            "$260 Million",
-            "$350 Million",
-            "$350 Million"
-          ]
-        ]
-      },
-      {
-        "id": "recommendation-matrix",
-        "type": "table",
-        "title": "Recommendation Framework: Short-Term vs Long-Term",
-        "columns": [
-          "Dimension",
-          "South Africa",
-          "Australia (Recommended)"
-        ],
-        "rows": [
-          [
-            "Revised profit (Year 1)",
-            "$350 Million",
-            "$350 Million"
-          ],
-          [
-            "Market growth rate",
-            "15%",
-            "15%"
-          ],
-          [
-            "Short-term constraint",
-            "Additional license ($50M, one-time)",
-            "Only 50% land acquirable now, limits initial capacity"
-          ],
-          [
-            "Long-term upside",
-            "Profits scale with growth but no structural expansion lever",
-            "Remaining 50% land acquirable in 10 years, profit potential doubles to ~$700M"
-          ],
-          [
-            "Scalability",
-            "Limited, no identified expansion pathway",
-            "High, built-in land expansion mechanism in 10 years"
-          ]
-        ]
-      }
-    ],
-    "framework": "Candidate: Oh wow, that's interesting! I'd like to get a better understanding of the problem. What kind of hotels does our client own? How has he fared in India? How many hotels does he own and where are they located in India?\nInterviewer: He owns premium hotels, similar to Taj. He has 50% share in the Indian market and believes the Indian hospitality industry has slow growth. He has 30 hotels in India, located in Tier 1 and 2 cities.\nCandidate: Okay. What is his primary objective of expanding? Is it profits?\nInterviewer: Yes, he wants to maximise profits.\nCandidate: Great. Do we have any countries in mind among which he wants to choose or is it open to us?\nInterviewer: Good question. We have 3 countries among which he wants to choose - Brazil, Australia and South Africa.\nCandidate: Lastly, are we planning on setting up premium hotels in these countries or are we open to other types of hotels too?\nInterviewer: Your client wants to be recognized in the premium segment only.\nCandidate: Okay brilliant. I would like to follow a 2 step approach. First, I'd like to analyse the profits he can earn in each of these three countries. Second, I'd like to see if operations can be easily set up in these countries. Based on these two steps, I shall make my recommendations.\nInterviewer: Sure. Let us begin.\nCandidate: To analyse the financial aspect of things, I would require the following information since I am unfamiliar with the demographics of the 3 countries.\n\nMarket size of the premium hospitality industry\nMarket share that we can expect\nMarket growth rate\nAverage revenue per night per customer\nAverage cost per night per customer\nFixed investment required to acquire above market share\nInterviewer: Sure! Have a look at the table.\nCandidate: (analyses for a minute) Interesting. I can calculate market size and our expected market share from this information. I shall multiply this into profit per night per customer to get our profits and then subtract the fixed costs.\nInterviewer: Are you sure you can calculate market size?\nCandidate: Oh wait. To get the number of nights occupied per year by tourists, I would also require the average number of nights occupied per premium tourist per stay.\nInterviewer: Exactly. The average stay is 3, 5 and 4 nights for Brazil, Australia and South Africa respectively.\nCandidate: Here are my calculations -\n(Refer to the next page)\nClearly, Australia seems like the best option according to financial attractiveness. Let us now move on to the operational feasibility test. There are 6 steps according to me in the setting up of operations.\nObtaining necessary permission and licenses - Research to analyse hotspots - Acquiring the requisite land - Setting up our hotels - Hiring the requisite staff - Marketing our hotel chain - Starting operations.\nI would like to understand the ease with which each of these can be done at the 3 locations.\nInterviewer: Great. There seems to be no issue in any of the steps in Brazil. In South Africa, there are certain regulatory issues regarding licenses and in Australia, an issue with purchasing of the land.\nCandidate: What are the particular issues in each of these countries?\nInterviewer: Australia has recently come up with regulations that limit the amount of land foreigners can purchase every ten years. Thus, we will only be able to acquire 50% of our initial estimates and the balance after 10 years. In South Africa, there are certain additional licenses to be obtained for premium Hotel Chains that would cost us an additional investment of $50 million not included in our previous estimates.\nCandidate: That's interesting. In light of the new information, our revised profits are as follows:\nAustralia: 50% of $700 Million = $350 Million\nSouth Africa: $400 Million - $50 million = $350 Million\nBrazil: $260 million.\nInterviewer: What are your final recommendations?\nCandidate: Since profit is our primary motive, the decision comes down to Australia and South Africa. We can consider various qualitative factors before finalising, in the absence of it, my suggestion would be Australia.\nThere is massive potential for increasing profits in the long term since we can acquire additional land in 10 years whereas in South Africa, the potential is maximised.\n\nMr. Worldwide Framework & Recommendations\nA HOTEL CHAIN ENTERING NEW MARKETS\nClarifying Questions: Primary Objective Any particular countries being targeted? Type of hotel chain India market share and hotel count\nBrownie Points: Keeping in mind, long-term potential of Australia Telling the interviewer the exact information required Adding market growth rate to financial feasibility table Highlighting scalability from future land acquisition\nKeep In Mind: Ask for average stay to calculate market size Check operational constraints before finalising the winner Use long-term growth potential to break ties\nRECOMMENDATIONS:\nPick Australia for stronger long-term growth potential\nAcquire remaining 50% land in Australia after ten years\nPlan staged capacity expansion as land restrictions ease\nAvoid South Africa due to limited expansion levers"
+    "framework": "Candidate: Oh wow, that's interesting! I'd like to get a better understanding of the problem. What kind of hotels does our client own? How has he fared in India? How many hotels does he own and where are they located in India?\nInterviewer: He owns premium hotels, similar to Taj. He has 50% share in the Indian market and believes the Indian hospitality industry has slow growth. He has 30 hotels in India, located in Tier 1 and 2 cities.\nCandidate: Okay. What is his primary objective of expanding? Is it profits?\nInterviewer: Yes, he wants to maximise profits.\nCandidate: Great. Do we have any countries in mind among which he wants to choose or is it open to us?\nInterviewer: Good question. We have 3 countries among which he wants to choose - Brazil, Australia and South Africa.\nCandidate: Lastly, are we planning on setting up premium hotels in these countries or are we open to other types of hotels too?\nInterviewer: Your client wants to be recognized in the premium segment only.\nCandidate: Okay brilliant. I would like to follow a 2 step approach. First, I'd like to analyse the profits he can earn in each of these three countries. Second, I'd like to see if operations can be easily set up in these countries. Based on these two steps, I shall make my recommendations.\nInterviewer: Sure. Let us begin.\nCandidate: To analyse the financial aspect of things, I would require the following information since I am unfamiliar with the demographics of the 3 countries.\n\nMarket size of the premium hospitality industry\nMarket share that we can expect\nMarket growth rate\nAverage revenue per night per customer\nAverage cost per night per customer\nFixed investment required to acquire above market share\nInterviewer: Sure! Have a look at the table.\nCandidate: (analyses for a minute) Interesting. I can calculate market size and our expected market share from this information. I shall multiply this into profit per night per customer to get our profits and then subtract the fixed costs.\nInterviewer: Are you sure you can calculate market size?\nCandidate: Oh wait. To get the number of nights occupied per year by tourists, I would also require the average number of nights occupied per premium tourist per stay.\nInterviewer: Exactly. The average stay is 3, 5 and 4 nights for Brazil, Australia and South Africa respectively.\nCandidate: Here are my calculations -\n(Refer to the next page)\nClearly, Australia seems like the best option according to financial attractiveness. Let us now move on to the operational feasibility test. There are 6 steps according to me in the setting up of operations.\nObtaining necessary permission and licenses - Research to analyse hotspots - Acquiring the requisite land - Setting up our hotels - Hiring the requisite staff - Marketing our hotel chain - Starting operations.\nI would like to understand the ease with which each of these can be done at the 3 locations.\nInterviewer: Great. There seems to be no issue in any of the steps in Brazil. In South Africa, there are certain regulatory issues regarding licenses and in Australia, an issue with purchasing of the land.\nCandidate: What are the particular issues in each of these countries?\nInterviewer: Australia has recently come up with regulations that limit the amount of land foreigners can purchase every ten years. Thus, we will only be able to acquire 50% of our initial estimates and the balance after 10 years. In South Africa, there are certain additional licenses to be obtained for premium Hotel Chains that would cost us an additional investment of $50 million not included in our previous estimates.\nCandidate: That's interesting. In light of the new information, our revised profits are as follows:\nAustralia: 50% of $700 Million = $350 Million\nSouth Africa: $400 Million - $50 million = $350 Million\nBrazil: $260 million.\nInterviewer: What are your final recommendations?\nCandidate: Since profit is our primary motive, the decision comes down to Australia and South Africa. We can consider various qualitative factors before finalising, in the absence of it, my suggestion would be Australia.\nThere is massive potential for increasing profits in the long term since we can acquire additional land in 10 years whereas in South Africa, the potential is maximised.\n\nMr. Worldwide Framework & Recommendations\nA HOTEL CHAIN ENTERING NEW MARKETS\nClarifying Questions: Primary Objective Any particular countries being targeted? Type of hotel chain India market share and hotel count\nBrownie Points: Keeping in mind, long-term potential of Australia Telling the interviewer the exact information required Adding market growth rate to financial feasibility table Highlighting scalability from future land acquisition\nKeep In Mind: Ask for average stay to calculate market size Check operational constraints before finalising the winner Use long-term growth potential to break ties\nRECOMMENDATIONS:\nPick Australia for stronger long-term growth potential\nAcquire remaining 50% land in Australia after ten years\nPlan staged capacity expansion as land restrictions ease\nAvoid South Africa due to limited expansion levers",
+    "visualisations": null
   }
 ]
