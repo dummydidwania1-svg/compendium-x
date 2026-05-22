@@ -1766,33 +1766,49 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
   const serif: React.CSSProperties = { fontFamily: "'Newsreader', serif" }
   const termColor = '#3B2F2F'
 
-  /* Renders a formula string — terms at 14px, operators (×÷=) larger + heavier */
-  function FormulaTokens({ text, muted = false }: { text: string; muted?: boolean }) {
-    const tokens = text.split(/(×|÷|\(|\))/)
+  const termStyle: React.CSSProperties = { ...serif, color: termColor, fontSize: 14, fontWeight: 500 }
+  const opStyle: React.CSSProperties = { ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 6px', lineHeight: 1 }
+  const eqStyle: React.CSSProperties = { ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 8px', lineHeight: 1 }
+
+  /* Strips outer parens from a string, e.g. "(A × B)" → "A × B" */
+  function stripParens(text: string): string {
+    const t = text.trim()
+    if (t.startsWith('(') && t.endsWith(')')) return t.slice(1, -1).trim()
+    return t
+  }
+
+  /* Renders inline terms — splits on × and renders each token */
+  function InlineTerms({ text, muted = false }: { text: string; muted?: boolean }) {
+    const parts = text.split(/\s*×\s*/)
     return (
       <>
-        {tokens.map((tok, i) => {
-          if (tok === '×' || tok === '÷') {
-            return (
-              <span key={i} style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 6px', lineHeight: 1, opacity: muted ? 0.5 : 1 }}>
-                {tok}
-              </span>
-            )
-          }
-          if (tok === '(' || tok === ')') {
-            return (
-              <span key={i} style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 300, opacity: muted ? 0.22 : 0.35 }}>
-                {tok}
-              </span>
-            )
-          }
-          return (
-            <span key={i} style={{ ...serif, color: termColor, fontSize: 14, fontWeight: 500, opacity: muted ? 0.65 : 1 }}>
-              {tok}
-            </span>
-          )
-        })}
+        {parts.map((part, i) => (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            {i > 0 && <span style={{ ...opStyle, opacity: muted ? 0.5 : 1 }}>×</span>}
+            {part.trim() ? <span style={{ ...termStyle, opacity: muted ? 0.65 : 1 }}>{part.trim()}</span> : null}
+          </span>
+        ))}
       </>
+    )
+  }
+
+  /* Renders an expression — splits on ÷ first (highest precedence structurally),
+     rendering as a vertical fraction if present, otherwise inline */
+  function FormulaExpr({ text, muted = false }: { text: string; muted?: boolean }) {
+    if (!text.includes('÷')) return <InlineTerms text={stripParens(text)} muted={muted} />
+    const divIdx = text.indexOf('÷')
+    const numerator = stripParens(text.slice(0, divIdx).trim())
+    const denominator = stripParens(text.slice(divIdx + 1).trim())
+    return (
+      <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', verticalAlign: 'middle', margin: '0 8px' }}>
+        <span style={{ paddingBottom: 4, display: 'inline-flex', alignItems: 'center' }}>
+          <InlineTerms text={numerator} muted={muted} />
+        </span>
+        <span style={{ display: 'block', height: 1.5, background: termColor, opacity: muted ? 0.3 : 0.45, width: '100%', borderRadius: 1, minWidth: 40 }} />
+        <span style={{ paddingTop: 4, display: 'inline-flex', alignItems: 'center' }}>
+          <InlineTerms text={denominator} muted={muted} />
+        </span>
+      </span>
     )
   }
 
@@ -1805,33 +1821,32 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
         <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
       </div>
 
-      <ul className="space-y-2">
-        <li className="flex items-start gap-2">
-          <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-          <span className="flex-1" style={{ ...serif, fontSize: 14, color: termColor, fontWeight: 500, lineHeight: 1.7, overflowX: 'auto' }}>
-            {/* Primary equation */}
-            <span style={{ whiteSpace: 'nowrap', display: 'block' }}>
-              <FormulaTokens text={primaryLhs} />
-              <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 8px', lineHeight: 1 }}>=</span>
-              <FormulaTokens text={primaryRhs} />
-            </span>
-            {/* Derivations — same font/size/color as primary, prefixed with "where" */}
-            {derivations.map((d, i) => (
-              <span key={i} style={{ whiteSpace: 'nowrap', display: 'block' }}>
-                <span style={{ ...serif, color: termColor, fontSize: 14, fontWeight: 500, marginRight: 4 }}>
-                  {i === 0 ? 'where, ' : 'and, '}
-                </span>
-                <FormulaTokens text={d.lhs} />
-                <span style={{ ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 8px', lineHeight: 1 }}>=</span>
-                <FormulaTokens text={d.rhs} />
-              </span>
-            ))}
+      <ul className="space-y-0">
+        {/* Primary equation — bullet aligned to center of equation row */}
+        <li className="flex items-center gap-2">
+          <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0 2px' }}>
+            <FormulaExpr text={primaryLhs} />
+            <span style={eqStyle}>=</span>
+            <FormulaExpr text={primaryRhs} />
           </span>
         </li>
+        {/* Derivations — indented, no bullet, separated by a comfortable gap */}
+        {derivations.map((d, i) => (
+          <li key={i} className="flex items-center gap-2" style={{ marginTop: 14, paddingLeft: 13 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0 2px' }}>
+              <span style={{ ...termStyle, marginRight: 6 }}>{i === 0 ? 'where,' : 'and,'}</span>
+              <FormulaExpr text={d.lhs} />
+              <span style={eqStyle}>=</span>
+              <FormulaExpr text={d.rhs} />
+            </span>
+          </li>
+        ))}
       </ul>
     </div>
   )
 }
+
 
 /* ═══════════════════════════════════════════════════════════
    Visualization: Inline table (walkthrough transcript)
@@ -1844,14 +1859,26 @@ function VisTableInline({ vis }: { vis: VisTable }) {
     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
     color: '#f0f5ee', background: '#3D5A35',
   }
+  const colCount = vis.columns.length
+  const dataColCount = colCount - 1
   return (
     <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: '30%' }} />
+          {Array.from({ length: dataColCount }).map((_, i) => (
+            <col key={i} style={{ width: `${70 / dataColCount}%` }} />
+          ))}
+        </colgroup>
         <thead>
           <tr>
             {vis.columns.map((col, i) => (
-              <th key={i} className="px-4 py-2.5 text-left"
-                style={{ ...headerStyle, borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined }}>
+              <th key={i} className="px-4 py-2"
+                style={{
+                  ...headerStyle,
+                  textAlign: i === 0 ? 'left' : 'center',
+                  borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined,
+                }}>
                 {col}
               </th>
             ))}
@@ -1861,10 +1888,11 @@ function VisTableInline({ vis }: { vis: VisTable }) {
           {rows.map((row, ri) => (
             <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
               {row.map((cell, ci) => (
-                <td key={ci} className="px-4 py-2.5 align-top"
+                <td key={ci} className="px-4 py-1.5 align-middle"
                   style={{
                     fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: ci === 0 ? 500 : 400,
                     color: '#3B2F2F', lineHeight: 1.5,
+                    textAlign: ci === 0 ? 'left' : 'center',
                     borderTop: '1px solid rgba(61,90,53,0.08)',
                     borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                   }}>
