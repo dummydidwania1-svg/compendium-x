@@ -3545,7 +3545,685 @@
         }
       ]
     },
-    "framework": "Candidate: What do you mean by below par? Since when have they been facing this problem? Is the problem specific to certain areas?\nInterviewer: It means they are performing below industry standards. The problem has persisted for 6 months now across the country.\nCandidate: Sure. A little bit more about the client. What are the different segments they are present in – Daily newspapers, Online news, Editorials, Journals etc.?\nInterviewer: Good question. They are involved only in the daily newspaper segment.\nCandidate: Sure. I can proceed now. I would first like to know if the fixed or variable costs are not comparable with the industry?\nInterviewer: Fixed costs are comparable.\nCandidate: Then it must be variable costs. It would make sense to break the costs down into the value chain to see where the cost issue lies. Should I go ahead with the same?\nInterviewer: Sure.\nCandidate: I believe this would be the value chain for a newspaper publisher:\nValue Chain = Raw materials – Transportation – Content – Processing and Printing – Packaging – Distribution - Marketing\nLet me know if I have missed out on anything?\nInterviewer: This seems fine. There has been an increase in the distribution costs.\nCandidate: Okay. I would like to understand the distribution model the client follows. I would also like to compare this model with the industry model.\nInterviewer: Sure. They use agents (_door-to-door sellers_) and vendors (_shops_) to distribute their newspapers. Agents are the primary source comprising around 70% of the newspapers sold. This is uniform throughout the industry.\nCandidate: Great. I want to understand if our costs have increased for both distribution channels or just one?\nInterviewer: The cost incurred on agents has gone up.\nCandidate: Total cost of agents = Number of Agents * Cost per Agent\nCandidate: Do we know which one has been the problem?\nInterviewer: We have a high cost per agent. Analyse why.\nCandidate: Sure. The agents provide a fairly standard service of delivering newspapers. The only difference could be because of quality in service demanded from these agents or contractual particulars such as lock-in period.\nInterviewer: Good observation. Analyse the quality in service.\nCandidate: I can think of the following factors:\n1) We might be expecting our agents to cover a larger area than our competitors\n2) We might be expecting our agents to deliver the newspapers at an earlier time\n3) We might be expecting our agents for preferential treatment regarding delivery of newspapers (not ruining quality by rolling,\n4) We might be expecting our agents to also market and push our newspapers more\nInterviewer: Spot on. You have correctly identified the reason. We are paying our agents a higher price because we recently started an initiative to be the earliest newspaper to be delivered by 5:00 AM every day. Due to this special request, agents have started charging us extra. You may give recommendations _(On next page)_ and leave. Thank you.\n\nTerrible Times Framework & Recommendations\nCOST STRUCTURE OF A NEWSPAPER\nClarifying Questions: What is below par? What type of newspaper? Time period of problem?\nBrownie Points: Larger area covered by agents for our newspaper Preferential treatment\nKeep In Mind: Developing the process map is an easy way to identify various costs Always benchmark with competitors or previous performance to understand where the deviation is.\nRECOMMENDATIONS:\nAsk customers if they would be willing to pay extra if newspapers are delivered early; If yes, charge them an additional fee and thereby pass the burden on to them; If they say no, newspapers can be delivered at the usual time.\nWe should also heavily market our new USP of early delivery to increase revenues and offset the costs."
+    "framework": "Candidate: What do you mean by below par? Since when have they been facing this problem? Is the problem specific to certain areas?\nInterviewer: It means they are performing below industry standards. The problem has persisted for 6 months now across the country.\nCandidate: Sure. A little bit more about the client. What are the different segments they are present in – Daily newspapers, Online news, Editorials, Journals etc.?\nInterviewer: Good question. They are involved only in the daily newspaper segment.\nCandidate: Sure. I can proceed now. I would first like to know if the fixed or variable costs are not comparable with the industry?\nInterviewer: Fixed costs are comparable.\nCandidate: Then it must be variable costs. It would make sense to break the costs down into the value chain to see where the cost issue lies. Should I go ahead with the same?\nInterviewer: Sure.\nCandidate: I believe this would be the value chain for a newspaper publisher:\nValue Chain = Raw materials – Transportation – Content – Processing and Printing – Packaging – Distribution - Marketing\nLet me know if I have missed out on anything?\nInterviewer: This seems fine. There has been an increase in the distribution costs.\nCandidate: Okay. I would like to understand the distribution model the client follows. I would also like to compare this model with the industry model.\nInterviewer: Sure. They use agents _(door-to-door sellers)_ and vendors _(shops)_ to distribute their newspapers. Agents are the primary source comprising around 70% of the newspapers sold. This is uniform throughout the industry.\nCandidate: Great. I want to understand if our costs have increased for both distribution channels or just one?\nInterviewer: The cost incurred on agents has gone up.\nCandidate: Total cost of agents = Number of Agents * Cost per Agent\nCandidate: Do we know which one has been the problem?\nInterviewer: We have a high cost per agent. Analyse why.\nCandidate: Sure. The agents provide a fairly standard service of delivering newspapers. The only difference could be because of quality in service demanded from these agents or contractual particulars such as lock-in period.\nInterviewer: Good observation. Analyse the quality in service.\nCandidate: I can think of the following factors:\n1) We might be expecting our agents to cover a larger area than our competitors\n2) We might be expecting our agents to deliver the newspapers at an earlier time\n3) We might be expecting our agents for preferential treatment regarding delivery of newspapers (not ruining quality by rolling,\n4) We might be expecting our agents to also market and push our newspapers more\nInterviewer: Spot on. You have correctly identified the reason. We are paying our agents a higher price because we recently started an initiative to be the earliest newspaper to be delivered by 5:00 AM every day. Due to this special request, agents have started charging us extra. You may give recommendations _(On next page)_ and leave. Thank you.\n\nTerrible Times Framework & Recommendations\nCOST STRUCTURE OF A NEWSPAPER\nClarifying Questions: What is below par? What type of newspaper? Time period of problem?\nBrownie Points: Larger area covered by agents for our newspaper Preferential treatment\nKeep In Mind: Developing the process map is an easy way to identify various costs Always benchmark with competitors or previous performance to understand where the deviation is.\nRECOMMENDATIONS:\nAsk customers if they would be willing to pay extra if newspapers are delivered early; If yes, charge them an additional fee and thereby pass the burden on to them; If they say no, newspapers can be delivered at the usual time.\nWe should also heavily market our new USP of early delivery to increase revenues and offset the costs."
+  },
+  {
+    "id": 16,
+    "docId": "case-16",
+    "title": "Empty Kart",
+    "industry": "E-Commerce",
+    "difficulty": "Medium",
+    "case_type": "Profitability",
+    "company": "Accenture Strategy",
+    "round": "Partner",
+    "prompt": "Your client is an e-commerce player who has been facing the problem of increasing costs. You need to analyse why this is happening and recommend solutions accordingly.",
+    "frameworkTree": {
+      "nodes": {
+        "total-costs": {
+          "id": "total-costs",
+          "label": "Total Costs",
+          "tone": "root",
+          "children": [
+            "licenses",
+            "research-and-development",
+            "website-and-app",
+            "onboarding",
+            "procurement",
+            "inventory-management",
+            "marketing-and-sales",
+            "delivery"
+          ]
+        },
+        "licenses": {
+          "id": "licenses",
+          "label": "Licenses",
+          "tone": "support",
+          "children": []
+        },
+        "research-and-development": {
+          "id": "research-and-development",
+          "label": "R&D",
+          "tone": "support",
+          "children": []
+        },
+        "website-and-app": {
+          "id": "website-and-app",
+          "label": "Website & App",
+          "tone": "support",
+          "children": []
+        },
+        "onboarding": {
+          "id": "onboarding",
+          "label": "Onboarding",
+          "tone": "support",
+          "children": []
+        },
+        "procurement": {
+          "id": "procurement",
+          "label": "Procurement",
+          "tone": "support",
+          "children": []
+        },
+        "inventory-management": {
+          "id": "inventory-management",
+          "label": "Inventory Management",
+          "tone": "branch",
+          "children": [
+            "operational-costs",
+            "inventory-losses"
+          ]
+        },
+        "marketing-and-sales": {
+          "id": "marketing-and-sales",
+          "label": "Marketing & Sales",
+          "tone": "support",
+          "children": []
+        },
+        "delivery": {
+          "id": "delivery",
+          "label": "Delivery",
+          "tone": "support",
+          "children": []
+        },
+        "operational-costs": {
+          "id": "operational-costs",
+          "label": "Operational Costs",
+          "tone": "support",
+          "children": [
+            "rent",
+            "labour",
+            "maintenance"
+          ]
+        },
+        "inventory-losses": {
+          "id": "inventory-losses",
+          "label": "Inventory Losses",
+          "tone": "branch",
+          "children": [
+            "pilferage",
+            "spoilage",
+            "improper-handling"
+          ]
+        },
+        "rent": {
+          "id": "rent",
+          "label": "Rent",
+          "tone": "support",
+          "children": []
+        },
+        "labour": {
+          "id": "labour",
+          "label": "Labour",
+          "tone": "support",
+          "children": []
+        },
+        "maintenance": {
+          "id": "maintenance",
+          "label": "Maintenance",
+          "tone": "support",
+          "children": []
+        },
+        "pilferage": {
+          "id": "pilferage",
+          "label": "Pilferage",
+          "tone": "support",
+          "children": []
+        },
+        "spoilage": {
+          "id": "spoilage",
+          "label": "Spoilage",
+          "tone": "branch",
+          "children": [
+            "fifo-lifo-method",
+            "eoq-not-met",
+            "warehouse-conditions"
+          ]
+        },
+        "improper-handling": {
+          "id": "improper-handling",
+          "label": "Improper Handling",
+          "tone": "support",
+          "children": []
+        },
+        "fifo-lifo-method": {
+          "id": "fifo-lifo-method",
+          "label": "FIFO/LIFO Method",
+          "tone": "leaf",
+          "children": []
+        },
+        "eoq-not-met": {
+          "id": "eoq-not-met",
+          "label": "EOQ Not Met",
+          "tone": "leaf",
+          "children": []
+        },
+        "warehouse-conditions": {
+          "id": "warehouse-conditions",
+          "label": "Warehouse Conditions",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "total-costs",
+        "inventory-management",
+        "inventory-losses",
+        "spoilage"
+      ],
+      "defaultFocusedId": "eoq-not-met",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Since when has the client been facing this problem?",
+            "Have the competitors faced a similar problem?",
+            "Where is our client based? What does our client sell through their e-commerce platform?",
+            "What is the magnitude of the cost increase?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Segment by product lines and geographies first",
+            "Know inventory concepts like FIFO, LIFO, EOQ"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Insights such as FIFO, LIFO and EOQ"
+          ]
+        }
+      ]
+    },
+    "recommendationsMatrix": {
+      "title": "Recommendations by Feasibility vs. Impact",
+      "xAxis": {
+        "start": "Moderate Impact",
+        "end": "High Impact"
+      },
+      "yAxis": {
+        "start": "Lower Feasibility",
+        "end": "High Feasibility"
+      },
+      "items": [
+        {
+          "label": "Charge for 1-day delivery",
+          "description": "Recover increased costs directly from demand; market-tested approach used globally",
+          "x": 0.75,
+          "y": 0.75,
+          "quadrant": "High Feasibility / High Impact"
+        },
+        {
+          "label": "Restrict to durable items only",
+          "description": "Eliminate spoilage risk by excluding perishables from the 1-day policy",
+          "x": 0.25,
+          "y": 0.75,
+          "quadrant": "High Feasibility / Moderate Impact"
+        },
+        {
+          "label": "Rollout in select geographies",
+          "description": "Implement 1-day delivery only in locations with optimum demand density to justify inventory build-up",
+          "x": 0.75,
+          "y": 0.25,
+          "quadrant": "Lower Feasibility / High Impact"
+        },
+        {
+          "label": "Abandon the policy altogether",
+          "description": "Eliminates the cost driver but risks competitive and reputational damage",
+          "x": 0.25,
+          "y": 0.25,
+          "quadrant": "Lower Feasibility / Moderate Impact"
+        }
+      ]
+    },
+    "framework": "Candidate: I would like to begin by understanding our client better. Where is our client based? What does our client sell through their e-commerce platform?\nInterviewer: Our client operates in India. It sells everything from mobile covers to clothes.\nCandidate: Got it. This is similar to Flipkart. Since when have we been facing this problem? What is the magnitude of the increase? Have other players in this industry faced a similar issue?\nInterviewer: Costs are up by 25% in the last 3 months. No, other players are not facing this issue.\nCandidate: We can analyse costs by identifying the various components in the cost structure of the e-commerce platform. They include: Licenses, Research & Development, Website/App Development & Maintenance, On-boarding brands & individual sellers, Inventory procurement, Inventory management, Marketing & Sales and Delivery.\nDo we have information on which of these costs have risen in the past 3 months?\nInterviewer: Look at Inventory Management.\nCandidate: Do we keep our inventory in warehouses located in different areas across the country?\nInterviewer: Yes. The warehouses are taken on rent.\nCandidate: Do we have information on whether the increase in cost is uniformly distributed across all areas and product lines?\nInterviewer: The increase in cost is fairly uniform across geographies. Some product lines may be more affected. We don't know yet.\nCandidate: Inventory costs include –\n1) Rent of the warehouses\n2) Labour cots - Security and other staff\n3) Maintenance costs – For example – Pest control\n4) Inventory losses - Spoilage, Pilferage, Improper Handling\nDo we have information on which cost has gone up in the past 3 months?\nInterviewer: The inventory losses have gone up. Can you think of some reasons for the same?\nCandidate: Inventory losses include:\n1) Pilferage\n2) Spoilage: The method of inventory management followed (First In First Out / Last In First Out). Maybe the Economic Order Quantity (EOQ is an accounting concept. Do not worry if you are not familiar with this.) is not being ordered. It is also possible that the warehouse conditions (temperature, moisture, pests, etc.) are not optimum.\n3) Improper handling: Mishandling of items can lead to losses\nInterviewer: Correct. Our client has recently implemented 1 day delivery because of which higher than optimal level inventory is maintained. This is leading to increased spoilage of goods, especially perishable ones. This is leading to higher costs. What do you think the client should do?\n(Recommendations on the next page)\nInterviewer: Thank you. We can close the case now.\n\nEmpty Kart Framework & Recommendations\nINCREASING COSTS OF AN E-COMMERCE PLATFORM\nClarifying Questions: Since when has the client been facing this problem? Have the competitors faced a similar problem?\nBrownie Points: Insights such as FIFO, LIFO and EOQ\nKeep In Mind: Segment by product lines and geographies first\nKnow inventory concepts like FIFO, LIFO, EOQ\nRECOMMENDATIONS: Charge for 1-day delivery to cover costs\nRestrict 1-day delivery to durable items only\nRoll out 1-day delivery in select geographies\nAbandon the 1-day delivery policy"
+  },
+  {
+    "id": 17,
+    "docId": "case-17",
+    "title": "Pulp Fiction",
+    "industry": "FMCG",
+    "difficulty": "Medium",
+    "case_type": "Profitability",
+    "company": "Kearney",
+    "round": "Manager",
+    "prompt": "Your client is the CEO of a major juice manufacturer. She is concerned about the company's profitability compared to other competitors'. She would like your assistance in identifying the reason behind this.",
+    "frameworkTree": {
+      "nodes": {
+        "profits": {
+          "id": "profits",
+          "label": "Profits",
+          "tone": "root",
+          "children": [
+            "revenue",
+            "costs"
+          ]
+        },
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "support",
+          "children": []
+        },
+        "costs": {
+          "id": "costs",
+          "label": "Costs",
+          "tone": "branch",
+          "children": [
+            "raw-materials",
+            "in-bound-logistics",
+            "production",
+            "outbound-logistics",
+            "marketing",
+            "after-sales-service"
+          ]
+        },
+        "raw-materials": {
+          "id": "raw-materials",
+          "label": "Raw Materials",
+          "tone": "branch",
+          "children": [
+            "water",
+            "pulp",
+            "preforms",
+            "sugar",
+            "preservatives"
+          ]
+        },
+        "in-bound-logistics": {
+          "id": "in-bound-logistics",
+          "label": "In-bound Logistics",
+          "tone": "support",
+          "children": []
+        },
+        "production": {
+          "id": "production",
+          "label": "Production",
+          "tone": "support",
+          "children": [
+            "processing",
+            "packaging"
+          ]
+        },
+        "outbound-logistics": {
+          "id": "outbound-logistics",
+          "label": "Outbound Logistics",
+          "tone": "support",
+          "children": [
+            "storage-and-transportation",
+            "margins"
+          ]
+        },
+        "marketing": {
+          "id": "marketing",
+          "label": "Marketing",
+          "tone": "support",
+          "children": []
+        },
+        "after-sales-service": {
+          "id": "after-sales-service",
+          "label": "After Sales Service",
+          "tone": "support",
+          "children": []
+        },
+        "water": {
+          "id": "water",
+          "label": "Water",
+          "tone": "support",
+          "children": []
+        },
+        "pulp": {
+          "id": "pulp",
+          "label": "Pulp",
+          "tone": "support",
+          "children": []
+        },
+        "preforms": {
+          "id": "preforms",
+          "label": "Preforms",
+          "tone": "branch",
+          "children": [
+            "no-of-preforms",
+            "cost-per-preform"
+          ]
+        },
+        "sugar": {
+          "id": "sugar",
+          "label": "Sugar",
+          "tone": "support",
+          "children": []
+        },
+        "preservatives": {
+          "id": "preservatives",
+          "label": "Preservatives",
+          "tone": "support",
+          "children": []
+        },
+        "processing": {
+          "id": "processing",
+          "label": "Processing",
+          "tone": "support",
+          "children": []
+        },
+        "packaging": {
+          "id": "packaging",
+          "label": "Packaging",
+          "tone": "support",
+          "children": []
+        },
+        "storage-and-transportation": {
+          "id": "storage-and-transportation",
+          "label": "Storage and Transportation",
+          "tone": "support",
+          "children": []
+        },
+        "margins": {
+          "id": "margins",
+          "label": "Margins",
+          "tone": "support",
+          "children": []
+        },
+        "no-of-preforms": {
+          "id": "no-of-preforms",
+          "label": "No. Of Preforms",
+          "tone": "branch",
+          "children": [
+            "smaller-quantities",
+            "wastage"
+          ]
+        },
+        "cost-per-preform": {
+          "id": "cost-per-preform",
+          "label": "Cost/Preform",
+          "tone": "branch",
+          "children": [
+            "customisation",
+            "negotiation-power",
+            "contractual-reasons"
+          ]
+        },
+        "smaller-quantities": {
+          "id": "smaller-quantities",
+          "label": "Smaller Quantities",
+          "tone": "support",
+          "children": []
+        },
+        "wastage": {
+          "id": "wastage",
+          "label": "Wastage",
+          "tone": "support",
+          "children": []
+        },
+        "customisation": {
+          "id": "customisation",
+          "label": "Customisation",
+          "tone": "leaf",
+          "children": []
+        },
+        "negotiation-power": {
+          "id": "negotiation-power",
+          "label": "Negotiation Power",
+          "tone": "support",
+          "children": []
+        },
+        "contractual-reasons": {
+          "id": "contractual-reasons",
+          "label": "Contractual Reasons",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "profits",
+        "costs",
+        "raw-materials",
+        "preforms",
+        "no-of-preforms",
+        "cost-per-preform"
+      ],
+      "defaultFocusedId": "customisation",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "What kind of juices does the company produce?",
+            "What are the other revenue streams?",
+            "Where does the company lie on the value chain?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Treat packaging as a raw material",
+            "Split variable costs into volume and unit price",
+            "Supplier overcharging: check cost or margin"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Asking for the market share to rule out economies of scale"
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: Understood. I would like to know more about the manufacturer. What kind of juices do they produce? Are there any other revenue streams such as jams? Which geographies do they operate in? Where do we lie on the value chain.\nInterviewer: For the purpose of this case, their only revenue stream is processed fruit juice that they sell across India. The company is involved in manufacturing and distribution. This is the case with our competitors as well.\nCandidate: Okay. I would now like to understand the problem better. The client is concerned about the company's profitability. This could either mean that the company is making less sales compared to competitors or they are incurring higher costs per unit of sales.\nInterviewer: Good question. For every Rs 100 of sales, our competitors incur Rs 75 as cost. Our company incurs Rs 78 for the same.\nCandidate: Interesting. It is possible that we are a smaller company as compared to our competitors who may be enjoying the advantage of economies of scale. Do we have details as to the respective market shares of the major players in the market?\nInterviewer: There are 5 major players in the market. We hold a 20% market share.\nCandidate: That rules out my initial hypothesis as we have a sizeable market share. Since the problem is with the company's cost structure, I would like to benchmark our cost structure with our competitors'. The first step would be to identify the major costs incurred in the process of manufacturing and selling the juice and then analyse the amount incurred under each head.\nInterviewer: Go ahead.\nCandidate: The costs can be grouped into in-bound logistics, production, out-bound logistics and marketing. In-bound logistics can further be divided into raw materials and transportation of the materials to the production site. Production includes processing of the raw materials into juice and the subsequent packaging of the juice. Out-bound logistics include the storage and transportation of the juice and margins allowed to the resellers. Since I am not too familiar with the industry, it is possible that I have missed a few relevant costs.\nInterviewer: You have covered all the major cost heads. We spend Rs. 3 more than our competitors on raw materials per Rs 100 of sales. Other costs are more or less equal.\nCandidate: According to my knowledge, the raw materials used in fruit juices are fruit extract/pulp, sugar, preservatives and water. I would also like to know how the product is packed. Is the packaging done in-house? What about our competitors?\nInterviewer: The juice is packaged in PET bottles. The preforms for the bottles are purchased. The preform is then heated in-house and blown into a bottle shape. Finally, the juice is filled into the bottles. Our competitors follow the same procedure.\nCandidate: Okay, so our raw materials will include these preforms. Do we know which raw materials we are paying more for in comparison to our competitors?\nInterviewer: In fact, we are paying extra for the preforms.\nCandidate: The cost of preforms is determined by the following factors:\nCost of preforms = Number of preforms * Cost per preform\nCandidate: Number of preforms may be higher because we may be packaging in smaller quantities or there is wastage. Alternatively, our suppliers may be charging us higher for the pre-forms.\nInterviewer: We use the same suppliers as our competitors. However, they are charging us more for the pre-forms. Why do you think this is the case?\nCandidate: That is strange. It is possible that the suppliers are incurring higher costs in producing our pre-forms due to special raw materials used or customisation required by our company. If not, they may be making higher margins from us due to lower negotiation power or contractual factors such as agreements for a shorter period.\nInterviewer: Correct. Our company requires a different pre-form which is compatible with the machines we own. We can end the case here.\n\nPulp Fiction Framework & Recommendations\nTURNAROUND STRATEGIES FOR A JUICE MANUFACTURER\nClarifying Questions: What kind of juices does the company produce? What are the other revenue streams?\nBrownie Points: Asking for the market share to rule out economies of scale\nKeep In Mind: Most variable costs can be broken down into Number of units * Cost/unit\nRECOMMENDATIONS: Manufacture our own pre-forms after doing a cost-benefit analysis and confirming it is feasible to do so\nChange our packaging machinery if this will ultimately lead to cost savings"
+  },
+  {
+    "id": 18,
+    "docId": "case-18",
+    "title": "Don't Steel From Us",
+    "industry": "Steel Industry",
+    "difficulty": "Hard",
+    "case_type": "Profitability",
+    "company": "Bain & Company",
+    "round": "Manager",
+    "prompt": "Hey. Your client is a steel manufacturing company. You are required to diagnose why the company's costs have increased by 4% in the last 6 months.",
+    "frameworkTree": {
+      "nodes": {
+        "costs": {
+          "id": "costs",
+          "label": "Costs",
+          "tone": "root",
+          "children": [
+            "variable",
+            "fixed"
+          ]
+        },
+        "variable": {
+          "id": "variable",
+          "label": "Variable",
+          "tone": "branch",
+          "children": [
+            "raw-materials",
+            "processing",
+            "packaging",
+            "transport-to-factory",
+            "storage",
+            "transport-to-customer",
+            "marketing"
+          ]
+        },
+        "fixed": {
+          "id": "fixed",
+          "label": "Fixed",
+          "tone": "support",
+          "children": [
+            "distribution-costs"
+          ]
+        },
+        "raw-materials": {
+          "id": "raw-materials",
+          "label": "Raw Materials",
+          "tone": "support",
+          "children": []
+        },
+        "processing": {
+          "id": "processing",
+          "label": "Processing",
+          "tone": "support",
+          "children": []
+        },
+        "packaging": {
+          "id": "packaging",
+          "label": "Packaging",
+          "tone": "support",
+          "children": []
+        },
+        "transport-to-factory": {
+          "id": "transport-to-factory",
+          "label": "Transport to Factory",
+          "tone": "support",
+          "children": []
+        },
+        "storage": {
+          "id": "storage",
+          "label": "Storage",
+          "tone": "support",
+          "children": []
+        },
+        "transport-to-customer": {
+          "id": "transport-to-customer",
+          "label": "Transport to Customer",
+          "tone": "branch",
+          "children": [
+            "outsourced"
+          ]
+        },
+        "marketing": {
+          "id": "marketing",
+          "label": "Marketing",
+          "tone": "support",
+          "children": []
+        },
+        "distribution-costs": {
+          "id": "distribution-costs",
+          "label": "Distribution Costs",
+          "tone": "support",
+          "children": []
+        },
+        "outsourced": {
+          "id": "outsourced",
+          "label": "Outsourced",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "costs",
+        "variable",
+        "transport-to-customer"
+      ],
+      "defaultFocusedId": "outsourced",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Different grades of steel?",
+            "Who the consumers are?",
+            "Where we lie on value chain?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Outsourced transport: analyse contractor's per-km cost structure",
+            "Identical below-cost rates signal contractor collusion"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Method of calculating distance between Jamshedpur and Delhi through prior air travel experience"
+          ]
+        }
+      ]
+    },
+    "visualisations": [
+      {
+        "id": "variable-cost-per-km",
+        "type": "table",
+        "title": "Variable Cost per km: Calculated vs. Contractor",
+        "rows": [
+          [
+            "Fuel",
+            "Diesel @ Rs. 80/litre; 8 km/litre",
+            "80 ÷ 8",
+            "Rs. 10.00"
+          ],
+          [
+            "Driver & Helper",
+            "Salary Rs. 45,000/month; 5 round trips/month; 1,500 km one-way",
+            "45,000 ÷ (1,500 × 5 × 2)",
+            "Rs. 3.00"
+          ],
+          [
+            "Maintenance",
+            "Service every 10 round trips @ Rs. 30,000",
+            "30,000 ÷ (1,500 × 10 × 2)",
+            "Rs. 1.00"
+          ],
+          [
+            "Toll",
+            "Monthly pass @ Rs. 7,500; 5 round trips",
+            "7,500 ÷ (1,500 × 5 × 2)",
+            "Rs. 0.50"
+          ],
+          [
+            "Total Calculated Cost",
+            "",
+            "",
+            "Rs. 14.50"
+          ],
+          [
+            "Contractor Charges",
+            "All contractors charge same rate",
+            "",
+            "Rs. 12.00"
+          ]
+        ],
+        "insight": "Contractor charges Rs. 2.50/km less than calculated variable cost — this is the anomaly that signals collusion.",
+        "columns": [
+          "Cost Component",
+          "Assumption",
+          "Calculation",
+          "Cost / km"
+        ]
+      },
+      {
+        "id": "no-of-trucks-formula",
+        "type": "table",
+        "title": "No. of Trucks Formula Breakdown",
+        "rows": [
+          [
+            "No. of Trucks = Total Volume ÷ (Volume/Truck/Trip × Trips/Truck)",
+            "Driving metric for transportation cost"
+          ],
+          [
+            "Volume/Truck/Trip = Capacity × % Utilised − (Wastage + Theft + Loss)",
+            "% Utilisation has declined → effective volume per trip down → more trucks needed"
+          ],
+          [
+            "Total Volume to Transport",
+            "Unchanged in last 6 months"
+          ],
+          [
+            "No. of Trips per Truck",
+            "Unchanged"
+          ],
+          [
+            "% Capacity Utilised ↓",
+            "Confirmed driver of increased truck count"
+          ]
+        ],
+        "columns": [
+          "Formula Element",
+          "Notes"
+        ]
+      }
+    ],
+    "framework": "Candidate: Interesting. I'd like to understand the problem a little better. Where is our client located? Where are their customers located? Which step of the value chain do they lie on? Do they have different grades of steel?\nInterviewer: Our client is located in Jamshedpur. They transport steel to 4 locations – Agra, Delhi, Mumbai and Haryana. They manufacture the steel and then transport it to various customers, mainly building manufacturers. For the purpose of this case, assume they make only one type of steel.\nCandidate: Great. Do we have any information on how competitors have fared in the last 6 months?\nInterviewer: We do not have any information on that. You can proceed with your approach.\nCandidate: Sure. I'd like to break down our total costs into Fixed and Variable costs. Under Fixed costs, I'd like to analyse costs incurred on Land, Interest payments, R&D (Since we manufacture steel), Machinery, Factories, Fixed Component of Labour and other assets owned. Under Variable costs, I'd like to analyse the various steps involved in the manufacturing of steel and isolate the problem. Do we know which amongst Fixed and Variable costs have increased?\nInterviewer: Sure, Fixed costs have remained the same. Variable costs have increased.\nCandidate: Okay. The various variable costs would be: Cost of acquiring raw materials – Transportation of raw materials to factories – Processing cost (Includes labour and utilities such as electricity) – Storage costs - Packaging costs – Transportation of final product to consumers - Distribution costs – Marketing costs. Miscellaneous costs like tax and legal expenses. Are there any other costs I am missing?\nInterviewer: No, you are not. The cost of transportation has increased for the client.\nCandidate: Interesting. I'd like to analyse the logistics better. Can I assume transportation is done through trucks since that is the preferred mode in this industry?\nInterviewer: You're right. We transport it through trucks.\nCandidate: Do we own the trucks or do we outsource transportation? Also, have the costs of transportation gone up in all locations?\nInterviewer: We do not own the trucks. We outsource the transportation. Costs have increased in our transportation to all locations.\nCandidate: Since we outsource transportation, we must be paying a rate per km covered by the truck to the contractor and hence will not have to pay separately for fuel, driver or maintenance costs.\nThe total cost of transportation = Number of trucks * km covered per truck * Rate per km\nCandidate: Do we know which of these has increased in the last 6 months?\nInterviewer: Why don't you analyse the number of trucks first?\nCandidate: Sure.\nTotal number of trucks required = (Total volume required to be transported)/(Volume transported by each truck per trip * Number of trips completed by each truck)\nWhere,\nVolume transported by each truck per trip = (Total capacity of truck * % of capacity utilized) – (Wastage + Theft + Loss)\nCandidate: Do we know which of these have changed?\nInterviewer: Spot on. The % capacity utilized has gone down in the last 6 months. The contractor uses only one type of truck and the capacity utilized is low. Moving on to the Rate per km charged, the CEO has a hypothesis that we are being overcharged. Why don't you estimate the various variable costs the contractor incurs and compare this with the actual rate charged?\nCandidate: Sure. I think there will primarily be 4 costs he incurs for every km travelled (Variable aspect):\n1) Fuel costs\n2) Driver and helper costs\n3) Maintenance costs\n4) Toll costs\nCalculating distance: I know that the average flight time from Jamshedpur to Delhi is 2.5 hours. The average speed of a commercial plane is 600 kmph. This gives us an approximate distance of 1500 km between the two locations.\nCalculating costs:\nFuel costs - Cost of fuel/km = (Cost of fuel/litre)/(Number of km/litre)\nDiesel prices hover around Rs 80/litre. Trucks give a mileage of about 8 km/litre. Thus, the cost of fuel is Rs 10/km.\nDriver and helper costs – Assuming around 5 round trips in a month (1 round trip takes about 6 days) and an average monthly salary of Rs. 25,000 and Rs. 20,000 for the driver and helper respectively:\nThe cost/km = (Salary for a month)/(Distance covered in a month)\n= (Rs. 45,000)/(1,500 km * 5 * 2)\n= Rs 3/km\nMaintenance costs – Assuming the truck is serviced once every 10 round trips and the average servicing cost is Rs. 30,000:\nThe maintenance cost/km = (Servicing costs)/(Distance covered per service)\n= (Rs. 30,000)/(1500 km * 10 * 2)\n= Rs 1/km\nToll costs – Assuming a monthly toll pass across different borders costs Rs 7,500:\nThe toll cost/km = (Monthly Toll costs)/(Distance covered in a month)\n= (Rs. 7,500)/(1500 km * 5 * 2)\n= Rs 0.5/km\nThis brings our total cost/km to Rs. 14.50. What is the cost that the contractor charges us per km?\nInterviewer: Brilliant job. He charges us Rs. 12/km. Can you analyse why this might be happening?\nCandidate: That's interesting. Something seems to be fishy. I can think of two reasons –\n1) Since he is not using his full capacity, he might be taking up additional contracts for shorter distance between Jamshedpur and Delhi, thereby increasing his revenues.\n2) On the return journey his truck would be empty, the fuel costs might be much lower and hence the cost we arrived at might not be accurate.\nInterviewer: Perfect. It has been found that the contractor takes up additional smaller contracts to fill the extra space in his trucks.\nCandidate: Okay. My immediate suggestion would be to hire a new contractor as this would reduce the number of trucks required and bring down our total costs. I would like to know what the capacity utilization and rate per km of other contractors are?\nInterviewer: In fact, all contractors in Jamshedpur have similar capacities and quantity utilizations. They all charge a similar rate of Rs. 12/km too.\nCandidate: This leads me to believe that the contractors are colluding and all are conducting multiple contracts on their journey.\nInterviewer: Spot on. You have identified the problem! You can give recommendations (next page) and quickly sum up the case. Thank you.\n\nDon't Steel From Us Framework & Recommendations\nINCREASING TRANSPORTATION COSTS OF A STEEL COMPANY\nClarifying Questions: Different grades of steel? Who the consumers are? Where we lie on value chain?\nBrownie Points: Method of calculating distance between Jamshedpur and Delhi through prior air travel experience\nKeep In Mind: When required, taking actual values to arrive at cost is important Make sure to never make a mistake while calculating as it is a sin\nRECOMMENDATIONS: All steel manufacturing companies can come together to stop this practice of the contractors\nThe company can purchase its own trucks and transport steel on its own after a cost-benefit analysis\nThe company can pay a higher rate/km to negotiate an increase in capacity utilized, bringing down total cost as whole"
   },
   {
     "id": 23,
