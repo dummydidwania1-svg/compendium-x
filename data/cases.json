@@ -4154,6 +4154,15 @@
           "Assumption",
           "Calculation",
           "Cost / km"
+        ],
+        "summaryRows": [
+          4
+        ],
+        "columnWidths": [
+          "20%",
+          "auto",
+          "auto",
+          "auto"
         ]
       },
       {

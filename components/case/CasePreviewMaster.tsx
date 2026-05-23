@@ -47,7 +47,7 @@ export type VisFormula = {
   rhs?: string
   derivations?: { lhs: string; rhs: string }[]
 }
-export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean }
+export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; summaryRows?: number[]; columnWidths?: string[] }
 export type VisQuadrant = {
   type: 'quadrant'; title: string; xAxis: string; yAxis: string
   points: { label: string; x: number; y: number }[]
@@ -1916,51 +1916,58 @@ function VisTableInline({ vis }: { vis: VisTable }) {
    ═══════════════════════════════════════════════════════════ */
 function VisTableBlock({ vis }: { vis: VisTable }) {
   const rows: string[][] = typeof vis.rows === 'string' ? JSON.parse(vis.rows) : vis.rows
+  const summarySet = new Set(vis.summaryRows ?? [])
   const headerStyle: React.CSSProperties = {
     fontFamily: "'Work Sans', sans-serif",
     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
-    color: '#f0f5ee', background: '#3D5A35',
+    color: '#f0f5ee', background: '#3D5A35', whiteSpace: 'nowrap',
   }
-  const colCount = vis.columns.length
-  const dataColCount = colCount - 1
   return (
     <div className="pt-16">
       <VisDivider label={vis.title} />
       <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
-        <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
-          <colgroup>
-            <col style={{ width: '30%' }} />
-            {Array.from({ length: dataColCount }).map((_, i) => (
-              <col key={i} style={{ width: `${70 / dataColCount}%` }} />
-            ))}
-          </colgroup>
+        <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
+          {vis.columnWidths && (
+            <colgroup>
+              {vis.columnWidths.map((w, i) => <col key={i} style={{ width: w }} />)}
+            </colgroup>
+          )}
           <thead>
             <tr>
               {vis.columns.map((col, i) => (
-                <th key={i} className="px-4 py-2"
-                  style={{ ...headerStyle, textAlign: i === 0 ? 'left' : 'center', borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined }}>
+                <th key={i} className="px-4 py-2 text-left"
+                  style={{ ...headerStyle, borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined }}>
                   {col}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, ri) => (
-              <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
-                {row.map((cell, ci) => (
-                  <td key={ci} className="px-4 py-1.5 align-middle"
-                    style={{
-                      fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: ci === 0 ? 500 : 400,
-                      color: '#3B2F2F', lineHeight: 1.5,
-                      textAlign: ci === 0 ? 'left' : 'center',
-                      borderTop: '1px solid rgba(61,90,53,0.08)',
-                      borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
-                    }}>
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {rows.map((row, ri) => {
+              const isSummary = summarySet.has(ri)
+              return (
+                <tr key={ri} style={{ background: isSummary ? 'rgba(61,90,53,0.04)' : 'rgba(255,248,240,0.5)' }}>
+                  {row.map((cell, ci) => (
+                    <td key={ci} className="px-4 py-2 align-middle"
+                      style={{
+                        fontFamily: "'Newsreader', serif",
+                        fontSize: '14px',
+                        fontWeight: isSummary || ci === 0 ? 600 : 400,
+                        color: '#3B2F2F',
+                        lineHeight: 1.5,
+                        whiteSpace: ci === 0 ? 'normal' : 'nowrap',
+                        // Double top border for summary rows (financial table convention)
+                        borderTop: isSummary
+                          ? '3px double rgba(61,90,53,0.35)'
+                          : '1px solid rgba(61,90,53,0.08)',
+                        borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
+                      }}>
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
