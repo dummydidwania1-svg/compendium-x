@@ -67,7 +67,10 @@ export type VisDecision = {
   nodes: VisDecisionNode[]
   rootId: string
 }
-export type Visualisation = VisFormula | VisTable | VisQuadrant | VisDecision
+export type VisCalcStep = { text: string; underline?: boolean; indent?: boolean; bold?: boolean }
+export type VisCalcPanel = { title: string; steps: VisCalcStep[] }
+export type VisCalcPair = { type: 'calcpair'; header: string; left: VisCalcPanel; right: VisCalcPanel }
+export type Visualisation = VisFormula | VisTable | VisQuadrant | VisDecision | VisCalcPair
 
 export type RecommendationsTableA = { headers: string[]; rows: string[][] }
 export type RecommendationsTableB = { framework: string; columns: string[]; dimensionHeader?: string; rows: { dimension: string; shortTerm: string; longTerm: string }[] }
@@ -2140,6 +2143,53 @@ function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Visualization: Side-by-side calculation panels
+   ═══════════════════════════════════════════════════════════ */
+function VisCalcPairBlock({ vis }: { vis: VisCalcPair }) {
+  function Panel({ panel }: { panel: VisCalcPanel }) {
+    return (
+      <div className="flex-1 min-w-0 px-6 py-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#3D5A35] mb-4 leading-none">{panel.title}</p>
+        <div className="space-y-[6px]">
+          {panel.steps.map((step, i) => (
+            <div key={i} className={`${step.indent ? 'pl-6' : ''}`}>
+              <p
+                className={`text-[13px] leading-snug ${step.bold ? 'font-semibold text-[#3B2F2F]' : 'font-normal text-[#5C4033]'}`}
+                style={{
+                  fontFamily: "'Work Sans', sans-serif",
+                  borderBottom: step.underline ? '1.5px solid rgba(92,64,51,0.35)' : undefined,
+                  paddingBottom: step.underline ? '2px' : undefined,
+                  display: 'inline-block',
+                }}
+              >
+                {step.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-8">
+      {/* Section header — same style as Recommendations divider */}
+      <div className="mb-5 flex items-center gap-4">
+        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{vis.header}</span>
+        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+      </div>
+      {/* Two panels split by a vertical divider */}
+      <div className="flex rounded-xl border border-[#3D5A35]/10 overflow-hidden" style={{ background: 'rgba(255,248,240,0.7)' }}>
+        <Panel panel={vis.left} />
+        <div className="w-px flex-shrink-0" style={{ background: 'rgba(92,64,51,0.12)' }} />
+        <Panel panel={vis.right} />
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    Visualization: Decision tree (flowchart)
    ═══════════════════════════════════════════════════════════ */
 function VisDecisionBlock({ vis }: { vis: VisDecision }) {
@@ -3284,6 +3334,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                               <VisDecisionBlock key={i} vis={v as VisDecision} />
                             ))}</Reveal>
                           )}
+                          {visualisations?.some(v => v.type === 'calcpair') && (
+                            <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                              <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                            ))}</Reveal>
+                          )}
                         </div>
                       )}
                       {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3344,6 +3399,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                   {visualisations?.some(v => v.type === 'decision') && (
                     <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                       <VisDecisionBlock key={i} vis={v as VisDecision} />
+                    ))}</Reveal>
+                  )}
+                  {visualisations?.some(v => v.type === 'calcpair') && (
+                    <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                      <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
                     ))}</Reveal>
                   )}
                 </div>
@@ -3761,6 +3821,11 @@ export function CaseInterviewerMaster({
                                 <VisDecisionBlock key={i} vis={v as VisDecision} />
                               ))}</Reveal>
                             )}
+                            {visualisations?.some(v => v.type === 'calcpair') && (
+                              <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                                <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                              ))}</Reveal>
+                            )}
                           </div>
                         )}
                         {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3817,6 +3882,11 @@ export function CaseInterviewerMaster({
                     {visualisations?.some(v => v.type === 'decision') && (
                       <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                         <VisDecisionBlock key={i} vis={v as VisDecision} />
+                      ))}</Reveal>
+                    )}
+                    {visualisations?.some(v => v.type === 'calcpair') && (
+                      <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                        <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
                       ))}</Reveal>
                     )}
                   </div>

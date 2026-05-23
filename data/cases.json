@@ -4951,23 +4951,19 @@
             "Where is the store located?",
             "How much space is the makeup outlet going to take?",
             "Why only makeup as an alternative?",
-            "What products are currently available?",
-            "How much have profits fallen by in the time period?",
             "In-house manufacturing or 3rd-party distribution?"
           ]
         },
         {
           "title": "Keep In Mind",
           "items": [
-            "Opportunity cost can be a recurring fixed cost",
             "Apply profit function basics to unorthodox cases"
           ]
         },
         {
           "title": "Brownie Points",
           "items": [
-            "Mentioning opportunity cost as one of the fixed costs as it ended up becoming crucial to the case",
-            "Incorporating opportunity cost into break-even unprompted"
+            "Mentioning opportunity cost as one of the recurring fixed costs"
           ]
         }
       ]
@@ -5049,7 +5045,54 @@
         ]
       }
     ],
-    "framework": "Candidate: Sure. I'd like to understand the problem better. Where is her store located? What are the products currently available at her store? Also, how much have profits fallen by in this period?\nInterviewer: Her store is located in Delhi. She currently sells clothes for men and women. Profits have fallen by 15%.\nCandidate: Interesting. Does she manufacture her own clothes or is she a 3rd party distributor? How much space inside the store is the makeup outlet going to take?\nInterviewer: She is a distributor of clothes and plans to be for makeup as well. The makeup outlet is proposed to take up 20% of the space in the store.\nCandidate: Lastly, is there any particular reason for choosing a makeup outlet or is our client open to other ideas as well?\nInterviewer: She believes makeup products will sell much better post the pandemic period and hence, this is the only option she is considering.\nCandidate: I can now begin. Since our client's objective is to increase profits, I shall evaluate this decision on the basis of the additional revenues she will earn minus the additional costs she will incur.\nInterviewer: Sure, sounds good,\nCandidate: Therefore, if - Additional Revenues > Additional Costs, this is a wise decision.\nIn additional costs, I would like to incorporate not just the costs of setting up and buying the products, but also the revenue foregone from the lost retail apparel space, since this is an opportunity cost.\nInterviewer: Brilliant. Opportunity costs become a major consideration. Why don't you find the breakeven point of sales for this decision in a month? What is the data you would require?\nCandidate: Sure, I know that Breakeven point of sale = (Fixed cost)/(Sale price – Variable cost)\nTherefore, I would require the following information:\n1) Fixed costs involved in setting up the makeup outlet\n2) Opportunity cost of sales foregone\n3) Average sale price of a makeup product\n4) Average cost price of purchasing a makeup item\n5) Other variable costs involved (Staff, etc.)\nInterviewer: That seems comprehensive. You may note down the following information:\nCost incurred to change the layout and set up the various aspects of the outlet – Rs. 40,000. The entire outlet has an area of 10,000 sq. ft and earns a profit of Rs. 25,000 a day. Assume that every part of the store contributes equally to profits. Average sale price of a makeup item would be around Rs. 1,000 and the average cost price would be Rs. 400. The other variable costs per product would come up to Rs. 100.\nCandidate: Great! Since the costs have been given to us in terms of a one-time fixed expenditure and a daily opportunity cost; we will first find the break-even point where we will be able to recover the fixed cost incurred. Subsequently, we will calculate the number of products we will need to sell daily in order to experience an incremental profit.\nCalculating daily opportunity cost - If income is uniform, then every 1 sq. ft of the apparel segment contributes Rs 2.5 (Rs. 25,000/10,000). Since the makeup division is expected to take up 2000 sq. ft, the revenue lost would be equal to 2000 Sq. ft x Rs 2.5 = Rs. 5,000 per day.\nThus, total cost to be recovered = Rs. 40,000. Rs. 5,000 everyday the store is open is the opportunity cost.\n(Calculation on next page)\nThus, we realise that we need to sell 80 items on an average from our makeup outlet to recover the fixed cost of renovations and we need to sell 10 products daily to recover the opportunity cost of giving up on 20% of the apparel segment.\nInterviewer: Brilliant! You have correctly identified the amount. Let's finally move on to recommendations on how we can further improve the sale from our makeup outlet.\nCandidate: I can think of the following suggestions –\n1) Online presence: Ensuring we have a website that provides for checking on stock availability and delivery option.\n2) Tie-ups with e-commerce aggregators: Presence on sites like Flipkart and Amazon can also add to sales.\n3) Range of makeup products not delimited to women: Keeping in mind the increasing trend of makeup for men and LGBTQi+ community\n4) Creating special ranges for all income segments and demographics\n5) Tie-ups with micro-influencers on Instagram and other platforms\n6) Discounts and offers on the makeup products on purchase of the apparel in the store\nAdditionally, driving up sales from the apparel division through similar marketing strategies will help raise sales through cross-selling techniques.\nInterviewer: Great. We can close the case here. Thank you!\n\nBeauty Lies On The Inside Framework & Recommendations\nDECLINING PROFITS OF AN APPAREL STORE\nWise Decision if Additional Revenues > Additional Costs\nFINDING THE BREAK EVEN POINT\n\nA: BREAK-EVEN POINT (ONE TIME EXPENDITURE)\nFixed Investment = ₹40,000\nS.P. of One Product = ₹1,000\nV.C. of One Product = ₹400 + ₹100 = ₹500\nBreak Even Point Of Sales = F.C./(S.P. – V.C.) = ₹40,000/(₹1,000 – ₹500) = ₹40,000/₹500 = 80 Items\n\nB: ANALYSING VIABILITY (ACCOUNTING FOR THE DAILY OPPORTUNITY COST)\nOpportunity Cost = ₹5,000\nS.P Of One Product = ₹1,000\nV.C. Of One Product = ₹400 + ₹100 = ₹500\nRequired Daily Sales = Opportunity Cost/(S.P. – V.C.) = ₹5,000/(₹1,000 – ₹500) = ₹5,000/₹500 = 10 Items/Day\n\nClarifying Questions: Where is the store located? How much space is the makeup outlet going to take? Why only makeup as an alternative?\nBrownie Points: Mentioning opportunity cost as one of the fixed costs as it ended up becoming crucial to the case\nKeep In Mind: Basics of profitability and the profit function are very useful in unorthodox cases like this. Try to incorporate concepts you have studied about before.\nRECOMMENDATIONS: Offer discounts on makeup with apparel purchases\nUse Instagram micro-influencer tie-ups\nBuild e-commerce website with delivery option\nList on Flipkart and Amazon aggregators\nExpand range to men and LGBTQi+ community\nCreate special ranges for all income segments"
+    "visualisations": [
+      {
+        "type": "calcpair",
+        "header": "Finding the Break-Even Point",
+        "left": {
+          "title": "A — Break-Even Point (One-Time Expenditure)",
+          "steps": [
+            { "text": "Fixed Investment = ₹40,000" },
+            { "text": "S.P. of One Product = ₹1,000" },
+            { "text": "V.C. of One Product = ₹400 + ₹100 = ₹500" },
+            { "text": "" },
+            { "text": "Break-Even Point of Sales =", "bold": true },
+            { "text": "F.C.", "indent": true, "underline": true },
+            { "text": "S.P. − V.C.", "indent": true },
+            { "text": "" },
+            { "text": "= ₹40,000", "indent": true, "underline": true },
+            { "text": "₹1,000 − ₹500", "indent": true },
+            { "text": "" },
+            { "text": "= ₹40,000", "indent": true, "underline": true },
+            { "text": "₹500", "indent": true },
+            { "text": "" },
+            { "text": "= 80 Items", "bold": true, "indent": true }
+          ]
+        },
+        "right": {
+          "title": "B — Daily Opportunity Cost Recovery",
+          "steps": [
+            { "text": "Store Daily Profit = ₹25,000" },
+            { "text": "Makeup Outlet Space = 2,000 sq. ft. (20% of store)" },
+            { "text": "Profit per Sq. Ft. = ₹25,000 ÷ 10,000 = ₹2.5" },
+            { "text": "Daily Opportunity Cost = 2,000 × ₹2.5 = ₹5,000/day" },
+            { "text": "" },
+            { "text": "Required Daily Sales =", "bold": true },
+            { "text": "Opportunity Cost", "indent": true, "underline": true },
+            { "text": "S.P. − V.C.", "indent": true },
+            { "text": "" },
+            { "text": "= ₹5,000", "indent": true, "underline": true },
+            { "text": "₹1,000 − ₹500", "indent": true },
+            { "text": "" },
+            { "text": "= ₹5,000", "indent": true, "underline": true },
+            { "text": "₹500", "indent": true },
+            { "text": "" },
+            { "text": "= 10 Items/Day", "bold": true, "indent": true }
+          ]
+        }
+      }
+    ],
+    "framework": "Candidate: Sure. I'd like to understand the problem better. Where is her store located? What are the products currently available at her store? Also, how much have profits fallen by in this period?\nInterviewer: Her store is located in Delhi. She currently sells clothes for men and women. Profits have fallen by 15%.\nCandidate: Interesting. Does she manufacture her own clothes or is she a 3rd party distributor? How much space inside the store is the makeup outlet going to take?\nInterviewer: She is a distributor of clothes and plans to be for makeup as well. The makeup outlet is proposed to take up 20% of the space in the store.\nCandidate: Lastly, is there any particular reason for choosing a makeup outlet or is our client open to other ideas as well?\nInterviewer: She believes makeup products will sell much better post the pandemic period and hence, this is the only option she is considering.\nCandidate: I can now begin. Since our client's objective is to increase profits, I shall evaluate this decision on the basis of the additional revenues she will earn minus the additional costs she will incur.\nInterviewer: Sure, sounds good,\nCandidate: Therefore, if - Additional Revenues > Additional Costs, this is a wise decision.\nIn additional costs, I would like to incorporate not just the costs of setting up and buying the products, but also the revenue foregone from the lost retail apparel space, since this is an opportunity cost.\nInterviewer: Brilliant. Opportunity costs become a major consideration. Why don't you find the breakeven point of sales for this decision in a month? What is the data you would require?\nCandidate: Sure, I know that\nBreakeven point of sale = (Fixed cost)/(Sale price – Variable cost)\nTherefore, I would require the following information:\n1) Fixed costs involved in setting up the makeup outlet\n2) Opportunity cost of sales foregone\n3) Average sale price of a makeup product\n4) Average cost price of purchasing a makeup item\n5) Other variable costs involved (Staff, etc.)\nInterviewer: That seems comprehensive. You may note down the following information:\nInterviewer: Cost incurred to change the layout and set up the various aspects of the outlet – Rs. 40,000. The entire outlet has an area of 10,000 sq. ft and earns a profit of Rs. 25,000 a day. Assume that every part of the store contributes equally to profits. Average sale price of a makeup item would be around Rs. 1,000 and the average cost price would be Rs. 400. The other variable costs per product would come up to Rs. 100.\nCandidate: Great! Since the costs have been given to us in terms of a one-time fixed expenditure and a daily opportunity cost; we will first find the break-even point where we will be able to recover the fixed cost incurred. Subsequently, we will calculate the number of products we will need to sell daily in order to experience an incremental profit.\n_(Calculating daily opportunity cost)_\nIf income is uniform, then every 1 sq. ft of the apparel segment contributes Rs 2.5 (Rs. 25,000/10,000). Since the makeup division is expected to take up 2000 sq. ft, the revenue lost would be equal to\n2000 Sq. ft x Rs 2.5 = Rs. 5,000 per day\nThus, total cost to be recovered = Rs. 40,000. Rs. 5,000 everyday the store is open is the opportunity cost.\n_(Calculation on next page)_\nThus, we realise that we need to sell 80 items on an average from our makeup outlet to recover the fixed cost of renovations and we need to sell 10 products daily to recover the opportunity cost of giving up on 20% of the apparel segment.\nInterviewer: Brilliant! You have correctly identified the amount. Let's finally move on to recommendations on how we can further improve the sale from our makeup outlet.\nCandidate: I can think of the following suggestions –\n1) Online presence: Ensuring we have a website that provides for checking on stock availability and delivery option.\n2) Tie-ups with e-commerce aggregators: Presence on sites like Flipkart and Amazon can also add to sales.\n3) Range of makeup products not delimited to women: Keeping in mind the increasing trend of makeup for men and LGBTQi+ community\n4) Creating special ranges for all income segments and demographics\n5) Tie-ups with micro-influencers on Instagram and other platforms\n6) Discounts and offers on the makeup products on purchase of the apparel in the store\nAdditionally, driving up sales from the apparel division through similar marketing strategies will help raise sales through cross-selling techniques.\nInterviewer: Great. We can close the case here. Thank you!\n\nBeauty Lies On The Inside Framework & Recommendations\nDECLINING PROFITS OF AN APPAREL STORE\nWise Decision if Additional Revenues > Additional Costs\nFINDING THE BREAK EVEN POINT\n\nA: BREAK-EVEN POINT (ONE TIME EXPENDITURE)\nFixed Investment = ₹40,000\nS.P. of One Product = ₹1,000\nV.C. of One Product = ₹400 + ₹100 = ₹500\nBreak Even Point Of Sales = F.C./(S.P. – V.C.) = ₹40,000/(₹1,000 – ₹500) = ₹40,000/₹500 = 80 Items\n\nB: ANALYSING VIABILITY (ACCOUNTING FOR THE DAILY OPPORTUNITY COST)\nOpportunity Cost = ₹5,000\nS.P Of One Product = ₹1,000\nV.C. Of One Product = ₹400 + ₹100 = ₹500\nRequired Daily Sales = Opportunity Cost/(S.P. – V.C.) = ₹5,000/(₹1,000 – ₹500) = ₹5,000/₹500 = 10 Items/Day\n\nClarifying Questions: Where is the store located? How much space is the makeup outlet going to take? Why only makeup as an alternative?\nBrownie Points: Mentioning opportunity cost as one of the fixed costs as it ended up becoming crucial to the case\nKeep In Mind: Basics of profitability and the profit function are very useful in unorthodox cases like this. Try to incorporate concepts you have studied about before."
   },
   {
     "id": 23,
