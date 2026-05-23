@@ -2153,10 +2153,10 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   const PAD = 24
   const GREEN    = '#3D5A35'
   const MUTED_BG = 'rgba(255,248,240,1)'
-  const MUTED_BD = 'rgba(92,64,51,0.08)'
-  const MUTED_TX = '#5C4033'
+  const MUTED_BD = 'rgba(92,64,51,0.28)'
+  const MUTED_TX = '#7A5C4A'
   const EDGE_ON  = '#3D5A35'
-  const EDGE_OFF = 'rgba(92,64,51,0.20)'
+  const EDGE_OFF = 'rgba(92,64,51,0.30)'
   // Approx char width at 13px Work Sans
   const CW = FS * 0.54
 
@@ -2186,18 +2186,37 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
       // A diamond's inscribed rect is w/2 × h/2, so the text + padding must fit inside that
       const hw = textW / 2 + PX + 16
       const hh = textH / 2 + PY + 16
-      // Enforce aspect ratio: height ≥ 70% of width so diamonds look proportional
-      return { w: hw * 2, h: Math.max(hh * 2, hw * 2 * 0.70) }
+      // Enforce aspect ratio: height ≥ 82% of width so diamonds look proportional
+      return { w: hw * 2, h: Math.max(hh * 2, hw * 2 * 0.82) }
     }
     return { w: Math.max(110, textW + PX * 2), h: Math.max(44, textH + PY * 2) }
   }
 
+  // Compute uniform diamond size — all diamonds in the tree share the same w/h
+  // so they look visually consistent regardless of text length differences
+  const uniformDiamondDims = (() => {
+    const diamonds = vis.nodes.filter(n => n.kind === 'diamond')
+    if (!diamonds.length) return null
+    let maxW = 0, maxH = 0
+    for (const d of diamonds) {
+      const { w, h } = nodeDims(d.label, true)
+      if (w > maxW) maxW = w
+      if (h > maxH) maxH = h
+    }
+    return { w: maxW, h: maxH }
+  })()
+
   type LN = VisDecisionNode & { x: number; y: number; w: number; h: number }
   const nodeMap = new Map<string, VisDecisionNode>(vis.nodes.map(n => [n.id, n]))
 
+  function effectiveDims(n: VisDecisionNode): { w: number; h: number } {
+    if (n.kind === 'diamond' && uniformDiamondDims) return uniformDiamondDims
+    return nodeDims(n.label, n.kind === 'diamond')
+  }
+
   function sw(id: string): number {
     const n = nodeMap.get(id)!
-    const { w } = nodeDims(n.label, n.kind === 'diamond')
+    const { w } = effectiveDims(n)
     if (!n.children?.length) return w
     const kids = n.children.reduce((s, c, i) => s + sw(c.nodeId) + (i ? H_GAP : 0), 0)
     return Math.max(w, kids)
@@ -2205,7 +2224,7 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
 
   function layout(id: string, cx: number, cy: number, out: Map<string, LN>) {
     const n = nodeMap.get(id)!
-    const { w, h } = nodeDims(n.label, n.kind === 'diamond')
+    const { w, h } = effectiveDims(n)
     out.set(id, { ...n, x: cx, y: cy, w, h })
     if (!n.children?.length) return
     const total = n.children.reduce((s, c, i) => s + sw(c.nodeId) + (i ? H_GAP : 0), 0)
@@ -2257,7 +2276,7 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
           <polygon points={pts}
             fill={MUTED_BG}
             stroke={on ? GREEN : MUTED_BD}
-            strokeWidth={on ? 1.5 : 1} />
+            strokeWidth={on ? 1.5 : 1.2} />
           {textLines(x, y, n.label, n.w - PX * 2 - 24, on ? GREEN : MUTED_TX, on)}
         </g>
       )
