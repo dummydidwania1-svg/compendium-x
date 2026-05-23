@@ -4819,7 +4819,7 @@
           },
           {
             "id": "B",
-            "label": "Fee < Fuel Cost of Circling?",
+            "label": "Fee < Fuel Cost\nof Circling?",
             "kind": "diamond",
             "chosen": true,
             "children": [
@@ -4836,7 +4836,7 @@
           },
           {
             "id": "D",
-            "label": "Churn Risk from Delays?",
+            "label": "Churn Risk\nFrom Delays?",
             "kind": "diamond",
             "chosen": false,
             "children": [
@@ -4848,8 +4848,7 @@
             "id": "E",
             "label": "Pay the Fee",
             "kind": "terminal",
-            "chosen": false,
-            "children": [{ "nodeId": "G" }]
+            "chosen": false
           },
           {
             "id": "F",

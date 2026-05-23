@@ -2145,12 +2145,12 @@ function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
 function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   const FS = 13         // matches framework tree font-size
   const FONT = "'Work Sans', sans-serif"
-  const PX = 14         // horizontal padding inside node
-  const PY = 10         // vertical padding inside node
-  const LINE_H = FS * 1.35
-  const H_GAP = 56
-  const V_GAP = 64
-  const PAD = 20
+  const PX = 18         // horizontal padding inside node
+  const PY = 12         // vertical padding inside node
+  const LINE_H = FS * 1.4
+  const H_GAP = 60
+  const V_GAP = 68
+  const PAD = 24
   const GREEN    = '#3D5A35'
   const MUTED_BG = 'rgba(255,248,240,1)'
   const MUTED_BD = 'rgba(92,64,51,0.08)'
@@ -2158,7 +2158,7 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   const EDGE_ON  = '#3D5A35'
   const EDGE_OFF = 'rgba(92,64,51,0.20)'
   // Approx char width at 13px Work Sans
-  const CW = FS * 0.56
+  const CW = FS * 0.54
 
   // Word-wrap label into lines that fit within innerW pixels
   function wrap(label: string, innerW: number): string[] {
@@ -2178,17 +2178,19 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
 
   // Compute node dimensions from label text
   function nodeDims(label: string, isDiamond: boolean): { w: number; h: number } {
-    const maxInner = isDiamond ? 96 : 120   // max inner text width
+    const maxInner = isDiamond ? 110 : 130
     const ls = wrap(label, maxInner)
     const textW = Math.max(...ls.map(l => l.length * CW))
     const textH = ls.length * LINE_H
     if (isDiamond) {
-      // diamond: half-diagonals must contain the text with PX/PY padding
-      const hw = textW / 2 + PX + 10
-      const hh = textH / 2 + PY + 8
+      // A diamond's inscribed rect is w/2 × h/2, so the text + padding must fit inside that
+      // We need: textW/2 + PX ≤ hw  →  hw = textW/2 + PX + 16
+      // We need: textH/2 + PY ≤ hh  →  hh = textH/2 + PY + 12
+      const hw = textW / 2 + PX + 16
+      const hh = textH / 2 + PY + 12
       return { w: hw * 2, h: hh * 2 }
     }
-    return { w: Math.max(100, textW + PX * 2), h: Math.max(40, textH + PY * 2) }
+    return { w: Math.max(110, textW + PX * 2), h: Math.max(44, textH + PY * 2) }
   }
 
   type LN = VisDecisionNode & { x: number; y: number; w: number; h: number }
@@ -2248,12 +2250,15 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
 
     if (n.kind === 'diamond') {
       const pts = `${x},${y - hh} ${x + hw},${y} ${x},${y + hh} ${x - hw},${y}`
+      // Chosen diamond: cream bg + green border + green text — consistent with platform
+      // Unchosen diamond: same cream bg, muted border + muted text
       return (
         <g key={n.id}>
           <polygon points={pts}
-            fill={on ? 'rgba(61,90,53,0.06)' : MUTED_BG}
-            stroke={on ? GREEN : MUTED_BD} strokeWidth={on ? 1.5 : 1} />
-          {textLines(x, y, n.label, n.w - PX * 2 - 20, on ? GREEN : MUTED_TX, on)}
+            fill={MUTED_BG}
+            stroke={on ? GREEN : MUTED_BD}
+            strokeWidth={on ? 1.5 : 1} />
+          {textLines(x, y, n.label, n.w - PX * 2 - 24, on ? GREEN : MUTED_TX, on)}
         </g>
       )
     }
