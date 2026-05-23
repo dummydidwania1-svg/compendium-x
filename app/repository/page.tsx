@@ -447,11 +447,6 @@ function RepositoryContent() {
                     </span>
                   </>
                 )}
-                {!selectionMode && (
-                  <span className="text-[7px] tracking-[0.1em] font-semibold px-1.5 py-[1px] rounded-sm border border-[#C4A882]/30 text-[#C4A882] bg-[#C4A882]/8 leading-tight uppercase">
-                    Sample
-                  </span>
-                )}
               </div>
             </div>
             <h1

@@ -162,7 +162,7 @@ const ContributorLogoTile = ({ src, alt, title }: { src: string; alt: string; ti
 
   return (
     <div
-      className="w-[110px] h-[90px] flex items-center justify-center"
+      className="w-[100px] h-[100px] flex items-center justify-center"
       title={title}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

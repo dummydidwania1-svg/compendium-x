@@ -639,7 +639,7 @@ function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 				const resolvedParams = await params
 				const caseId = resolvedParams.id
 				setResolvedCaseId(caseId)
-				const cacheKey = `compendium-case-v4-${caseId}`
+				const cacheKey = `compendium-case-v8-${caseId}`
 				const cachedValue = localStorage.getItem(cacheKey)
 				let hasValidCache = false
 				if (cachedValue) {

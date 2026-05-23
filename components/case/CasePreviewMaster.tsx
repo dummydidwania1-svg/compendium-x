@@ -2148,15 +2148,16 @@ function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
    Visualization: Side-by-side calculation panels
    ═══════════════════════════════════════════════════════════ */
 function VisCalcPairBlock({ vis }: { vis: VisCalcPair }) {
-  const TX  = '#5C4033'          // matches NoteCard body text color
+  const TX    = '#3B2F2F'        // dark — matches left sticky panel labels
+  const MUTED = '#5C4033'        // muted brown for values / eq signs
   const FONT = "'Work Sans', sans-serif"
   const FS   = 'text-[13px] leading-relaxed'
 
   function Panel({ panel }: { panel: VisCalcPanel }) {
     return (
       <div className="flex-1 min-w-0">
-        {/* Green header — full panel width, small text */}
-        <div className="px-5 py-2.5" style={{ background: '#3D5A35' }}>
+        {/* Green header — full panel width, tight vertical padding */}
+        <div className="px-5 py-1.5" style={{ background: '#3D5A35' }}>
           <span className="text-[10px] font-semibold uppercase tracking-[0.16em] leading-none"
             style={{ color: 'rgba(240,245,238,0.9)', fontFamily: FONT }}>
             {panel.title}
@@ -2174,24 +2175,21 @@ function VisCalcPairBlock({ vis }: { vis: VisCalcPair }) {
                     <span className={`${FS} flex-1`} style={{ fontFamily: FONT, color: TX, fontWeight: step.bold ? 600 : 400 }}>
                       {step.label}
                     </span>
-                    <span className={`${FS} w-6 text-center shrink-0`} style={{ fontFamily: FONT, color: `${TX}99` }}>=</span>
-                    <span className={`${FS} flex-1`} style={{ fontFamily: FONT, color: TX, fontWeight: step.bold ? 600 : 400 }}>
+                    <span className={`${FS} w-6 text-center shrink-0`} style={{ fontFamily: FONT, color: `${MUTED}99` }}>=</span>
+                    <span className={`${FS} flex-1`} style={{ fontFamily: FONT, color: MUTED, fontWeight: step.bold ? 600 : 400 }}>
                       {step.value}
                     </span>
                   </div>
                 ) : (
                   // Plain row — fraction numerator/denominator or bold result line
-                  <div className="flex items-baseline">
-                    {/* Indent fraction rows with = prefix on first numerator */}
-                    <span className={`${FS}`}
-                      style={{ fontFamily: FONT, color: step.bold ? TX : `${TX}cc`,
-                        fontWeight: step.bold ? 600 : 400,
-                        borderBottom: step.underline ? '1.5px solid rgba(61,90,53,0.35)' : undefined,
-                        paddingBottom: step.underline ? '1px' : undefined,
-                        display: 'inline-block' }}>
-                      {step.text}
-                    </span>
-                  </div>
+                  <span className={`${FS}`}
+                    style={{ fontFamily: FONT, color: step.bold ? TX : MUTED,
+                      fontWeight: step.bold ? 600 : 400,
+                      borderBottom: step.underline ? '1.5px solid rgba(61,90,53,0.35)' : undefined,
+                      paddingBottom: step.underline ? '1px' : undefined,
+                      display: 'inline-block' }}>
+                    {step.text}
+                  </span>
                 )}
               </div>
             )
@@ -2419,7 +2417,7 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   }
 
   return (
-    <div className="mt-2 w-full overflow-x-auto">
+    <div className="mt-6 w-full overflow-x-auto">
       <svg viewBox={`0 0 ${svgW} ${svgH}`} width="100%"
         style={{ maxWidth: svgW, display: 'block', margin: '0 auto' }}>
         {renderEdges()}

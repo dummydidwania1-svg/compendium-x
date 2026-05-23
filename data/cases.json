@@ -3972,7 +3972,7 @@
     "id": 18,
     "docId": "case-18",
     "title": "Don't Steel From Us",
-    "industry": "Steel Industry",
+    "industry": "Steel",
     "difficulty": "Hard",
     "case_type": "Profitability",
     "company": "Bain & Company",
@@ -5060,13 +5060,13 @@
             { "text": "Fixed Cost", "indent": true, "underline": true },
             { "text": "Selling Price − Variable Cost", "indent": true },
             { "text": "" },
-            { "text": "= ₹40,000", "indent": true, "underline": true },
-            { "text": "    ₹1,000 − ₹500", "indent": true },
+            { "text": "₹40,000", "indent": true, "underline": true },
+            { "text": "₹1,000 − ₹500", "indent": true },
             { "text": "" },
-            { "text": "= ₹40,000", "indent": true, "underline": true },
-            { "text": "    ₹500", "indent": true },
+            { "text": "₹40,000", "indent": true, "underline": true },
+            { "text": "₹500", "indent": true },
             { "text": "" },
-            { "text": "= 80 Items", "bold": true }
+            { "text": "= 80 Items", "bold": true, "indent": true }
           ]
         },
         "right": {
@@ -5084,13 +5084,13 @@
             { "text": "Opportunity Cost", "indent": true, "underline": true },
             { "text": "Selling Price − Variable Cost", "indent": true },
             { "text": "" },
-            { "text": "= ₹5,000", "indent": true, "underline": true },
-            { "text": "    ₹1,000 − ₹500", "indent": true },
+            { "text": "₹5,000", "indent": true, "underline": true },
+            { "text": "₹1,000 − ₹500", "indent": true },
             { "text": "" },
-            { "text": "= ₹5,000", "indent": true, "underline": true },
-            { "text": "    ₹500", "indent": true },
+            { "text": "₹5,000", "indent": true, "underline": true },
+            { "text": "₹500", "indent": true },
             { "text": "" },
-            { "text": "= 10 Items / Day", "bold": true }
+            { "text": "= 10 Items / Day", "bold": true, "indent": true }
           ]
         }
       }
