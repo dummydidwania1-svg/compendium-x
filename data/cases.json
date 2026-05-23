@@ -4909,31 +4909,31 @@
         },
         "one-time-fixed-cost": {
           "id": "one-time-fixed-cost",
-          "label": "One-Time Fixed Cost (₹40,000)",
+          "label": "One-Time Fixed Cost",
           "tone": "leaf",
           "children": []
         },
         "daily-opportunity-cost": {
           "id": "daily-opportunity-cost",
-          "label": "Daily Opportunity Cost (₹5,000/day)",
+          "label": "Daily Opportunity Cost",
           "tone": "leaf",
           "children": []
         },
         "variable-cost-per-unit": {
           "id": "variable-cost-per-unit",
-          "label": "Variable Cost per Unit (₹500/unit)",
+          "label": "Variable Cost per Unit",
           "tone": "leaf",
           "children": []
         },
         "direct-revenue": {
           "id": "direct-revenue",
-          "label": "Direct Revenue (Makeup Sales)",
+          "label": "Direct Revenue",
           "tone": "leaf",
           "children": []
         },
         "indirect-revenue": {
           "id": "indirect-revenue",
-          "label": "Indirect Revenue (Apparel Cross-Sell)",
+          "label": "Indirect Revenue",
           "tone": "leaf",
           "children": []
         }
@@ -5048,7 +5048,6 @@
     "visualisations": [
       {
         "type": "calcpair",
-        "header": "Finding the Break-Even Point",
         "left": {
           "title": "A.  Break-Even Point (One-Time Expenditure)",
           "steps": [

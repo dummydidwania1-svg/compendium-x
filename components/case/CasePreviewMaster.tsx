@@ -71,7 +71,7 @@ export type VisCalcStep =
   | { text: string; underline?: boolean; indent?: boolean; bold?: boolean; eq?: false; label?: never; value?: never }
   | { eq: true; label: string; value: string; underline?: boolean; indent?: boolean; bold?: boolean; text?: never }
 export type VisCalcPanel = { title: string; steps: VisCalcStep[] }
-export type VisCalcPair = { type: 'calcpair'; header: string; left: VisCalcPanel; right: VisCalcPanel }
+export type VisCalcPair = { type: 'calcpair'; header?: string; left: VisCalcPanel; right: VisCalcPanel }
 export type Visualisation = VisFormula | VisTable | VisQuadrant | VisDecision | VisCalcPair
 
 export type RecommendationsTableA = { headers: string[]; rows: string[][] }
@@ -2203,12 +2203,14 @@ function VisCalcPairBlock({ vis }: { vis: VisCalcPair }) {
 
   return (
     <div className="mt-8">
-      {/* Section header — gradient divider matching Recommendations */}
-      <div className="mb-4 flex items-center gap-4">
-        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(61,90,53,0.20))' }} />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none" style={{ color: `${TX}80`, fontFamily: FONT }}>{vis.header}</span>
-        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(61,90,53,0.20), transparent)' }} />
-      </div>
+      {/* Section header — only shown if header string provided */}
+      {vis.header && (
+        <div className="mb-4 flex items-center gap-4">
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(61,90,53,0.20))' }} />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none" style={{ color: `${TX}80`, fontFamily: FONT }}>{vis.header}</span>
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(61,90,53,0.20), transparent)' }} />
+        </div>
+      )}
       {/* Two panels side by side — no outer box */}
       <div className="flex items-stretch gap-0">
         <Panel panel={vis.left} />
@@ -3304,7 +3306,14 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         />
                       )}
 
-                      {/* Desktop chart — centers vertically when no recommendations */}
+                      {/* ── Calc pair — before framework tree ── */}
+                      {visualisations?.some(v => v.type === 'calcpair') && (
+                        <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                          <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                        ))}</Reveal>
+                      )}
+
+                      {/* Desktop chart */}
                       <div
                         ref={chartRef}
                         className={(() => {
@@ -3331,20 +3340,13 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         )}
                       </div>
 
-                      {/* Drilldown table visualizations — between chart and formula */}
+                      {/* Drilldown table visualizations */}
                       {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                         <Reveal key={`vis-tbl-d-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
                       ))}
 
-                      {/* ── Formula visualizations — between table and recs ── */}
+                      {/* ── Formula visualizations ── */}
                       {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-
-                      {/* ── Calc pair — above recommendations ── */}
-                      {visualisations?.some(v => v.type === 'calcpair') && (
-                        <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                          <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                        ))}</Reveal>
-                      )}
 
                       {/* ── Recommendations ─────────────── */}
                       {recommendations.length > 0 && (
@@ -3366,11 +3368,18 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                               </Reveal>
                             ))}
                           </ul>
-                          {visualisations?.some(v => v.type === 'decision') && (
+                          {visualisations?.some(v => v.type === 'decision') && (<>
+                            <Reveal>
+                              <div className="mt-10 mb-4 flex items-center gap-4">
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                              </div>
+                            </Reveal>
                             <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                               <VisDecisionBlock key={i} vis={v as VisDecision} />
                             ))}</Reveal>
-                          )}
+                          </>)}
                         </div>
                       )}
                       {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3397,24 +3406,24 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 {NOTES.map(n => <NoteCard key={n.title} title={n.title} items={n.items} />)}
               </div>
 
+              {/* Calc pair — before framework tree (mobile) */}
+              {visualisations?.some(v => v.type === 'calcpair') && (
+                <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                  <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                ))}</Reveal>
+              )}
               <Reveal>
                 <div className="space-y-3">
                   <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds}
                     onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                 </div>
               </Reveal>
-              {/* Mobile drilldown table — between chart and formula */}
+              {/* Mobile drilldown table */}
               {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                 <Reveal key={`vis-tbl-m-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
               ))}
-              {/* Formula — mobile, between table and recs */}
+              {/* Formula — mobile */}
               {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-              {/* Calc pair — above recommendations */}
-              {visualisations?.some(v => v.type === 'calcpair') && (
-                <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                  <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                ))}</Reveal>
-              )}
               {recommendations.length > 0 && (
                 <div className="mt-12">
                   <Reveal>
@@ -3434,11 +3443,18 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       </Reveal>
                     ))}
                   </ul>
-                  {visualisations?.some(v => v.type === 'decision') && (
+                  {visualisations?.some(v => v.type === 'decision') && (<>
+                    <Reveal>
+                      <div className="mt-10 mb-4 flex items-center gap-4">
+                        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
+                        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                      </div>
+                    </Reveal>
                     <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                       <VisDecisionBlock key={i} vis={v as VisDecision} />
                     ))}</Reveal>
-                  )}
+                  </>)}
                 </div>
               )}
               {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3805,6 +3821,12 @@ export function CaseInterviewerMaster({
                         {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
+                        {/* Calc pair — before framework tree (interviewer) */}
+                        {visualisations?.some(v => v.type === 'calcpair') && (
+                          <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                            <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                          ))}</Reveal>
+                        )}
                         <div ref={chartRef} className={(() => {
                           const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
@@ -3824,18 +3846,12 @@ export function CaseInterviewerMaster({
                             <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                           )}
                         </div>
-                        {/* Drilldown table — between chart and formula */}
+                        {/* Drilldown table */}
                         {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                           <Reveal key={`vis-tbl-id-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
                         ))}
-                        {/* ── Formula — between table and recs ── */}
+                        {/* Formula */}
                         {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-                        {/* Calc pair — above recommendations */}
-                        {visualisations?.some(v => v.type === 'calcpair') && (
-                          <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                            <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                          ))}</Reveal>
-                        )}
                         {recommendations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
@@ -3855,11 +3871,18 @@ export function CaseInterviewerMaster({
                                 </Reveal>
                               ))}
                             </ul>
-                            {visualisations?.some(v => v.type === 'decision') && (
+                            {visualisations?.some(v => v.type === 'decision') && (<>
+                              <Reveal>
+                                <div className="mt-10 mb-4 flex items-center gap-4">
+                                  <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
+                                  <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                                </div>
+                              </Reveal>
                               <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                                 <VisDecisionBlock key={i} vis={v as VisDecision} />
                               ))}</Reveal>
-                            )}
+                            </>)}
                           </div>
                         )}
                         {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3884,6 +3907,12 @@ export function CaseInterviewerMaster({
                 <div className="mb-6 grid gap-3 sm:grid-cols-3">
                   {NOTES.map(n => <NoteCard key={n.title} title={n.title} items={n.items} />)}
                 </div>
+                {/* Calc pair — before framework tree (interviewer mobile) */}
+                {visualisations?.some(v => v.type === 'calcpair') && (
+                  <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                    <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                  ))}</Reveal>
+                )}
                 <Reveal>
                   <div className="space-y-3">
                     <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds} onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
@@ -3894,12 +3923,6 @@ export function CaseInterviewerMaster({
                   <Reveal key={`vis-tbl-im-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
                 ))}
                 {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-                {/* Calc pair — above recommendations */}
-                {visualisations?.some(v => v.type === 'calcpair') && (
-                  <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                    <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                  ))}</Reveal>
-                )}
                 {recommendations.length > 0 && (
                   <div className="mt-12">
                     <Reveal>
@@ -3919,11 +3942,18 @@ export function CaseInterviewerMaster({
                         </Reveal>
                       ))}
                     </ul>
-                    {visualisations?.some(v => v.type === 'decision') && (
+                    {visualisations?.some(v => v.type === 'decision') && (<>
+                      <Reveal>
+                        <div className="mt-10 mb-4 flex items-center gap-4">
+                          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
+                          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                        </div>
+                      </Reveal>
                       <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                         <VisDecisionBlock key={i} vis={v as VisDecision} />
                       ))}</Reveal>
-                    )}
+                    </>)}
                   </div>
                 )}
                 {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
