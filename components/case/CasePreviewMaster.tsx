@@ -3334,12 +3334,12 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                               <VisDecisionBlock key={i} vis={v as VisDecision} />
                             ))}</Reveal>
                           )}
-                          {visualisations?.some(v => v.type === 'calcpair') && (
-                            <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                              <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                            ))}</Reveal>
-                          )}
                         </div>
+                      )}
+                      {visualisations?.some(v => v.type === 'calcpair') && (
+                        <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                          <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                        ))}</Reveal>
                       )}
                       {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                         <Reveal key={`vis-qd-d-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
@@ -3401,12 +3401,12 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       <VisDecisionBlock key={i} vis={v as VisDecision} />
                     ))}</Reveal>
                   )}
-                  {visualisations?.some(v => v.type === 'calcpair') && (
-                    <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                      <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                    ))}</Reveal>
-                  )}
                 </div>
+              )}
+              {visualisations?.some(v => v.type === 'calcpair') && (
+                <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                  <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                ))}</Reveal>
               )}
               {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                 <Reveal key={`vis-qd-m-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
@@ -3821,12 +3821,12 @@ export function CaseInterviewerMaster({
                                 <VisDecisionBlock key={i} vis={v as VisDecision} />
                               ))}</Reveal>
                             )}
-                            {visualisations?.some(v => v.type === 'calcpair') && (
-                              <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                                <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                              ))}</Reveal>
-                            )}
                           </div>
+                        )}
+                        {visualisations?.some(v => v.type === 'calcpair') && (
+                          <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                            <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                          ))}</Reveal>
                         )}
                         {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                           <Reveal key={`vis-qd-id-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
@@ -3884,12 +3884,12 @@ export function CaseInterviewerMaster({
                         <VisDecisionBlock key={i} vis={v as VisDecision} />
                       ))}</Reveal>
                     )}
-                    {visualisations?.some(v => v.type === 'calcpair') && (
-                      <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                        <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                      ))}</Reveal>
-                    )}
                   </div>
+                )}
+                {visualisations?.some(v => v.type === 'calcpair') && (
+                  <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                    <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                  ))}</Reveal>
                 )}
                 {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                   <Reveal key={`vis-qd-im-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
