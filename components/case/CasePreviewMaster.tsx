@@ -3307,11 +3307,18 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       )}
 
                       {/* ── Calc pair — before framework tree ── */}
-                      {visualisations?.some(v => v.type === 'calcpair') && (
+                      {visualisations?.some(v => v.type === 'calcpair') && (<>
                         <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
                           <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
                         ))}</Reveal>
-                      )}
+                        <Reveal>
+                          <div className="mt-10 mb-0 flex items-center gap-4">
+                            <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Framework</span>
+                            <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                          </div>
+                        </Reveal>
+                      </>)}
 
                       {/* Desktop chart */}
                       <div
@@ -3407,11 +3414,18 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
               </div>
 
               {/* Calc pair — before framework tree (mobile) */}
-              {visualisations?.some(v => v.type === 'calcpair') && (
+              {visualisations?.some(v => v.type === 'calcpair') && (<>
                 <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
                   <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
                 ))}</Reveal>
-              )}
+                <Reveal>
+                  <div className="mt-10 mb-0 flex items-center gap-4">
+                    <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Framework</span>
+                    <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                  </div>
+                </Reveal>
+              </>)}
               <Reveal>
                 <div className="space-y-3">
                   <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds}
@@ -3822,11 +3836,18 @@ export function CaseInterviewerMaster({
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
                         {/* Calc pair — before framework tree (interviewer) */}
-                        {visualisations?.some(v => v.type === 'calcpair') && (
+                        {visualisations?.some(v => v.type === 'calcpair') && (<>
                           <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
                             <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
                           ))}</Reveal>
-                        )}
+                          <Reveal>
+                            <div className="mt-10 mb-0 flex items-center gap-4">
+                              <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Framework</span>
+                              <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                            </div>
+                          </Reveal>
+                        </>)}
                         <div ref={chartRef} className={(() => {
                           const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
@@ -3908,11 +3929,18 @@ export function CaseInterviewerMaster({
                   {NOTES.map(n => <NoteCard key={n.title} title={n.title} items={n.items} />)}
                 </div>
                 {/* Calc pair — before framework tree (interviewer mobile) */}
-                {visualisations?.some(v => v.type === 'calcpair') && (
+                {visualisations?.some(v => v.type === 'calcpair') && (<>
                   <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
                     <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
                   ))}</Reveal>
-                )}
+                  <Reveal>
+                    <div className="mt-10 mb-0 flex items-center gap-4">
+                      <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Framework</span>
+                      <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                    </div>
+                  </Reveal>
+                </>)}
                 <Reveal>
                   <div className="space-y-3">
                     <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds} onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
