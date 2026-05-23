@@ -1912,21 +1912,33 @@ function VisTableInline({ vis }: { vis: VisTable }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Visualization: Generic table
+   Visualization: Generic table (drilldown) — same styling as VisTableInline
    ═══════════════════════════════════════════════════════════ */
 function VisTableBlock({ vis }: { vis: VisTable }) {
-  // rows may be serialized as a JSON string by the Firestore import (Firestore rejects arrays-of-arrays)
   const rows: string[][] = typeof vis.rows === 'string' ? JSON.parse(vis.rows) : vis.rows
+  const headerStyle: React.CSSProperties = {
+    fontFamily: "'Work Sans', sans-serif",
+    fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
+    color: '#f0f5ee', background: '#3D5A35',
+  }
+  const colCount = vis.columns.length
+  const dataColCount = colCount - 1
   return (
     <div className="pt-16">
       <VisDivider label={vis.title} />
-      <div className="w-full overflow-x-auto rounded-xl border border-[#3D5A35]/10" style={{ background: 'rgba(255,248,240,0.6)' }}>
-        <table className="w-full text-[13px] border-collapse">
+      <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
+        <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '30%' }} />
+            {Array.from({ length: dataColCount }).map((_, i) => (
+              <col key={i} style={{ width: `${70 / dataColCount}%` }} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
               {vis.columns.map((col, i) => (
-                <th key={i} className="px-3 py-2.5 text-left border-b border-[#3D5A35]/12"
-                  style={{ background: 'rgba(61,90,53,0.06)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#3D5A35' }}>
+                <th key={i} className="px-4 py-2"
+                  style={{ ...headerStyle, textAlign: i === 0 ? 'left' : 'center', borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined }}>
                   {col}
                 </th>
               ))}
@@ -1934,10 +1946,16 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
           </thead>
           <tbody>
             {rows.map((row, ri) => (
-              <tr key={ri} style={{ background: ri % 2 === 1 ? 'rgba(59,47,47,0.025)' : 'transparent' }}>
+              <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
                 {row.map((cell, ci) => (
-                  <td key={ci} className="px-3 py-2.5 border-b border-[#3D5A35]/06 text-[#3B2F2F] leading-relaxed align-top"
-                    style={{ fontWeight: ci === 0 ? 500 : 400 }}>
+                  <td key={ci} className="px-4 py-1.5 align-middle"
+                    style={{
+                      fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: ci === 0 ? 500 : 400,
+                      color: '#3B2F2F', lineHeight: 1.5,
+                      textAlign: ci === 0 ? 'left' : 'center',
+                      borderTop: '1px solid rgba(61,90,53,0.08)',
+                      borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
+                    }}>
                     {cell}
                   </td>
                 ))}
@@ -2903,7 +2921,12 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         )}
                       </div>
 
-                      {/* ── Formula visualizations — between chart and recs ── */}
+                      {/* Drilldown table visualizations — between chart and formula */}
+                      {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
+                        <Reveal key={`vis-tbl-d-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
+                      ))}
+
+                      {/* ── Formula visualizations — between table and recs ── */}
                       {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
 
                       {/* ── Recommendations ─────────────── */}
@@ -2928,10 +2951,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                           </ul>
                         </div>
                       )}
-                      {/* Drilldown visualizations */}
-                      {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
-                        <Reveal key={`vis-tbl-d-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
-                      ))}
+                      {/* (table already rendered above) */}
                       {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                         <Reveal key={`vis-qd-d-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
                       ))}
@@ -2962,7 +2982,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                     onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                 </div>
               </Reveal>
-              {/* Formula — mobile, between chart and recs */}
+              {/* Mobile drilldown table — between chart and formula */}
+              {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
+                <Reveal key={`vis-tbl-m-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
+              ))}
+              {/* Formula — mobile, between table and recs */}
               {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
               {recommendations.length > 0 && (
                 <div className="mt-12">
@@ -2985,10 +3009,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                   </ul>
                 </div>
               )}
-              {/* Mobile drilldown visualizations */}
-              {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
-                <Reveal key={`vis-tbl-m-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
-              ))}
+              {/* (table already rendered above) */}
               {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                 <Reveal key={`vis-qd-m-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
               ))}
@@ -3372,7 +3393,11 @@ export function CaseInterviewerMaster({
                             <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                           )}
                         </div>
-                        {/* ── Formula — between chart and recs ── */}
+                        {/* Drilldown table — between chart and formula */}
+                        {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
+                          <Reveal key={`vis-tbl-id-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
+                        ))}
+                        {/* ── Formula — between table and recs ── */}
                         {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
                         {recommendations.length > 0 && (
                           <div className="pt-16">
@@ -3395,10 +3420,7 @@ export function CaseInterviewerMaster({
                             </ul>
                           </div>
                         )}
-                        {/* Drilldown visualizations */}
-                        {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
-                          <Reveal key={`vis-tbl-id-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
-                        ))}
+                        {/* (table already rendered above) */}
                         {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                           <Reveal key={`vis-qd-id-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
                         ))}
@@ -3426,6 +3448,11 @@ export function CaseInterviewerMaster({
                     <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds} onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                   </div>
                 </Reveal>
+                {/* Mobile interviewer: table before formula before recs */}
+                {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
+                  <Reveal key={`vis-tbl-im-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
+                ))}
+                {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
                 {recommendations.length > 0 && (
                   <div className="mt-12">
                     <Reveal>
@@ -3447,10 +3474,7 @@ export function CaseInterviewerMaster({
                     </ul>
                   </div>
                 )}
-                {/* Mobile drilldown visualizations */}
-                {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
-                  <Reveal key={`vis-tbl-im-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
-                ))}
+                {/* (table and formula already rendered above) */}
                 {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                   <Reveal key={`vis-qd-im-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
                 ))}
