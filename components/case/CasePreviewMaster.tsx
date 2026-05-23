@@ -1978,8 +1978,8 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
         </table>
       </div>
       {vis.insight && (
-        <p className="mt-2.5 pl-1 text-[13px] leading-relaxed text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>
-          <span className="font-semibold">Key Insight: </span>{vis.insight}
+        <p className="mt-2 pl-1 text-[12px] leading-relaxed italic text-[#3B2F2F]/50" style={{ fontFamily: "'Newsreader', serif" }}>
+          <span className="not-italic font-medium text-[#3B2F2F]/60">Key Insight: </span>{vis.insight}
         </p>
       )}
     </div>
