@@ -4785,33 +4785,85 @@
           "items": [
             "Both domestic and international?",
             "Is the decline specific to certain locations?",
-            "What are the other service offerings beyond ticket sales?",
-            "Since it is a low-cost operator, can I assume there is only economy class?",
-            "Since when has the profitability decline been happening, and what is the magnitude of the decline?",
-            "Have other airlines reported a similar drop in profits?"
+            "Other service offerings?",
+            "Does it have only economy class?"
           ]
         },
         {
           "title": "Keep In Mind",
           "items": [
-            "Ask if issue is company-specific or industry-wide",
+            "Ask early if issue is company-specific or industry-wide",
             "Map flight path to isolate cost drivers"
           ]
         },
         {
           "title": "Brownie Points",
           "items": [
-            "The environmental impact of the company's actions while giving recommendations."
+            "Environmental impact of company's actions while giving recommendations."
           ]
         }
       ]
     },
     "visualisations": [
       {
-        "id": "recommendation-decision-logic",
-        "title": "Recommendation Decision Logic",
-        "type": "mermaid",
-        "diagram": "flowchart TD\n    A[\"Should the Airline<br>Pay the AAI Priority Fee?\"] --> B{\"Fee < Fuel Cost<br>of Extra Circling?\"}\n    B -->|\"Yes\"| C[\"Pay the Fee ✓<br>Net cost saving\"]\n    B -->|\"No\"| D{\"Customer Churn<br>Risk from Delays?\"}\n    D -->|\"High\"| E[\"Pay the Fee ✓<br>Protect revenue\"]\n    D -->|\"Low\"| F[\"Defer Payment<br>Monitor situation\"]\n    C --> G[\"Also consider:<br>Environmental benefit<br>of reduced circling\"]\n    E --> G"
+        "type": "decision",
+        "title": "Decision Logic",
+        "rootId": "A",
+        "nodes": [
+          {
+            "id": "A",
+            "label": "Pay AAI\nPriority Fee?",
+            "kind": "rect",
+            "chosen": true,
+            "children": [{ "nodeId": "B" }]
+          },
+          {
+            "id": "B",
+            "label": "Fee < Fuel Cost\nof Circling?",
+            "kind": "diamond",
+            "chosen": true,
+            "children": [
+              { "edgeLabel": "Yes", "nodeId": "C" },
+              { "edgeLabel": "No", "nodeId": "D" }
+            ]
+          },
+          {
+            "id": "C",
+            "label": "Pay the Fee ✓\nNet cost saving",
+            "kind": "terminal",
+            "chosen": true,
+            "children": [{ "nodeId": "G" }]
+          },
+          {
+            "id": "D",
+            "label": "Churn Risk\nfrom Delays?",
+            "kind": "diamond",
+            "chosen": false,
+            "children": [
+              { "edgeLabel": "High", "nodeId": "E" },
+              { "edgeLabel": "Low", "nodeId": "F" }
+            ]
+          },
+          {
+            "id": "E",
+            "label": "Pay the Fee ✓\nProtect revenue",
+            "kind": "terminal",
+            "chosen": false,
+            "children": [{ "nodeId": "G" }]
+          },
+          {
+            "id": "F",
+            "label": "Defer Payment\nMonitor situation",
+            "kind": "terminal",
+            "chosen": false
+          },
+          {
+            "id": "G",
+            "label": "Consider:\nEnvironmental benefit",
+            "kind": "terminal",
+            "chosen": true
+          }
+        ]
       }
     ],
     "framework": "Candidate: That's interesting. Can I assume the airline to be similar to Spice Jet? Also, does the airline operate both domestic and international flights? What are our other service offerings? Since it is a low-cost operator, can I assume there is only economy class?\nInterviewer: Yes, it is similar to Spice Jet. For the purpose of this case, you can assume that the airline only operates domestic flights. They have a presence across the country. Yes, the operator only offers economy class.\nCandidate: Alright. I would like to understand the decline in profitability a little better. Since when have we been facing this issue and what is the magnitude of decline? Have other airlines reported a similar drop? Is the issue specific to certain locations?\nInterviewer: It is a marginal decline in profits and has been happening for a couple of months now. Other operators don't seem to be facing this issue. We are facing the decline across the country.\nCandidate: It seems that the issue is only affecting our airline then. Interesting. Declining profits could be driven either by declining revenues or increasing costs. I would first like to break down revenues into\nRevenues = Number of Flights * Number of Seats/Flight * Occupancy * Price/Ticket\nand see if there's been a change in any of these factors over the last two months. This is the revenue from ticket sales. Other revenue streams would include value-added services, on-flight food and beverages, merchandise purchases and advertisements.\nInterviewer: Fair enough. None of these factors have seen a significant change. What would you like to look at next?\nCandidate: Okay. It is clear that revenues have not seen a decline. I would now like to look at the major cost drivers and benchmark them with our competitors. Once we identify which costs have seen a rise, we can dive deeper into why this has been happening.\nInterviewer: Makes sense. What is your question?\nCandidate: I would like to know if the increase has been in fixed costs or variable costs. Fixed costs include costs like lease fees paid for the carriers, airport charges (hangar, space for check-in counters, fee for boarding gates, etc), employee compensation and back-end administrative costs. Major variable costs would include cost of fuel, commission paid to airports, etc.\nInterviewer: Great. There has been a significant increase in the amount we're paying for fuel. Why don't you analyse why this may be happening?\nCandidate: Sure. Apart from flights, we may be needing fuel for our passenger buses and cargo trucks as well. Do we know where the increase has been?\nInterviewer: Good question. Fuel consumption by flights has increased.\nCandidate: The amount we are paying for fuel would be determined by\nCost of Fuel = Number of flights * Number of kilometres/flight * Number of litres/kilometre * Cost/litre + Cost of wastage\nCandidate: Since the number of flights has not changed, my hypothesis is that number of kilometres/flight has seen an increase. It is unlikely that our mileage has changed in the last two months and any changes in fuel prices would have affected our competitors as well. Another possible reason would be an increase in wastage.\nInterviewer: Excellent. The number of kilometres/flight has increased.\nCandidate: I would like to analyse the flight path now. According to my personal experience, the plane first taxis to the runway. After this, the plane takes off upon reaching a suitable speed. Once it is airborne, the plane ascends until it reaches a point of stabilisation. Few hours later, we reach our destination and choose a landing point. Before descending, we circle the airport waiting for approval from the Air Traffic Control. After obtaining permission, we descend and touchdown. We finally decelerate and taxi to the drop point. Do we know at what stage our distance travelled has gone up?\nInterviewer: You seem to know a lot about airlines! Perfect. Our circling time has increased.\nCandidate: Interesting. There are three things I would like to analyse here. The Air Traffic Control may not be giving us clearance to land as promptly as before. It is also possible that we are picking up the signal late due to some faulty or outdated equipment in our planes. Lastly, I want to know if the time between receiving the signal and landing is longer than before due to the lack of expertise of our flight crew. My guess is that we are not facing this problem since our entire fleet is facing this problem.\nInterviewer: Correct.\nCandidate: Okay. This could be due to increase in air traffic during our landing times due to which waiting time has increased. It could also be the result of policy changes by the Airport Authorities where higher circling time is required. However, since we are the only airline facing the issue, I would like to know if other airlines are being favoured for some reason.\nInterviewer: Spot on! Two months ago, the Airport Authority of India started a priority-based system wherein airlines paying a certain fee will be allowed to land first. The CEO is wondering if we should start doing the same. What would you recommend?\nCandidate: We must first compare the fee to be paid with the cost incurred for the additional fuel consumed to determine which alternative would be more cost-effective. However, longer flight durations might lead to customers choosing our competitors in the future which could hurt our revenues. Also, from an environmental standpoint, it makes sense to pay the fee.\nInterviewer: Makes sense. We can end the case here.\n\nThe King of Bad Times Framework & Recommendations\nDECLINING PROFITS OF A LOW-COST AIRLINE\nClarifying Questions: Both domestic and international? Is the decline specific to certain locations?\nBrownie Points: The environmental impact of the company's actions while giving recommendations.\nKeep In Mind: Drawing the process journey helps isolate the problem quicker.\nRECOMMENDATIONS: Doing a cost-benefit analysis of paying the fee\nKeeping in mind the environment impact of the company's actions"

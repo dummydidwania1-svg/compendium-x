@@ -54,7 +54,20 @@ export type VisQuadrant = {
   points: { label: string; x: number; y: number }[]
   priorityOrder?: string[]
 }
-export type Visualisation = VisFormula | VisTable | VisQuadrant
+export type VisDecisionNode = {
+  id: string
+  label: string
+  kind: 'rect' | 'diamond' | 'terminal'
+  chosen?: boolean   // true = interviewee's actual path
+  children?: { edgeLabel?: string; nodeId: string }[]
+}
+export type VisDecision = {
+  type: 'decision'
+  title?: string
+  nodes: VisDecisionNode[]
+  rootId: string
+}
+export type Visualisation = VisFormula | VisTable | VisQuadrant | VisDecision
 
 export type RecommendationsTableA = { headers: string[]; rows: string[][] }
 export type RecommendationsTableB = { framework: string; columns: string[]; dimensionHeader?: string; rows: { dimension: string; shortTerm: string; longTerm: string }[] }
@@ -2127,6 +2140,210 @@ function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Visualization: Decision tree (flowchart)
+   ═══════════════════════════════════════════════════════════ */
+function VisDecisionBlock({ vis }: { vis: VisDecision }) {
+  // ── Layout constants ──────────────────────────────────────
+  const NODE_W = 110
+  const NODE_H = 36
+  const DIAMOND_W = 100
+  const DIAMOND_H = 44
+  const H_GAP = 36   // horizontal gap between siblings
+  const V_GAP = 56   // vertical gap between levels
+
+  type LayoutNode = VisDecisionNode & { x: number; y: number; w: number; h: number; subtreeW: number }
+
+  const nodeMap = new Map<string, VisDecisionNode>(vis.nodes.map(n => [n.id, n]))
+
+  function subtreeWidth(id: string): number {
+    const n = nodeMap.get(id)!
+    if (!n.children || n.children.length === 0) {
+      return n.kind === 'diamond' ? DIAMOND_W : NODE_W
+    }
+    const childrenW = n.children.reduce((sum, c, i) =>
+      sum + subtreeWidth(c.nodeId) + (i > 0 ? H_GAP : 0), 0)
+    const selfW = n.kind === 'diamond' ? DIAMOND_W : NODE_W
+    return Math.max(selfW, childrenW)
+  }
+
+  function layout(id: string, cx: number, cy: number, result: Map<string, LayoutNode>) {
+    const n = nodeMap.get(id)!
+    const sw = subtreeWidth(id)
+    const w = n.kind === 'diamond' ? DIAMOND_W : NODE_W
+    const h = n.kind === 'diamond' ? DIAMOND_H : NODE_H
+    result.set(id, { ...n, x: cx, y: cy, w, h, subtreeW: sw })
+
+    if (!n.children || n.children.length === 0) return
+
+    const childrenTotalW = n.children.reduce((sum, c, i) =>
+      sum + subtreeWidth(c.nodeId) + (i > 0 ? H_GAP : 0), 0)
+    let childX = cx - childrenTotalW / 2
+    const childY = cy + h / 2 + V_GAP
+
+    for (const c of n.children) {
+      const csw = subtreeWidth(c.nodeId)
+      layout(c.nodeId, childX + csw / 2, childY, result)
+      childX += csw + H_GAP
+    }
+  }
+
+  const layoutMap = new Map<string, LayoutNode>()
+  layout(vis.rootId, 0, 0, layoutMap)
+
+  // Normalise to top-left = (0,0) with padding
+  const PAD = 24
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  layoutMap.forEach(n => {
+    minX = Math.min(minX, n.x - n.w / 2)
+    minY = Math.min(minY, n.y - n.h / 2)
+    maxX = Math.max(maxX, n.x + n.w / 2)
+    maxY = Math.max(maxY, n.y + n.h / 2)
+  })
+  const svgW = maxX - minX + PAD * 2
+  const svgH = maxY - minY + PAD * 2
+  const ox = PAD - minX, oy = PAD - minY
+
+  // Design tokens
+  const GREEN = '#3D5A35'
+  const GREEN_LIGHT = 'rgba(61,90,53,0.06)'
+  const GREEN_BORDER = 'rgba(61,90,53,0.22)'
+  const MUTED_BG = 'rgba(255,248,240,0.8)'
+  const MUTED_BORDER = 'rgba(61,90,53,0.12)'
+  const MUTED_TEXT = '#5C4033'
+  const EDGE_CHOSEN = GREEN
+  const EDGE_MUTED = 'rgba(61,90,53,0.22)'
+  const FONT = "'Work Sans', sans-serif"
+
+  // Which edges are on the chosen path?
+  const chosenNodes = new Set(vis.nodes.filter(n => n.chosen).map(n => n.id))
+  function edgeChosen(parentId: string, childId: string) {
+    return chosenNodes.has(parentId) && chosenNodes.has(childId)
+  }
+
+  function renderNode(n: LayoutNode) {
+    const x = n.x + ox, y = n.y + oy
+    const isChosen = n.chosen
+
+    if (n.kind === 'diamond') {
+      const hw = n.w / 2, hh = n.h / 2
+      const pts = `${x},${y - hh} ${x + hw},${y} ${x},${y + hh} ${x - hw},${y}`
+      return (
+        <g key={n.id}>
+          <polygon points={pts}
+            fill={isChosen ? GREEN_LIGHT : MUTED_BG}
+            stroke={isChosen ? GREEN : MUTED_BORDER}
+            strokeWidth={isChosen ? 1.5 : 1}
+          />
+          <text x={x} y={y} textAnchor="middle" dominantBaseline="middle"
+            fontSize={10} fontFamily={FONT} fontWeight={isChosen ? 500 : 400}
+            fill={isChosen ? GREEN : MUTED_TEXT}>
+            {n.label.split('\n').map((line, i, arr) => (
+              <tspan key={i} x={x} dy={i === 0 ? -(arr.length - 1) * 6 : 12}>{line}</tspan>
+            ))}
+          </text>
+        </g>
+      )
+    }
+
+    if (n.kind === 'terminal') {
+      const hw = n.w / 2, hh = n.h / 2
+      return (
+        <g key={n.id}>
+          <rect x={x - hw} y={y - hh} width={n.w} height={n.h} rx={4}
+            fill={isChosen ? GREEN : MUTED_BG}
+            stroke={isChosen ? GREEN : MUTED_BORDER}
+            strokeWidth={isChosen ? 1.5 : 1}
+          />
+          <text x={x} y={y} textAnchor="middle" dominantBaseline="middle"
+            fontSize={10} fontFamily={FONT} fontWeight={isChosen ? 600 : 400}
+            fill={isChosen ? '#f0f5ee' : MUTED_TEXT}>
+            {n.label.split('\n').map((line, i, arr) => (
+              <tspan key={i} x={x} dy={i === 0 ? -(arr.length - 1) * 6 : 12}>{line}</tspan>
+            ))}
+          </text>
+        </g>
+      )
+    }
+
+    // rect (default)
+    const hw = n.w / 2, hh = n.h / 2
+    return (
+      <g key={n.id}>
+        <rect x={x - hw} y={y - hh} width={n.w} height={n.h} rx={4}
+          fill={isChosen ? GREEN_LIGHT : MUTED_BG}
+          stroke={isChosen ? GREEN : MUTED_BORDER}
+          strokeWidth={isChosen ? 1.5 : 1}
+        />
+        <text x={x} y={y} textAnchor="middle" dominantBaseline="middle"
+          fontSize={10} fontFamily={FONT} fontWeight={isChosen ? 500 : 400}
+          fill={isChosen ? GREEN : MUTED_TEXT}>
+          {n.label.split('\n').map((line, i, arr) => (
+            <tspan key={i} x={x} dy={i === 0 ? -(arr.length - 1) * 6 : 12}>{line}</tspan>
+          ))}
+        </text>
+      </g>
+    )
+  }
+
+  function renderEdges() {
+    const edges: React.ReactNode[] = []
+    layoutMap.forEach(parent => {
+      if (!parent.children) return
+      const px = parent.x + ox, py = parent.y + oy
+      parent.children.forEach(c => {
+        const child = layoutMap.get(c.nodeId)!
+        const cx2 = child.x + ox, cy2 = child.y + oy
+        const chosen = edgeChosen(parent.id, c.nodeId)
+        const x1 = px, y1 = py + parent.h / 2
+        const x2 = cx2, y2 = cy2 - child.h / 2
+        const midY = (y1 + y2) / 2
+        const d = `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`
+        edges.push(
+          <g key={`${parent.id}-${c.nodeId}`}>
+            <path d={d} fill="none"
+              stroke={chosen ? EDGE_CHOSEN : EDGE_MUTED}
+              strokeWidth={chosen ? 1.5 : 1}
+              strokeDasharray={chosen ? 'none' : '3 3'}
+            />
+            {/* arrowhead */}
+            <polygon
+              points={`${x2},${y2} ${x2 - 4},${y2 - 6} ${x2 + 4},${y2 - 6}`}
+              fill={chosen ? EDGE_CHOSEN : EDGE_MUTED}
+            />
+            {/* edge label */}
+            {c.edgeLabel && (
+              <text x={(x1 + x2) / 2 + (x2 > x1 ? 6 : -6)} y={midY - 4}
+                textAnchor={x2 > x1 ? 'start' : 'end'}
+                fontSize={9} fontFamily={FONT}
+                fill={chosen ? GREEN : 'rgba(92,64,51,0.45)'}>
+                {c.edgeLabel}
+              </text>
+            )}
+          </g>
+        )
+      })
+    })
+    return edges
+  }
+
+  return (
+    <div className="pt-10">
+      {vis.title && <VisDivider label={vis.title} />}
+      <div className="w-full overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${svgW} ${svgH}`}
+          width="100%"
+          style={{ maxWidth: svgW, display: 'block', margin: '0 auto' }}
+        >
+          {renderEdges()}
+          {Array.from(layoutMap.values()).map(renderNode)}
+        </svg>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    Visualization: Recommendations table (3 variants)
    ═══════════════════════════════════════════════════════════ */
 function RecTableBlock({ data }: { data: RecommendationsTable }) {
@@ -3007,7 +3224,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       <div
                         ref={chartRef}
                         className={(() => {
-                          const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant'))
+                          const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
                           if (!hasContent) return 'flex items-center'
                           if (chartMaxDepth === 0) return 'flex-1 flex items-center'
@@ -3063,6 +3280,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       )}
                       {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                         <Reveal key={`vis-qd-d-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
+                      ))}
+                      {visualisations?.filter(v => v.type === 'decision').map((v, i) => (
+                        <Reveal key={`vis-dec-d-${i}`}><VisDecisionBlock vis={v as VisDecision} /></Reveal>
                       ))}
                       {recommendationsTable && (
                         <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
@@ -3120,6 +3340,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
               )}
               {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                 <Reveal key={`vis-qd-m-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
+              ))}
+              {visualisations?.filter(v => v.type === 'decision').map((v, i) => (
+                <Reveal key={`vis-dec-m-${i}`}><VisDecisionBlock vis={v as VisDecision} /></Reveal>
               ))}
               {recommendationsTable && (
                 <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
@@ -3483,7 +3706,7 @@ export function CaseInterviewerMaster({
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
                         <div ref={chartRef} className={(() => {
-                          const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant'))
+                          const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
                           if (!hasContent) return 'flex items-center'
                           if (chartMaxDepth === 0) return 'flex-1 flex items-center'
@@ -3530,6 +3753,9 @@ export function CaseInterviewerMaster({
                         )}
                         {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                           <Reveal key={`vis-qd-id-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
+                        ))}
+                        {visualisations?.filter(v => v.type === 'decision').map((v, i) => (
+                          <Reveal key={`vis-dec-id-${i}`}><VisDecisionBlock vis={v as VisDecision} /></Reveal>
                         ))}
                         {recommendationsTable && (
                           <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
@@ -3583,6 +3809,9 @@ export function CaseInterviewerMaster({
                 )}
                 {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                   <Reveal key={`vis-qd-im-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
+                ))}
+                {visualisations?.filter(v => v.type === 'decision').map((v, i) => (
+                  <Reveal key={`vis-dec-im-${i}`}><VisDecisionBlock vis={v as VisDecision} /></Reveal>
                 ))}
                 {recommendationsTable && (
                   <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
