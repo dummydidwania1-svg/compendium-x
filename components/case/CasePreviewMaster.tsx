@@ -2192,8 +2192,8 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
     return { w: Math.max(110, textW + PX * 2), h: Math.max(44, textH + PY * 2) }
   }
 
-  // Compute uniform diamond size — all diamonds in the tree share the same w/h
-  // so they look visually consistent regardless of text length differences
+  // All diamonds share the same size: the largest natural size among all diamonds,
+  // with both w and h independently maximised so neither dimension is ever smaller.
   const uniformDiamondDims = (() => {
     const diamonds = vis.nodes.filter(n => n.kind === 'diamond')
     if (!diamonds.length) return null
@@ -2203,6 +2203,9 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
       if (w > maxW) maxW = w
       if (h > maxH) maxH = h
     }
+    // Re-enforce aspect ratio on the unified dims so the result is still proportional
+    maxH = Math.max(maxH, maxW * 0.82)
+    maxW = Math.max(maxW, maxH / 0.82)
     return { w: maxW, h: maxH }
   })()
 
