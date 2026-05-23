@@ -2148,45 +2148,50 @@ function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
    Visualization: Side-by-side calculation panels
    ═══════════════════════════════════════════════════════════ */
 function VisCalcPairBlock({ vis }: { vis: VisCalcPair }) {
+  const TX  = '#5C4033'          // matches NoteCard body text color
+  const FONT = "'Work Sans', sans-serif"
+  const FS   = 'text-[13px] leading-relaxed'
+
   function Panel({ panel }: { panel: VisCalcPanel }) {
     return (
       <div className="flex-1 min-w-0">
-        {/* Green header row — same treatment as VisTable header */}
-        <div className="px-5 py-2.5" style={{ background: '#3D5A35' }}>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] leading-none" style={{ color: 'rgba(240,245,238,0.85)', fontFamily: "'Work Sans', sans-serif" }}>
+        {/* Green header — width stretches to match the panel's share */}
+        <div className="px-5 py-2.5 rounded-t-lg" style={{ background: '#3D5A35' }}>
+          <span className={`${FS} font-semibold uppercase tracking-[0.16em] leading-none`}
+            style={{ color: 'rgba(240,245,238,0.9)', fontFamily: FONT }}>
             {panel.title}
           </span>
         </div>
         {/* Steps */}
-        <div className="px-5 py-5 space-y-2">
+        <div className="px-5 pt-4 pb-5 space-y-[5px]">
           {panel.steps.map((step, i) => {
-            if (step.text === '') return <div key={i} className="h-2" />
+            if (step.text === '') return <div key={i} className="h-[10px]" />
             return (
-              <div key={i} className={step.indent ? 'pl-5' : ''}>
+              <div key={i} className={step.indent ? 'pl-4' : ''}>
                 {step.eq ? (
-                  // Formula row: label | = | value, all evenly aligned
-                  <div className="flex items-baseline gap-2">
-                    <span className="flex-1 text-[13px] leading-relaxed text-[#3B2F2F]"
-                      style={{ fontFamily: "'Newsreader', serif", fontWeight: step.bold ? 600 : 400,
-                        borderBottom: step.underline ? '1.5px solid rgba(61,90,53,0.4)' : undefined,
-                        paddingBottom: step.underline ? '1px' : undefined }}>
+                  // Eq row: label pinned left | = fixed-width centre | value pinned left
+                  <div className="flex items-baseline">
+                    <span className={`${FS} flex-1`} style={{ fontFamily: FONT, color: TX, fontWeight: step.bold ? 600 : 400 }}>
                       {step.label}
                     </span>
-                    <span className="text-[13px] text-[#5C4033]/60 shrink-0" style={{ fontFamily: "'Work Sans', sans-serif" }}>=</span>
-                    <span className="flex-1 text-[13px] leading-relaxed text-[#3B2F2F]"
-                      style={{ fontFamily: "'Newsreader', serif", fontWeight: step.bold ? 600 : 400 }}>
+                    <span className={`${FS} w-6 text-center shrink-0`} style={{ fontFamily: FONT, color: `${TX}99` }}>=</span>
+                    <span className={`${FS} flex-1`} style={{ fontFamily: FONT, color: TX, fontWeight: step.bold ? 600 : 400 }}>
                       {step.value}
                     </span>
                   </div>
                 ) : (
-                  // Plain row (numerator/denominator lines for fractions)
-                  <p className="text-[13px] leading-relaxed text-[#3B2F2F]"
-                    style={{ fontFamily: "'Newsreader', serif", fontWeight: step.bold ? 600 : 400,
-                      borderBottom: step.underline ? '1.5px solid rgba(61,90,53,0.4)' : undefined,
-                      paddingBottom: step.underline ? '1px' : undefined,
-                      display: 'inline-block' }}>
-                    {step.text}
-                  </p>
+                  // Plain row — fraction numerator/denominator or bold result line
+                  <div className="flex items-baseline">
+                    {/* Indent fraction rows with = prefix on first numerator */}
+                    <span className={`${FS}`}
+                      style={{ fontFamily: FONT, color: step.bold ? TX : `${TX}cc`,
+                        fontWeight: step.bold ? 600 : 400,
+                        borderBottom: step.underline ? '1.5px solid rgba(61,90,53,0.35)' : undefined,
+                        paddingBottom: step.underline ? '1px' : undefined,
+                        display: 'inline-block' }}>
+                      {step.text}
+                    </span>
+                  </div>
                 )}
               </div>
             )
@@ -2198,19 +2203,17 @@ function VisCalcPairBlock({ vis }: { vis: VisCalcPair }) {
 
   return (
     <div className="mt-8">
-      {/* Section header — same gradient divider style as Recommendations */}
-      <div className="mb-5 flex items-center gap-4">
+      {/* Section header — gradient divider matching Recommendations */}
+      <div className="mb-4 flex items-center gap-4">
         <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(61,90,53,0.20))' }} />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{vis.header}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none" style={{ color: `${TX}80`, fontFamily: FONT }}>{vis.header}</span>
         <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(61,90,53,0.20), transparent)' }} />
       </div>
-      {/* Two panels — no outer box, just side by side with gradient center divider */}
-      <div className="flex gap-0">
+      {/* Two panels side by side — no outer box */}
+      <div className="flex items-stretch gap-0">
         <Panel panel={vis.left} />
-        {/* Centre gradient divider */}
-        <div className="flex flex-col items-center justify-stretch px-3 pt-10">
-          <div className="flex-1 w-px" style={{ background: 'linear-gradient(180deg, rgba(61,90,53,0.25) 0%, rgba(61,90,53,0.08) 100%)' }} />
-        </div>
+        {/* Gradient vertical divider */}
+        <div className="w-px mx-4 self-stretch" style={{ background: 'linear-gradient(180deg, rgba(61,90,53,0.30) 0%, rgba(61,90,53,0.06) 100%)' }} />
         <Panel panel={vis.right} />
       </div>
     </div>
