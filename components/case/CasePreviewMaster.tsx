@@ -2149,7 +2149,7 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   const PY = 12         // vertical padding inside node
   const LINE_H = FS * 1.4
   const H_GAP = 60
-  const V_GAP = 68
+  const V_GAP = 36  // clearance between parent bottom edge and child top edge
   const PAD = 24
   const GREEN    = '#3D5A35'
   const MUTED_BG = 'rgba(255,248,240,1)'
@@ -2231,7 +2231,10 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
     let lx = cx - total / 2
     for (const c of n.children) {
       const csw = sw(c.nodeId)
-      layout(c.nodeId, lx + csw / 2, cy + h / 2 + V_GAP, out)
+      const child = nodeMap.get(c.nodeId)!
+      const { h: childH } = effectiveDims(child)
+      // Place child so its top edge is V_GAP below parent's bottom edge
+      layout(c.nodeId, lx + csw / 2, cy + h / 2 + V_GAP + childH / 2, out)
       lx += csw + H_GAP
     }
   }
