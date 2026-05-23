@@ -2135,43 +2135,39 @@ function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
 /* ═══════════════════════════════════════════════════════════
    Visualization: Process map (horizontal step chain)
    ═══════════════════════════════════════════════════════════ */
-function VisProcessBlock({ vis }: { vis: VisProcess }) {
+function VisProcessBlock({ vis, compact }: { vis: VisProcess; compact?: boolean }) {
   return (
     <div className="pt-10">
       <VisDivider label="Process Map" />
-      <div className="w-full overflow-x-auto mt-4">
-        <div className="flex items-stretch justify-between w-full" style={{ minWidth: 'max-content' }}>
+      <div className="w-full mt-4">
+        <div className="flex items-stretch w-full">
           {vis.steps.map((step, i) => (
             <Fragment key={i}>
               {i > 0 && (
-                <div className="flex items-center shrink-0 px-1">
-                  <svg width="32" height="12" viewBox="0 0 32 12" fill="none" className="shrink-0">
-                    <line x1="0" y1="6" x2="26" y2="6" stroke="rgba(61,90,53,0.25)" strokeWidth="1" strokeDasharray="2 2" />
-                    <path d="M24 2.5L29 6L24 9.5" stroke="rgba(61,90,53,0.35)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <div className="flex items-center shrink-0" style={{ width: compact ? 14 : 22 }}>
+                  <svg width={compact ? 14 : 22} height="10" viewBox={`0 0 ${compact ? 14 : 22} 10`} fill="none">
+                    <line x1="0" y1="5" x2={compact ? 9 : 16} y2="5" stroke="rgba(61,90,53,0.25)" strokeWidth="1" strokeDasharray="2 2" />
+                    <path d={compact ? 'M8 2L12 5L8 8' : 'M14 2L19 5L14 8'} stroke="rgba(61,90,53,0.35)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </svg>
                 </div>
               )}
-              <div className="shrink-0 flex-1 rounded-[6px] border flex items-center justify-center text-center px-3 py-2.5"
+              <div className="flex-1 min-w-0 rounded-[6px] border flex items-center justify-center text-center"
                 style={{
-                  minWidth: 72,
+                  padding: compact ? '6px 4px' : '8px 6px',
                   fontFamily: "'Work Sans', sans-serif",
-                  fontSize: 13, fontWeight: step.highlight ? 500 : 400,
-                  lineHeight: 1.4,
+                  fontSize: compact ? 11 : 12,
+                  fontWeight: step.highlight ? 500 : 400,
+                  lineHeight: 1.35,
                   background: step.highlight ? '#3D5A35' : 'rgba(255,248,240,0.8)',
                   borderColor: step.highlight ? '#3D5A35' : 'rgba(61,90,53,0.12)',
-                  color: step.highlight ? '#f0f5ee' : '#3B2F2F',
+                  color: step.highlight ? '#f0f5ee' : '#5C4033',
                 }}>
-                <span>{step.label}</span>
+                <span style={{ wordBreak: 'break-word', hyphens: 'auto' }}>{step.label}</span>
               </div>
             </Fragment>
           ))}
         </div>
       </div>
-      {vis.insight && (
-        <p className="mt-3 text-[12px] leading-relaxed italic text-[#3B2F2F]/50" style={{ fontFamily: "'Newsreader', serif" }}>
-          {vis.insight}
-        </p>
-      )}
     </div>
   )
 }
@@ -3567,7 +3563,7 @@ export function CaseInterviewerMaster({
                         {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
                         {/* ── Process map — above recommendations ── */}
                         {visualisations?.filter(v => v.type === 'process').map((v, i) => (
-                          <Reveal key={`vis-proc-id-${i}`}><VisProcessBlock vis={v as VisProcess} /></Reveal>
+                          <Reveal key={`vis-proc-id-${i}`}><VisProcessBlock vis={v as VisProcess} compact /></Reveal>
                         ))}
                         {recommendations.length > 0 && (
                           <div className="pt-16">
@@ -3624,7 +3620,7 @@ export function CaseInterviewerMaster({
                 {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
                 {/* Process map — above recommendations */}
                 {visualisations?.filter(v => v.type === 'process').map((v, i) => (
-                  <Reveal key={`vis-proc-im-${i}`}><VisProcessBlock vis={v as VisProcess} /></Reveal>
+                  <Reveal key={`vis-proc-im-${i}`}><VisProcessBlock vis={v as VisProcess} compact /></Reveal>
                 ))}
                 {recommendations.length > 0 && (
                   <div className="mt-12">
