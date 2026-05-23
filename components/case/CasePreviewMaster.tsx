@@ -2143,38 +2143,68 @@ function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
    Visualization: Decision tree (flowchart)
    ═══════════════════════════════════════════════════════════ */
 function VisDecisionBlock({ vis }: { vis: VisDecision }) {
-  // ── Exact tokens from framework tree ──────────────────────
-  const NW = 130       // rect / terminal node width
-  const NH = 44        // rect / terminal node height
-  const DW = 120       // diamond width
-  const DH = 52        // diamond height
-  const H_GAP = 48     // horizontal gap between sibling subtrees
-  const V_GAP = 60     // vertical gap between levels
-  const PAD = 28
-  const FS = 12        // font-size matching framework tree
+  const FS = 13         // matches framework tree font-size
   const FONT = "'Work Sans', sans-serif"
-  const GREEN       = '#3D5A35'
-  const MUTED_BG    = 'rgba(255,248,240,1)'
-  const MUTED_BD    = 'rgba(92,64,51,0.08)'
-  const MUTED_TEXT  = '#5C4033'
-  const EDGE_ON     = '#3D5A35'
-  const EDGE_OFF    = 'rgba(92,64,51,0.18)'
+  const PX = 14         // horizontal padding inside node
+  const PY = 10         // vertical padding inside node
+  const LINE_H = FS * 1.35
+  const H_GAP = 56
+  const V_GAP = 64
+  const PAD = 20
+  const GREEN    = '#3D5A35'
+  const MUTED_BG = 'rgba(255,248,240,1)'
+  const MUTED_BD = 'rgba(92,64,51,0.08)'
+  const MUTED_TX = '#5C4033'
+  const EDGE_ON  = '#3D5A35'
+  const EDGE_OFF = 'rgba(92,64,51,0.20)'
+  // Approx char width at 13px Work Sans
+  const CW = FS * 0.56
+
+  // Word-wrap label into lines that fit within innerW pixels
+  function wrap(label: string, innerW: number): string[] {
+    const cpl = Math.max(4, Math.floor(innerW / CW))
+    const result: string[] = []
+    for (const seg of label.split('\n')) {
+      const words = seg.split(' ')
+      let cur = ''
+      for (const w of words) {
+        if (cur && cur.length + 1 + w.length > cpl) { result.push(cur); cur = w }
+        else { cur = cur ? `${cur} ${w}` : w }
+      }
+      if (cur) result.push(cur)
+    }
+    return result.length ? result : ['']
+  }
+
+  // Compute node dimensions from label text
+  function nodeDims(label: string, isDiamond: boolean): { w: number; h: number } {
+    const maxInner = isDiamond ? 96 : 120   // max inner text width
+    const ls = wrap(label, maxInner)
+    const textW = Math.max(...ls.map(l => l.length * CW))
+    const textH = ls.length * LINE_H
+    if (isDiamond) {
+      // diamond: half-diagonals must contain the text with PX/PY padding
+      const hw = textW / 2 + PX + 10
+      const hh = textH / 2 + PY + 8
+      return { w: hw * 2, h: hh * 2 }
+    }
+    return { w: Math.max(100, textW + PX * 2), h: Math.max(40, textH + PY * 2) }
+  }
 
   type LN = VisDecisionNode & { x: number; y: number; w: number; h: number }
   const nodeMap = new Map<string, VisDecisionNode>(vis.nodes.map(n => [n.id, n]))
 
   function sw(id: string): number {
     const n = nodeMap.get(id)!
-    const self = n.kind === 'diamond' ? DW : NW
-    if (!n.children?.length) return self
+    const { w } = nodeDims(n.label, n.kind === 'diamond')
+    if (!n.children?.length) return w
     const kids = n.children.reduce((s, c, i) => s + sw(c.nodeId) + (i ? H_GAP : 0), 0)
-    return Math.max(self, kids)
+    return Math.max(w, kids)
   }
 
   function layout(id: string, cx: number, cy: number, out: Map<string, LN>) {
     const n = nodeMap.get(id)!
-    const w = n.kind === 'diamond' ? DW : NW
-    const h = n.kind === 'diamond' ? DH : NH
+    const { w, h } = nodeDims(n.label, n.kind === 'diamond')
     out.set(id, { ...n, x: cx, y: cy, w, h })
     if (!n.children?.length) return
     const total = n.children.reduce((s, c, i) => s + sw(c.nodeId) + (i ? H_GAP : 0), 0)
@@ -2197,36 +2227,16 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   const svgW = maxX - minX + PAD * 2
   const svgH = maxY - minY + PAD * 2
   const ox = PAD - minX, oy = PAD - minY
-
   const chosenSet = new Set(vis.nodes.filter(n => n.chosen).map(n => n.id))
 
-  function lines(label: string, w: number): string[] {
-    // Split on \n first, then word-wrap each part to fit ~w-24px at FS px
-    const charsPerLine = Math.floor((w - 24) / (FS * 0.54))
-    const result: string[] = []
-    for (const seg of label.split('\n')) {
-      const words = seg.split(' ')
-      let cur = ''
-      for (const word of words) {
-        if (cur.length + word.length + 1 > charsPerLine && cur) {
-          result.push(cur); cur = word
-        } else { cur = cur ? `${cur} ${word}` : word }
-      }
-      if (cur) result.push(cur)
-    }
-    return result
-  }
-
-  function textEl(x: number, y: number, label: string, w: number, color: string, bold: boolean) {
-    const ls = lines(label, w)
-    const lineH = FS * 1.3
-    const totalH = ls.length * lineH
-    const startY = y - totalH / 2 + lineH / 2
+  function textLines(x: number, y: number, label: string, innerW: number, color: string, chosen: boolean) {
+    const ls = wrap(label, innerW)
+    const totalH = ls.length * LINE_H
+    const startY = y - totalH / 2 + LINE_H * 0.5
     return ls.map((l, i) => (
-      <text key={i} x={x} y={startY + i * lineH}
+      <text key={i} x={x} y={startY + i * LINE_H}
         textAnchor="middle" dominantBaseline="middle"
-        fontSize={FS} fontFamily={FONT}
-        fontWeight={bold ? 500 : 400}
+        fontSize={FS} fontFamily={FONT} fontWeight={chosen ? 500 : 400}
         fill={color}>{l}</text>
     ))
   }
@@ -2234,27 +2244,25 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   function renderNode(n: LN) {
     const x = n.x + ox, y = n.y + oy
     const on = !!n.chosen
+    const hw = n.w / 2, hh = n.h / 2
 
     if (n.kind === 'diamond') {
-      const hw = n.w / 2, hh = n.h / 2
       const pts = `${x},${y - hh} ${x + hw},${y} ${x},${y + hh} ${x - hw},${y}`
       return (
         <g key={n.id}>
           <polygon points={pts}
             fill={on ? 'rgba(61,90,53,0.06)' : MUTED_BG}
             stroke={on ? GREEN : MUTED_BD} strokeWidth={on ? 1.5 : 1} />
-          {textEl(x, y, n.label, n.w, on ? GREEN : MUTED_TEXT, on)}
+          {textLines(x, y, n.label, n.w - PX * 2 - 20, on ? GREEN : MUTED_TX, on)}
         </g>
       )
     }
-
-    const hw = n.w / 2, hh = n.h / 2
     return (
       <g key={n.id}>
         <rect x={x - hw} y={y - hh} width={n.w} height={n.h} rx={4}
           fill={on ? GREEN : MUTED_BG}
           stroke={on ? GREEN : MUTED_BD} strokeWidth={on ? 1.5 : 1} />
-        {textEl(x, y, n.label, n.w, on ? '#f0f5ee' : MUTED_TEXT, on)}
+        {textLines(x, y, n.label, n.w - PX * 2, on ? '#f0f5ee' : MUTED_TX, on)}
       </g>
     )
   }
@@ -2272,8 +2280,8 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
         const x2 = cx2, y2 = cy2 - child.h / 2
         const my = (y1 + y2) / 2
         const d = `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`
-        const elx = (x1 + x2) / 2 + (x2 > x1 ? 7 : x2 < x1 ? -7 : 0)
-        const ely = my - 5
+        const eLabelX = (x1 + x2) / 2 + (x2 > x1 ? 8 : x2 < x1 ? -8 : 0)
+        const eLabelY = my - 6
         out.push(
           <g key={`${parent.id}-${c.nodeId}`}>
             <path d={d} fill="none"
@@ -2283,7 +2291,7 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
             <polygon points={`${x2},${y2} ${x2 - 4},${y2 - 7} ${x2 + 4},${y2 - 7}`}
               fill={on ? EDGE_ON : EDGE_OFF} />
             {c.edgeLabel && (
-              <text x={elx} y={ely}
+              <text x={eLabelX} y={eLabelY}
                 textAnchor={x2 > x1 ? 'start' : x2 < x1 ? 'end' : 'middle'}
                 fontSize={10} fontFamily={FONT} fontWeight={400}
                 fill={on ? GREEN : 'rgba(92,64,51,0.4)'}>
@@ -2298,15 +2306,12 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   }
 
   return (
-    <div className="pt-10">
-      {vis.title && <VisDivider label={vis.title} />}
-      <div className="w-full overflow-x-auto">
-        <svg viewBox={`0 0 ${svgW} ${svgH}`} width="100%"
-          style={{ maxWidth: svgW, display: 'block', margin: '0 auto' }}>
-          {renderEdges()}
-          {Array.from(lm.values()).map(renderNode)}
-        </svg>
-      </div>
+    <div className="mt-6 w-full overflow-x-auto">
+      <svg viewBox={`0 0 ${svgW} ${svgH}`} width="100%"
+        style={{ maxWidth: svgW, display: 'block', margin: '0 auto' }}>
+        {renderEdges()}
+        {Array.from(lm.values()).map(renderNode)}
+      </svg>
     </div>
   )
 }
@@ -3225,9 +3230,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
 
 
                       {/* ── Recommendations ─────────────── */}
-                      {visualisations?.filter(v => v.type === 'decision').map((v, i) => (
-                        <Reveal key={`vis-dec-d-${i}`}><VisDecisionBlock vis={v as VisDecision} /></Reveal>
-                      ))}
                       {recommendations.length > 0 && (
                         <div className="pt-16">
                           <Reveal>
@@ -3247,6 +3249,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                               </Reveal>
                             ))}
                           </ul>
+                          {visualisations?.some(v => v.type === 'decision') && (
+                            <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
+                              <VisDecisionBlock key={i} vis={v as VisDecision} />
+                            ))}</Reveal>
+                          )}
                         </div>
                       )}
                       {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3285,9 +3292,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
               ))}
               {/* Formula — mobile, between table and recs */}
               {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-              {visualisations?.filter(v => v.type === 'decision').map((v, i) => (
-                <Reveal key={`vis-dec-m-${i}`}><VisDecisionBlock vis={v as VisDecision} /></Reveal>
-              ))}
               {recommendations.length > 0 && (
                 <div className="mt-12">
                   <Reveal>
@@ -3307,6 +3311,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       </Reveal>
                     ))}
                   </ul>
+                  {visualisations?.some(v => v.type === 'decision') && (
+                    <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
+                      <VisDecisionBlock key={i} vis={v as VisDecision} />
+                    ))}</Reveal>
+                  )}
                 </div>
               )}
               {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3698,9 +3707,6 @@ export function CaseInterviewerMaster({
                         ))}
                         {/* ── Formula — between table and recs ── */}
                         {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-                        {visualisations?.filter(v => v.type === 'decision').map((v, i) => (
-                          <Reveal key={`vis-dec-id-${i}`}><VisDecisionBlock vis={v as VisDecision} /></Reveal>
-                        ))}
                         {recommendations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
@@ -3720,6 +3726,11 @@ export function CaseInterviewerMaster({
                                 </Reveal>
                               ))}
                             </ul>
+                            {visualisations?.some(v => v.type === 'decision') && (
+                              <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
+                                <VisDecisionBlock key={i} vis={v as VisDecision} />
+                              ))}</Reveal>
+                            )}
                           </div>
                         )}
                         {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
@@ -3754,9 +3765,6 @@ export function CaseInterviewerMaster({
                   <Reveal key={`vis-tbl-im-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
                 ))}
                 {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-                {visualisations?.filter(v => v.type === 'decision').map((v, i) => (
-                  <Reveal key={`vis-dec-im-${i}`}><VisDecisionBlock vis={v as VisDecision} /></Reveal>
-                ))}
                 {recommendations.length > 0 && (
                   <div className="mt-12">
                     <Reveal>
@@ -3776,6 +3784,11 @@ export function CaseInterviewerMaster({
                         </Reveal>
                       ))}
                     </ul>
+                    {visualisations?.some(v => v.type === 'decision') && (
+                      <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
+                        <VisDecisionBlock key={i} vis={v as VisDecision} />
+                      ))}</Reveal>
+                    )}
                   </div>
                 )}
                 {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
