@@ -2155,8 +2155,8 @@ function VisCalcPairBlock({ vis }: { vis: VisCalcPair }) {
   function Panel({ panel }: { panel: VisCalcPanel }) {
     return (
       <div className="flex-1 min-w-0">
-        {/* Green header — fits text width only */}
-        <div className="inline-block px-4 py-2 rounded-t-md mb-3" style={{ background: '#3D5A35' }}>
+        {/* Green header — full panel width, small text */}
+        <div className="px-5 py-2.5" style={{ background: '#3D5A35' }}>
           <span className="text-[10px] font-semibold uppercase tracking-[0.16em] leading-none"
             style={{ color: 'rgba(240,245,238,0.9)', fontFamily: FONT }}>
             {panel.title}
@@ -3339,6 +3339,12 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       {/* ── Formula visualizations — between table and recs ── */}
                       {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
 
+                      {/* ── Calc pair — above recommendations ── */}
+                      {visualisations?.some(v => v.type === 'calcpair') && (
+                        <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                          <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                        ))}</Reveal>
+                      )}
 
                       {/* ── Recommendations ─────────────── */}
                       {recommendations.length > 0 && (
@@ -3366,11 +3372,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                             ))}</Reveal>
                           )}
                         </div>
-                      )}
-                      {visualisations?.some(v => v.type === 'calcpair') && (
-                        <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                          <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                        ))}</Reveal>
                       )}
                       {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                         <Reveal key={`vis-qd-d-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
@@ -3408,6 +3409,12 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
               ))}
               {/* Formula — mobile, between table and recs */}
               {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
+              {/* Calc pair — above recommendations */}
+              {visualisations?.some(v => v.type === 'calcpair') && (
+                <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                  <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                ))}</Reveal>
+              )}
               {recommendations.length > 0 && (
                 <div className="mt-12">
                   <Reveal>
@@ -3433,11 +3440,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                     ))}</Reveal>
                   )}
                 </div>
-              )}
-              {visualisations?.some(v => v.type === 'calcpair') && (
-                <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                  <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                ))}</Reveal>
               )}
               {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                 <Reveal key={`vis-qd-m-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
@@ -3828,6 +3830,12 @@ export function CaseInterviewerMaster({
                         ))}
                         {/* ── Formula — between table and recs ── */}
                         {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
+                        {/* Calc pair — above recommendations */}
+                        {visualisations?.some(v => v.type === 'calcpair') && (
+                          <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                            <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                          ))}</Reveal>
+                        )}
                         {recommendations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
@@ -3853,11 +3861,6 @@ export function CaseInterviewerMaster({
                               ))}</Reveal>
                             )}
                           </div>
-                        )}
-                        {visualisations?.some(v => v.type === 'calcpair') && (
-                          <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                            <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                          ))}</Reveal>
                         )}
                         {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                           <Reveal key={`vis-qd-id-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
@@ -3891,6 +3894,12 @@ export function CaseInterviewerMaster({
                   <Reveal key={`vis-tbl-im-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
                 ))}
                 {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
+                {/* Calc pair — above recommendations */}
+                {visualisations?.some(v => v.type === 'calcpair') && (
+                  <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
+                    <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
+                  ))}</Reveal>
+                )}
                 {recommendations.length > 0 && (
                   <div className="mt-12">
                     <Reveal>
@@ -3916,11 +3925,6 @@ export function CaseInterviewerMaster({
                       ))}</Reveal>
                     )}
                   </div>
-                )}
-                {visualisations?.some(v => v.type === 'calcpair') && (
-                  <Reveal>{visualisations!.filter(v => v.type === 'calcpair').map((v, i) => (
-                    <VisCalcPairBlock key={i} vis={v as VisCalcPair} />
-                  ))}</Reveal>
                 )}
                 {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                   <Reveal key={`vis-qd-im-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
