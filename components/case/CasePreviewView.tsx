@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react'
 import CasePreviewMaster from '@/components/case/CasePreviewMaster'
-import type { FrameworkTree, Visualisation, RecommendationsTable, RecommendationsMatrix } from '@/components/case/CasePreviewMaster'
+import type { FrameworkTree, Visualisation, RecommendationsTable } from '@/components/case/CasePreviewMaster'
 
 type TranscriptSpeaker = 'candidate' | 'interviewer' | 'neutral'
 type TranscriptDisplayLine = { text: string; speaker: TranscriptSpeaker }
@@ -28,7 +28,6 @@ type CasePreviewProps = {
   frameworkTree?: FrameworkTree
   visualisations?: Visualisation[]
   recommendationsTable?: RecommendationsTable
-  recommendationsMatrix?: RecommendationsMatrix
   ForumSection?: ReactNode
 }
 

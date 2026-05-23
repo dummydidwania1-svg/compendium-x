@@ -41,7 +41,6 @@ type CaseDocument = {
 	frameworkTree?: import('@/components/case/CasePreviewMaster').FrameworkTree
 	visualisations?: import('@/components/case/CasePreviewMaster').Visualisation[]
 	recommendationsTable?: import('@/components/case/CasePreviewMaster').RecommendationsTable
-	recommendationsMatrix?: import('@/components/case/CasePreviewMaster').RecommendationsMatrix
 }
 
 type ScoreState = {
@@ -798,7 +797,6 @@ function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 					frameworkTree={caseData.frameworkTree}
 					visualisations={caseData.visualisations}
 					recommendationsTable={caseData.recommendationsTable}
-					recommendationsMatrix={caseData.recommendationsMatrix}
 					ForumSection={resolvedCaseId ? <CaseForumSection caseId={resolvedCaseId} caseTitle={caseData!.title} /> : undefined}
 				/>
 			)
@@ -820,7 +818,6 @@ function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 				frameworkTree={caseData.frameworkTree}
 				visualisations={caseData.visualisations}
 				recommendationsTable={caseData.recommendationsTable}
-				recommendationsMatrix={caseData.recommendationsMatrix}
 				notes={notes}
 				setNotes={setNotes}
 				scores={scores}

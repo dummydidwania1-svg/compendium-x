@@ -33,7 +33,24 @@
       "Bash(pkill -9 -f \"next\")",
       "Bash(node scripts/import-cases.mjs data/cases.json)",
       "Bash(xxd)",
-      "Bash(curl -s http://localhost:3000/case/case-18/interviewer?preview=1)"
+      "Bash(curl -s http://localhost:3000/case/case-18/interviewer?preview=1)",
+      "Bash(gh run *)",
+      "Bash(gh api *)",
+      "Bash(python3 -c \"import json,sys; s=json.load\\(sys.stdin\\); [print\\(x['state'], x['context'], x['description'], x.get\\('target_url',''\\)[:80]\\) for x in s]\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,v\\) for k,v in {**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}.items\\(\\) if 'mermaid' in k.lower\\(\\) or 'diagram' in k.lower\\(\\) or 'chart' in k.lower\\(\\)]\")",
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===21\\); console.log\\(JSON.stringify\\(c.visualisations,null,2\\)\\)\")",
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===21\\); console.log\\(JSON.stringify\\(c.visualisations[0].right,null,2\\)\\)\")",
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const idx=d.findIndex\\(x=>x.id===21\\); console.log\\(idx\\)\")",
+      "Bash(node scripts/import-cases.mjs)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('data/cases.json','utf8'\\)\\); console.log\\('Valid JSON'\\)\")",
+      "Bash(identify /Users/sakshamd/Desktop/compendium-x-fresh/public/colleges/sscbs.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/sakshamd/Desktop/compendium-x-fresh/public/colleges/sscbs.png)",
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===18\\); console.log\\(c.industry\\)\")",
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===21\\); const steps=c.visualisations[0].left.steps; steps.forEach\\(\\(s,i\\)=>console.log\\(i, JSON.stringify\\(s\\)\\)\\)\")",
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===4\\); console.log\\('recommendationsTable:', JSON.stringify\\(c.recommendationsTable,null,2\\).slice\\(0,200\\)\\); console.log\\('framework snippet:', c.framework.slice\\(c.framework.indexOf\\('RECOMMENDATIONS'\\),c.framework.indexOf\\('RECOMMENDATIONS'\\)+300\\)\\)\")",
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===11\\); console.log\\('recommendationsTable:', JSON.stringify\\(c.recommendationsTable,null,2\\).slice\\(0,200\\)\\); console.log\\('framework snippet:', c.framework.slice\\(c.framework.indexOf\\('RECOMMENDATIONS'\\),c.framework.indexOf\\('RECOMMENDATIONS'\\)+300\\)\\)\")",
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===20\\); console.log\\(JSON.stringify\\(c.visualisations[0].title\\)\\)\")",
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===21\\); console.log\\(JSON.stringify\\(c.visualisations.map\\(v=>\\({type:v.type,title:v.title}\\)\\)\\)\\)\")"
     ],
     "additionalDirectories": [
       "/tmp"

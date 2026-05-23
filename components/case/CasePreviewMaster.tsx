@@ -49,11 +49,6 @@ export type VisFormula = {
   derivations?: { lhs: string; rhs: string }[]
 }
 export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; noTitle?: boolean; summaryRows?: number[]; columnWidths?: string[]; insight?: string }
-export type VisQuadrant = {
-  type: 'quadrant'; title: string; xAxis: string; yAxis: string
-  points: { label: string; x: number; y: number }[]
-  priorityOrder?: string[]
-}
 export type VisDecisionNode = {
   id: string
   label: string
@@ -72,19 +67,10 @@ export type VisCalcStep =
   | { eq: true; label: string; value: string; underline?: boolean; indent?: boolean; bold?: boolean; text?: never }
 export type VisCalcPanel = { title: string; steps: VisCalcStep[] }
 export type VisCalcPair = { type: 'calcpair'; header?: string; left: VisCalcPanel; right: VisCalcPanel }
-export type Visualisation = VisFormula | VisTable | VisQuadrant | VisDecision | VisCalcPair
+export type Visualisation = VisFormula | VisTable | VisDecision | VisCalcPair
 
-export type RecommendationsTableA = { headers: string[]; rows: string[][] }
 export type RecommendationsTableB = { framework: string; columns: string[]; dimensionHeader?: string; rows: { dimension: string; shortTerm: string; longTerm: string }[] }
-export type RecommendationsTableC = { framework: string; shortTerm: { title: string; action: string; impact: string }[]; longTerm: { title: string; action: string; impact: string }[] }
-export type RecommendationsTable  = RecommendationsTableA | RecommendationsTableB | RecommendationsTableC
-
-export type RecommendationsMatrix = {
-  title: string
-  xAxis: { start: string; end: string }
-  yAxis: { start: string; end: string }
-  items: { label: string; x: number; y: number; quadrant?: string }[]
-}
+export type RecommendationsTable  = RecommendationsTableB
 
 export type CasePreviewMasterProps = {
   caseData: { title: string; prompt?: string; framework?: string }
@@ -101,7 +87,6 @@ export type CasePreviewMasterProps = {
   frameworkTree?: FrameworkTree
   visualisations?: Visualisation[]
   recommendationsTable?: RecommendationsTable
-  recommendationsMatrix?: RecommendationsMatrix
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2096,55 +2081,6 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Visualization: Quadrant scatter chart
-   ═══════════════════════════════════════════════════════════ */
-function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
-  const W = 320, H = 260, PAD = 32
-  const plotW = W - PAD * 2, plotH = H - PAD * 2
-  const px = (x: number) => PAD + x * plotW
-  const py = (y: number) => PAD + (1 - y) * plotH
-  return (
-    <div className="pt-16">
-      <VisDivider label={vis.title} />
-      <div className="rounded-xl border border-[#3D5A35]/10 p-4" style={{ background: 'rgba(255,248,240,0.6)' }}>
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 260 }}>
-          {/* Quadrant dividers */}
-          <line x1={px(0.5)} y1={PAD} x2={px(0.5)} y2={PAD + plotH} stroke="#C4A882" strokeWidth={1} opacity={0.5} />
-          <line x1={PAD} y1={py(0.5)} x2={PAD + plotW} y2={py(0.5)} stroke="#C4A882" strokeWidth={1} opacity={0.5} />
-          {/* Axis labels */}
-          <text x={W / 2} y={H - 4} textAnchor="middle" fontSize={9} fill="#5C4033" opacity={0.55} fontFamily="Work Sans, sans-serif">{vis.xAxis}</text>
-          <text x={10} y={H / 2} textAnchor="middle" fontSize={9} fill="#5C4033" opacity={0.55} fontFamily="Work Sans, sans-serif" transform={`rotate(-90, 10, ${H / 2})`}>{vis.yAxis}</text>
-          {/* Points */}
-          {vis.points.map((pt, i) => {
-            const cx = px(pt.x), cy = py(pt.y)
-            const labelY = pt.y > 0.5 ? cy + 16 : cy - 9
-            return (
-              <g key={i}>
-                <circle cx={cx} cy={cy} r={5} fill="#3D5A35" opacity={0.85} />
-                <text x={cx} y={labelY} textAnchor="middle" fontSize={10} fill="#3B2F2F" fontFamily="Work Sans, sans-serif" fontWeight={500}>{pt.label}</text>
-              </g>
-            )
-          })}
-        </svg>
-        {vis.priorityOrder && vis.priorityOrder.length > 0 && (
-          <div className="mt-3 border-t border-[#3D5A35]/08 pt-3">
-            <p className="text-[10px] uppercase tracking-[0.14em] font-semibold mb-2" style={{ color: 'rgba(196,168,130,0.9)' }}>Priority Order</p>
-            <ol className="space-y-1">
-              {vis.priorityOrder.map((label, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold" style={{ color: '#C4A882', minWidth: 14 }}>{i + 1}.</span>
-                  <span className="text-[13px] text-[#3B2F2F]" style={{ fontFamily: "'Work Sans', sans-serif" }}>{label}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════
    Visualization: Side-by-side calculation panels
    ═══════════════════════════════════════════════════════════ */
 function VisCalcPairBlock({ vis }: { vis: VisCalcPair }) {
@@ -2428,213 +2364,83 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Visualization: Recommendations table (3 variants)
+   Visualization: Recommendations table (Variant B)
    ═══════════════════════════════════════════════════════════ */
-function RecTableBlock({ data }: { data: RecommendationsTable }) {
-  const isA = 'headers' in data
-  const isB = !isA && 'rows' in data
-  // Variant A — plain headers/rows matrix
-  if (isA) {
-    const d = data as RecommendationsTableA
-    return (
-      <div className="pt-16">
-        <VisDivider label="Recommendations" />
-        <div className="w-full overflow-x-auto rounded-xl border border-[#3D5A35]/10" style={{ background: 'rgba(255,248,240,0.6)' }}>
-          <table className="w-full text-[13px] border-collapse">
-            <thead>
-              <tr>
-                {d.headers.map((h, i) => (
-                  <th key={i} className="px-3 py-2.5 text-left border-b border-[#3D5A35]/12"
-                    style={{ background: 'rgba(61,90,53,0.06)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#3D5A35' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {d.rows.map((row, ri) => (
-                <tr key={ri} style={{ background: ri % 2 === 1 ? 'rgba(59,47,47,0.025)' : 'transparent' }}>
-                  {row.map((cell, ci) => {
-                    const lines = cell.split('\n').map(l => l.trim()).filter(Boolean)
-                    return (
-                      <td key={ci} className="px-3 py-3 border-b border-[#3D5A35]/06 text-[#3B2F2F] align-top"
-                        style={{ fontWeight: ci === 0 ? 500 : 400 }}>
-                        {lines.length > 1 ? (
-                          <ul className="space-y-2">
-                            {lines.map((line, li) => (
-                              <li key={li} className="flex items-start gap-2">
-                                <span className="mt-[6px] h-[4px] w-[4px] shrink-0 rounded-full bg-[#3B2F2F]/50" />
-                                <span className="flex-1 text-[13px] leading-relaxed">{line}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <span className="text-[13px] leading-relaxed">{cell}</span>
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    )
+function RecTableBlock({ data }: { data: RecommendationsTableB }) {
+  const d = data
+  const hideDimension = d.rows.every(r => !r.dimension?.trim())
+  // dimensionHeader present → dimension column gets full header styling (matrix mode)
+  const matrixMode = !hideDimension && !!d.dimensionHeader
+  const cols = d.columns ?? ['Short-Term', 'Long-Term']
+  const headerStyle: React.CSSProperties = {
+    fontFamily: "'Work Sans', sans-serif",
+    fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
+    color: '#f0f5ee', background: '#3D5A35', whiteSpace: 'nowrap',
   }
-  // Variant B — dimension rows with shortTerm/longTerm columns
-  if (isB) {
-    const d = data as RecommendationsTableB
-    const hideDimension = d.rows.every(r => !r.dimension?.trim())
-    // dimensionHeader present → dimension column gets full header styling (matrix mode)
-    const matrixMode = !hideDimension && !!d.dimensionHeader
-    const cols = d.columns ?? ['Short-Term', 'Long-Term']
-    const headerStyle: React.CSSProperties = {
-      fontFamily: "'Work Sans', sans-serif",
-      fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
-      color: '#f0f5ee', background: '#3D5A35', whiteSpace: 'nowrap',
-    }
-    const renderBullets = (text: string) => {
-      const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-      if (lines.length === 0) return null
-      return (
-        <ul className="space-y-1.5">
-          {lines.map((line, li) => (
-            <li key={li} className="flex items-start gap-2">
-              <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-              <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{line}</span>
-            </li>
-          ))}
-        </ul>
-      )
-    }
+  const renderBullets = (text: string) => {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+    if (lines.length === 0) return null
     return (
-      <div className="pt-10">
-        <VisDivider label="Recommendations" />
-        <div className="overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
-          <table className="border-collapse" style={{ tableLayout: 'auto', width: 'fit-content', maxWidth: '100%' }}>
-            <thead>
-              <tr>
-                {/* Top-left corner header cell in matrix mode — shrinks to content */}
-                {!hideDimension && (
-                  <th className="px-4 py-2.5 text-left"
-                    style={{ ...headerStyle, whiteSpace: 'nowrap', width: '1%', borderRight: '1px solid rgba(240,245,238,0.15)' }}>
-                    {matrixMode ? (d.dimensionHeader ?? '') : ''}
-                  </th>
-                )}
-                {cols.map((col, i) => (
-                  <th key={i} className="px-4 py-2.5 text-left"
-                    style={{ ...headerStyle, whiteSpace: 'nowrap', borderLeft: (hideDimension && i === 0) ? undefined : '1px solid rgba(240,245,238,0.15)' }}>
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {d.rows.map((row, ri) => (
-                <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
-                  {!hideDimension && (
-                    <td className="px-4 py-3 align-middle text-center"
-                      style={matrixMode ? {
-                        // Matrix mode: dimension cell — same green header styling
-                        ...headerStyle,
-                        whiteSpace: 'nowrap', textAlign: 'center', verticalAlign: 'middle',
-                        borderTop: '1px solid rgba(240,245,238,0.15)',
-                        borderRight: '1px solid rgba(240,245,238,0.15)',
-                      } : {
-                        fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500, color: '#3B2F2F',
-                        borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
-                      }}>
-                      {row.dimension}
-                    </td>
-                  )}
-                  <td className="px-4 py-3 align-top" style={{ borderLeft: !hideDimension ? '1px solid rgba(61,90,53,0.10)' : undefined, borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined }}>
-                    {renderBullets(row.shortTerm)}
-                  </td>
-                  <td className="px-4 py-3 align-top" style={{ borderLeft: '1px solid rgba(61,90,53,0.10)', borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined }}>
-                    {renderBullets(row.longTerm)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    )
-  }
-  // Variant C — shortTerm/longTerm card columns
-  const d = data as RecommendationsTableC
-  return (
-    <div className="pt-16">
-      <VisDivider label={d.framework ?? 'Recommendations'} />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {(['shortTerm', 'longTerm'] as const).map(period => (
-          <div key={period}>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] mb-3" style={{ color: 'rgba(196,168,130,0.9)' }}>
-              {period === 'shortTerm' ? 'Short-Term' : 'Long-Term'}
-            </p>
-            <div className="flex flex-col gap-2.5">
-              {d[period].map((item, i) => (
-                <div key={i} className="rounded-lg border border-[#3D5A35]/10 p-3" style={{ background: 'rgba(255,248,240,0.6)' }}>
-                  <p className="text-[13px] font-semibold text-[#3B2F2F] mb-1" style={{ fontFamily: "'Newsreader', serif" }}>{item.title}</p>
-                  <p className="text-[12px] text-[#5C4033]/70 leading-relaxed mb-2">{item.action}</p>
-                  <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: 'rgba(61,90,53,0.08)', color: '#3D5A35' }}>{item.impact}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+      <ul className="space-y-1.5">
+        {lines.map((line, li) => (
+          <li key={li} className="flex items-start gap-2">
+            <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{line}</span>
+          </li>
         ))}
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   Visualization: Recommendations matrix (2×2 SVG)
-   ═══════════════════════════════════════════════════════════ */
-function RecMatrixBlock({ data }: { data: RecommendationsMatrix }) {
-  const W = 340, H = 280, PAD = 40
-  const plotW = W - PAD * 2, plotH = H - PAD * 2
-  const px = (x: number) => PAD + x * plotW
-  const py = (y: number) => PAD + (1 - y) * plotH
+      </ul>
+    )
+  }
   return (
-    <div className="pt-16">
-      <VisDivider label={data.title} />
-      <div className="rounded-xl border border-[#3D5A35]/10 p-4" style={{ background: 'rgba(255,248,240,0.6)' }}>
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 280 }}>
-          {/* Quadrant dividers */}
-          <line x1={px(0.5)} y1={PAD} x2={px(0.5)} y2={PAD + plotH} stroke="#C4A882" strokeWidth={1} opacity={0.5} />
-          <line x1={PAD} y1={py(0.5)} x2={PAD + plotW} y2={py(0.5)} stroke="#C4A882" strokeWidth={1} opacity={0.5} />
-          {/* Quadrant region labels */}
-          <text x={px(0.25)} y={py(0.75) + 4} textAnchor="middle" fontSize={8} fill="#3B2F2F" opacity={0.18} fontFamily="Work Sans, sans-serif">
-            {data.xAxis.start} / {data.yAxis.end}
-          </text>
-          <text x={px(0.75)} y={py(0.75) + 4} textAnchor="middle" fontSize={8} fill="#3B2F2F" opacity={0.18} fontFamily="Work Sans, sans-serif">
-            {data.xAxis.end} / {data.yAxis.end}
-          </text>
-          <text x={px(0.25)} y={py(0.25) + 4} textAnchor="middle" fontSize={8} fill="#3B2F2F" opacity={0.18} fontFamily="Work Sans, sans-serif">
-            {data.xAxis.start} / {data.yAxis.start}
-          </text>
-          <text x={px(0.75)} y={py(0.25) + 4} textAnchor="middle" fontSize={8} fill="#3B2F2F" opacity={0.18} fontFamily="Work Sans, sans-serif">
-            {data.xAxis.end} / {data.yAxis.start}
-          </text>
-          {/* Axis edge labels */}
-          <text x={PAD} y={H - 6} textAnchor="middle" fontSize={8} fill="#5C4033" opacity={0.5} fontFamily="Work Sans, sans-serif">{data.xAxis.start}</text>
-          <text x={W - PAD} y={H - 6} textAnchor="middle" fontSize={8} fill="#5C4033" opacity={0.5} fontFamily="Work Sans, sans-serif">{data.xAxis.end}</text>
-          <text x={8} y={py(0.02)} textAnchor="middle" fontSize={8} fill="#5C4033" opacity={0.5} fontFamily="Work Sans, sans-serif">{data.yAxis.start}</text>
-          <text x={8} y={py(0.98)} textAnchor="middle" fontSize={8} fill="#5C4033" opacity={0.5} fontFamily="Work Sans, sans-serif">{data.yAxis.end}</text>
-          {/* Points */}
-          {data.items.map((item, i) => {
-            const cx = px(item.x), cy = py(item.y)
-            const labelY = item.y > 0.5 ? cy + 16 : cy - 9
-            return (
-              <g key={i}>
-                <circle cx={cx} cy={cy} r={5} fill="#3D5A35" opacity={0.85} />
-                <text x={cx} y={labelY} textAnchor="middle" fontSize={10} fill="#3B2F2F" fontFamily="Work Sans, sans-serif" fontWeight={500}>{item.label}</text>
-              </g>
-            )
-          })}
-        </svg>
+    <div className="pt-10">
+      <VisDivider label="Recommendations" />
+      <div className="overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
+        <table className="border-collapse" style={{ tableLayout: 'auto', width: 'fit-content', maxWidth: '100%' }}>
+          <thead>
+            <tr>
+              {/* Top-left corner header cell in matrix mode — shrinks to content */}
+              {!hideDimension && (
+                <th className="px-4 py-2.5 text-left"
+                  style={{ ...headerStyle, whiteSpace: 'nowrap', width: '1%', borderRight: '1px solid rgba(240,245,238,0.15)' }}>
+                  {matrixMode ? (d.dimensionHeader ?? '') : ''}
+                </th>
+              )}
+              {cols.map((col, i) => (
+                <th key={i} className="px-4 py-2.5 text-left"
+                  style={{ ...headerStyle, whiteSpace: 'nowrap', borderLeft: (hideDimension && i === 0) ? undefined : '1px solid rgba(240,245,238,0.15)' }}>
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {d.rows.map((row, ri) => (
+              <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
+                {!hideDimension && (
+                  <td className="px-4 py-3 align-middle text-center"
+                    style={matrixMode ? {
+                      // Matrix mode: dimension cell — same green header styling
+                      ...headerStyle,
+                      whiteSpace: 'nowrap', textAlign: 'center', verticalAlign: 'middle',
+                      borderTop: '1px solid rgba(240,245,238,0.15)',
+                      borderRight: '1px solid rgba(240,245,238,0.15)',
+                    } : {
+                      fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500, color: '#3B2F2F',
+                      borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
+                    }}>
+                    {row.dimension}
+                  </td>
+                )}
+                <td className="px-4 py-3 align-top" style={{ borderLeft: !hideDimension ? '1px solid rgba(61,90,53,0.10)' : undefined, borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined }}>
+                  {renderBullets(row.shortTerm)}
+                </td>
+                <td className="px-4 py-3 align-top" style={{ borderLeft: '1px solid rgba(61,90,53,0.10)', borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined }}>
+                  {renderBullets(row.longTerm)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )
@@ -2644,7 +2450,7 @@ export default function CasePreviewMaster({
   caseData, previewMode, transcriptDisplayLines, parsedFramework,
   promptLines, caseTypeLabel, industryLabel, difficultyLabel,
   companyLabel, roundLabel, ForumSection, frameworkTree,
-  visualisations, recommendationsTable, recommendationsMatrix,
+  visualisations, recommendationsTable,
 }: CasePreviewMasterProps) {
   // ─── Sync module-level tree data from props ──────────
   const tree = frameworkTree ?? BANKING_ON_YOU_TREE
@@ -3322,7 +3128,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       <div
                         ref={chartRef}
                         className={(() => {
-                          const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant' || v.type === 'decision'))
+                          const hasViz = !!(recommendationsTable || visualisations?.some(v => v.type === 'table' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
                           if (!hasContent) return 'flex items-center'
                           if (chartMaxDepth === 0) return 'flex-1 flex items-center'
@@ -3389,14 +3195,8 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                           </>)}
                         </div>
                       )}
-                      {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
-                        <Reveal key={`vis-qd-d-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
-                      ))}
                       {recommendationsTable && (
                         <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
-                      )}
-                      {recommendationsMatrix && (
-                        <Reveal><RecMatrixBlock data={recommendationsMatrix} /></Reveal>
                       )}
                       {/* Sentinel for bottom-border visibility detection */}
                       <div ref={drilldownBottomRef} className="h-px w-full" />
@@ -3473,14 +3273,8 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                   </>)}
                 </div>
               )}
-              {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
-                <Reveal key={`vis-qd-m-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
-              ))}
               {recommendationsTable && (
                 <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
-              )}
-              {recommendationsMatrix && (
-                <Reveal><RecMatrixBlock data={recommendationsMatrix} /></Reveal>
               )}
   </div>
 </section>
@@ -3512,7 +3306,7 @@ export function CaseInterviewerMaster({
   caseData, transcriptDisplayLines, parsedFramework,
   promptLines, caseTypeLabel, industryLabel, difficultyLabel,
   companyLabel, roundLabel, frameworkTree,
-  visualisations, recommendationsTable, recommendationsMatrix,
+  visualisations, recommendationsTable,
   notes, setNotes, scores, setScores, onEndCase,
 }: CaseInterviewerMasterProps) {
   // ─── Sync tree data (same as preview) ────────────────
@@ -3851,7 +3645,7 @@ export function CaseInterviewerMaster({
                           </Reveal>
                         </>)}
                         <div ref={chartRef} className={(() => {
-                          const hasViz = !!(recommendationsTable || recommendationsMatrix || visualisations?.some(v => v.type === 'table' || v.type === 'quadrant' || v.type === 'decision'))
+                          const hasViz = !!(recommendationsTable || visualisations?.some(v => v.type === 'table' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
                           if (!hasContent) return 'flex items-center'
                           if (chartMaxDepth === 0) return 'flex-1 flex items-center'
@@ -3910,14 +3704,8 @@ export function CaseInterviewerMaster({
                             </>)}
                           </div>
                         )}
-                        {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
-                          <Reveal key={`vis-qd-id-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
-                        ))}
                         {recommendationsTable && (
                           <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
-                        )}
-                        {recommendationsMatrix && (
-                          <Reveal><RecMatrixBlock data={recommendationsMatrix} /></Reveal>
                         )}
                         {/* Sentinel for bottom-border visibility detection */}
                         <div ref={drilldownBottomRef2} className="h-px w-full" />
@@ -3990,14 +3778,8 @@ export function CaseInterviewerMaster({
                     </>)}
                   </div>
                 )}
-                {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
-                  <Reveal key={`vis-qd-im-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
-                ))}
                 {recommendationsTable && (
                   <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
-                )}
-                {recommendationsMatrix && (
-                  <Reveal><RecMatrixBlock data={recommendationsMatrix} /></Reveal>
                 )}
               </div>
             </section>
