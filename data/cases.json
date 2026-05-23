@@ -818,7 +818,7 @@
     "industry": "Retail",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "company": "Curated by the Authors",
+    "company": "Authors",
     "round": "N/A",
     "prompt": "Your client is the owner of one of the Miniso stores in Delhi and the store has been facing declining product sales. You need to analyse why this is happening and also recommend solutions accordingly.",
     "frameworkTree": {
@@ -1046,31 +1046,6 @@
             "Listing on Google Maps",
             "Contextualizing with respect to the pandemic"
           ]
-        }
-      ]
-    },
-    "recommendationsTable": {
-      "framework": "Short-Term vs. Long-Term",
-      "columns": [
-        "Dimension",
-        "Short-Term (Immediate)",
-        "Long-Term (Sustained)"
-      ],
-      "rows": [
-        {
-          "dimension": "Payment",
-          "shortTerm": "Accept UPI payments on the store manager's personal mobile number (Paytm / BHIM / Google Pay) to avoid losing customers immediately",
-          "longTerm": "Formally integrate online payment infrastructure with QR-based billing counters, card readers, and digital receipts"
-        },
-        {
-          "dimension": "Reach & Visibility",
-          "shortTerm": "Ensure the store is listed and updated on Google Maps with correct hours, photos, and address",
-          "longTerm": "Run targeted social media marketing via WhatsApp and Instagram to drive footfall and build local brand presence"
-        },
-        {
-          "dimension": "Fulfilment",
-          "shortTerm": "Offer home delivery for regular customers through informal channels such as WhatsApp orders to work around lockdown constraints",
-          "longTerm": "Partner with delivery platforms or build a lightweight delivery workflow for the post-pandemic environment"
         }
       ]
     },
@@ -2033,8 +2008,7 @@
         }
       ]
     },
-    "framework": "Candidate: Sounds like an interesting case. I would first like to understand the company better and then move on to the problem at hand. What are the product lines Zendaya is involved in? Does the company sell its products pan-India? Also, what are the distribution channels we use?\nInterviewer: The company has four product lines: Nail Polish, Perfumes, Skin Care and Hair Care. They sell their products pan-India and use their own as well as third-party distributors.\nCandidate: Interesting. It is possible that the decline in profits is specific to certain product lines, geographies or distribution channels. Do we have data on the same?\nInterviewer: Yes. In fact, there has been a decline in revenues only in our 'Perfumes' segment. However, the decline has been uniform across geographies and distribution channels.\nCandidate: Okay, that's helpful. Do we know the magnitude of decline? I would also like to know since when Zendaya has been facing the problem. This will help us understand the nature of decline better.\nInterviewer: Perfume sales have seen a decline of about 10% over the last 2 years. Is there anything else you would like to know?\nCandidate: Yes. Before I proceed with my analysis, I would like to know if other perfume companies have seen a similar decline as well. Also, do we have any segmentation in the perfumes we sell?\nInterviewer: Other perfume companies seem to be doing fine. We sell perfumes under 2 segments: 1) Mass segment: These perfumes are priced below Rs. 200 and constitute 20% of perfume sales. 2) Premium segment: These perfumes are priced more than Rs. 200 and constitute the remaining 80% of perfume sales. The decline is limited to our premium segment.\nCandidate: Understood. Revenues are a function of:\nRevenues = Number of Bottles Sold * Price/Bottle\nCandidate: Has Zendaya changed the price of its premium perfume in the last 2 years? If not, it means the number of bottles sold has seen a decline.\nInterviewer: Prices have not changed. Why don't you analyse the decline in the number of bottles sold?\nCandidate: Sure. I would like to analyse three aspects here: Production, Distribution and Demand. It is possible that we have been facing issues in production due to labour strikes, factory closure, etc. However, this is unlikely as the decline has been taking place for two years now.\nCandidate: Under distribution, it would be interesting to know if our distributors are pushing our competitors' perfumes over ours. This too is unlikely as all our distribution channels seem to be facing the decline. Lastly, I would like to see if demand for our perfumes has seen a decline. This may be due to reasons like unpopular fragrances, negative publicity, etc.\nInterviewer: You are right. We have reason to believe our competitors' perfumes are being preferred by customers. Why do you think this is happening?\nCandidate: There are several reasons why this may be happening. In order to further isolate the problem, I would like to look at 5 major drivers of demand: Need, Awareness, Accessibility, Affordability and Experience. Under need, I'm concerned with any change in customer preferences or requirements in the last couple of years. Under awareness, it is important to look at our promotional efforts and see how they compare to our competitors' in case we believe our target population is not aware of our perfumes. Under Accessibility, it is important that our perfumes are easily accessible to the end customers. Since we have multiple distribution channels, this should not be an issue. Affordability may not be very relevant in premium perfumes. However, I would still like to benchmark our prices with our competitors' prices and see if it is a concern. Finally, it is also important to analyse customer satisfaction and Experience. Do we know where we are facing an issue?\nInterviewer: Yes. Customers are not very satisfied with Zendaya's premium perfume. Why don't you analyse customer experience?\nCandidate: Sure. At this point, it makes sense to draw a customer journey and find out at what stage we're losing them. The first step undertaken by the customer is to make a decision to purchase our perfume. He/she then visits a shop or website where the perfume is available. Subsequently, the customer navigates the shop or website and locates the perfume. He/she then completes the purchase by going through the billing process. Now, we come to the usage stage and see how satisfied they are with the product itself. Finally, we must also look at the quality of our customer service and feedback mechanism. Do we know at what stage customers have been expressing dissatisfaction? If not, we can dive deeper into each stage.\nInterviewer: Excellent. You can limit your analysis to the usage stage.\nCandidate: Perfect. There are 4 things I would like to look at in this stage: Packaging, Fragrance, Life of the product and Defect rate. Under packaging, I would like to know if we or our competitors have made any changes to the type of packaging, size of the bottle/can and durability. Under fragrance, I am mainly concerned with changes made to the scents as well as ingredients used in the perfumes. For instance, it is possible that some ingredients may be inducing allergic reactions.\nCandidate: Life of the product includes both shelf life as well as number of uses of our perfume and if there has been any change observed. Lastly, it is possible that there is higher defect rate due to poor quality control.\nInterviewer: Great. You have identified the problem correctly. In order to cut costs, Zendaya decided to replace their glass bottles with plastic bottles. Customers no longer feel that they are using a 'premium' product. What would you recommend?\nCandidate: Before that, I would like to know if the bottles are procured or manufactured in-house.\nInterviewer: Raw materials are sourced from outside. However, manufacturing is done in-house.\nCandidate: Given that Zendaya has branded these perfumes as 'premium', the packaging will have to reflect the same.\nInterviewer: Good. We will pass on your suggestions to the company.\n\nMake-Up for Lost Profits Framework & Recommendations\nDECLINING PROFITS OF ZENDAYA\nClarifying Questions: What are the product lines? What locations does Zendaya sell in?\nBrownie Points: Exploring metallic bottles as an alternative\nKeep In Mind: Segment the problem wherever possible to arrive at the solution quicker\nRECOMMENDATIONS:\n Returning to the use of glass bottles either by negotiating with suppliers to bring down glass prices or procuring finished bottles; we can also consider recovering the added cost through our customers, though this will involve a price increase which may adversely affect our market share.\n Refine plastic bottles to mimic glass finish and give a 'premium' feel.\n Explore metallic bottles for premium differentiation.",
-    "visualisations": null
+    "framework": "Candidate: Sounds like an interesting case. I would first like to understand the company better and then move on to the problem at hand. What are the product lines Zendaya is involved in? Does the company sell its products pan-India? Also, what are the distribution channels we use?\nInterviewer: The company has four product lines: Nail Polish, Perfumes, Skin Care and Hair Care. They sell their products pan-India and use their own as well as third-party distributors.\nCandidate: Interesting. It is possible that the decline in profits is specific to certain product lines, geographies or distribution channels. Do we have data on the same?\nInterviewer: Yes. In fact, there has been a decline in revenues only in our 'Perfumes' segment. However, the decline has been uniform across geographies and distribution channels.\nCandidate: Okay, that's helpful. Do we know the magnitude of decline? I would also like to know since when Zendaya has been facing the problem. This will help us understand the nature of decline better.\nInterviewer: Perfume sales have seen a decline of about 10% over the last 2 years. Is there anything else you would like to know?\nCandidate: Yes. Before I proceed with my analysis, I would like to know if other perfume companies have seen a similar decline as well. Also, do we have any segmentation in the perfumes we sell?\nInterviewer: Other perfume companies seem to be doing fine. We sell perfumes under 2 segments: 1) Mass segment: These perfumes are priced below Rs. 200 and constitute 20% of perfume sales. 2) Premium segment: These perfumes are priced more than Rs. 200 and constitute the remaining 80% of perfume sales. The decline is limited to our premium segment.\nCandidate: Understood. Revenues are a function of:\nRevenues = Number of Bottles Sold * Price/Bottle\nCandidate: Has Zendaya changed the price of its premium perfume in the last 2 years? If not, it means the number of bottles sold has seen a decline.\nInterviewer: Prices have not changed. Why don't you analyse the decline in the number of bottles sold?\nCandidate: Sure. I would like to analyse three aspects here: Production, Distribution and Demand. It is possible that we have been facing issues in production due to labour strikes, factory closure, etc. However, this is unlikely as the decline has been taking place for two years now.\nCandidate: Under distribution, it would be interesting to know if our distributors are pushing our competitors' perfumes over ours. This too is unlikely as all our distribution channels seem to be facing the decline. Lastly, I would like to see if demand for our perfumes has seen a decline. This may be due to reasons like unpopular fragrances, negative publicity, etc.\nInterviewer: You are right. We have reason to believe our competitors' perfumes are being preferred by customers. Why do you think this is happening?\nCandidate: There are several reasons why this may be happening. In order to further isolate the problem, I would like to look at 5 major drivers of demand: Need, Awareness, Accessibility, Affordability and Experience. Under need, I'm concerned with any change in customer preferences or requirements in the last couple of years. Under awareness, it is important to look at our promotional efforts and see how they compare to our competitors' in case we believe our target population is not aware of our perfumes. Under Accessibility, it is important that our perfumes are easily accessible to the end customers. Since we have multiple distribution channels, this should not be an issue. Affordability may not be very relevant in premium perfumes. However, I would still like to benchmark our prices with our competitors' prices and see if it is a concern. Finally, it is also important to analyse customer satisfaction and Experience. Do we know where we are facing an issue?\nInterviewer: Yes. Customers are not very satisfied with Zendaya's premium perfume. Why don't you analyse customer experience?\nCandidate: Sure. At this point, it makes sense to draw a customer journey and find out at what stage we're losing them. The first step undertaken by the customer is to make a decision to purchase our perfume. He/she then visits a shop or website where the perfume is available. Subsequently, the customer navigates the shop or website and locates the perfume. He/she then completes the purchase by going through the billing process. Now, we come to the usage stage and see how satisfied they are with the product itself. Finally, we must also look at the quality of our customer service and feedback mechanism. Do we know at what stage customers have been expressing dissatisfaction? If not, we can dive deeper into each stage.\nInterviewer: Excellent. You can limit your analysis to the usage stage.\nCandidate: Perfect. There are 4 things I would like to look at in this stage: Packaging, Fragrance, Life of the product and Defect rate. Under packaging, I would like to know if we or our competitors have made any changes to the type of packaging, size of the bottle/can and durability. Under fragrance, I am mainly concerned with changes made to the scents as well as ingredients used in the perfumes. For instance, it is possible that some ingredients may be inducing allergic reactions.\nCandidate: Life of the product includes both shelf life as well as number of uses of our perfume and if there has been any change observed. Lastly, it is possible that there is higher defect rate due to poor quality control.\nInterviewer: Great. You have identified the problem correctly. In order to cut costs, Zendaya decided to replace their glass bottles with plastic bottles. Customers no longer feel that they are using a 'premium' product. What would you recommend?\nCandidate: Before that, I would like to know if the bottles are procured or manufactured in-house.\nInterviewer: Raw materials are sourced from outside. However, manufacturing is done in-house.\nCandidate: Given that Zendaya has branded these perfumes as 'premium', the packaging will have to reflect the same.\nInterviewer: Good. We will pass on your suggestions to the company.\n\nMake-Up for Lost Profits Framework & Recommendations\nDECLINING PROFITS OF ZENDAYA\nClarifying Questions: What are the product lines? What locations does Zendaya sell in?\nBrownie Points: Exploring metallic bottles as an alternative\nKeep In Mind: Segment the problem wherever possible to arrive at the solution quicker\nRECOMMENDATIONS:\n Returning to the use of glass bottles either by negotiating with suppliers to bring down glass prices or procuring finished bottles; we can also consider recovering the added cost through our customers, though this will involve a price increase which may adversely affect our market share.\n Refine plastic bottles to mimic glass finish and give a 'premium' feel.\n Explore metallic bottles for premium differentiation."
   },
   {
     "id": 10,
@@ -4807,7 +4781,7 @@
     "visualisations": [
       {
         "type": "decision",
-        "title": "Decision Logic",
+        "title": "",
         "rootId": "A",
         "nodes": [
           {
@@ -5096,307 +5070,5 @@
       }
     ],
     "framework": "Candidate: Sure. I'd like to understand the problem better. Where is her store located? What are the products currently available at her store? Also, how much have profits fallen by in this period?\nInterviewer: Her store is located in Delhi. She currently sells clothes for men and women. Profits have fallen by 15%.\nCandidate: Interesting. Does she manufacture her own clothes or is she a 3rd party distributor? How much space inside the store is the makeup outlet going to take?\nInterviewer: She is a distributor of clothes and plans to be for makeup as well. The makeup outlet is proposed to take up 20% of the space in the store.\nCandidate: Lastly, is there any particular reason for choosing a makeup outlet or is our client open to other ideas as well?\nInterviewer: She believes makeup products will sell much better post the pandemic period and hence, this is the only option she is considering.\nCandidate: I can now begin. Since our client's objective is to increase profits, I shall evaluate this decision on the basis of the additional revenues she will earn minus the additional costs she will incur.\nInterviewer: Sure, sounds good,\nCandidate: Therefore, if - Additional Revenues > Additional Costs, this is a wise decision.\nIn additional costs, I would like to incorporate not just the costs of setting up and buying the products, but also the revenue foregone from the lost retail apparel space, since this is an opportunity cost.\nInterviewer: Brilliant. Opportunity costs become a major consideration. Why don't you find the breakeven point of sales for this decision in a month? What is the data you would require?\nCandidate: Sure, I know that\nBreakeven point of sale = (Fixed cost)/(Sale price – Variable cost)\nTherefore, I would require the following information:\n1) Fixed costs involved in setting up the makeup outlet\n2) Opportunity cost of sales foregone\n3) Average sale price of a makeup product\n4) Average cost price of purchasing a makeup item\n5) Other variable costs involved (Staff, etc.)\nInterviewer: That seems comprehensive. You may note down the following information:\nInterviewer: Cost incurred to change the layout and set up the various aspects of the outlet – Rs. 40,000. The entire outlet has an area of 10,000 sq. ft and earns a profit of Rs. 25,000 a day. Assume that every part of the store contributes equally to profits. Average sale price of a makeup item would be around Rs. 1,000 and the average cost price would be Rs. 400. The other variable costs per product would come up to Rs. 100.\nCandidate: Great! Since the costs have been given to us in terms of a one-time fixed expenditure and a daily opportunity cost; we will first find the break-even point where we will be able to recover the fixed cost incurred. Subsequently, we will calculate the number of products we will need to sell daily in order to experience an incremental profit.\n_(Calculating daily opportunity cost)_\nIf income is uniform, then every 1 sq. ft of the apparel segment contributes Rs 2.5 (Rs. 25,000/10,000). Since the makeup division is expected to take up 2000 sq. ft, the revenue lost would be equal to\n2000 Sq. ft x Rs 2.5 = Rs. 5,000 per day\nThus, total cost to be recovered = Rs. 40,000. Rs. 5,000 everyday the store is open is the opportunity cost.\n_(Calculation on next page)_\nThus, we realise that we need to sell 80 items on an average from our makeup outlet to recover the fixed cost of renovations and we need to sell 10 products daily to recover the opportunity cost of giving up on 20% of the apparel segment.\nInterviewer: Brilliant! You have correctly identified the amount. Let's finally move on to recommendations on how we can further improve the sale from our makeup outlet.\nCandidate: I can think of the following suggestions –\n1) Online presence: Ensuring we have a website that provides for checking on stock availability and delivery option.\n2) Tie-ups with e-commerce aggregators: Presence on sites like Flipkart and Amazon can also add to sales.\n3) Range of makeup products not delimited to women: Keeping in mind the increasing trend of makeup for men and LGBTQi+ community\n4) Creating special ranges for all income segments and demographics\n5) Tie-ups with micro-influencers on Instagram and other platforms\n6) Discounts and offers on the makeup products on purchase of the apparel in the store\nAdditionally, driving up sales from the apparel division through similar marketing strategies will help raise sales through cross-selling techniques.\nInterviewer: Great. We can close the case here. Thank you!\n\nBeauty Lies On The Inside Framework & Recommendations\nDECLINING PROFITS OF AN APPAREL STORE\nWise Decision if Additional Revenues > Additional Costs\nFINDING THE BREAK EVEN POINT\n\nA: BREAK-EVEN POINT (ONE TIME EXPENDITURE)\nFixed Investment = ₹40,000\nS.P. of One Product = ₹1,000\nV.C. of One Product = ₹400 + ₹100 = ₹500\nBreak Even Point Of Sales = F.C./(S.P. – V.C.) = ₹40,000/(₹1,000 – ₹500) = ₹40,000/₹500 = 80 Items\n\nB: ANALYSING VIABILITY (ACCOUNTING FOR THE DAILY OPPORTUNITY COST)\nOpportunity Cost = ₹5,000\nS.P Of One Product = ₹1,000\nV.C. Of One Product = ₹400 + ₹100 = ₹500\nRequired Daily Sales = Opportunity Cost/(S.P. – V.C.) = ₹5,000/(₹1,000 – ₹500) = ₹5,000/₹500 = 10 Items/Day\n\nClarifying Questions: Where is the store located? How much space is the makeup outlet going to take? Why only makeup as an alternative?\nBrownie Points: Mentioning opportunity cost as one of the fixed costs as it ended up becoming crucial to the case\nKeep In Mind: Basics of profitability and the profit function are very useful in unorthodox cases like this. Try to incorporate concepts you have studied about before."
-  },
-  {
-    "id": 23,
-    "docId": "case-23",
-    "title": "Mr. Worldwide",
-    "industry": "Hospitality",
-    "difficulty": "Medium",
-    "case_type": "Market Entry",
-    "company": "L. E. K. Consulting",
-    "round": "Principal",
-    "prompt": "Hey, let's begin with a quick case. Your client is the CEO of a famous hotel chain in India. He believes the Indian market has saturated and wants to open operations in another country. You are required to help him.",
-    "frameworkTree": {
-      "nodes": {
-        "mr-worldwide-enter-new-market": {
-          "id": "mr-worldwide-enter-new-market",
-          "label": "Mr. Worldwide - Enter New Market",
-          "tone": "root",
-          "children": [
-            "financial-feasibility",
-            "operational-feasibility",
-            "risks"
-          ]
-        },
-        "financial-feasibility": {
-          "id": "financial-feasibility",
-          "label": "Financial Feasibility",
-          "tone": "branch",
-          "children": [
-            "market-size",
-            "market-share",
-            "profit-per-night",
-            "market-growth-rate"
-          ]
-        },
-        "operational-feasibility": {
-          "id": "operational-feasibility",
-          "label": "Operational Feasibility",
-          "tone": "branch",
-          "children": [
-            "pre-setup",
-            "setup",
-            "post-setup"
-          ]
-        },
-        "risks": {
-          "id": "risks",
-          "label": "Risks",
-          "tone": "branch",
-          "children": [
-            "regulatory",
-            "cost-and-capital",
-            "market-and-economic"
-          ]
-        },
-        "market-size": {
-          "id": "market-size",
-          "label": "Market Size",
-          "tone": "branch",
-          "children": [
-            "no-of-tourists",
-            "avg-stay"
-          ]
-        },
-        "market-share": {
-          "id": "market-share",
-          "label": "Market Share",
-          "tone": "support",
-          "children": []
-        },
-        "profit-per-night": {
-          "id": "profit-per-night",
-          "label": "Profit per Night: (R - VC) - FC",
-          "tone": "branch",
-          "children": [
-            "revenue-per-night",
-            "variable-cost-per-night",
-            "fixed-investment"
-          ]
-        },
-        "market-growth-rate": {
-          "id": "market-growth-rate",
-          "label": "Market Growth Rate",
-          "tone": "leaf",
-          "children": []
-        },
-        "no-of-tourists": {
-          "id": "no-of-tourists",
-          "label": "No. of Tourists",
-          "tone": "leaf",
-          "children": []
-        },
-        "avg-stay": {
-          "id": "avg-stay",
-          "label": "Avg Stay (nights)",
-          "tone": "leaf",
-          "children": []
-        },
-        "revenue-per-night": {
-          "id": "revenue-per-night",
-          "label": "Revenue/Night",
-          "tone": "leaf",
-          "children": []
-        },
-        "variable-cost-per-night": {
-          "id": "variable-cost-per-night",
-          "label": "Variable Cost/Night",
-          "tone": "leaf",
-          "children": []
-        },
-        "fixed-investment": {
-          "id": "fixed-investment",
-          "label": "Fixed Investment",
-          "tone": "leaf",
-          "children": []
-        },
-        "pre-setup": {
-          "id": "pre-setup",
-          "label": "Pre-Setup",
-          "tone": "branch",
-          "children": [
-            "permissions-and-licensing",
-            "market-research",
-            "land-acquisition"
-          ]
-        },
-        "setup": {
-          "id": "setup",
-          "label": "Setup",
-          "tone": "branch",
-          "children": [
-            "establishing-hotels",
-            "hiring-and-staffing",
-            "marketing"
-          ]
-        },
-        "post-setup": {
-          "id": "post-setup",
-          "label": "Post-Setup",
-          "tone": "branch",
-          "children": [
-            "service-delivery",
-            "maintenance"
-          ]
-        },
-        "permissions-and-licensing": {
-          "id": "permissions-and-licensing",
-          "label": "Permissions & Licensing",
-          "tone": "leaf",
-          "children": []
-        },
-        "market-research": {
-          "id": "market-research",
-          "label": "Market Research",
-          "tone": "leaf",
-          "children": []
-        },
-        "land-acquisition": {
-          "id": "land-acquisition",
-          "label": "Land Acquisition",
-          "tone": "leaf",
-          "children": []
-        },
-        "establishing-hotels": {
-          "id": "establishing-hotels",
-          "label": "Establishing Hotels",
-          "tone": "leaf",
-          "children": []
-        },
-        "hiring-and-staffing": {
-          "id": "hiring-and-staffing",
-          "label": "Hiring & Staffing",
-          "tone": "leaf",
-          "children": []
-        },
-        "marketing": {
-          "id": "marketing",
-          "label": "Marketing",
-          "tone": "leaf",
-          "children": []
-        },
-        "service-delivery": {
-          "id": "service-delivery",
-          "label": "Service Delivery",
-          "tone": "leaf",
-          "children": []
-        },
-        "maintenance": {
-          "id": "maintenance",
-          "label": "Maintenance",
-          "tone": "leaf",
-          "children": []
-        },
-        "regulatory": {
-          "id": "regulatory",
-          "label": "Regulatory",
-          "tone": "branch",
-          "children": [
-            "licensing-and-permits",
-            "land-ownership-laws"
-          ]
-        },
-        "cost-and-capital": {
-          "id": "cost-and-capital",
-          "label": "Cost & Capital",
-          "tone": "branch",
-          "children": [
-            "capex-overruns",
-            "setup-cost-overruns"
-          ]
-        },
-        "market-and-economic": {
-          "id": "market-and-economic",
-          "label": "Market & Economic",
-          "tone": "branch",
-          "children": [
-            "demand-volatility",
-            "macroeconomic-conditions"
-          ]
-        },
-        "licensing-and-permits": {
-          "id": "licensing-and-permits",
-          "label": "Licensing & Permits",
-          "tone": "leaf",
-          "children": []
-        },
-        "land-ownership-laws": {
-          "id": "land-ownership-laws",
-          "label": "Land Ownership Laws",
-          "tone": "leaf",
-          "children": []
-        },
-        "capex-overruns": {
-          "id": "capex-overruns",
-          "label": "Capex Overruns",
-          "tone": "leaf",
-          "children": []
-        },
-        "setup-cost-overruns": {
-          "id": "setup-cost-overruns",
-          "label": "Setup Cost Overruns",
-          "tone": "leaf",
-          "children": []
-        },
-        "demand-volatility": {
-          "id": "demand-volatility",
-          "label": "Demand Volatility",
-          "tone": "leaf",
-          "children": []
-        },
-        "macroeconomic-conditions": {
-          "id": "macroeconomic-conditions",
-          "label": "Macroeconomic Conditions",
-          "tone": "leaf",
-          "children": []
-        }
-      },
-      "defaultExpanded": [
-        "mr-worldwide-enter-new-market",
-        "financial-feasibility",
-        "market-size",
-        "profit-per-night",
-        "operational-feasibility",
-        "pre-setup",
-        "setup",
-        "post-setup",
-        "risks",
-        "regulatory",
-        "cost-and-capital",
-        "market-and-economic"
-      ],
-      "defaultFocusedId": "land-acquisition",
-      "notes": [
-        {
-          "title": "Questions",
-          "items": [
-            "Primary Objective",
-            "Any particular countries being targeted?",
-            "Type of hotel chain",
-            "India market share and hotel count"
-          ]
-        },
-        {
-          "title": "Keep In Mind",
-          "items": [
-            "Ask for average stay to calculate market size",
-            "Check operational constraints before finalising the winner",
-            "Use long-term growth potential to break ties"
-          ]
-        },
-        {
-          "title": "Brownie Points",
-          "items": [
-            "Keeping in mind, long-term potential of Australia",
-            "Telling the interviewer the exact information required",
-            "Adding market growth rate to financial feasibility table",
-            "Highlighting scalability from future land acquisition"
-          ]
-        }
-      ]
-    },
-    "framework": "Candidate: Oh wow, that's interesting! I'd like to get a better understanding of the problem. What kind of hotels does our client own? How has he fared in India? How many hotels does he own and where are they located in India?\nInterviewer: He owns premium hotels, similar to Taj. He has 50% share in the Indian market and believes the Indian hospitality industry has slow growth. He has 30 hotels in India, located in Tier 1 and 2 cities.\nCandidate: Okay. What is his primary objective of expanding? Is it profits?\nInterviewer: Yes, he wants to maximise profits.\nCandidate: Great. Do we have any countries in mind among which he wants to choose or is it open to us?\nInterviewer: Good question. We have 3 countries among which he wants to choose - Brazil, Australia and South Africa.\nCandidate: Lastly, are we planning on setting up premium hotels in these countries or are we open to other types of hotels too?\nInterviewer: Your client wants to be recognized in the premium segment only.\nCandidate: Okay brilliant. I would like to follow a 2 step approach. First, I'd like to analyse the profits he can earn in each of these three countries. Second, I'd like to see if operations can be easily set up in these countries. Based on these two steps, I shall make my recommendations.\nInterviewer: Sure. Let us begin.\nCandidate: To analyse the financial aspect of things, I would require the following information since I am unfamiliar with the demographics of the 3 countries.\n\nMarket size of the premium hospitality industry\nMarket share that we can expect\nMarket growth rate\nAverage revenue per night per customer\nAverage cost per night per customer\nFixed investment required to acquire above market share\nInterviewer: Sure! Have a look at the table.\nCandidate: (analyses for a minute) Interesting. I can calculate market size and our expected market share from this information. I shall multiply this into profit per night per customer to get our profits and then subtract the fixed costs.\nInterviewer: Are you sure you can calculate market size?\nCandidate: Oh wait. To get the number of nights occupied per year by tourists, I would also require the average number of nights occupied per premium tourist per stay.\nInterviewer: Exactly. The average stay is 3, 5 and 4 nights for Brazil, Australia and South Africa respectively.\nCandidate: Here are my calculations -\n(Refer to the next page)\nClearly, Australia seems like the best option according to financial attractiveness. Let us now move on to the operational feasibility test. There are 6 steps according to me in the setting up of operations.\nObtaining necessary permission and licenses - Research to analyse hotspots - Acquiring the requisite land - Setting up our hotels - Hiring the requisite staff - Marketing our hotel chain - Starting operations.\nI would like to understand the ease with which each of these can be done at the 3 locations.\nInterviewer: Great. There seems to be no issue in any of the steps in Brazil. In South Africa, there are certain regulatory issues regarding licenses and in Australia, an issue with purchasing of the land.\nCandidate: What are the particular issues in each of these countries?\nInterviewer: Australia has recently come up with regulations that limit the amount of land foreigners can purchase every ten years. Thus, we will only be able to acquire 50% of our initial estimates and the balance after 10 years. In South Africa, there are certain additional licenses to be obtained for premium Hotel Chains that would cost us an additional investment of $50 million not included in our previous estimates.\nCandidate: That's interesting. In light of the new information, our revised profits are as follows:\nAustralia: 50% of $700 Million = $350 Million\nSouth Africa: $400 Million - $50 million = $350 Million\nBrazil: $260 million.\nInterviewer: What are your final recommendations?\nCandidate: Since profit is our primary motive, the decision comes down to Australia and South Africa. We can consider various qualitative factors before finalising, in the absence of it, my suggestion would be Australia.\nThere is massive potential for increasing profits in the long term since we can acquire additional land in 10 years whereas in South Africa, the potential is maximised.\n\nMr. Worldwide Framework & Recommendations\nA HOTEL CHAIN ENTERING NEW MARKETS\nClarifying Questions: Primary Objective Any particular countries being targeted? Type of hotel chain India market share and hotel count\nBrownie Points: Keeping in mind, long-term potential of Australia Telling the interviewer the exact information required Adding market growth rate to financial feasibility table Highlighting scalability from future land acquisition\nKeep In Mind: Ask for average stay to calculate market size Check operational constraints before finalising the winner Use long-term growth potential to break ties\nRECOMMENDATIONS:\nPick Australia for stronger long-term growth potential\nAcquire remaining 50% land in Australia after ten years\nPlan staged capacity expansion as land restrictions ease\nAvoid South Africa due to limited expansion levers",
-    "visualisations": null
   }
 ]

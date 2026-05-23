@@ -3312,7 +3312,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         <Reveal>
                           <div className="mt-10 mb-0 flex items-center gap-4">
                             <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Framework</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
                             <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
                           </div>
                         </Reveal>
@@ -3374,13 +3374,15 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                             ))}
                           </ul>
                           {visualisations?.some(v => v.type === 'decision') && (<>
-                            <Reveal>
-                              <div className="mt-10 mb-4 flex items-center gap-4">
-                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
-                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                              </div>
-                            </Reveal>
+                            {(visualisations!.find(v => v.type === 'decision') as VisDecision)?.title && (
+                              <Reveal>
+                                <div className="mt-10 mb-4 flex items-center gap-4">
+                                  <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{(visualisations!.find(v => v.type === 'decision') as VisDecision).title}</span>
+                                  <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                                </div>
+                              </Reveal>
+                            )}
                             <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                               <VisDecisionBlock key={i} vis={v as VisDecision} />
                             ))}</Reveal>
@@ -3419,7 +3421,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 <Reveal>
                   <div className="mt-10 mb-0 flex items-center gap-4">
                     <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Framework</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
                     <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
                   </div>
                 </Reveal>
@@ -3456,13 +3458,15 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                     ))}
                   </ul>
                   {visualisations?.some(v => v.type === 'decision') && (<>
-                    <Reveal>
-                      <div className="mt-10 mb-4 flex items-center gap-4">
-                        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
-                        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                      </div>
-                    </Reveal>
+                    {(visualisations!.find(v => v.type === 'decision') as VisDecision)?.title && (
+                      <Reveal>
+                        <div className="mt-10 mb-4 flex items-center gap-4">
+                          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{(visualisations!.find(v => v.type === 'decision') as VisDecision).title}</span>
+                          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                        </div>
+                      </Reveal>
+                    )}
                     <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                       <VisDecisionBlock key={i} vis={v as VisDecision} />
                     ))}</Reveal>
@@ -3841,7 +3845,7 @@ export function CaseInterviewerMaster({
                           <Reveal>
                             <div className="mt-10 mb-0 flex items-center gap-4">
                               <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Framework</span>
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
                               <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
                             </div>
                           </Reveal>
@@ -3891,13 +3895,15 @@ export function CaseInterviewerMaster({
                               ))}
                             </ul>
                             {visualisations?.some(v => v.type === 'decision') && (<>
-                              <Reveal>
-                                <div className="mt-10 mb-4 flex items-center gap-4">
-                                  <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
-                                  <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                                </div>
-                              </Reveal>
+                              {(visualisations!.find(v => v.type === 'decision') as VisDecision)?.title && (
+                                <Reveal>
+                                  <div className="mt-10 mb-4 flex items-center gap-4">
+                                    <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{(visualisations!.find(v => v.type === 'decision') as VisDecision).title}</span>
+                                    <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                                  </div>
+                                </Reveal>
+                              )}
                               <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                                 <VisDecisionBlock key={i} vis={v as VisDecision} />
                               ))}</Reveal>
@@ -3934,7 +3940,7 @@ export function CaseInterviewerMaster({
                   <Reveal>
                     <div className="mt-10 mb-0 flex items-center gap-4">
                       <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Framework</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
                       <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
                     </div>
                   </Reveal>
@@ -3969,13 +3975,15 @@ export function CaseInterviewerMaster({
                       ))}
                     </ul>
                     {visualisations?.some(v => v.type === 'decision') && (<>
-                      <Reveal>
-                        <div className="mt-10 mb-4 flex items-center gap-4">
-                          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Decision Logic</span>
-                          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                        </div>
-                      </Reveal>
+                      {(visualisations!.find(v => v.type === 'decision') as VisDecision)?.title && (
+                        <Reveal>
+                          <div className="mt-10 mb-4 flex items-center gap-4">
+                            <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{(visualisations!.find(v => v.type === 'decision') as VisDecision).title}</span>
+                            <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                          </div>
+                        </Reveal>
+                      )}
                       <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
                         <VisDecisionBlock key={i} vis={v as VisDecision} />
                       ))}</Reveal>

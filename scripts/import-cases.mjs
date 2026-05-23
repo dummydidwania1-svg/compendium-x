@@ -35,7 +35,6 @@ function buildPayload(rawCase) {
     prompt: rawCase.prompt.trim(),
     framework: rawCase.framework.trim(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
   }
   if (typeof rawCase.company === 'string' && rawCase.company.trim()) {
     payload.company = rawCase.company.trim()
@@ -112,26 +111,10 @@ async function main() {
 
     if (docId) {
       const ref = db.collection('cases').doc(docId)
-      // Separate delete sentinels — they must go via update(), not set()
-      const { frameworkTree, ...rest } = payload
-      const deleteFields = {}
-      const setFields = {}
-      for (const [k, v] of Object.entries(rest)) {
-        if (v && typeof v === 'object' && v.isEqual === undefined && '_methodName' in v) {
-          deleteFields[k] = v  // FieldValue.delete() sentinel
-        } else {
-          setFields[k] = v
-        }
-      }
-      await ref.set(setFields, { merge: true })
-      if (frameworkTree !== undefined) {
-        await ref.update({ frameworkTree })
-      }
-      if (Object.keys(deleteFields).length > 0) {
-        await ref.update(deleteFields)
-      }
+      // Full overwrite — document in Firestore will exactly match the JSON payload
+      await ref.set(payload)
       upsertedCount += 1
-      console.log(`Upserted case: ${payload.title} (${docId})`)
+      console.log(`Replaced case: ${payload.title} (${docId})`)
     } else {
       const newDoc = await db.collection('cases').add(payload)
       createdCount += 1
