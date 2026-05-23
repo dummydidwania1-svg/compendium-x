@@ -3093,7 +3093,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
   />
 </div>
 
-                    <div className={`relative flex flex-col pl-7 pr-5 py-6${recommendations.length === 0 ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
+                    <div className={`relative flex flex-col pl-7 pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-4' : ' pt-6'}${recommendations.length === 0 ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
                       {/* Glass blur overlay — only when framework is fully expanded AND bottom border is not yet visible */}
                       {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                         <div className="pointer-events-none z-20"
@@ -3627,7 +3627,7 @@ export function CaseInterviewerMaster({
                       <div className="absolute left-0 top-0 hidden h-full w-px lg:block">
                         <div className="sticky top-[128px] w-full" style={{ height: 'calc(100vh - 168px)', background: 'linear-gradient(180deg, transparent 0%, rgba(92,64,51,0.14) 12%, rgba(92,64,51,0.14) 88%, transparent 100%)' }} />
                       </div>
-                      <div className={`relative flex flex-col pl-7 pr-5 py-6${recommendations.length === 0 ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
+                      <div className={`relative flex flex-col pl-7 pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-4' : ' pt-6'}${recommendations.length === 0 ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
                         {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
