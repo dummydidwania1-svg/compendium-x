@@ -21,6 +21,7 @@ type ParsedFramework = {
 type WalkthroughBlock =
   | { key: string; kind: 'heading'; text: string }
   | { key: string; kind: 'equation'; text: string; speaker: TranscriptSpeaker }
+  | { key: string; kind: 'indent'; text: string; speaker: TranscriptSpeaker }
   | { key: string; kind: 'bullet'; marker: string; text: string; speaker: TranscriptSpeaker }
   | { key: string; kind: 'line'; text: string; speaker: TranscriptSpeaker }
   | { key: string; kind: 'vis-inline'; visIndex: number }
@@ -179,6 +180,7 @@ function buildBlocks(lines: TranscriptDisplayLine[]): WalkthroughBlock[] {
     if (visMatch) return [{ key: `vis-${i}`, kind: 'vis-inline', visIndex: parseInt(visMatch[1], 10) }]
     if (isSectionHeading(n)) return [{ key: `h-${i}`, kind: 'heading', text: n }]
     if (isEquation(n)) return [{ key: `eq-${i}`, kind: 'equation', text: fmtEquation(n), speaker: e.speaker }]
+    if (/^=\s/.test(n)) return [{ key: `ind-${i}`, kind: 'indent', text: fmtEquation(n), speaker: e.speaker }]
     const bm = n.match(/^(\d+[\).]|[-•])\s*(.+)$/)
     if (bm) return [{ key: `b-${i}`, kind: 'bullet', marker: bm[1], text: bm[2], speaker: e.speaker }]
     return [{ key: `l-${i}`, kind: 'line', text: n, speaker: e.speaker }]
@@ -602,6 +604,13 @@ function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
       </p>
     )
   }
+  if (block.kind === 'indent') {
+    return (
+      <p className={`pl-10 text-[16px] leading-[1.5] tracking-[0.01em] ${walkthroughSpeakerTone(block.speaker)}`}>
+        {renderInline(block.text)}
+      </p>
+    )
+  }
   if (block.kind === 'bullet') {
     return (
       <div className={`ml-5 flex gap-3 ${walkthroughSpeakerTone(block.speaker)}`}>
@@ -624,6 +633,9 @@ function walkthroughSpacingClass(block: WalkthroughBlock, previous?: Walkthrough
   if (block.kind === 'heading') return 'mt-6'
   if (previous.kind === 'heading') return block.kind === 'equation' ? 'mt-3.5' : 'mt-3'
 
+  if (block.kind === 'indent' && (previous.kind === 'equation' || previous.kind === 'indent')) return 'mt-1.5'
+  if (block.kind === 'indent') return 'mt-3'
+  if (previous.kind === 'indent') return 'mt-4'
   if (block.kind === 'equation' || previous.kind === 'equation') return 'mt-4'
 
   if (block.kind === 'bullet') return previous.kind === 'bullet' ? 'mt-2' : 'mt-3'
