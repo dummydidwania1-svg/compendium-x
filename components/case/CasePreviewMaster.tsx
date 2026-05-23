@@ -1918,10 +1918,13 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
   const rows: string[][] = typeof vis.rows === 'string' ? JSON.parse(vis.rows) : (vis.rows ?? [])
   const cols: string[] = (vis as { columns?: string[]; headers?: string[] }).columns ?? (vis as { headers?: string[] }).headers ?? []
   const summarySet = new Set(vis.summaryRows ?? [])
+  // Only the first summaryRow gets the separator line above it; subsequent ones just bold
+  const separatorRow = vis.summaryRows?.length ? Math.min(...vis.summaryRows) : -1
+  const lastCol = cols.length - 1
   return (
-    <div className="pt-16">
+    <div className="pt-10">
       {!vis.noTitle && <VisDivider label={vis.title} />}
-      <div className="w-full overflow-x-auto rounded-[4px] border border-[#5C4033]/12">
+      <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
         <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
           {vis.columnWidths && (
             <colgroup>
@@ -1929,14 +1932,15 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
             </colgroup>
           )}
           <thead>
-            <tr style={{ background: 'rgba(92,64,51,0.05)', borderBottom: '1px solid rgba(92,64,51,0.12)' }}>
+            <tr>
               {cols.map((col, i) => (
-                <th key={i} className="px-4 py-2 text-left"
+                <th key={i} className="px-4 py-2"
                   style={{
                     fontFamily: "'Work Sans', sans-serif",
-                    fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.18em',
-                    color: '#5C4033', opacity: 0.7, whiteSpace: 'nowrap',
-                    borderLeft: i > 0 ? '1px solid rgba(92,64,51,0.08)' : undefined,
+                    fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
+                    color: '#f0f5ee', background: '#3D5A35', whiteSpace: 'nowrap',
+                    textAlign: i === lastCol ? 'right' : 'left',
+                    borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined,
                   }}>
                   {col}
                 </th>
@@ -1946,6 +1950,7 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
           <tbody>
             {rows.map((row, ri) => {
               const isSummary = summarySet.has(ri)
+              const hasSeparator = ri === separatorRow
               return (
                 <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
                   {row.map((cell, ci) => (
@@ -1957,10 +1962,11 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
                         color: '#3B2F2F',
                         lineHeight: 1.5,
                         whiteSpace: ci === 0 ? 'normal' : 'nowrap',
-                        borderTop: isSummary
-                          ? '2px solid rgba(92,64,51,0.18)'
-                          : '1px solid rgba(92,64,51,0.07)',
-                        borderLeft: ci > 0 ? '1px solid rgba(92,64,51,0.07)' : undefined,
+                        textAlign: ci === lastCol ? 'right' : 'left',
+                        borderTop: hasSeparator
+                          ? '2px solid rgba(61,90,53,0.25)'
+                          : '1px solid rgba(61,90,53,0.08)',
+                        borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                       }}>
                       {cell}
                     </td>
@@ -1972,8 +1978,8 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
         </table>
       </div>
       {vis.insight && (
-        <p className="mt-3 text-[12px] leading-relaxed text-[#5C4033]/60" style={{ fontFamily: "'Work Sans', sans-serif" }}>
-          <span className="font-semibold text-[#5C4033]/70">Key Insight:</span> {vis.insight}
+        <p className="mt-2.5 pl-1 text-[12px] leading-relaxed text-[#5C4033]/55" style={{ fontFamily: "'Work Sans', sans-serif" }}>
+          <span className="font-semibold text-[#5C4033]/65">Key Insight:</span> {vis.insight}
         </p>
       )}
     </div>
