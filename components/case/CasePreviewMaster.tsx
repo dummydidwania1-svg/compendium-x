@@ -1853,10 +1853,19 @@ function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
         {derivations.map((d, i) => (
           <li key={i} className="flex items-center gap-2" style={{ marginTop: 14, paddingLeft: 13 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0 2px' }}>
-              <span style={{ ...termStyle, marginRight: 6 }}>{i === 0 ? 'where,' : 'and,'}</span>
-              <FormulaExpr text={d.lhs} />
-              <span style={eqStyle}>=</span>
-              <FormulaExpr text={d.rhs} />
+              {d.lhs === '+' ? (
+                <>
+                  <span style={{ ...opStyle, marginRight: 6 }}>+</span>
+                  <FormulaExpr text={d.rhs} />
+                </>
+              ) : (
+                <>
+                  <span style={{ ...termStyle, marginRight: 6 }}>{i === 0 ? 'where,' : 'and,'}</span>
+                  <FormulaExpr text={d.lhs} />
+                  <span style={eqStyle}>=</span>
+                  <FormulaExpr text={d.rhs} />
+                </>
+              )}
             </span>
           </li>
         ))}

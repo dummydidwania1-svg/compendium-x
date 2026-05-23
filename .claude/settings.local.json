@@ -30,7 +30,10 @@
       "Bash(xargs kill -9)",
       "Bash(npm run dev > /tmp/dev.log 2>&1 & *)",
       "Bash(pkill -f \"next dev\")",
-      "Bash(pkill -9 -f \"next\")"
+      "Bash(pkill -9 -f \"next\")",
+      "Bash(node scripts/import-cases.mjs data/cases.json)",
+      "Bash(xxd)",
+      "Bash(curl -s http://localhost:3000/case/case-18/interviewer?preview=1)"
     ],
     "additionalDirectories": [
       "/tmp"
