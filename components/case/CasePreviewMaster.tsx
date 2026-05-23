@@ -1958,7 +1958,7 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
                       style={{
                         fontFamily: "'Newsreader', serif",
                         fontSize: '14px',
-                        fontWeight: isSummary ? 600 : 400,
+                        fontWeight: isSummary && (ci === 0 || ci === lastCol) ? 600 : 400,
                         color: '#3B2F2F',
                         lineHeight: 1.5,
                         whiteSpace: ci === 0 ? 'normal' : 'nowrap',
