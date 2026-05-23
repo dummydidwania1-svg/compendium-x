@@ -4812,14 +4812,14 @@
         "nodes": [
           {
             "id": "A",
-            "label": "Pay AAI\nPriority Fee?",
+            "label": "Pay AAI Priority Fee?",
             "kind": "rect",
             "chosen": true,
             "children": [{ "nodeId": "B" }]
           },
           {
             "id": "B",
-            "label": "Fee < Fuel Cost\nof Circling?",
+            "label": "Fee < Fuel Cost of Circling?",
             "kind": "diamond",
             "chosen": true,
             "children": [
@@ -4829,14 +4829,14 @@
           },
           {
             "id": "C",
-            "label": "Pay the Fee ✓\nNet cost saving",
+            "label": "Pay the Fee",
             "kind": "terminal",
             "chosen": true,
             "children": [{ "nodeId": "G" }]
           },
           {
             "id": "D",
-            "label": "Churn Risk\nfrom Delays?",
+            "label": "Churn Risk from Delays?",
             "kind": "diamond",
             "chosen": false,
             "children": [
@@ -4846,20 +4846,20 @@
           },
           {
             "id": "E",
-            "label": "Pay the Fee ✓\nProtect revenue",
+            "label": "Pay the Fee",
             "kind": "terminal",
             "chosen": false,
             "children": [{ "nodeId": "G" }]
           },
           {
             "id": "F",
-            "label": "Defer Payment\nMonitor situation",
+            "label": "Defer Payment",
             "kind": "terminal",
             "chosen": false
           },
           {
             "id": "G",
-            "label": "Consider:\nEnvironmental benefit",
+            "label": "Environmental benefit",
             "kind": "terminal",
             "chosen": true
           }
