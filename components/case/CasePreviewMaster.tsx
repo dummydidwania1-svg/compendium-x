@@ -1915,7 +1915,8 @@ function VisTableInline({ vis }: { vis: VisTable }) {
    Visualization: Generic table (drilldown) — same styling as VisTableInline
    ═══════════════════════════════════════════════════════════ */
 function VisTableBlock({ vis }: { vis: VisTable }) {
-  const rows: string[][] = typeof vis.rows === 'string' ? JSON.parse(vis.rows) : vis.rows
+  const rows: string[][] = typeof vis.rows === 'string' ? JSON.parse(vis.rows) : (vis.rows ?? [])
+  const cols: string[] = (vis as { columns?: string[]; headers?: string[] }).columns ?? (vis as { headers?: string[] }).headers ?? []
   const summarySet = new Set(vis.summaryRows ?? [])
   const headerStyle: React.CSSProperties = {
     fontFamily: "'Work Sans', sans-serif",
@@ -1934,7 +1935,7 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
           )}
           <thead>
             <tr>
-              {vis.columns.map((col, i) => (
+              {cols.map((col, i) => (
                 <th key={i} className="px-4 py-2 text-left"
                   style={{ ...headerStyle, borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined }}>
                   {col}
