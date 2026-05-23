@@ -4815,12 +4815,12 @@
           { "label": "Take-off" },
           { "label": "Ascent" },
           { "label": "Stabilisation & Cruise" },
-          { "label": "Circling ↑\nAwaiting ATC", "highlight": true },
+          { "label": "Circling", "highlight": true },
           { "label": "Descent" },
           { "label": "Touchdown" },
           { "label": "Taxi to Drop Point" }
         ],
-        "insight": "Drawing the process journey isolates the cost driver with precision — the circling stage is the only phase that has extended, adding kilometres and fuel burn per flight."
+        "insight": "Drawing the process journey isolates the cost driver with precision. The circling stage is the only phase that has extended, adding kilometres and fuel burn per flight."
       },
       {
         "id": "recommendation-decision-logic",

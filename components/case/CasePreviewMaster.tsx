@@ -2151,19 +2151,17 @@ function VisProcessBlock({ vis }: { vis: VisProcess }) {
                   </svg>
                 </div>
               )}
-              <div className="shrink-0 flex-1 rounded-[6px] border px-3 py-2.5 text-center"
+              <div className="shrink-0 flex-1 rounded-[6px] border flex items-center justify-center text-center px-3 py-2.5"
                 style={{
                   minWidth: 72,
                   fontFamily: "'Work Sans', sans-serif",
-                  fontSize: 12, fontWeight: step.highlight ? 600 : 400,
+                  fontSize: 13, fontWeight: step.highlight ? 500 : 400,
                   lineHeight: 1.4,
                   background: step.highlight ? '#3D5A35' : 'rgba(255,248,240,0.8)',
                   borderColor: step.highlight ? '#3D5A35' : 'rgba(61,90,53,0.12)',
                   color: step.highlight ? '#f0f5ee' : '#3B2F2F',
                 }}>
-                {step.label.split('\n').map((line, li) => (
-                  <span key={li} style={{ display: 'block' }}>{line}</span>
-                ))}
+                <span>{step.label}</span>
               </div>
             </Fragment>
           ))}
