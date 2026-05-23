@@ -2155,8 +2155,8 @@ function VisCalcPairBlock({ vis }: { vis: VisCalcPair }) {
   function Panel({ panel }: { panel: VisCalcPanel }) {
     return (
       <div className="flex-1 min-w-0">
-        {/* Green header — width stretches to match the panel's share */}
-        <div className="px-5 py-2.5 rounded-t-lg" style={{ background: '#3D5A35' }}>
+        {/* Green header — fits text width only */}
+        <div className="inline-block px-4 py-2 rounded-t-md mb-3" style={{ background: '#3D5A35' }}>
           <span className="text-[10px] font-semibold uppercase tracking-[0.16em] leading-none"
             style={{ color: 'rgba(240,245,238,0.9)', fontFamily: FONT }}>
             {panel.title}
