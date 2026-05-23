@@ -4668,7 +4668,12 @@
           "label": "Km / Flight",
           "tone": "branch",
           "children": [
-            "flight-path"
+            "taxi-to-runway",
+            "take-off-and-ascent",
+            "cruise",
+            "circling",
+            "descent-and-touchdown",
+            "taxi-to-drop"
           ]
         },
         "litres-per-km": {
@@ -4688,19 +4693,6 @@
           "label": "Wastage",
           "tone": "support",
           "children": []
-        },
-        "flight-path": {
-          "id": "flight-path",
-          "label": "Flight Path",
-          "tone": "branch",
-          "children": [
-            "taxi-to-runway",
-            "take-off-and-ascent",
-            "cruise",
-            "circling",
-            "descent-and-touchdown",
-            "taxi-to-drop"
-          ]
         },
         "taxi-to-runway": {
           "id": "taxi-to-runway",
@@ -4783,7 +4775,6 @@
         "fuel",
         "flights",
         "km-per-flight",
-        "flight-path",
         "circling",
         "atc-clearance"
       ],
@@ -4817,11 +4808,19 @@
     },
     "visualisations": [
       {
-        "id": "flight-path-process-journey",
+        "type": "process",
         "title": "Flight Path Process Journey",
-        "type": "mermaid",
-        "diagram": "flowchart LR\n    A[\"Taxi to<br>Runway\"] --> B[\"Take-off\"] --> C[\"Ascent\"] --> D[\"Stabilisation<br>& Cruise\"] --> E[\"Circling ↑<br>Awaiting ATC\"] --> F[\"Descent\"] --> G[\"Touchdown\"] --> H[\"Taxi to<br>Drop Point\"]\n\n    style E fill:#b5451b,stroke:#333,stroke-width:2px,color:#fff",
-        "caption": "Drawing the process journey isolates the cost driver with precision — the circling stage is the only phase that has extended, adding kilometres and fuel burn per flight."
+        "steps": [
+          { "label": "Taxi to Runway" },
+          { "label": "Take-off" },
+          { "label": "Ascent" },
+          { "label": "Stabilisation & Cruise" },
+          { "label": "Circling ↑\nAwaiting ATC", "highlight": true },
+          { "label": "Descent" },
+          { "label": "Touchdown" },
+          { "label": "Taxi to Drop Point" }
+        ],
+        "insight": "Drawing the process journey isolates the cost driver with precision — the circling stage is the only phase that has extended, adding kilometres and fuel burn per flight."
       },
       {
         "id": "recommendation-decision-logic",

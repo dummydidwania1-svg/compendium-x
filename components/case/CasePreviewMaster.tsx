@@ -54,7 +54,13 @@ export type VisQuadrant = {
   points: { label: string; x: number; y: number }[]
   priorityOrder?: string[]
 }
-export type Visualisation = VisFormula | VisTable | VisQuadrant
+export type VisProcess = {
+  type: 'process'
+  title: string
+  steps: { label: string; highlight?: boolean }[]
+  insight?: string
+}
+export type Visualisation = VisFormula | VisTable | VisQuadrant | VisProcess
 
 export type RecommendationsTableA = { headers: string[]; rows: string[][] }
 export type RecommendationsTableB = { framework: string; columns: string[]; dimensionHeader?: string; rows: { dimension: string; shortTerm: string; longTerm: string }[] }
@@ -2127,6 +2133,49 @@ function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Visualization: Process map (horizontal step chain)
+   ═══════════════════════════════════════════════════════════ */
+function VisProcessBlock({ vis }: { vis: VisProcess }) {
+  return (
+    <div className="pt-10">
+      <div className="w-full overflow-x-auto rounded-[4px] border border-[rgba(61,90,53,0.10)] p-4"
+        style={{ background: 'rgba(255,248,240,0.5)' }}>
+        <div className="flex items-center gap-0" style={{ minWidth: 'max-content' }}>
+          {vis.steps.map((step, i) => (
+            <Fragment key={i}>
+              {i > 0 && (
+                <svg width="28" height="16" viewBox="0 0 28 16" fill="none" className="shrink-0">
+                  <path d="M0 8h22M18 3l7 5-7 5" stroke={step.highlight ? '#3D5A35' : 'rgba(61,90,53,0.30)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+              <div className="shrink-0 rounded-[4px] border px-3 py-2 text-center"
+                style={{
+                  minWidth: 80, maxWidth: 120,
+                  fontFamily: "'Work Sans', sans-serif",
+                  fontSize: 12, fontWeight: step.highlight ? 600 : 400,
+                  lineHeight: 1.35,
+                  background: step.highlight ? '#3D5A35' : 'rgba(255,248,240,0.8)',
+                  borderColor: step.highlight ? '#3D5A35' : 'rgba(61,90,53,0.12)',
+                  color: step.highlight ? '#f0f5ee' : '#3B2F2F',
+                }}>
+                {step.label.split('\n').map((line, li) => (
+                  <span key={li} style={{ display: 'block' }}>{line}</span>
+                ))}
+              </div>
+            </Fragment>
+          ))}
+        </div>
+      </div>
+      {vis.insight && (
+        <p className="mt-2 pl-1 text-[12px] leading-relaxed italic text-[#3B2F2F]/50" style={{ fontFamily: "'Newsreader', serif" }}>
+          {vis.insight}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    Visualization: Recommendations table (3 variants)
    ═══════════════════════════════════════════════════════════ */
 function RecTableBlock({ data }: { data: RecommendationsTable }) {
@@ -3061,6 +3110,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         </div>
                       )}
                       {/* (table already rendered above) */}
+                      {visualisations?.filter(v => v.type === 'process').map((v, i) => (
+                        <Reveal key={`vis-proc-d-${i}`}><VisProcessBlock vis={v as VisProcess} /></Reveal>
+                      ))}
                       {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                         <Reveal key={`vis-qd-d-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
                       ))}
@@ -3119,6 +3171,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 </div>
               )}
               {/* (table already rendered above) */}
+              {visualisations?.filter(v => v.type === 'process').map((v, i) => (
+                <Reveal key={`vis-proc-m-${i}`}><VisProcessBlock vis={v as VisProcess} /></Reveal>
+              ))}
               {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                 <Reveal key={`vis-qd-m-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
               ))}
@@ -3530,6 +3585,9 @@ export function CaseInterviewerMaster({
                           </div>
                         )}
                         {/* (table already rendered above) */}
+                        {visualisations?.filter(v => v.type === 'process').map((v, i) => (
+                          <Reveal key={`vis-proc-id-${i}`}><VisProcessBlock vis={v as VisProcess} /></Reveal>
+                        ))}
                         {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                           <Reveal key={`vis-qd-id-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
                         ))}
@@ -3584,6 +3642,9 @@ export function CaseInterviewerMaster({
                   </div>
                 )}
                 {/* (table and formula already rendered above) */}
+                {visualisations?.filter(v => v.type === 'process').map((v, i) => (
+                  <Reveal key={`vis-proc-im-${i}`}><VisProcessBlock vis={v as VisProcess} /></Reveal>
+                ))}
                 {visualisations?.filter(v => v.type === 'quadrant').map((v, i) => (
                   <Reveal key={`vis-qd-im-${i}`}><VisQuadrantBlock vis={v as VisQuadrant} /></Reveal>
                 ))}
