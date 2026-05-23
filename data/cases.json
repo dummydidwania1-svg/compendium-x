@@ -4161,14 +4161,11 @@
         "title": "Total Cost",
         "lhs": "Total Cost",
         "rhs": "No. of Trucks × No. of km per Truck × Rate per km",
-        "derivations": []
-      },
-      {
-        "type": "formula",
-        "title": "No. of Trucks",
-        "lhs": "No. of Trucks",
-        "rhs": "Total Volume to be Transported ÷ (Volume per Trip per Truck × No. of Trips per Truck)",
         "derivations": [
+          {
+            "lhs": "No. of Trucks",
+            "rhs": "Total Volume to be Transported ÷ (Volume per Trip per Truck × No. of Trips per Truck)"
+          },
           {
             "lhs": "Volume per Truck",
             "rhs": "Capacity per Truck × Percentage Utilised"
