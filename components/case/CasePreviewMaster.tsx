@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { Fragment, ReactNode, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
@@ -1751,18 +1751,7 @@ function VisDivider({ label }: { label: string }) {
 /* ═══════════════════════════════════════════════════════════
    Visualization: Formula block (drilldown, between chart and recs)
    ═══════════════════════════════════════════════════════════ */
-function VisFormulaBlock({ vis }: { vis: VisFormula }) {
-  const primaryLhs = vis.lhs ?? vis.content.split('=')[0]?.trim() ?? ''
-  const primaryRhs = vis.rhs ?? vis.content.split('=').slice(1).join('=').split(/\.\s*Where:/i)[0]?.trim() ?? ''
-  const derivations = vis.derivations ?? (() => {
-    const whereMatch = vis.content.match(/\.\s*Where:\s*(.+)/i)
-    if (!whereMatch) return []
-    return whereMatch[1].split(/;\s*/).map(p => {
-      const [l, ...rest] = p.split('=')
-      return { lhs: l?.trim() ?? '', rhs: rest.join('=').trim() }
-    })
-  })()
-
+function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
   const serif: React.CSSProperties = { fontFamily: "'Newsreader', serif" }
   const termColor = '#3B2F2F'
 
@@ -1770,14 +1759,12 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
   const opStyle: React.CSSProperties = { ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 6px', lineHeight: 1 }
   const eqStyle: React.CSSProperties = { ...serif, color: termColor, fontSize: 18, fontWeight: 700, margin: '0 8px', lineHeight: 1 }
 
-  /* Strips outer parens from a string, e.g. "(A × B)" → "A × B" */
   function stripParens(text: string): string {
     const t = text.trim()
     if (t.startsWith('(') && t.endsWith(')')) return t.slice(1, -1).trim()
     return t
   }
 
-  /* Renders inline terms — splits on × and renders each token */
   function InlineTerms({ text, muted = false }: { text: string; muted?: boolean }) {
     const parts = text.split(/\s*×\s*/)
     return (
@@ -1792,8 +1779,6 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
     )
   }
 
-  /* Renders an expression — splits on ÷ first (highest precedence structurally),
-     rendering as a vertical fraction if present, otherwise inline */
   function FormulaExpr({ text, muted = false }: { text: string; muted?: boolean }) {
     if (!text.includes('÷')) return <InlineTerms text={stripParens(text)} muted={muted} />
     const divIdx = text.indexOf('÷')
@@ -1812,17 +1797,19 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
     )
   }
 
-  return (
-    <div className="pt-16">
-      {/* Section header — identical pattern to Recommendations */}
-      <div className="mb-4 flex items-center gap-4">
-        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Key Equations</span>
-        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-      </div>
-
-      <ul className="space-y-0">
-        {/* Primary equation — bullet aligned to center of equation row */}
+  function FormulaItem({ vis }: { vis: VisFormula }) {
+    const primaryLhs = vis.lhs ?? vis.content?.split('=')[0]?.trim() ?? ''
+    const primaryRhs = vis.rhs ?? vis.content?.split('=').slice(1).join('=').split(/\.\s*Where:/i)[0]?.trim() ?? ''
+    const derivations = vis.derivations ?? (() => {
+      const whereMatch = vis.content?.match(/\.\s*Where:\s*(.+)/i)
+      if (!whereMatch) return []
+      return whereMatch[1].split(/;\s*/).map(p => {
+        const [l, ...rest] = p.split('=')
+        return { lhs: l?.trim() ?? '', rhs: rest.join('=').trim() }
+      })
+    })()
+    return (
+      <>
         <li className="flex items-center gap-2">
           <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0 2px' }}>
@@ -1831,7 +1818,6 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
             <FormulaExpr text={primaryRhs} />
           </span>
         </li>
-        {/* Derivations — indented, no bullet, separated by a comfortable gap */}
         {derivations.map((d, i) => (
           <li key={i} className="flex items-center gap-2" style={{ marginTop: 14, paddingLeft: 13 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0 2px' }}>
@@ -1841,6 +1827,24 @@ function VisFormulaBlock({ vis }: { vis: VisFormula }) {
               <FormulaExpr text={d.rhs} />
             </span>
           </li>
+        ))}
+      </>
+    )
+  }
+
+  return (
+    <div className="pt-16">
+      <div className="mb-4 flex items-center gap-4">
+        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Key Equations</span>
+        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+      </div>
+      <ul className="space-y-0">
+        {formulas.map((vis, fi) => (
+          <Fragment key={fi}>
+            {fi > 0 && <li style={{ height: 18 }} />}
+            <FormulaItem vis={vis} />
+          </Fragment>
         ))}
       </ul>
     </div>
@@ -2900,9 +2904,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       </div>
 
                       {/* ── Formula visualizations — between chart and recs ── */}
-                      {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
-                        <Reveal key={`formula-dd-${i}`}><VisFormulaBlock vis={v as VisFormula} /></Reveal>
-                      ))}
+                      {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
 
                       {/* ── Recommendations ─────────────── */}
                       {recommendations.length > 0 && (
@@ -2961,9 +2963,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 </div>
               </Reveal>
               {/* Formula — mobile, between chart and recs */}
-              {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
-                <Reveal key={`formula-dm-${i}`}><VisFormulaBlock vis={v as VisFormula} /></Reveal>
-              ))}
+              {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
               {recommendations.length > 0 && (
                 <div className="mt-12">
                   <Reveal>
@@ -3373,9 +3373,7 @@ export function CaseInterviewerMaster({
                           )}
                         </div>
                         {/* ── Formula — between chart and recs ── */}
-                        {visualisations?.filter(v => v.type === 'formula').map((v, i) => (
-                          <Reveal key={`formula-idd-${i}`}><VisFormulaBlock vis={v as VisFormula} /></Reveal>
-                        ))}
+                        {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
                         {recommendations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
