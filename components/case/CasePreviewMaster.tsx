@@ -2184,11 +2184,10 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
     const textH = ls.length * LINE_H
     if (isDiamond) {
       // A diamond's inscribed rect is w/2 × h/2, so the text + padding must fit inside that
-      // We need: textW/2 + PX ≤ hw  →  hw = textW/2 + PX + 16
-      // We need: textH/2 + PY ≤ hh  →  hh = textH/2 + PY + 12
       const hw = textW / 2 + PX + 16
-      const hh = textH / 2 + PY + 12
-      return { w: hw * 2, h: hh * 2 }
+      const hh = textH / 2 + PY + 16
+      // Enforce aspect ratio: height ≥ 70% of width so diamonds look proportional
+      return { w: hw * 2, h: Math.max(hh * 2, hw * 2 * 0.70) }
     }
     return { w: Math.max(110, textW + PX * 2), h: Math.max(44, textH + PY * 2) }
   }
@@ -2234,10 +2233,11 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   function textLines(x: number, y: number, label: string, innerW: number, color: string, chosen: boolean) {
     const ls = wrap(label, innerW)
     const totalH = ls.length * LINE_H
-    const startY = y - totalH / 2 + LINE_H * 0.5
+    // startY positions the top of the first line so all lines are vertically centered on y
+    const startY = y - totalH / 2 + LINE_H * 0.85
     return ls.map((l, i) => (
       <text key={i} x={x} y={startY + i * LINE_H}
-        textAnchor="middle" dominantBaseline="middle"
+        textAnchor="middle"
         fontSize={FS} fontFamily={FONT} fontWeight={chosen ? 500 : 400}
         fill={color}>{l}</text>
     ))
@@ -2311,7 +2311,7 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   }
 
   return (
-    <div className="mt-6 w-full overflow-x-auto">
+    <div className="mt-2 w-full overflow-x-auto">
       <svg viewBox={`0 0 ${svgW} ${svgH}`} width="100%"
         style={{ maxWidth: svgW, display: 'block', margin: '0 auto' }}>
         {renderEdges()}
