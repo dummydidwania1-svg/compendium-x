@@ -1811,11 +1811,32 @@ function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
     )
   }
 
-  function FormulaExpr({ text, muted = false }: { text: string; muted?: boolean }) {
-    if (!text.includes('÷')) return <InlineTerms text={stripParens(text)} muted={muted} />
-    const divIdx = text.indexOf('÷')
-    const numerator = stripParens(text.slice(0, divIdx).trim())
-    const denominator = stripParens(text.slice(divIdx + 1).trim())
+  function outerDivIdx(text: string): number {
+    let depth = 0
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] === '(') depth++
+      else if (text[i] === ')') depth--
+      else if (text[i] === '÷' && depth === 0) return i
+    }
+    return -1
+  }
+
+  function splitOuterAddSub(text: string): { op: string; term: string }[] {
+    const parts: { op: string; term: string }[] = []
+    let depth = 0, cur = '', op = ''
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]
+      if (ch === '(') { depth++; cur += ch }
+      else if (ch === ')') { depth--; cur += ch }
+      else if ((ch === '+' || ch === '-') && depth === 0 && cur.trim()) {
+        parts.push({ op, term: cur.trim() }); cur = ''; op = ch
+      } else { cur += ch }
+    }
+    if (cur.trim()) parts.push({ op, term: cur.trim() })
+    return parts.length ? parts : [{ op: '', term: text }]
+  }
+
+  function FractionSpan({ numerator, denominator, muted }: { numerator: string; denominator: string; muted: boolean }) {
     return (
       <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', verticalAlign: 'middle', margin: '0 8px' }}>
         <span style={{ paddingBottom: 4, display: 'inline-flex', alignItems: 'center' }}>
@@ -1825,6 +1846,35 @@ function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
         <span style={{ paddingTop: 4, display: 'inline-flex', alignItems: 'center' }}>
           <InlineTerms text={denominator} muted={muted} />
         </span>
+      </span>
+    )
+  }
+
+  function FormulaExpr({ text, muted = false }: { text: string; muted?: boolean }) {
+    // Case 1: ÷ at outer level → simple fraction, no additive terms
+    const divIdx = outerDivIdx(text)
+    if (divIdx !== -1) {
+      return <FractionSpan numerator={stripParens(text.slice(0, divIdx).trim())} denominator={stripParens(text.slice(divIdx + 1).trim())} muted={muted} />
+    }
+    // Case 2: no outer ÷, but may have outer + / - after a paren-wrapped fraction group
+    const addParts = splitOuterAddSub(text)
+    if (addParts.length === 1) {
+      return <InlineTerms text={stripParens(text)} muted={muted} />
+    }
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: '0 2px' }}>
+        {addParts.map((part, i) => {
+          const innerDivIdx = outerDivIdx(stripParens(part.term))
+          const inner = stripParens(part.term)
+          return (
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {part.op && <span style={{ ...opStyle, opacity: muted ? 0.5 : 1, margin: '0 6px' }}>{part.op}</span>}
+              {innerDivIdx !== -1
+                ? <FractionSpan numerator={stripParens(inner.slice(0, innerDivIdx).trim())} denominator={stripParens(inner.slice(innerDivIdx + 1).trim())} muted={muted} />
+                : <InlineTerms text={inner} muted={muted} />}
+            </span>
+          )
+        })}
       </span>
     )
   }
