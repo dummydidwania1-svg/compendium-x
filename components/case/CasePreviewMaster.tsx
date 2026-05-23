@@ -1811,9 +1811,36 @@ function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
     )
   }
 
-  function FormulaExpr({ text, muted = false }: { text: string; muted?: boolean }) {
-    if (!text.includes('÷')) return <InlineTerms text={stripParens(text)} muted={muted} />
-    const divIdx = text.indexOf('÷')
+  // Split text on outer-level + and - (outside parens), preserving the operator
+  function splitOuterAddSub(text: string): { op: string; term: string }[] {
+    const parts: { op: string; term: string }[] = []
+    let depth = 0, cur = '', op = ''
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]
+      if (ch === '(') { depth++; cur += ch }
+      else if (ch === ')') { depth--; cur += ch }
+      else if ((ch === '+' || ch === '-') && depth === 0 && cur.trim()) {
+        parts.push({ op, term: cur.trim() }); cur = ''; op = ch
+      } else { cur += ch }
+    }
+    if (cur.trim()) parts.push({ op, term: cur.trim() })
+    return parts
+  }
+
+  // Find index of ÷ outside parens
+  function outerDivIdx(text: string): number {
+    let depth = 0
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] === '(') depth++
+      else if (text[i] === ')') depth--
+      else if (text[i] === '÷' && depth === 0) return i
+    }
+    return -1
+  }
+
+  function FractionOrTerms({ text, muted }: { text: string; muted: boolean }) {
+    const divIdx = outerDivIdx(text)
+    if (divIdx === -1) return <InlineTerms text={stripParens(text)} muted={muted} />
     const numerator = stripParens(text.slice(0, divIdx).trim())
     const denominator = stripParens(text.slice(divIdx + 1).trim())
     return (
@@ -1825,6 +1852,24 @@ function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
         <span style={{ paddingTop: 4, display: 'inline-flex', alignItems: 'center' }}>
           <InlineTerms text={denominator} muted={muted} />
         </span>
+      </span>
+    )
+  }
+
+  function FormulaExpr({ text, muted = false }: { text: string; muted?: boolean }) {
+    const addParts = splitOuterAddSub(text)
+    if (addParts.length <= 1) {
+      // No outer + or -, treat as single fraction-or-terms
+      return <FractionOrTerms text={stripParens(text)} muted={muted} />
+    }
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: '0 2px' }}>
+        {addParts.map((part, i) => (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            {part.op && <span style={{ ...opStyle, opacity: muted ? 0.5 : 1, margin: '0 6px' }}>{part.op}</span>}
+            <FractionOrTerms text={part.term} muted={muted} />
+          </span>
+        ))}
       </span>
     )
   }
