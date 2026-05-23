@@ -1773,8 +1773,14 @@ function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
 
   function stripParens(text: string): string {
     const t = text.trim()
-    if (t.startsWith('(') && t.endsWith(')')) return t.slice(1, -1).trim()
-    return t
+    if (!t.startsWith('(') || !t.endsWith(')')) return t
+    // Only strip if the opening ( is matched by the final )
+    let depth = 0
+    for (let i = 0; i < t.length - 1; i++) {
+      if (t[i] === '(') depth++
+      else if (t[i] === ')') { depth--; if (depth === 0) return t }
+    }
+    return t.slice(1, -1).trim()
   }
 
   function splitOuterTimes(text: string): string[] {
