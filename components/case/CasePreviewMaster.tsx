@@ -54,13 +54,7 @@ export type VisQuadrant = {
   points: { label: string; x: number; y: number }[]
   priorityOrder?: string[]
 }
-export type VisProcess = {
-  type: 'process'
-  title: string
-  steps: { label: string; highlight?: boolean }[]
-  insight?: string
-}
-export type Visualisation = VisFormula | VisTable | VisQuadrant | VisProcess
+export type Visualisation = VisFormula | VisTable | VisQuadrant
 
 export type RecommendationsTableA = { headers: string[]; rows: string[][] }
 export type RecommendationsTableB = { framework: string; columns: string[]; dimensionHeader?: string; rows: { dimension: string; shortTerm: string; longTerm: string }[] }
@@ -2133,46 +2127,6 @@ function VisQuadrantBlock({ vis }: { vis: VisQuadrant }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Visualization: Process map (horizontal step chain)
-   ═══════════════════════════════════════════════════════════ */
-function VisProcessBlock({ vis, compact }: { vis: VisProcess; compact?: boolean }) {
-  return (
-    <div className="pt-10">
-      <VisDivider label="Process Map" />
-      <div className="w-full mt-4">
-        <div className="flex items-stretch w-full">
-          {vis.steps.map((step, i) => (
-            <Fragment key={i}>
-              {i > 0 && (
-                <div className="flex items-center shrink-0" style={{ width: compact ? 14 : 22 }}>
-                  <svg width={compact ? 14 : 22} height="10" viewBox={`0 0 ${compact ? 14 : 22} 10`} fill="none">
-                    <line x1="0" y1="5" x2={compact ? 9 : 16} y2="5" stroke="rgba(61,90,53,0.25)" strokeWidth="1" strokeDasharray="2 2" />
-                    <path d={compact ? 'M8 2L12 5L8 8' : 'M14 2L19 5L14 8'} stroke="rgba(61,90,53,0.35)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                  </svg>
-                </div>
-              )}
-              <div className="flex-1 min-w-0 rounded-[6px] border flex items-center justify-center text-center"
-                style={{
-                  padding: compact ? '6px 4px' : '8px 6px',
-                  fontFamily: "'Work Sans', sans-serif",
-                  fontSize: compact ? 11 : 12,
-                  fontWeight: step.highlight ? 500 : 400,
-                  lineHeight: 1.35,
-                  background: step.highlight ? '#3D5A35' : 'rgba(255,248,240,0.8)',
-                  borderColor: step.highlight ? '#3D5A35' : 'rgba(61,90,53,0.12)',
-                  color: step.highlight ? '#f0f5ee' : '#5C4033',
-                }}>
-                <span style={{ wordBreak: 'break-word', hyphens: 'auto' }}>{step.label}</span>
-              </div>
-            </Fragment>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════
    Visualization: Recommendations table (3 variants)
    ═══════════════════════════════════════════════════════════ */
 function RecTableBlock({ data }: { data: RecommendationsTable }) {
@@ -3084,10 +3038,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       {/* ── Formula visualizations — between table and recs ── */}
                       {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
 
-                      {/* ── Process map — above recommendations ── */}
-                      {visualisations?.filter(v => v.type === 'process').map((v, i) => (
-                        <Reveal key={`vis-proc-d-${i}`}><VisProcessBlock vis={v as VisProcess} /></Reveal>
-                      ))}
 
                       {/* ── Recommendations ─────────────── */}
                       {recommendations.length > 0 && (
@@ -3147,10 +3097,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
               ))}
               {/* Formula — mobile, between table and recs */}
               {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-              {/* Process map — above recommendations */}
-              {visualisations?.filter(v => v.type === 'process').map((v, i) => (
-                <Reveal key={`vis-proc-m-${i}`}><VisProcessBlock vis={v as VisProcess} /></Reveal>
-              ))}
               {recommendations.length > 0 && (
                 <div className="mt-12">
                   <Reveal>
@@ -3561,10 +3507,6 @@ export function CaseInterviewerMaster({
                         ))}
                         {/* ── Formula — between table and recs ── */}
                         {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-                        {/* ── Process map — above recommendations ── */}
-                        {visualisations?.filter(v => v.type === 'process').map((v, i) => (
-                          <Reveal key={`vis-proc-id-${i}`}><VisProcessBlock vis={v as VisProcess} compact /></Reveal>
-                        ))}
                         {recommendations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
@@ -3618,10 +3560,6 @@ export function CaseInterviewerMaster({
                   <Reveal key={`vis-tbl-im-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
                 ))}
                 {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
-                {/* Process map — above recommendations */}
-                {visualisations?.filter(v => v.type === 'process').map((v, i) => (
-                  <Reveal key={`vis-proc-im-${i}`}><VisProcessBlock vis={v as VisProcess} compact /></Reveal>
-                ))}
                 {recommendations.length > 0 && (
                   <div className="mt-12">
                     <Reveal>

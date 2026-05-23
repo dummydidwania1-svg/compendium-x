@@ -4808,21 +4808,6 @@
     },
     "visualisations": [
       {
-        "type": "process",
-        "title": "Flight Path Process Journey",
-        "steps": [
-          { "label": "Taxi to Runway" },
-          { "label": "Take-off" },
-          { "label": "Ascent" },
-          { "label": "Stabilisation & Cruise" },
-          { "label": "Circling", "highlight": true },
-          { "label": "Descent" },
-          { "label": "Touchdown" },
-          { "label": "Taxi to Drop Point" }
-        ],
-        "insight": "Drawing the process journey isolates the cost driver with precision. The circling stage is the only phase that has extended, adding kilometres and fuel burn per flight."
-      },
-      {
         "id": "recommendation-decision-logic",
         "title": "Recommendation Decision Logic",
         "type": "mermaid",
