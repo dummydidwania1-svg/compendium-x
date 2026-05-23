@@ -179,8 +179,8 @@ function buildBlocks(lines: TranscriptDisplayLine[]): WalkthroughBlock[] {
     const visMatch = n.match(/^\[VIS:(\d+)\]$/)
     if (visMatch) return [{ key: `vis-${i}`, kind: 'vis-inline', visIndex: parseInt(visMatch[1], 10) }]
     if (isSectionHeading(n)) return [{ key: `h-${i}`, kind: 'heading', text: n }]
-    if (isEquation(n)) return [{ key: `eq-${i}`, kind: 'equation', text: fmtEquation(n), speaker: e.speaker }]
     if (/^=\s/.test(n)) return [{ key: `ind-${i}`, kind: 'indent', text: fmtEquation(n), speaker: e.speaker }]
+    if (isEquation(n)) return [{ key: `eq-${i}`, kind: 'equation', text: fmtEquation(n), speaker: e.speaker }]
     const bm = n.match(/^(\d+[\).]|[-•])\s*(.+)$/)
     if (bm) return [{ key: `b-${i}`, kind: 'bullet', marker: bm[1], text: bm[2], speaker: e.speaker }]
     return [{ key: `l-${i}`, kind: 'line', text: n, speaker: e.speaker }]
