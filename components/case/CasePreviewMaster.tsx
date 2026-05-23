@@ -1777,8 +1777,22 @@ function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
     return t
   }
 
+  function splitOuterTimes(text: string): string[] {
+    const parts: string[] = []
+    let depth = 0, cur = ''
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]
+      if (ch === '(') { depth++; cur += ch }
+      else if (ch === ')') { depth--; cur += ch }
+      else if (ch === '×' && depth === 0) { parts.push(cur.trim()); cur = '' }
+      else { cur += ch }
+    }
+    if (cur.trim()) parts.push(cur.trim())
+    return parts.length ? parts : [text]
+  }
+
   function InlineTerms({ text, muted = false }: { text: string; muted?: boolean }) {
-    const parts = text.split(/\s*×\s*/)
+    const parts = splitOuterTimes(text)
     return (
       <>
         {parts.map((part, i) => (
