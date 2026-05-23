@@ -47,7 +47,7 @@ export type VisFormula = {
   rhs?: string
   derivations?: { lhs: string; rhs: string }[]
 }
-export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; summaryRows?: number[]; columnWidths?: string[] }
+export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; noTitle?: boolean; summaryRows?: number[]; columnWidths?: string[]; insight?: string }
 export type VisQuadrant = {
   type: 'quadrant'; title: string; xAxis: string; yAxis: string
   points: { label: string; x: number; y: number }[]
@@ -1918,15 +1918,10 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
   const rows: string[][] = typeof vis.rows === 'string' ? JSON.parse(vis.rows) : (vis.rows ?? [])
   const cols: string[] = (vis as { columns?: string[]; headers?: string[] }).columns ?? (vis as { headers?: string[] }).headers ?? []
   const summarySet = new Set(vis.summaryRows ?? [])
-  const headerStyle: React.CSSProperties = {
-    fontFamily: "'Work Sans', sans-serif",
-    fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
-    color: '#f0f5ee', background: '#3D5A35', whiteSpace: 'nowrap',
-  }
   return (
     <div className="pt-16">
-      <VisDivider label={vis.title} />
-      <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
+      {!vis.noTitle && <VisDivider label={vis.title} />}
+      <div className="w-full overflow-x-auto rounded-[4px] border border-[#5C4033]/12">
         <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
           {vis.columnWidths && (
             <colgroup>
@@ -1934,10 +1929,15 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
             </colgroup>
           )}
           <thead>
-            <tr>
+            <tr style={{ background: 'rgba(92,64,51,0.05)', borderBottom: '1px solid rgba(92,64,51,0.12)' }}>
               {cols.map((col, i) => (
                 <th key={i} className="px-4 py-2 text-left"
-                  style={{ ...headerStyle, borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined }}>
+                  style={{
+                    fontFamily: "'Work Sans', sans-serif",
+                    fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.18em',
+                    color: '#5C4033', opacity: 0.7, whiteSpace: 'nowrap',
+                    borderLeft: i > 0 ? '1px solid rgba(92,64,51,0.08)' : undefined,
+                  }}>
                   {col}
                 </th>
               ))}
@@ -1947,21 +1947,20 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
             {rows.map((row, ri) => {
               const isSummary = summarySet.has(ri)
               return (
-                <tr key={ri} style={{ background: isSummary ? 'rgba(61,90,53,0.04)' : 'rgba(255,248,240,0.5)' }}>
+                <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
                   {row.map((cell, ci) => (
                     <td key={ci} className="px-4 py-2 align-middle"
                       style={{
                         fontFamily: "'Newsreader', serif",
                         fontSize: '14px',
-                        fontWeight: isSummary || ci === 0 ? 600 : 400,
+                        fontWeight: isSummary ? 600 : 400,
                         color: '#3B2F2F',
                         lineHeight: 1.5,
                         whiteSpace: ci === 0 ? 'normal' : 'nowrap',
-                        // Double top border for summary rows (financial table convention)
                         borderTop: isSummary
-                          ? '3px double rgba(61,90,53,0.35)'
-                          : '1px solid rgba(61,90,53,0.08)',
-                        borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
+                          ? '2px solid rgba(92,64,51,0.18)'
+                          : '1px solid rgba(92,64,51,0.07)',
+                        borderLeft: ci > 0 ? '1px solid rgba(92,64,51,0.07)' : undefined,
                       }}>
                       {cell}
                     </td>
@@ -1972,6 +1971,11 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
           </tbody>
         </table>
       </div>
+      {vis.insight && (
+        <p className="mt-3 text-[12px] leading-relaxed text-[#5C4033]/60" style={{ fontFamily: "'Work Sans', sans-serif" }}>
+          <span className="font-semibold text-[#5C4033]/70">Key Insight:</span> {vis.insight}
+        </p>
+      )}
     </div>
   )
 }

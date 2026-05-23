@@ -4148,7 +4148,8 @@
             "Rs. 12.00"
           ]
         ],
-        "insight": "Contractor charges Rs. 2.50/km less than calculated variable cost — this is the anomaly that signals collusion.",
+        "noTitle": true,
+        "insight": "Contractor charges Rs. 2.50/km less than calculated variable cost, which is the anomaly that signals collusion.",
         "columns": [
           "Cost Component",
           "Assumption",
@@ -4156,7 +4157,8 @@
           "Cost / km"
         ],
         "summaryRows": [
-          4
+          4,
+          5
         ],
         "columnWidths": [
           "20%",
