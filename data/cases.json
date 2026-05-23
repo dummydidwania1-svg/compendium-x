@@ -5050,44 +5050,48 @@
         "type": "calcpair",
         "header": "Finding the Break-Even Point",
         "left": {
-          "title": "A — Break-Even Point (One-Time Expenditure)",
+          "title": "A  Break-Even Point (One-Time Expenditure)",
           "steps": [
-            { "text": "Fixed Investment = ₹40,000" },
-            { "text": "S.P. of One Product = ₹1,000" },
-            { "text": "V.C. of One Product = ₹400 + ₹100 = ₹500" },
+            { "eq": true, "label": "Fixed Investment", "value": "₹40,000" },
+            { "eq": true, "label": "Selling Price per Product", "value": "₹1,000" },
+            { "eq": true, "label": "Variable Cost per Product", "value": "₹400 + ₹100 = ₹500" },
             { "text": "" },
-            { "text": "Break-Even Point of Sales =", "bold": true },
-            { "text": "F.C.", "indent": true, "underline": true },
-            { "text": "S.P. − V.C.", "indent": true },
+            { "text": "Break-Even Point of Sales", "bold": true },
             { "text": "" },
-            { "text": "= ₹40,000", "indent": true, "underline": true },
+            { "text": "Fixed Cost", "indent": true, "underline": true },
+            { "text": "Selling Price − Variable Cost", "indent": true },
+            { "text": "" },
+            { "text": "₹40,000", "indent": true, "underline": true },
             { "text": "₹1,000 − ₹500", "indent": true },
             { "text": "" },
-            { "text": "= ₹40,000", "indent": true, "underline": true },
+            { "text": "₹40,000", "indent": true, "underline": true },
             { "text": "₹500", "indent": true },
             { "text": "" },
-            { "text": "= 80 Items", "bold": true, "indent": true }
+            { "text": "= 80 Items", "bold": true }
           ]
         },
         "right": {
-          "title": "B — Daily Opportunity Cost Recovery",
+          "title": "B  Daily Opportunity Cost Recovery",
           "steps": [
-            { "text": "Store Daily Profit = ₹25,000" },
-            { "text": "Makeup Outlet Space = 2,000 sq. ft. (20% of store)" },
-            { "text": "Profit per Sq. Ft. = ₹25,000 ÷ 10,000 = ₹2.5" },
-            { "text": "Daily Opportunity Cost = 2,000 × ₹2.5 = ₹5,000/day" },
+            { "eq": true, "label": "Selling Price per Product", "value": "₹1,000" },
+            { "eq": true, "label": "Variable Cost per Product", "value": "₹400 + ₹100 = ₹500" },
+            { "eq": true, "label": "Store Daily Profit", "value": "₹25,000" },
+            { "eq": true, "label": "Makeup Outlet Space", "value": "2,000 sq. ft. (20% of store)" },
+            { "eq": true, "label": "Profit per Sq. Ft.", "value": "₹25,000 ÷ 10,000 = ₹2.5" },
+            { "eq": true, "label": "Daily Opportunity Cost", "value": "2,000 × ₹2.5 = ₹5,000/day" },
             { "text": "" },
-            { "text": "Required Daily Sales =", "bold": true },
+            { "text": "Required Daily Sales", "bold": true },
+            { "text": "" },
             { "text": "Opportunity Cost", "indent": true, "underline": true },
-            { "text": "S.P. − V.C.", "indent": true },
+            { "text": "Selling Price − Variable Cost", "indent": true },
             { "text": "" },
-            { "text": "= ₹5,000", "indent": true, "underline": true },
+            { "text": "₹5,000", "indent": true, "underline": true },
             { "text": "₹1,000 − ₹500", "indent": true },
             { "text": "" },
-            { "text": "= ₹5,000", "indent": true, "underline": true },
+            { "text": "₹5,000", "indent": true, "underline": true },
             { "text": "₹500", "indent": true },
             { "text": "" },
-            { "text": "= 10 Items/Day", "bold": true, "indent": true }
+            { "text": "= 10 Items / Day", "bold": true }
           ]
         }
       }
