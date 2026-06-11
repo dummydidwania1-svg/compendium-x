@@ -39,7 +39,7 @@ body { font-family: 'Work Sans', sans-serif; }
    When JS is disabled, default to fully visible (no FOUC). */
 .ccx-page {
   opacity: 0;
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ccx-page.ccx-revealed { opacity: 1; }
 @media (scripting: none) {
@@ -286,7 +286,7 @@ transition: opacity 0.7s cubic-bezier(0.65, 0, 0.35, 1),
 }
 #ccx-entrance-overlay.fade-out {
   opacity: 0;
-  transform: translateY(-10vh);
+  transform: translateY(-12vh);
   pointer-events: none;
 }
 #ccx-intro-logo {
@@ -299,7 +299,7 @@ transition: opacity 0.7s cubic-bezier(0.65, 0, 0.35, 1),
   mix-blend-mode: multiply;
   opacity: 0;
   transform: scale(0.94);
-animation: introLogoIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
 }
 @keyframes introLogoIn {
   to { opacity: 1; transform: scale(1); }
@@ -313,7 +313,7 @@ animation: introLogoIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
   letter-spacing: 0.08em;
   opacity: 0;
   transform: translateY(10px);
-  animation: editionRise 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
+  animation: editionRise 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
 }
 @keyframes editionRise {
   to { opacity: 1; transform: translateY(0); }
@@ -404,8 +404,8 @@ animation: introLogoIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
   color: #b0a898;
   opacity: 0;
   transform: translateY(12px);
-  transition: opacity 0.6s cubic-bezier(0.22,1,0.36,1),
-              transform 0.6s cubic-bezier(0.22,1,0.36,1);
+  transition: opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1),
+            transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .ccx-supported__label.visible { opacity: 1; transform: translateY(0); }
 .ccx-supported__logos {
@@ -499,11 +499,11 @@ const tFade = setTimeout(() => {
   // Crossfade: as the overlay lifts away, the landing page fades in
   // over the same 0.7s window so the reveal feels seamless, not abrupt.
   pageEl?.classList.add('ccx-revealed')
-}, 1100)
+}, 1265)
 const tRemove = setTimeout(() => {
   document.getElementById('ccx-entrance-overlay')?.remove()
   sessionStorage.setItem('ccx-entrance-done', '1')
-}, 2000)
+}, 2300)
       cleanups.push(() => {
         clearTimeout(tFade)
         clearTimeout(tRemove)
