@@ -1,9 +1,10 @@
 'use client'
 
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
-import Navbar from '@/components/dashboard/Navbar'
-import Footer from '@/components/dashboard/Footer'
 
+const ACCENT = '#6B4A1E'
 
 const PAGE_CSS = `
 /* ═══════════════════════════════════════════════════
@@ -16,17 +17,8 @@ const PAGE_CSS = `
   --footer-bg:    #453A2A;
   --text-primary: #3B2F2F;
   --text-heading: #453A2A;
---accent:       #3D5A35;
+  --accent:       #6B4A1E;
   --muted:        #695C4D;
-}
-
-/* Glass navbar — scoped to the landing page only */
-.ccx-page nav {
-  background: rgba(255, 248, 240, 0.55) !important;
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border-bottom: 1px solid rgba(61, 90, 53, 0.06);
-  transition: background 0.4s ease, backdrop-filter 0.4s ease;
 }
 
 html, body { background: var(--cream) !important; color: var(--text-primary); }
@@ -123,7 +115,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
 #ccx-edition {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   font-family: 'Newsreader', serif;
   font-style: italic;
   font-size: 28px;
@@ -135,9 +127,9 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
 #ccx-edition::before {
   content: '';
   display: inline-block;
-  width: 24px;        /* short — not em-dash length */
-  height: 1px;        /* thin */
-  background: #6B4A1E; /* warm brown */
+  width: 42px;
+  height: 1.5px;
+  background: var(--accent);
   flex-shrink: 0;
 }
 #ccx-main-title {
@@ -191,15 +183,14 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
 }
 .ccx-hidden { display: none !important; }
 
-
 /* ═══════════════════════════════════════════════════
    SPLIT HERO — SRCC IMAGE (fades on scroll)
    ═══════════════════════════════════════════════════ */
 #ccx-split-left {
   position: absolute;
-  top: -70px; left: 0;
+  top: 0; left: 0;
   width: 42%;
-  height: calc(100% + 70px);
+  height: 100%;
   background-color: var(--toasty);
   background-image:
     url('/srcc.jpg'),
@@ -455,8 +446,240 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
 .ccx-grant-link img { display: block; height: auto; }
 `
 
+const NAV_LINKS = [
+  { label: 'Home', href: '/x' },
+  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'About Us', href: '/about' },
+]
 
-export default function LandingPage() {
+const FOOTER_LINKS = [
+  { label: 'About Us', href: '/about' },
+  { label: 'Privacy Policy', href: '/privacy-policy' },
+  {
+    label: 'Contact Us',
+    href: 'mailto:contact@casecompendiumx.in?subject=Compendium%20X%20Privacy%20Request',
+  },
+]
+
+const COLLEGES = [
+  { src: 'https://www.casecompendiumx.in/colleges/srcc.png', alt: 'SRCC' },
+  { src: 'https://www.casecompendiumx.in/colleges/st-stephens.png', alt: "St. Stephen's" },
+  { src: 'https://www.casecompendiumx.in/colleges/sscbs.png', alt: 'SSCBS' },
+  { src: 'https://www.casecompendiumx.in/colleges/lsr.png', alt: 'LSR' },
+  { src: 'https://www.casecompendiumx.in/colleges/ashoka.png', alt: 'Ashoka' },
+  { src: 'https://www.casecompendiumx.in/colleges/iit-delhi.png', alt: 'IIT Delhi' },
+  { src: 'https://www.casecompendiumx.in/colleges/iit-bombay.png', alt: 'IIT Bombay' },
+  { src: 'https://www.casecompendiumx.in/colleges/iit-kharagpur.png', alt: 'IIT Kharagpur' },
+  { src: 'https://www.casecompendiumx.in/colleges/iit-kanpur.png', alt: 'IIT Kanpur' },
+  { src: 'https://www.casecompendiumx.in/colleges/iit-madras.png', alt: 'IIT Madras' },
+]
+
+function Navbar() {
+  const pathname = usePathname()
+  return (
+    <nav
+      className={`fixed top-0 w-full z-[100] border-b border-[${ACCENT}]/10`}
+      style={{
+        backgroundColor: 'rgba(255, 248, 240, 0.9)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        height: '70px',
+        borderBottomColor: 'rgba(107,74,30,0.1)',
+      }}
+    >
+      <div className="max-w-screen-2xl mx-auto flex justify-between items-center w-full h-full px-12">
+        <Link
+          href="/x"
+          className="flex items-center gap-1 transition-opacity hover:opacity-85"
+          aria-label="Case CompendiumX home"
+        >
+          <span
+            className="text-xl font-semibold tracking-tight"
+            style={{ fontFamily: 'Newsreader, serif', color: 'rgb(59, 47, 47)' }}
+          >
+            Case Compendium<span style={{ color: 'rgb(59, 47, 47)' }}>X</span>
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-10">
+          {NAV_LINKS.map(({ label, href }) => {
+            const isActive = pathname === href
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={[
+                  'relative pb-1 text-xs uppercase tracking-[0.2em] transition-all duration-300',
+                  'hover:font-semibold',
+                  isActive ? 'font-medium' : 'text-[#57534E] font-normal',
+                ].join(' ')}
+                style={{
+                  fontFamily: "'Work Sans', sans-serif",
+                  color: isActive ? ACCENT : undefined,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = ACCENT
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = isActive ? ACCENT : ''
+                }}
+              >
+                {label.toUpperCase()}
+                {isActive && (
+                  <span
+                    className="absolute left-0 right-0 bottom-[-4px] h-[2px]"
+                    style={{ backgroundColor: ACCENT }}
+                    aria-hidden="true"
+                  />
+                )}
+              </Link>
+            )
+          })}
+        </div>
+
+        <Link
+          href="/login?redirect=/x"
+          className="px-5 py-2 text-[10px] uppercase tracking-[0.2em] font-medium transition-all duration-300 cursor-pointer bg-transparent"
+          style={{
+            fontFamily: "'Work Sans', sans-serif",
+            color: ACCENT,
+            border: `1px solid ${ACCENT}`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = ACCENT
+            e.currentTarget.style.color = '#fff'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = ACCENT
+          }}
+        >
+          SIGN IN
+        </Link>
+      </div>
+    </nav>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="w-full py-16 px-12" style={{ backgroundColor: 'rgb(69, 58, 42)' }}>
+      <div className="max-w-screen-2xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-12 mb-10">
+          <div>
+            <Link
+              href="/x"
+              className="mb-2 inline-block transition-opacity hover:opacity-85"
+              style={{
+                fontFamily: 'Newsreader, serif',
+                fontSize: '24px',
+                fontWeight: 600,
+                letterSpacing: '-0.6px',
+                color: 'rgb(30, 27, 21)',
+                textDecoration: 'none',
+              }}
+            >
+              Case Compendium<span style={{ color: ACCENT }}>X</span>
+            </Link>
+            <p
+              className="text-xs"
+              style={{
+                fontFamily: "'Work Sans', sans-serif",
+                color: 'rgba(213, 196, 177, 0.5)',
+              }}
+            >
+              AI-powered case practice and performance analytics for consulting interviews.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-x-12 gap-y-4">
+            {FOOTER_LINKS.map(({ label, href }) => (
+              <a
+                key={label}
+                href={href}
+                className="transition-all hover:text-white hover:font-semibold"
+                style={{
+                  fontFamily: "'Work Sans', sans-serif",
+                  fontSize: '10px',
+                  fontWeight: 400,
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase',
+                  color: 'rgba(213, 196, 177, 0.7)',
+                  textDecoration: 'none',
+                }}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div
+          className="w-full mb-8"
+          style={{ height: '1px', backgroundColor: 'rgba(213, 196, 177, 0.15)' }}
+        />
+
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex items-center gap-8">
+            <a
+              href="https://www.linkedin.com/company/casecompendiumx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-all hover:text-white"
+              style={{ color: 'rgba(213, 196, 177, 0.7)' }}
+              aria-label="LinkedIn"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path d="M4.98 3.5C4.98 4.881 3.87 6 2.5 6S.02 4.881.02 3.5C.02 2.12 1.13 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V24h-4V8.5zm6.5 0h3.8v2.1h.05c.53-1 1.82-2.1 3.75-2.1 4.01 0 4.75 2.64 4.75 6.07V24H15v-8.37c0-2-.04-4.58-2.79-4.58-2.8 0-3.23 2.18-3.23 4.43V24H5.5V8.5H7z" />
+              </svg>
+            </a>
+            <a
+              href="mailto:contact@casecompendiumx.in"
+              className="transition-all hover:text-white"
+              style={{ color: 'rgba(213, 196, 177, 0.7)' }}
+              aria-label="Email us"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            </a>
+          </div>
+
+          <p
+            className="text-[10px] tracking-[0.2em] uppercase"
+            style={{
+              fontFamily: "'Work Sans', sans-serif",
+              color: 'rgba(213, 196, 177, 0.5)',
+            }}
+          >
+            © 2026 Case CompendiumX. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+export default function LandingX() {
   useEffect(() => {
     const cleanups: Array<() => void> = []
 
@@ -482,7 +705,7 @@ export default function LandingPage() {
       const overlay = document.createElement('div')
       overlay.id = 'ccx-entrance-overlay'
       overlay.innerHTML = `
-        <img id="ccx-intro-logo" src="/logo2.png" alt="Case CompendiumX" onerror="this.style.display='none'"/>
+        <img id="ccx-intro-logo" src="/logo.png" alt="Case CompendiumX" onerror="this.style.display='none'"/>
         <div id="ccx-edition-reveal">3rd Edition of Case Compendium</div>
       `
       document.body.appendChild(overlay)
@@ -668,7 +891,7 @@ export default function LandingPage() {
       />
       <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
 
-      <Navbar currentPage="home" />
+      <Navbar />
 
       <main className="pt-[70px]">
         <header className="ccx-hero">
@@ -683,15 +906,33 @@ export default function LandingPage() {
               </span>
             </h1>
             <div className="ctas">
-  <a className="primary" href="/repository">
-    BROWSE LIBRARY
-  </a>
-  <a className="secondary" href="/practice">
-    DO A CASE
-  </a>
-</div>
+              <a className="primary" href="#library">
+                BROWSE LIBRARY
+              </a>
+              <a className="secondary" href="#practice">
+                DO A CASE
+              </a>
+            </div>
           </div>
         </header>
+
+        <section className="ccx-contributors">
+          <div className="ccx-contributors__inner">
+            <h2 className="ccx-contributors__heading">Contributors</h2>
+          </div>
+          <div className="ccx-carousel-mask">
+            <div className="ccx-carousel-track">
+              {[...COLLEGES, ...COLLEGES].map((c, i) => (
+                <div key={`${c.alt}-${i}`} className="ccx-carousel-item">
+                  <div className="ccx-carousel-item__img-wrap">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={c.src} alt={c.alt} loading="lazy" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <section className="ccx-supported">
           <div className="ccx-supported__inner">

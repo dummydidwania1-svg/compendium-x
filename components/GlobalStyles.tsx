@@ -19,6 +19,15 @@ const GlobalStyles = () => (
   margin-bottom: 4px;
 }
 
+::selection {
+  background: rgba(61, 90, 53, 0.18);
+  color: inherit;
+}
+::-moz-selection {
+  background: rgba(61, 90, 53, 0.18);
+  color: inherit;
+}
+
 .glass-card h3 {
   font-family: 'Newsreader', Georgia, serif;
   font-size: 13px;

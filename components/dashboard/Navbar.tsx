@@ -8,7 +8,7 @@ import MarketingAuthPanel from '@/components/auth/MarketingAuthPanel';
 import { auth } from '@/lib/firebase/config';
 
 interface NavbarProps {
-  currentPage: 'home' | 'dashboard' | 'about' | 'repository' | 'practice' | 'privacy';
+  currentPage: 'home' | 'dashboard' | 'about' | 'about-ccx' | 'repository' | 'practice' | 'privacy';
 }
 
 const Navbar = ({ currentPage }: NavbarProps) => {
@@ -53,6 +53,88 @@ const Navbar = ({ currentPage }: NavbarProps) => {
           font-family: 'Material Symbols Outlined';
           font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
         }
+        /* ── About dropdown ── */
+.nav-dropdown { position: relative; display: inline-block;   margin-top: -3px;   }
+
+.nav-dropdown-trigger {
+display: inline-block;
+  position: relative;
+  padding-right: 16px;       /* reserves space for the chevron */
+  cursor: default;
+  user-select: none;
+}
+
+.nav-dropdown-trigger .chevron {
+  position: absolute;
+  right: 0;
+  top: 0;                    /* changed from 1px — now sits at trigger top edge */
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.55;
+  transition: transform 0.28s ease, opacity 0.2s ease;
+  pointer-events: none;
+}
+.nav-dropdown:hover .nav-dropdown-trigger .chevron {
+  transform: rotate(180deg);
+  opacity: 0.9;
+}
+
+/* invisible bridge — keeps hover alive when cursor moves from trigger to menu */
+.nav-dropdown::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  height: 14px;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  min-width: 240px;
+  background: #fff8f0;
+  border: 1px solid rgba(61, 90, 53, 0.10);
+  box-shadow: 0 12px 32px rgba(59, 47, 47, 0.08), 0 4px 12px rgba(59, 47, 47, 0.04);
+  padding: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 100;
+}
+.nav-dropdown:hover .nav-dropdown-menu,
+.nav-dropdown:focus-within .nav-dropdown-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.nav-dropdown-item {
+  display: block;
+  padding: 12px 16px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+  border-left: 2px solid transparent;
+}
+.nav-dropdown-item:hover {
+  background: rgba(61, 90, 53, 0.06);
+  border-left-color: #3D5A35;
+}
+.nav-dropdown-item-label {
+  color: #57534e;
+  display: block;
+  margin-bottom: 3px;
+  transition: color 0.2s ease;
+}
+.nav-dropdown-item:hover .nav-dropdown-item-label { color: #3D5A35; }
+.nav-dropdown-item-desc {
+  font-family: 'Newsreader', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: rgba(69, 58, 42, 0.55);
+  display: block;
+  letter-spacing: -0.005em;
+}
       `}</style>
 
       {/* ── Navbar ── */}
@@ -100,13 +182,47 @@ const Navbar = ({ currentPage }: NavbarProps) => {
             >
               DASHBOARD
             </Link>
-            <Link
-              href="/about"
-              style={{ fontFamily: "'Work Sans', sans-serif" }}
-              className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'about' ? 'active' : ''}`}
-            >
-              ABOUT US
-            </Link>
+<div className="nav-dropdown">
+  <span
+    style= {{fontFamily: "'Work Sans', sans-serif" }}
+    className={`nav-link nav-dropdown-trigger text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${
+      currentPage === 'about' || currentPage === 'about-ccx' ? 'active' : ''
+    }`}
+    tabIndex={0}
+  >
+    ABOUT US
+    <span className="material-symbols-outlined chevron">expand_more</span>
+  </span>
+
+  <div className="nav-dropdown-menu" role="menu">
+    <Link
+      href="/about-ccx"
+      style= {{fontFamily: "'Work Sans', sans-serif" }}
+      className="nav-dropdown-item"
+      role="menuitem"
+    >
+      <span
+        style= {{fontFamily: "'Work Sans', sans-serif" }}
+        className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300"
+      >
+        The Platform
+      </span>
+    </Link>
+    <Link
+      href="/about"
+      style= {{fontFamily: "'Work Sans', sans-serif" }}
+      className="nav-dropdown-item"
+      role="menuitem"
+    >
+      <span
+        style= {{fontFamily: "'Work Sans', sans-serif" }}
+        className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300"
+      >
+        The Team
+      </span>
+    </Link>
+  </div>
+</div>
           </div>
 
           {/* Auth Area */}
