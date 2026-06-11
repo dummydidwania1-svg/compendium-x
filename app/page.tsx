@@ -39,7 +39,7 @@ body { font-family: 'Work Sans', sans-serif; }
    When JS is disabled, default to fully visible (no FOUC). */
 .ccx-page {
   opacity: 0;
-  transition: opacity 2.2s cubic-bezier(0.65, 0, 0.35, 1);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ccx-page.ccx-revealed { opacity: 1; }
 @media (scripting: none) {
@@ -280,13 +280,13 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   pointer-events: all;
   /* Slow, smooth lift on exit — overlay slides upward while fading,
      revealing the landing page beneath. */
-  transition: opacity 2s cubic-bezier(0.65, 0, 0.35, 1),
-              transform 2s cubic-bezier(0.65, 0, 0.35, 1);
+transition: opacity 0.7s cubic-bezier(0.65, 0, 0.35, 1),
+            transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
   will-change: opacity, transform;
 }
 #ccx-entrance-overlay.fade-out {
   opacity: 0;
-  transform: translateY(-22vh);
+  transform: translateY(-10vh);
   pointer-events: none;
 }
 #ccx-intro-logo {
@@ -299,7 +299,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   mix-blend-mode: multiply;
   opacity: 0;
   transform: scale(0.94);
-  animation: introLogoIn 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+animation: introLogoIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
 }
 @keyframes introLogoIn {
   to { opacity: 1; transform: scale(1); }
@@ -313,7 +313,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   letter-spacing: 0.08em;
   opacity: 0;
   transform: translateY(10px);
-  animation: editionRise 1.4s cubic-bezier(0.22, 1, 0.36, 1) 1.2s forwards;
+  animation: editionRise 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
 }
 @keyframes editionRise {
   to { opacity: 1; transform: translateY(0); }
@@ -494,16 +494,16 @@ export default function LandingPage() {
       //   3.2s        : fade-out class triggers 2s upward lift + opacity fade
       //   5.2s        : overlay fully invisible
       //   5.5s        : overlay element removed from DOM
-      const tFade = setTimeout(() => {
-        document.getElementById('ccx-entrance-overlay')?.classList.add('fade-out')
-        // Crossfade: as the overlay lifts away, the landing page fades in
-        // over the same 2s window so the reveal feels seamless, not abrupt.
-        pageEl?.classList.add('ccx-revealed')
-      }, 3200)
-      const tRemove = setTimeout(() => {
-        document.getElementById('ccx-entrance-overlay')?.remove()
-        sessionStorage.setItem('ccx-entrance-done', '1')
-      }, 5500)
+const tFade = setTimeout(() => {
+  document.getElementById('ccx-entrance-overlay')?.classList.add('fade-out')
+  // Crossfade: as the overlay lifts away, the landing page fades in
+  // over the same 0.7s window so the reveal feels seamless, not abrupt.
+  pageEl?.classList.add('ccx-revealed')
+}, 1100)
+const tRemove = setTimeout(() => {
+  document.getElementById('ccx-entrance-overlay')?.remove()
+  sessionStorage.setItem('ccx-entrance-done', '1')
+}, 2000)
       cleanups.push(() => {
         clearTimeout(tFade)
         clearTimeout(tRemove)
