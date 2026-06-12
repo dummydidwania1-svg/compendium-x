@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getDocs, limit, query, where } from 'firebase/firestore'
 import { casesCol } from '@/lib/firebase/collections'
 import PlatformLoader from '@/components/PlatformLoader'
-import { InterviewerPageInner } from './interviewer/page'
+import { InterviewerPageInner } from './interviewer/InterviewerExperience'
 
 function CaseBySlug({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
