@@ -38,3 +38,21 @@ export const PARAM_LABELS: Record<string, string> = {
   analysis: 'Analysis',
   creativity: 'Creativity',
 };
+
+// Canonical category order for the book-style Table of Contents grouping.
+// Matches the section ordering used in the printed edition.
+export const REPO_SECTION_ORDER = [
+  'Profitability',
+  'Market Entry',
+  'Growth',
+  'Pricing',
+  'Unconventional',
+  'Guesstimate',
+];
+
+// Difficulty -> number of filled "book dots" (out of 3).
+export const DIFFICULTY_DOTS: Record<string, number> = {
+  easy: 1,
+  medium: 2,
+  hard: 3,
+};

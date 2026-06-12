@@ -12,6 +12,16 @@ const inputArg = process.argv[2]
 const inputPath = inputArg ? path.resolve(projectRoot, inputArg) : path.resolve(projectRoot, 'data', 'cases.json')
 const serviceAccountPath = path.resolve(projectRoot, 'serviceAccountKey.json')
 
+function slugify(title = '') {
+  return String(title)
+    .toLowerCase()
+    .trim()
+    .replace(/['']/g, '')
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 function validateCase(rawCase, index) {
   const required = ['title', 'industry', 'difficulty', 'prompt', 'framework']
   for (const field of required) {
@@ -42,6 +52,16 @@ function buildPayload(rawCase) {
   if (typeof rawCase.round === 'string' && rawCase.round.trim()) {
     payload.round = rawCase.round.trim()
   }
+
+  if (typeof rawCase.subtype === 'string' && rawCase.subtype.trim()) {
+  payload.subtype = rawCase.subtype.trim()
+}
+
+payload.slug =
+  typeof rawCase.slug === 'string' && rawCase.slug.trim()
+    ? rawCase.slug.trim()          // explicit override in cases.json wins
+    : slugify(rawCase.title)       // otherwise derived from the title
+
   if (rawCase.frameworkTree && typeof rawCase.frameworkTree === 'object') {
     payload.frameworkTree = rawCase.frameworkTree
   }
@@ -99,11 +119,20 @@ async function main() {
 
   let createdCount = 0
   let upsertedCount = 0
+const seenSlugs = new Map() // slug -> title, to catch collisions
 
   for (let i = 0; i < parsed.length; i += 1) {
     const rawCase = parsed[i]
     validateCase(rawCase, i)
-    const payload = buildPayload(rawCase)
+const payload = buildPayload(rawCase)
+
+if (seenSlugs.has(payload.slug)) {
+  throw new Error(
+    `Duplicate slug "${payload.slug}" from "${payload.title}" — already used by "${seenSlugs.get(payload.slug)}". ` +
+    `Add a unique "slug" to one of them in cases.json.`,
+  )
+}
+seenSlugs.set(payload.slug, payload.title)
 
     const providedDocId = typeof rawCase.docId === 'string' ? rawCase.docId.trim() : ''
     const derivedDocId = typeof rawCase.id === 'number' ? `case-${rawCase.id}` : ''

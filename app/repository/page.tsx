@@ -9,14 +9,16 @@ import { X } from 'lucide-react'
 import Footer from '@/components/dashboard/Footer'
 import Navbar from '@/components/dashboard/Navbar'
 import { db, signInAnonymouslyIfNeeded } from '@/lib/firebase/config'
-import { FILTER_TYPES, FILTER_LEVELS } from '@/lib/constants'
-import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown'
+import { FILTER_LEVELS } from '@/lib/constants'
+import RepoFilterDropdown from '@/components/ui/RepoFilterDropdown'
 import { apiPost } from '@/lib/api/client'
+import { slugifyCase } from '@/lib/slug'
+
 
 const CASES_CACHE_KEY = 'compendium_cases_v2'
 // Bump when the cached shape (CaseListItem) changes — old envelopes get
 // rejected automatically so users don't render stale, type-mismatched data.
-const CASES_CACHE_VERSION = 1
+const CASES_CACHE_VERSION = 4
 // Optimistic-render cache window. Beyond this the cache is treated as too
 // stale to flash on screen and we wait for fresh data instead. Firestore is
 // fetched on every load regardless; this just controls "do we show
@@ -30,6 +32,10 @@ type CaseListItem = {
   industry: string | null
   case_type: string | null
   difficulty: string | null
+  company: string | null
+  subtype: string | null
+  round: string | null
+    slug: string | null
 }
 
 interface CasesCacheEnvelope {
@@ -98,21 +104,72 @@ function writeCasesCache(data: CaseListItem[]) {
   }
 }
 
-function formatDifficultyLabel(value: string | null) {
-  if (!value) return 'General'
-  return value
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(' ')
+
+const DIFFICULTY_RANK: Record<string, number> = { easy: 1, medium: 2, hard: 3 }
+
+function DifficultyDots({ level }: { level: string | null }) {
+  const rank = DIFFICULTY_RANK[(level ?? '').toLowerCase()] ?? 0
+  const label = level ? level[0].toUpperCase() + level.slice(1).toLowerCase() : 'General'
+  return (
+    <span className="inline-flex items-center gap-[5px]" title={label} aria-label={`Difficulty: ${label}`}>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className={`h-[7px] w-[7px] rounded-full transition-colors ${
+            i < rank ? 'bg-[#5C4033]' : 'border border-[#5C4033]/25 bg-transparent'
+          }`}
+        />
+      ))}
+    </span>
+  )
+}
+
+const SEARCH_DEMOS = ['bcg easy', 'fmcg revenue', 'market entry', 'guesstimate hard']
+
+function useTypewriter(words: string[], active: boolean) {
+  const [text, setText] = useState('')
+  const [wordIdx, setWordIdx] = useState(0)
+  const [deleting, setDeleting] = useState(false)
+  useEffect(() => {
+    if (!active) return
+    const word = words[wordIdx % words.length]
+    const atFull = !deleting && text === word
+    const atEmpty = deleting && text === ''
+    let delay = deleting ? 45 : 95
+    if (atFull) delay = 1100
+    if (atEmpty) delay = 280
+    const timer = setTimeout(() => {
+      if (atFull) return setDeleting(true)
+      if (atEmpty) { setDeleting(false); return setWordIdx((i) => (i + 1) % words.length) }
+      setText((prev) => (deleting ? prev.slice(0, -1) : word.slice(0, prev.length + 1)))
+    }, delay)
+    return () => clearTimeout(timer)
+  }, [text, deleting, wordIdx, active, words])
+  return text
+}
+
+function SearchPlaceholder({ words }: { words: string[] }) {
+  const typed = useTypewriter(words.length > 0 ? words : SEARCH_DEMOS, true)
+  return (
+    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center gap-2">
+      <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/40">try</span>
+      <span className="font-mono text-[12px] text-[#3D5A35]">{typed}</span>
+      <span className="repo-caret font-mono text-[12px] text-[#3D5A35]">|</span>
+    </div>
+  )
 }
 
 function RepositoryContent() {
+
   const [cases, setCases] = useState<CaseListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string[]>([])
   const [levelFilter, setLevelFilter] = useState<string[]>([])
+  const [industryFilter, setIndustryFilter] = useState<string[]>([])
+const [companyFilter, setCompanyFilter] = useState<string[]>([])
+const [roundFilter, setRoundFilter] = useState<string[]>([])
   const [actionError, setActionError] = useState('')
   const [offlineBanner, setOfflineBanner] = useState(false)
   const [firestoreFailed, setFirestoreFailed] = useState(false)
@@ -132,8 +189,17 @@ function RepositoryContent() {
   const lobbyId = searchParams.get('lobby')
   const sessionMode = searchParams.get('sessionMode') === 'local' ? 'local' : 'remote'
 
-  const hasActiveFilters = typeFilter.length > 0 || levelFilter.length > 0
-  const clearAllFilters = () => { setTypeFilter([]); setLevelFilter([]) }
+
+  const showSectionBands = typeFilter.length !== 1;
+
+const hasActiveFilters =
+  typeFilter.length > 0 || levelFilter.length > 0 ||
+  industryFilter.length > 0 || companyFilter.length > 0 ||
+  roundFilter.length > 0
+const hasQuery = filter.trim().length > 0
+const clearAllFilters = () => {
+  setTypeFilter([]); setLevelFilter([]); setIndustryFilter([]); setCompanyFilter([]); setRoundFilter([])
+}
 
   // Interviewers arriving in select-mode (via shared invite link) may not be
   // signed in. Silently provision an anonymous Firebase user so the /api
@@ -184,6 +250,19 @@ function RepositoryContent() {
                   ? value.caseType
                   : null,
             difficulty: typeof value.difficulty === 'string' ? value.difficulty : null,
+            company: typeof value.company === 'string' ? value.company : null,
+                        round: typeof value.round === 'string' ? value.round : null,
+slug:
+  typeof value.slug === 'string' && value.slug
+    ? value.slug
+    : slugifyCase(typeof value.title === 'string' ? value.title : ''),
+
+subtype:
+  typeof value.subtype === 'string'
+    ? value.subtype
+    : typeof value.case_subtype === 'string'
+    ? value.case_subtype
+    : null,
           } satisfies CaseListItem
         })
 
@@ -217,36 +296,143 @@ function RepositoryContent() {
     fetchCases()
   }, [])
 
-  const filteredCases = useMemo(
-    () =>
-      cases.filter((caseItem) => {
-        const matchesText =
-          caseItem.title.toLowerCase().includes(filter.toLowerCase()) ||
-          (caseItem.industry ?? '').toLowerCase().includes(filter.toLowerCase())
-        const matchesType =
-          typeFilter.length === 0 ||
-          typeFilter.some((t) => (caseItem.case_type ?? '').toLowerCase() === t.toLowerCase())
-        const matchesLevel =
-          levelFilter.length === 0 ||
-          levelFilter.some((l) => (caseItem.difficulty ?? '').toLowerCase() === l.toLowerCase())
-        return matchesText && matchesType && matchesLevel
-      }),
-    [cases, filter, typeFilter, levelFilter]
+  // Preferred display order; anything not listed still gets its own real
+// section (sorted after), so no case is ever dumped into "Other".
+const PREFERRED_TYPE_ORDER = [
+  'Profitability', 'Market Entry', 'Market Growth', 'Growth',
+  'Pricing', 'Unconventional', 'Guesstimate',
+]
+
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
+
+const orderTypes = (types: string[]) =>
+  [...types].sort((a, b) => {
+    const ia = PREFERRED_TYPE_ORDER.findIndex((t) => t.toLowerCase() === a.toLowerCase())
+    const ib = PREFERRED_TYPE_ORDER.findIndex((t) => t.toLowerCase() === b.toLowerCase())
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b)
+  })
+
+const typeOptions = useMemo(
+  () => orderTypes(Array.from(new Set(cases.map((c) => c.case_type).filter(Boolean) as string[]))),
+  [cases],
+)
+const industryOptions = useMemo(
+  () => Array.from(new Set(cases.map((c) => c.industry).filter(Boolean) as string[])).sort(),
+  [cases],
+)
+const companyOptions = useMemo(
+  () => Array.from(new Set(cases.map((c) => c.company).filter(Boolean) as string[])).sort(),
+  [cases],
+)
+
+const roundOptions = useMemo(
+  () => Array.from(new Set(cases.map((c) => c.round).filter(Boolean) as string[])).sort(),
+  [cases],
+)
+
+// Large, data-driven pool of example searches spanning every filter dimension.
+const searchDemos = useMemo(() => {
+  const lc = (s: string) => s.toLowerCase().trim()
+  const companies = companyOptions
+  const industries = industryOptions
+  const types = typeOptions
+  const rounds = roundOptions
+  const levels = FILTER_LEVELS
+  const subtypes = Array.from(
+    new Set(cases.map((c) => c.subtype).filter(Boolean) as string[]),
   )
+
+  const out = new Set<string>()
+  const add = (...parts: string[]) => {
+    const phrase = parts.map(lc).filter(Boolean).join(' ')
+    if (phrase) out.add(phrase)
+  }
+
+  // singles
+  ;[...companies, ...industries, ...types, ...levels, ...rounds, ...subtypes].forEach((v) => add(v))
+
+  // pairs across dimensions
+  companies.forEach((c) => levels.forEach((l) => add(c, l)))
+  companies.forEach((c) => types.forEach((t) => add(c, t)))
+  companies.forEach((c) => industries.forEach((i) => add(c, i)))
+  industries.forEach((i) => types.forEach((t) => add(i, t)))
+  industries.forEach((i) => levels.forEach((l) => add(i, l)))
+  industries.forEach((i) => subtypes.forEach((s) => add(i, s)))
+  types.forEach((t) => levels.forEach((l) => add(t, l)))
+  types.forEach((t) => rounds.forEach((r) => add(t, r)))
+  subtypes.forEach((s) => levels.forEach((l) => add(s, l)))
+
+  // a few triples for extra variety
+  industries.forEach((i) => types.forEach((t) => levels.forEach((l) => add(i, t, l))))
+
+  return Array.from(out)
+}, [cases, companyOptions, industryOptions, typeOptions, roundOptions])
+
+// Fisher–Yates shuffle, fresh per mount → different users see different orders.
+const shuffledDemos = useMemo(() => {
+  const arr = [...searchDemos]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}, [searchDemos])
+
+ // Token search: query is split on spaces; a case matches only if EVERY
+// token appears in AT LEAST ONE field. So "bcg easy" => BCG + Easy,
+// "profitability revenue" => only profitability-revenue cases, a case
+// name matches its title, an industry name matches that industry, etc.
+const filteredCases = useMemo(() => {
+  const tokens = filter.toLowerCase().split(/\s+/).filter(Boolean)
+  return cases.filter((caseItem) => {
+const haystack = [
+  caseItem.title, caseItem.industry, caseItem.case_type,
+  caseItem.subtype, caseItem.difficulty, caseItem.company, caseItem.round,
+].map((v) => (v ?? '').toLowerCase())
+   
+    const matchesText = tokens.every((tok) => haystack.some((f) => f.includes(tok)))
+    const eq = (val: string | null, list: string[]) =>
+      list.length === 0 || list.some((x) => (val ?? '').toLowerCase() === x.toLowerCase())
+
+
+    
+return (
+  matchesText &&
+  eq(caseItem.case_type, typeFilter) &&
+  eq(caseItem.difficulty, levelFilter) &&
+  eq(caseItem.industry, industryFilter) &&
+  eq(caseItem.company, companyFilter) &&
+  eq(caseItem.round, roundFilter)
+)
+  })
+}, [cases, filter, typeFilter, levelFilter, industryFilter, companyFilter, roundFilter])
+
+
+// Book-style lettered sections — only when browsing (no search/filter active).
+const grouped = useMemo(() => {
+  if (!showSectionBands) return null
+  return typeOptions
+    .map((type) => ({
+      type,
+      items: filteredCases.filter((c) => (c.case_type ?? '') === type),
+    }))
+    .filter((g) => g.items.length > 0)
+    .map((g, i) => ({ ...g, letter: ROMAN[i] ?? String(i + 1) }))
+}, [filteredCases, typeOptions, showSectionBands])
 
   // On row hover (or focus) ask Next.js to download the destination page
   // bundle so click → navigation feels closer to instant. We mirror the
   // exact URLs handleSelectCase will router.push to, including the lobby
   // params, so the prefetched route hydrates correctly.
-  const prefetchCase = (caseId: string) => {
-    if (prefetchedCasesRef.current.has(caseId)) return
-    prefetchedCasesRef.current.add(caseId)
-    const destination =
-      selectionMode && lobbyId
-        ? `/case/${caseId}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`
-        : `/case/${caseId}/interviewer?preview=1`
-    router.prefetch(destination)
-  }
+const prefetchCase = (caseItem: CaseListItem) => {
+  if (prefetchedCasesRef.current.has(caseItem.id)) return
+  prefetchedCasesRef.current.add(caseItem.id)
+  const destination =
+    selectionMode && lobbyId
+      ? `/case/${caseItem.id}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`
+      : `/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`
+  router.prefetch(destination)
+}
 
   const handleSelectCase = async (caseId: string) => {
     if (pendingCaseId) return // ignore double-clicks while one is in flight
@@ -288,105 +474,236 @@ function RepositoryContent() {
     ? 'Loading...'
     : `${filteredCases.length} ${filteredCases.length === 1 ? 'case' : 'cases'} available`
 
+const ROW_GRID =
+  'grid grid-cols-[40px_minmax(0,1.3fr)_minmax(0,1.05fr)_minmax(0,0.6fr)_minmax(0,1fr)_112px] items-center gap-x-4'
+
+
+  const OPEN_ENDED = (t: string | null) => ['guesstimate', 'unconventional'].includes((t ?? '').toLowerCase())
+
+const SectionBand = ({ letter, type, isFirst }: { letter: string; type: string; isFirst: boolean }) => (
+  <div className={`repo-section ${ROW_GRID} px-2 sm:px-4 ${isFirst ? 'pt-3' : 'pt-8'} pb-3`}>
+<div className="flex items-center px-2">   {/* ← same px-/justify as the CaseRow number cell */}
+  <span className="font-serif text-[16px] leading-none tracking-tight text-[#3D5A35]/85">
+    {letter}
+  </span>
+</div>
+    <div className="col-span-5 flex items-baseline gap-3 px-2 pr-4">
+      <span className="font-serif text-[15px] italic tracking-wide text-[#453a2a]/80">{type}</span>
+      <span className="repo-section-rule" />
+    </div>
+  </div>
+)
+
+const CaseRow = ({ caseItem, index }: { caseItem: CaseListItem; index: number }) => (
+  <div
+    onMouseEnter={() => prefetchCase(caseItem)}
+    onFocus={() => prefetchCase(caseItem)}
+    style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
+    className={`repo-table-row repo-rise ${ROW_GRID} px-2 sm:px-4 ${pendingCaseId === caseItem.id ? 'opacity-50' : ''}`}
+  >
+    <div className="px-2 py-4 text-[11px] tabular-nums text-[#5C4033]/35">
+      {caseItem.numericId ?? caseItem.id.slice(0, 4)}
+    </div>
+    <div className="px-2 py-4 pr-4">
+      <div className="repo-title flex flex-col gap-0.5">
+<span className="text-[13px] font-medium leading-snug tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>        {caseItem.subtype ? (
+          <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#3D5A35]/75">{caseItem.subtype}</span>
+        ) : null}
+      </div>
+    </div>
+    <div className="px-2 py-4 text-[12px] text-[#5C4033]/65">
+      {OPEN_ENDED(caseItem.case_type) ? '' : (caseItem.industry ?? '')}
+    </div>
+    <div className="px-2 py-4"><DifficultyDots level={caseItem.difficulty} /></div>
+    <div className="px-2 py-4 text-[12px] text-[#5C4033]/65">{caseItem.company ?? ''}</div>
+    <div className="px-2 py-4">
+  {selectionMode ? (
+    <button
+      onClick={() => handleSelectCase(caseItem.id)}
+      disabled={pendingCaseId !== null}
+      className="repo-preview-button w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pendingCaseId === caseItem.id ? 'Starting…' : 'Select'}
+    </button>
+  ) : (
+    <Link
+      href={`/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`}
+      onMouseEnter={() => prefetchCase(caseItem)}
+      className="repo-preview-button block w-full rounded-full px-3 py-2 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
+    >
+      Preview
+    </Link>
+  )}
+</div>
+  </div>
+)
+
+const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }) => (
+  <div
+    onMouseEnter={() => prefetchCase(caseItem)}
+    onFocus={() => prefetchCase(caseItem)}
+    style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
+    className={`repo-mobile-card repo-rise px-4 py-4 space-y-2 ${pendingCaseId === caseItem.id ? 'opacity-50' : ''}`}
+  >
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex items-baseline gap-2">
+        <span className="text-[11px] tabular-nums text-[#5C4033]/35">{caseItem.numericId ?? caseItem.id.slice(0, 4)}</span>
+<span className="text-[13px] font-medium tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
+      </div>
+      <DifficultyDots level={caseItem.difficulty} />
+    </div>
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#5C4033]/65">
+      {caseItem.subtype ? (
+        <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#3D5A35]/80">{caseItem.subtype}</span>
+      ) : null}
+      {!OPEN_ENDED(caseItem.case_type) && caseItem.industry ? <span>{caseItem.industry}</span> : null}
+      {caseItem.company ? <span>· {caseItem.company}</span> : null}
+    </div>
+{selectionMode ? (
+  <button
+    onClick={() => handleSelectCase(caseItem.id)}
+    disabled={pendingCaseId !== null}
+    className="repo-preview-button w-full rounded-full px-5 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    {pendingCaseId === caseItem.id ? 'Starting…' : 'Select Case'}
+  </button>
+) : (
+  <Link
+    href={`/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`}
+    onMouseEnter={() => prefetchCase(caseItem)}
+    className="repo-preview-button block w-full rounded-full px-5 py-2 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
+  >
+    Preview Case
+  </Link>
+)}
+  </div>
+)
+
   return (
     <div
       style={{ fontFamily: "'Work Sans', sans-serif" }}
       className="relative flex min-h-screen flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
       <style>{`
-        .repo-table-surface {
-          background: rgba(255,248,240,0.8);
-          border: 1px solid rgba(61, 90, 53, 0.1);
-          box-shadow: 0 4px 12px rgba(59, 47, 47, 0.04);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-        }
-        .repo-table-toolbar {
-          background: linear-gradient(180deg, rgba(255,248,240,0.9) 0%, rgba(247,240,232,0.82) 72%, rgba(246,239,231,0.62) 100%);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.52);
-        }
-        .repo-table-toolbar::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: -1px;
-          height: 10px;
-          background: linear-gradient(180deg, rgba(246,239,231,0) 0%, rgba(255,248,240,0.5) 100%);
-          pointer-events: none;
-          z-index: 2;
-        }
-        .repo-table-toolbar::after {
-          content: '';
-          position: absolute;
-          left: 18px;
-          right: 18px;
-          bottom: 0;
-          height: 1px;
-          background: linear-gradient(90deg, rgba(92,64,51,0) 0%, rgba(92,64,51,0.07) 18%, rgba(92,64,51,0.12) 50%, rgba(92,64,51,0.07) 82%, rgba(92,64,51,0) 100%);
-          pointer-events: none;
-          z-index: 3;
-        }
-        .repo-table-head {
-          background: linear-gradient(180deg, rgba(255,248,240,0.82) 0%, rgba(255,248,240,0.95) 100%);
-          backdrop-filter: blur(4px);
-          -webkit-backdrop-filter: blur(4px);
-        }
-        .repo-search-shell {
-          background: linear-gradient(180deg, rgba(255,249,242,0.56) 0%, rgba(245,238,229,0.42) 100%);
-          border: 1px solid rgba(92,64,51,0.06);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .repo-search-shell:focus-within {
-          background: linear-gradient(180deg, rgba(255,249,242,0.7) 0%, rgba(248,241,233,0.56) 100%);
-          border-color: rgba(92,64,51,0.09);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.62), 0 0 0 3px rgba(255,248,240,0.5);
-        }
-        .repo-preview-button {
-          background: rgba(255,248,240,0.84);
-          border: 1px solid rgba(61,90,53,0.16);
-          color: #3D5A35;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.72), 0 1px 2px rgba(61,90,53,0.04);
-          transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-        }
-        .repo-preview-button:hover {
-          background: rgba(61,90,53,0.08);
-          border-color: rgba(61,90,53,0.24);
-          color: #3D5A35;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.76), 0 6px 14px rgba(61,90,53,0.06);
-          transform: translateY(-1px);
-        }
-        .repo-table-row,
-        .repo-mobile-card {
-          transition: background-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .repo-table-row:nth-child(even),
-        .repo-mobile-card:nth-child(even) {
-          background: rgba(217,208,196,0.05);
-        }
-        .repo-table-row:hover {
-          background: rgba(217,208,196,0.2);
-        }
-        .repo-mobile-card:hover {
-          background: rgba(217,208,196,0.2);
-        }
-        .repo-input::placeholder {
-          color: rgba(92,64,51,0.46);
-          opacity: 1;
-        }
-        @keyframes repo-bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(4px); }
-        }
-        @keyframes repo-shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-        }
+.repo-table-surface {
+  background: rgba(255, 248, 240, 0.55);
+  border: 1px solid rgba(92,64,51,0.08);
+  box-shadow: 0 1px 2px rgba(59,47,47,0.02), 0 18px 40px rgba(59,47,47,0.04);
+}
+.repo-table-toolbar { position: relative; }
+.repo-table-head { background: transparent; }
+
+.repo-filter-pop {
+  padding: 8px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,250,244,0.98), rgba(248,241,233,0.96));
+  border: 1px solid rgba(92,64,51,0.10);
+  box-shadow: 0 14px 36px rgba(59,47,47,0.12);
+  animation: repo-tip-in .18s cubic-bezier(0.16,1,0.3,1) both;
+}
+.repo-filter-scroll::-webkit-scrollbar { width: 6px; }
+.repo-filter-scroll::-webkit-scrollbar-thumb { background: rgba(92,64,51,0.18); border-radius: 99px; }
+.repo-filter-scroll::-webkit-scrollbar-track { background: transparent; }
+
+
+.repo-clear { animation: repo-clear-in .3s cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes repo-clear-in { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+
+/* Flowy, glassy search that melts into the page */
+.repo-search-shell {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(252,245,236,0.55) 0%, rgba(249,241,232,0.4) 50%, rgba(247,238,228,0.45) 100%);
+  border: 1px solid rgba(92,64,51,0.09);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255,252,247,0.4), 0 1px 2px rgba(59,47,47,0.02);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  transition: border-color .3s ease, box-shadow .3s ease, background .3s ease;
+}
+/* faint warm-green drift instead of a white glare */
+.repo-search-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 35%, rgba(61,90,53,0.05) 50%, transparent 65%);
+  background-size: 220% 100%;
+  animation: repo-shimmer 9s ease-in-out infinite;
+  opacity: 0.7;
+}
+.repo-search-shell:focus-within {
+  border-color: rgba(61,90,53,0.16);
+  background: linear-gradient(135deg, rgba(253,247,239,0.62) 0%, rgba(250,243,234,0.46) 50%, rgba(248,240,230,0.5) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,252,247,0.5), 0 6px 22px rgba(61,90,53,0.05), 0 0 0 5px rgba(255,248,240,0.45);
+}
+.repo-input::placeholder { color: rgba(92,64,51,0.42); opacity: 1; }
+
+.repo-tip {
+  background: linear-gradient(180deg, rgba(255,250,244,0.94) 0%, rgba(248,241,233,0.88) 100%);
+  border: 1px solid rgba(92,64,51,0.10);
+  box-shadow: 0 12px 30px rgba(59,47,47,0.10);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: repo-tip-in .22s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes repo-tip-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.repo-caret { animation: repo-blink 1s steps(1) infinite; }
+@keyframes repo-blink { 50% { opacity: 0; } }
+
+.repo-hint-chip:hover { background: rgba(61,90,53,0.14); border-color: rgba(61,90,53,0.28); transform: translateY(-1px); }
+
+.repo-no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.repo-no-scrollbar::-webkit-scrollbar { display: none; }
+.repo-scroll-cue { animation: repo-bounce 1.4s ease-in-out infinite; }
+
+/* Book-style category header: drop-cap + fading green rule, no fill, no full divider */
+.repo-section { animation: repo-fade .6s ease both; }
+.repo-section-rule {
+  flex: 1; height: 1px; align-self: center; margin-left: 8px;
+  background: linear-gradient(90deg, rgba(61,90,53,0.22) 0%, rgba(92,64,51,0.06) 38%, transparent 100%);
+}
+
+/* Rows: no borders, no zebra — structure from whitespace + a green accent bar on hover */
+.repo-table-row, .repo-mobile-card {
+  position: relative;
+  transition: background-color .22s ease, opacity .22s ease;
+}
+.repo-table-row::before {
+  content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 2px;
+  border-radius: 2px; background: #3D5A35; opacity: 0; transform: scaleY(0.35);
+  transform-origin: center; transition: opacity .22s ease, transform .22s ease;
+}
+.repo-table-row:hover { background: rgba(61,90,53,0.045); }
+.repo-table-row:hover::before { opacity: 1; transform: scaleY(1); }
+.repo-mobile-card:hover { background: rgba(61,90,53,0.04); }
+.repo-title { transition: transform .22s ease; }
+.repo-table-row:hover .repo-title { transform: translateX(4px); }
+
+.repo-preview-button {
+  background: rgba(255,248,240,0.7);
+  border: 1px solid rgba(61,90,53,0.18);
+  color: #3D5A35;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.repo-preview-button:hover {
+  background: rgba(61,90,53,0.10);
+  border-color: rgba(61,90,53,0.30);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 16px rgba(61,90,53,0.08);
+  transform: translateY(-1px);
+}
+
+@keyframes repo-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes repo-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.repo-rise { animation: repo-rise .5s cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes repo-bounce { 0%,100% { transform: translateY(0);} 50% { transform: translateY(4px);} }
+@keyframes repo-shimmer { 0% { background-position: -200% 0;} 100% { background-position: 200% 0;} }
+
+@media (prefers-reduced-motion: reduce) {
+  .repo-rise, .repo-section, .repo-hints { animation: none; }
+  .repo-table-row:hover .repo-title { transform: none; }
+}
       `}</style>
 
       {selectionMode ? (
@@ -422,13 +739,13 @@ function RepositoryContent() {
 
       {/* pt-[90px] clears the fixed 70px navbar + breathing room */}
       <main
-        className={`relative px-4 md:px-8 ${
+        className={`min-h-[88vh] px-4 md:px-8 ${
           selectionMode
             ? 'flex min-h-[calc(100vh-70px)] flex-1 flex-col justify-center pb-20 pt-[90px] md:pb-24'
             : 'pb-12 pt-[90px]'
         }`}
       >
-        <section className="mx-auto w-full max-w-6xl">
+        <section className="mx-auto w-full max-w-[1320px] pb-16">
 
           {/* Header */}
           <div className="mb-7 max-w-[760px]">
@@ -477,60 +794,69 @@ function RepositoryContent() {
 
           {/* Case Table */}
           <div className="repo-table-surface relative z-10 rounded-[30px]">
-            <div className="repo-table-toolbar relative z-30 rounded-t-[30px] px-4 py-3 md:px-5">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <MultiSelectDropdown
-                    label="Type"
-                    options={FILTER_TYPES}
-                    selected={typeFilter}
-                    onChange={setTypeFilter}
-                    align="left"
-                  />
-                  <MultiSelectDropdown
-                    label="Level"
-                    options={FILTER_LEVELS}
-                    selected={levelFilter}
-                    onChange={setLevelFilter}
-                    align="left"
-                  />
-                  {hasActiveFilters && (
-                    <button
-                      onClick={clearAllFilters}
-                      className="flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold text-[#5C4033]/50 transition-colors hover:bg-[#D9D0C4]/30 hover:text-[#3B2F2F]"
-                    >
-                      <X className="h-3 w-3" /> Clear all
-                    </button>
-                  )}
-                  <span className="ml-1 text-[10px] text-[#5C4033]/35">{resultsLabel}</span>
-                </div>
-                <div className="w-full md:max-w-[260px]">
-                  <div className="repo-search-shell rounded-full px-3.5 py-1.5">
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      value={filter}
-                      onChange={(event) => setFilter(event.target.value)}
-                      className="repo-input w-full border-none bg-transparent text-[12px] text-[#453a2a] outline-none"
-                      style={{ fontFamily: "'Work Sans', sans-serif" }}
-                    />
-                  </div>
-                </div>
-              </div>
+            <div className="repo-table-toolbar relative z-30 rounded-t-[30px] px-5 py-5 md:px-7 md:py-6">
+
+{/* Search */}
+<div className="repo-search-shell flex items-center gap-2.5 px-4 py-3">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="shrink-0 text-[#3D5A35]/55">
+    <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+    <path d="m20 20-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+  <div className="relative w-full">
+    <input
+      value={filter}
+      onChange={(event) => setFilter(event.target.value)}
+      onFocus={() => setSearchFocused(true)}
+      onBlur={() => setSearchFocused(false)}
+      placeholder=""
+      className="repo-input w-full border-none bg-transparent text-[13px] text-[#453a2a] outline-none"
+    />
+    {filter === '' && !searchFocused && <SearchPlaceholder words={shuffledDemos} />}
+  </div>
+  {filter ? (
+    <button onClick={() => setFilter('')} aria-label="Clear search" className="shrink-0 text-[#5C4033]/40 hover:text-[#5C4033] transition-colors">
+      <X className="h-4 w-4" />
+    </button>
+  ) : null}
+</div>
+
+{/* Filters */}
+<div className="mt-4 flex flex-wrap items-center gap-1">
+  <RepoFilterDropdown label="Type" options={typeOptions} selected={typeFilter} onChange={setTypeFilter} align="left" />
+  <RepoFilterDropdown label="Industry" options={industryOptions} selected={industryFilter} onChange={setIndustryFilter} align="left" />
+  <RepoFilterDropdown label="Company" options={companyOptions} selected={companyFilter} onChange={setCompanyFilter} align="left" />
+  <RepoFilterDropdown label="Level" options={FILTER_LEVELS} selected={levelFilter} onChange={setLevelFilter} align="left" />
+<RepoFilterDropdown label="Round" options={roundOptions} selected={roundFilter} onChange={setRoundFilter} align="left" />
+
+{hasActiveFilters && (
+  <button
+    onClick={clearAllFilters}
+    className="repo-clear group ml-1 inline-flex items-center gap-1 px-1.5 py-1 text-[11px] font-medium text-[#5C4033]/45 transition-colors duration-200 hover:text-[#3D5A35]"
+  >
+    <X className="h-3 w-3 transition-transform duration-300 group-hover:rotate-90" />
+    Clear
+  </button>
+)}
+
+{(hasActiveFilters || hasQuery) && (
+  <div className="ml-auto flex items-center gap-3">
+    <span className="text-[10px] uppercase tracking-[0.16em] text-[#5C4033]/45">
+      {filteredCases.length} {filteredCases.length === 1 ? 'result' : 'results'}
+    </span>
+  </div>
+)}
+</div>
             </div>
 
             <div className="relative overflow-hidden rounded-b-[30px]">
-              {/* Table Header */}
-              <div className="repo-table-head hidden border-b border-[#5C4033]/8 md:grid md:grid-cols-[56px_minmax(0,1.28fr)_minmax(0,0.95fr)_minmax(0,0.95fr)_96px_150px] items-center">
-                {['#', 'Case', 'Industry', 'Type', 'Level', ''].map((label) => (
-                  <div
-                    key={label}
-                    className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#5C4033]/60"
-                  >
-                    {label}
-                  </div>
-                ))}
-              </div>
+{/* Table Header */}
+<div className={`repo-table-head ${ROW_GRID} hidden md:grid px-2 sm:px-4 pt-5 md:pt-6`}>
+  {['', 'Case', 'Industry', 'Level', 'Company', ''].map((label, i) => (
+    <div key={i} className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#3D5A35]/55">
+      {label}
+    </div>
+  ))}
+</div>
 
               {loading ? (
                 <div className="px-6 py-14 text-center text-[13px] text-[#5c4033]/45">
@@ -553,101 +879,28 @@ function RepositoryContent() {
                 </div>
               ) : (
                 <>
-                  {/* Desktop rows */}
-                  <div className="hidden md:block">
-                    {filteredCases.map((caseItem) => (
-                      <div
-                        key={caseItem.id}
-                        onMouseEnter={() => prefetchCase(caseItem.id)}
-                        onFocus={() => prefetchCase(caseItem.id)}
-                        className="repo-table-row grid grid-cols-[56px_minmax(0,1.28fr)_minmax(0,0.95fr)_minmax(0,0.95fr)_96px_150px] items-center"
-                      >
-                        <div className="px-4 py-3.5 text-[11px] text-[#5c4033]/34 font-medium tabular-nums">
-                          {caseItem.numericId ?? caseItem.id.slice(0, 4)}
-                        </div>
-                        <div className="px-4 py-3.5">
-                          <span className="text-[13px] font-medium text-[#453a2a]/88">{caseItem.title}</span>
-                        </div>
-                        <div className="px-4 py-3.5 text-[12px] text-[#5c4033]/78">
-                          {caseItem.industry ?? 'General'}
-                        </div>
-                        <div className="px-4 py-3.5 text-[12px] text-[#5c4033]/76">
-                          {caseItem.case_type ?? 'General'}
-                        </div>
-                        <div className="px-4 py-3.5">
-                          <span className="text-[9px] font-medium bg-[#D9D0C4]/20 border border-[#5C4033]/10 text-[#5C4033]/66 px-2 py-[3px] rounded-md whitespace-nowrap">
-                            {formatDifficultyLabel(caseItem.difficulty)}
-                          </span>
-                        </div>
-                        <div className="px-4 py-3.5 pr-5">
-                          <button
-                            type="button"
-                            onClick={() => handleSelectCase(caseItem.id)}
-                            disabled={pendingCaseId !== null}
-                            className="repo-preview-button w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {pendingCaseId === caseItem.id
-                              ? selectionMode
-                                ? 'Starting…'
-                                : 'Opening…'
-                              : selectionMode
-                                ? 'Select'
-                                : 'Preview'}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+<div className="hidden md:block">
+{grouped
+  ? grouped.map((g, gi) => (
+      <div key={g.type}>
+        <SectionBand letter={g.letter} type={g.type} isFirst={gi === 0} />
+        {g.items.map((caseItem, i) => <CaseRow key={caseItem.id} caseItem={caseItem} index={i} />)}
+      </div>
+    ))
+  : filteredCases.map((caseItem, i) => <CaseRow key={caseItem.id} caseItem={caseItem} index={i} />)}
+</div>
 
                   {/* Mobile cards */}
-                  <div className="md:hidden">
-                    {filteredCases.map((caseItem) => (
-                      <article
-                        key={caseItem.id}
-                        onMouseEnter={() => prefetchCase(caseItem.id)}
-                        onFocus={() => prefetchCase(caseItem.id)}
-                        className="repo-mobile-card px-4 py-4 space-y-2.5"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <span className="text-[10px] text-[#5c4033]/30 font-medium">
-                              {caseItem.numericId ?? caseItem.id.slice(0, 4)}
-                            </span>
-                            <h2
-                              style={{ fontFamily: "'Newsreader', serif" }}
-                              className="mt-0.5 text-xl leading-tight text-[#453a2a]/88"
-                            >
-                              {caseItem.title}
-                            </h2>
-                          </div>
-                          <span className="text-[9px] font-medium bg-[#D9D0C4]/20 border border-[#5C4033]/10 text-[#5C4033]/60 px-2 py-[3px] rounded-md whitespace-nowrap mt-1">
-                            {formatDifficultyLabel(caseItem.difficulty)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-3 text-[11px] text-[#5c4033]/64">
-                          <span>{caseItem.industry ?? 'General'}</span>
-                          <span className="text-[#D9D0C4]">·</span>
-                          <span>{caseItem.case_type ?? 'General'}</span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSelectCase(caseItem.id)}
-                          disabled={pendingCaseId !== null}
-                          className="repo-preview-button w-full rounded-full px-5 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {pendingCaseId === caseItem.id
-                            ? selectionMode
-                              ? 'Starting…'
-                              : 'Opening…'
-                            : selectionMode
-                              ? 'Select Case'
-                              : 'Preview Case'}
-                        </button>
-                      </article>
-                    ))}
-                  </div>
+<div className="md:hidden">
+{grouped
+  ? grouped.map((g, gi) => (
+      <div key={g.type}>
+        <SectionBand letter={g.letter} type={g.type} isFirst={gi === 0} />
+        {g.items.map((caseItem, i) => <CaseCard key={caseItem.id} caseItem={caseItem} index={i} />)}
+      </div>
+    ))
+  : filteredCases.map((caseItem, i) => <CaseCard key={caseItem.id} caseItem={caseItem} index={i} />)}
+</div>
 
                   {/* Coming Soon - animated glass strip */}
                   <div className="relative border-t border-[#5C4033]/6 overflow-hidden">

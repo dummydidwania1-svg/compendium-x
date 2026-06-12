@@ -11,6 +11,8 @@ import { CaseForumSection } from '@/components/forum/CaseForumSection'
 import CasePreviewView from '@/components/case/CasePreviewView'
 import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
 import PlatformLoader from '@/components/PlatformLoader'
+import { slugifyCase } from '@/lib/slug'
+
 
 /* ── Error boundary — catches client-side crashes, auto-reloads ── */
 class CaseErrorBoundary extends Component<{ children: ReactNode }, { crashed: boolean }> {
@@ -547,7 +549,13 @@ function DefaultFramework({ framework }: { framework: ParsedFramework }) {
 	)
 }
 
-function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
+export function InterviewerPageInner({
+  params,
+  forcePreview = false,
+}: {
+  params: Promise<{ id: string }>
+  forcePreview?: boolean
+}) {
 	const [caseData, setCaseData] = useState<CaseDocument | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [loadError, setLoadError] = useState('')
@@ -555,7 +563,7 @@ function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 	const [resolvedCaseId, setResolvedCaseId] = useState<string | null>(null)
 	const router = useRouter()
 	const searchParams = useSearchParams()
-	const previewMode = searchParams.get('preview') === '1'
+	const previewMode = forcePreview || searchParams.get('preview') === '1'
 	const lobbyId = searchParams.get('lobby')
 
 	const [currentView, setCurrentView] = useState<'case' | 'feedback' | 'success'>('case')
@@ -691,6 +699,14 @@ function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 		fetchData()
 	}, [lobbyId, params, previewMode, reloadTick, router])
 
+	// Legacy /case/[id]/interviewer?preview=1 links → bounce to the clean /case/[slug] URL.
+useEffect(() => {
+  if (forcePreview || !previewMode || !caseData) return
+  const stored = (caseData as { slug?: string }).slug
+  const slug = (stored && stored.trim()) || slugifyCase(caseData.title)
+  router.replace(`/case/${slug}`)
+}, [forcePreview, previewMode, caseData, router])
+
 	const handleSubmitFeedback = async () => {
 		if (!resolvedCaseId || !caseData) return
 		if (Object.values(scores).some((value) => value < 1)) {
@@ -803,6 +819,11 @@ function InterviewerPageInner({ params }: { params: Promise<{ id: string }> }) {
 		}
 
 		if (!caseData) return null
+
+		// Old preview URL is mid-redirect to /case/[slug]; show the loader instead of the old view.
+if (previewMode && !forcePreview) {
+  return <PlatformLoader />
+}
 
 		return (
 			<CaseInterviewerMaster

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { ChevronRight, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, CheckCircle2 } from 'lucide-react';
+
 
 const MultiSelectDropdown = ({ label, options, selected, onChange, align = 'right' }: { label: string, options: string[], selected: string[], onChange: (v: string[]) => void, align?: 'left' | 'right' }) => {
   const [open, setOpen] = useState(false);
@@ -22,12 +23,24 @@ const MultiSelectDropdown = ({ label, options, selected, onChange, align = 'righ
   return (
     <div ref={ref} className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       <button
-        className={`rounded-full px-4 py-2 text-xs font-medium text-[#5C4033] flex items-center gap-2 transition-colors border cursor-pointer bg-transparent ${selected.length > 0 ? 'border-[#3D5A35]/50 bg-[#3D5A35]/8 text-[#3D5A35]' : 'border-[#5C4033]/20 hover:bg-[#5C4033]/6'}`}
-      >
-        <span className="opacity-60">{label}:</span>
-        <span className="text-[#3B2F2F] max-w-[100px] truncate">{displayText}</span>
-        <ChevronRight className={`w-3 h-3 text-[#5C4033]/40 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
-      </button>
+  className={`group flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-all duration-200 ${
+    selected.length > 0
+      ? 'bg-[#3D5A35]/[0.09] text-[#3D5A35]'
+      : 'text-[#5C4033]/65 hover:bg-[#5C4033]/[0.05] hover:text-[#5C4033]'
+  }`}
+>
+  <span>{label}</span>
+  {selected.length > 0 && (
+    <span className="flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#3D5A35]/15 px-1 text-[10px] font-semibold leading-none text-[#3D5A35]">
+      {selected.length}
+    </span>
+  )}
+  <ChevronDown
+    className={`h-3 w-3 transition-transform duration-200 ${open ? 'rotate-180' : ''} ${
+      selected.length > 0 ? 'text-[#3D5A35]/70' : 'text-[#5C4033]/35'
+    }`}
+  />
+</button>
 
       {open && (
         <div className={`absolute top-full mt-2 w-52 z-50 animate-scale-in ${align === 'left' ? 'left-0' : 'right-0'}`}>
