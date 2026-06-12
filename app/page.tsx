@@ -453,6 +453,117 @@ animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
   animation: ccx-grant-breathe 3s ease-in-out 1.5s infinite;
 }
 .ccx-grant-link img { display: block; height: auto; }
+
+/* ═══════════════════════════════════════════════════
+   MOBILE / RESPONSIVE  (phones + small tablets)
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  header.ccx-hero {
+    min-height: calc(100vh - 70px);
+    min-height: calc(100svh - 70px);
+    overflow: visible;
+    align-items: center;
+    padding: 32px 0 48px;
+  }
+
+  /* Full-width college backdrop, dimmed a touch for contrast */
+  #ccx-split-left {
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    background-position: center center;
+    filter: grayscale(0.18) sepia(0.08) brightness(0.9);
+    -webkit-mask-image: linear-gradient(to bottom,
+      rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%,
+      rgba(0,0,0,0.6) 82%, rgba(0,0,0,0) 100%);
+    mask-image: linear-gradient(to bottom,
+      rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%,
+      rgba(0,0,0,0.6) 82%, rgba(0,0,0,0) 100%);
+    -webkit-mask-composite: source-over;
+    mask-composite: add;
+  }
+  /* STRONGER cream scrim — image stays as soft texture, text reads clearly.
+     Want MORE photo? lower these alphas. Want MORE text contrast? raise them. */
+  #ccx-split-left::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+      rgba(255,248,240,0.55) 0%,
+      rgba(255,248,240,0.68) 42%,
+      rgba(255,248,240,0.80) 68%,
+      rgba(255,248,240,0.95) 100%);
+  }
+
+  /* Full-width text column (beats desktop calc() + the scroll script's inline padding) */
+  header.ccx-hero .hero-inner {
+    padding: 0 24px !important;
+    max-width: 100%;
+  }
+
+  /* Cream halo crisps every line against the photo behind it */
+  #ccx-edition,
+  #ccx-main-title,
+  #ccx-where-line,
+  #ccx-animated-line,
+  #ccx-animated-line .word-item {
+    text-shadow: 0 1px 10px rgba(255,248,240,0.9), 0 1px 2px rgba(255,248,240,0.75);
+  }
+
+  #ccx-edition { font-size: 16px; gap: 10px; margin-bottom: 14px; }
+  #ccx-edition::before { width: 18px; }
+
+  #ccx-main-title {
+    font-size: clamp(38px, 12vw, 58px) !important;
+    line-height: 1.05 !important;
+    letter-spacing: -1px !important;
+    margin-bottom: 10px;
+  }
+  #ccx-main-title .title-nowrap { white-space: normal; }
+
+  header.ccx-hero h1 { font-size: 22px !important; margin-top: 10px !important; }
+  #ccx-where-line { font-size: clamp(22px, 6.4vw, 30px) !important; }
+  #ccx-animated-line,
+  #ccx-animated-line .word-item { font-size: clamp(22px, 6.4vw, 30px) !important; }
+  .word-carousel { min-width: 200px; height: 1.2em; }
+
+  /* CTAs stack full-width */
+  header.ccx-hero .ctas {
+    margin-top: 28px;
+    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  header.ccx-hero .ctas a { text-align: center; padding: 16px 24px; font-size: 12px; }
+
+  /* ─── SUPPORTED BY — symmetrical stacked layout ─── */
+  .ccx-supported { padding: 36px 24px 72px; }
+  .ccx-supported__inner { gap: 26px; }
+  .ccx-supported__label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-align: center;
+  }
+  .ccx-supported__logos {
+    flex-direction: column;   /* stack instead of cramped wrap */
+    gap: 26px;
+    width: 100%;
+  }
+  .ccx-supported__divider { display: none; }      /* vertical hairline is wrong when stacked */
+  .ccx-grant-link { justify-content: center; }
+.ccx-grant-link img {
+  height: 22px !important;
+  width: auto !important;
+}
+}
+
+/* Extra squeeze for very small phones (SE / mini, older Androids) */
+@media (max-width: 380px) {
+  #ccx-main-title { font-size: clamp(32px, 11vw, 44px) !important; }
+  header.ccx-hero .hero-inner { padding: 0 18px !important; }
+  .ccx-grant-link img { height: 18px !important; }
+}
 `
 
 

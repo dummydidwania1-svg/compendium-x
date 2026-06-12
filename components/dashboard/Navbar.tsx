@@ -149,7 +149,7 @@ display: inline-block;
         }}
         className="fixed top-0 w-full z-[100] border-b border-[#3D5A35]/10"
       >
-        <div className="flex justify-between items-center w-full px-12 h-full max-w-screen-2xl mx-auto">
+        <div className="flex justify-between items-center w-full px-4 sm:px-6 lg:px-12 h-full max-w-screen-2xl mx-auto gap-3">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-1 transition-opacity hover:opacity-85" aria-label="Go to home page">
@@ -158,9 +158,9 @@ display: inline-block;
               alt="Case Compendium X"
               width={56}
               height={56}
-              className="w-14 h-14 object-contain"
+              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-contain shrink-0"
             />
-            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
+            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-base sm:text-lg md:text-xl font-semibold tracking-tight whitespace-nowrap">
               <span className="text-[#453a2a]">Case Compendium</span>
               <span className="text-[#3D5A35]">X</span>
             </div>
@@ -226,23 +226,23 @@ display: inline-block;
           </div>
 
           {/* Auth Area */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 sm:gap-4 md:gap-6 shrink-0">
             {isSignedIn ? (
               <>
                 <button
                   onClick={handleLogout}
                   style={{ fontFamily: "'Work Sans', sans-serif" }}
-                  className="border border-[#3D5A35] px-5 py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent"
+                  className="border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap"
                 >
                   LOG OUT
                 </button>
-                <span className="material-symbols-outlined text-[#3D5A35]" style={{ fontSize: '36px' }}>account_circle</span>
+                <span className="material-symbols-outlined text-[#3D5A35] hidden sm:inline-block sm:text-[32px] md:text-[36px]">account_circle</span>
               </>
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
                 style={{ fontFamily: "'Work Sans', sans-serif" }}
-                className="border border-[#3D5A35] px-5 py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent"
+                className="border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap"
               >
                 SIGN IN
               </button>
