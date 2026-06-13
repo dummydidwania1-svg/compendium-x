@@ -13,6 +13,8 @@ import { FILTER_LEVELS } from '@/lib/constants'
 import RepoFilterDropdown from '@/components/ui/RepoFilterDropdown'
 import { apiPost } from '@/lib/api/client'
 import { slugifyCase } from '@/lib/slug'
+import PlatformLoader from '@/components/PlatformLoader'
+import CursorGlow from '@/components/CursorGlow'
 
 
 const CASES_CACHE_KEY = 'compendium_cases_v2'
@@ -859,10 +861,8 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
 </div>
 
               {loading ? (
-                <div className="px-6 py-14 text-center text-[13px] text-[#5c4033]/45">
-                  Loading library...
-                </div>
-              ) : firestoreFailed && cases.length === 0 ? (
+  <PlatformLoader message="Pulling up your cases…" />
+) : firestoreFailed && cases.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
                   <svg viewBox="0 0 64 64" fill="none" width="28" height="28" style={{ opacity: 0.35 }}>
                     <path d="M16 10h32l-8 14 5 8-13 22-13-22 5-8-8-14Z" fill="#5C4033" />
@@ -1027,14 +1027,11 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
 
 export default function RepositoryPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#fff8f0] text-[#5c4033]">
-          Loading Repository...
-        </div>
-      }
-    >
-      <RepositoryContent />
-    </Suspense>
+    <>
+      <CursorGlow />
+      <Suspense fallback={<PlatformLoader message="Pulling up your cases…" />}>
+        <RepositoryContent />
+      </Suspense>
+    </>
   )
 }

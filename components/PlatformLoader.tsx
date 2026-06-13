@@ -9,16 +9,6 @@ export default function PlatformLoader({ message = 'Getting things ready' }: { m
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#fff8f0]"
       style={{ fontFamily: "'Work Sans', sans-serif" }}
     >
-      <style>{`
-        @keyframes pl-tie-swing {
-          0%,100% { transform: rotate(-5deg); }
-          50%      { transform: rotate(5deg); }
-        }
-        @keyframes pl-breathe {
-          0%,100% { opacity: 0.4; }
-          50%      { opacity: 0.75; }
-        }
-      `}</style>
       <div className="flex flex-col items-center gap-5">
         <div style={{ transformOrigin: 'top center', animation: 'pl-tie-swing 2.4s cubic-bezier(0.37,0,0.63,1) infinite' }}>
           <svg viewBox="0 0 64 64" fill="none" width="30" height="30">
