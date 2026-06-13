@@ -113,7 +113,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
       </span>
     </Link>
     <Link
-      href="/about"
+      href="/our-story"
       style= {{fontFamily: "'Work Sans', sans-serif" }}
       className="nav-dropdown-item"
       role="menuitem"

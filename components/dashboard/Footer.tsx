@@ -19,7 +19,7 @@ const Footer = (_props: FooterProps) => (
         </div>
         <div className="flex flex-wrap gap-x-12 gap-y-4">
           <Link
-            href="/about"
+            href="/our-story"
             style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }}
             className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all"
           >
