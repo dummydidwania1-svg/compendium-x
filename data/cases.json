@@ -5093,5 +5093,2143 @@
       }
     ],
     "framework": "Candidate: Sure. I'd like to understand the problem better. Where is her store located? What are the products currently available at her store? Also, how much have profits fallen by in this period?\nInterviewer: Her store is located in Delhi. She currently sells clothes for men and women. Profits have fallen by 15%.\nCandidate: Interesting. Does she manufacture her own clothes or is she a 3rd party distributor? How much space inside the store is the makeup outlet going to take?\nInterviewer: She is a distributor of clothes and plans to be for makeup as well. The makeup outlet is proposed to take up 20% of the space in the store.\nCandidate: Lastly, is there any particular reason for choosing a makeup outlet or is our client open to other ideas as well?\nInterviewer: She believes makeup products will sell much better post the pandemic period and hence, this is the only option she is considering.\nCandidate: I can now begin. Since our client's objective is to increase profits, I shall evaluate this decision on the basis of the additional revenues she will earn minus the additional costs she will incur.\nInterviewer: Sure, sounds good,\nCandidate: Therefore, if - Additional Revenues > Additional Costs, this is a wise decision.\nIn additional costs, I would like to incorporate not just the costs of setting up and buying the products, but also the revenue foregone from the lost retail apparel space, since this is an opportunity cost.\nInterviewer: Brilliant. Opportunity costs become a major consideration. Why don't you find the breakeven point of sales for this decision in a month? What is the data you would require?\nCandidate: Sure, I know that\nBreakeven point of sale = (Fixed cost)/(Sale price – Variable cost)\nTherefore, I would require the following information:\n1) Fixed costs involved in setting up the makeup outlet\n2) Opportunity cost of sales foregone\n3) Average sale price of a makeup product\n4) Average cost price of purchasing a makeup item\n5) Other variable costs involved (Staff, etc.)\nInterviewer: That seems comprehensive. You may note down the following information:\nInterviewer: Cost incurred to change the layout and set up the various aspects of the outlet – Rs. 40,000. The entire outlet has an area of 10,000 sq. ft and earns a profit of Rs. 25,000 a day. Assume that every part of the store contributes equally to profits. Average sale price of a makeup item would be around Rs. 1,000 and the average cost price would be Rs. 400. The other variable costs per product would come up to Rs. 100.\nCandidate: Great! Since the costs have been given to us in terms of a one-time fixed expenditure and a daily opportunity cost; we will first find the break-even point where we will be able to recover the fixed cost incurred. Subsequently, we will calculate the number of products we will need to sell daily in order to experience an incremental profit.\n_(Calculating daily opportunity cost)_\nIf income is uniform, then every 1 sq. ft of the apparel segment contributes Rs 2.5 (Rs. 25,000/10,000). Since the makeup division is expected to take up 2000 sq. ft, the revenue lost would be equal to\n2000 Sq. ft x Rs 2.5 = Rs. 5,000 per day\nThus, total cost to be recovered = Rs. 40,000. Rs. 5,000 everyday the store is open is the opportunity cost.\n_(Calculation on next page)_\nThus, we realise that we need to sell 80 items on an average from our makeup outlet to recover the fixed cost of renovations and we need to sell 10 products daily to recover the opportunity cost of giving up on 20% of the apparel segment.\nInterviewer: Brilliant! You have correctly identified the amount. Let's finally move on to recommendations on how we can further improve the sale from our makeup outlet.\nCandidate: I can think of the following suggestions –\n1) Online presence: Ensuring we have a website that provides for checking on stock availability and delivery option.\n2) Tie-ups with e-commerce aggregators: Presence on sites like Flipkart and Amazon can also add to sales.\n3) Range of makeup products not delimited to women: Keeping in mind the increasing trend of makeup for men and LGBTQi+ community\n4) Creating special ranges for all income segments and demographics\n5) Tie-ups with micro-influencers on Instagram and other platforms\n6) Discounts and offers on the makeup products on purchase of the apparel in the store\nAdditionally, driving up sales from the apparel division through similar marketing strategies will help raise sales through cross-selling techniques.\nInterviewer: Great. We can close the case here. Thank you!\n\nBeauty Lies On The Inside Framework & Recommendations\nDECLINING PROFITS OF AN APPAREL STORE\nWise Decision if Additional Revenues > Additional Costs\nFINDING THE BREAK EVEN POINT\n\nA: BREAK-EVEN POINT (ONE TIME EXPENDITURE)\nFixed Investment = ₹40,000\nS.P. of One Product = ₹1,000\nV.C. of One Product = ₹400 + ₹100 = ₹500\nBreak Even Point Of Sales = F.C./(S.P. – V.C.) = ₹40,000/(₹1,000 – ₹500) = ₹40,000/₹500 = 80 Items\n\nB: ANALYSING VIABILITY (ACCOUNTING FOR THE DAILY OPPORTUNITY COST)\nOpportunity Cost = ₹5,000\nS.P Of One Product = ₹1,000\nV.C. Of One Product = ₹400 + ₹100 = ₹500\nRequired Daily Sales = Opportunity Cost/(S.P. – V.C.) = ₹5,000/(₹1,000 – ₹500) = ₹5,000/₹500 = 10 Items/Day\n\nClarifying Questions: Where is the store located? How much space is the makeup outlet going to take? Why only makeup as an alternative?\nBrownie Points: Mentioning opportunity cost as one of the fixed costs as it ended up becoming crucial to the case\nKeep In Mind: Basics of profitability and the profit function are very useful in unorthodox cases like this. Try to incorporate concepts you have studied about before."
+  },
+  {
+    "id": 22,
+    "docId": "case-22",
+    "title": "IIM - A(irtel)",
+    "industry": "Education",
+    "difficulty": "Easy",
+    "case_type": "Market Entry",
+    "company": "BCG",
+    "round": "Principal",
+    "prompt": "Your client is Airtel. They wish to enter the Education sector. How should they go about it?",
+    "frameworkTree": {
+      "nodes": {
+        "market-entry": {
+          "id": "market-entry",
+          "label": "Market Entry",
+          "tone": "root",
+          "children": [
+            "market-attractiveness",
+            "set-up",
+            "risks"
+          ]
+        },
+        "market-attractiveness": {
+          "id": "market-attractiveness",
+          "label": "Market Attractiveness",
+          "tone": "branch",
+          "children": [
+            "market-size",
+            "market-share",
+            "profitability",
+            "capex"
+          ]
+        },
+        "set-up": {
+          "id": "set-up",
+          "label": "Set Up",
+          "tone": "support",
+          "children": [
+            "licenses-permissions",
+            "platform",
+            "educators",
+            "support-staff",
+            "marketing"
+          ]
+        },
+        "risks": {
+          "id": "risks",
+          "label": "Risks",
+          "tone": "support",
+          "children": [
+            "entry",
+            "operation",
+            "exit"
+          ]
+        },
+        "market-size": {
+          "id": "market-size",
+          "label": "Market Size",
+          "tone": "branch",
+          "children": [
+            "physical-education",
+            "digital-education",
+            "hybrid-sector"
+          ]
+        },
+        "market-share": {
+          "id": "market-share",
+          "label": "Market Share (~20%: Rs 4B Yr 1)",
+          "tone": "support",
+          "children": []
+        },
+        "profitability": {
+          "id": "profitability",
+          "label": "Profitability",
+          "tone": "support",
+          "children": []
+        },
+        "capex": {
+          "id": "capex",
+          "label": "CAPEX",
+          "tone": "support",
+          "children": []
+        },
+        "physical-education": {
+          "id": "physical-education",
+          "label": "Physical Education",
+          "tone": "support",
+          "children": []
+        },
+        "digital-education": {
+          "id": "digital-education",
+          "label": "Digital Education",
+          "tone": "branch",
+          "children": [
+            "traditional",
+            "value-add",
+            "digital-hybrid"
+          ]
+        },
+        "hybrid-sector": {
+          "id": "hybrid-sector",
+          "label": "Hybrid / Both",
+          "tone": "support",
+          "children": []
+        },
+        "traditional": {
+          "id": "traditional",
+          "label": "Traditional",
+          "tone": "support",
+          "children": []
+        },
+        "value-add": {
+          "id": "value-add",
+          "label": "Value-Add",
+          "tone": "branch",
+          "children": [
+            "population"
+          ]
+        },
+        "digital-hybrid": {
+          "id": "digital-hybrid",
+          "label": "Hybrid / Both",
+          "tone": "support",
+          "children": []
+        },
+        "population": {
+          "id": "population",
+          "label": "Population (1.4B)",
+          "tone": "branch",
+          "children": [
+            "urban",
+            "rural"
+          ]
+        },
+        "urban": {
+          "id": "urban",
+          "label": "Urban (400M)",
+          "tone": "branch",
+          "children": [
+            "bpl",
+            "lmc",
+            "umc-uc"
+          ]
+        },
+        "rural": {
+          "id": "rural",
+          "label": "Rural (1B)",
+          "tone": "support",
+          "children": []
+        },
+        "bpl": {
+          "id": "bpl",
+          "label": "BPL (120M)",
+          "tone": "support",
+          "children": []
+        },
+        "lmc": {
+          "id": "lmc",
+          "label": "LMC (120M)",
+          "tone": "support",
+          "children": []
+        },
+        "umc-uc": {
+          "id": "umc-uc",
+          "label": "UMC + UC (160M)",
+          "tone": "branch",
+          "children": [
+            "age-18-24",
+            "other-ages"
+          ]
+        },
+        "age-18-24": {
+          "id": "age-18-24",
+          "label": "18-24 (16M)",
+          "tone": "branch",
+          "children": [
+            "interested-digital"
+          ]
+        },
+        "other-ages": {
+          "id": "other-ages",
+          "label": "Other Ages (144M)",
+          "tone": "support",
+          "children": []
+        },
+        "interested-digital": {
+          "id": "interested-digital",
+          "label": "Interested In Digital Courses (5M)",
+          "tone": "branch",
+          "children": [
+            "market-size-output"
+          ]
+        },
+        "market-size-output": {
+          "id": "market-size-output",
+          "label": "Market Size (Rs 20B)",
+          "tone": "leaf",
+          "children": []
+        },
+        "licenses-permissions": {
+          "id": "licenses-permissions",
+          "label": "Licenses & Permissions",
+          "tone": "support",
+          "children": []
+        },
+        "platform": {
+          "id": "platform",
+          "label": "Platform",
+          "tone": "support",
+          "children": [
+            "website",
+            "app"
+          ]
+        },
+        "website": {
+          "id": "website",
+          "label": "Website",
+          "tone": "support",
+          "children": []
+        },
+        "app": {
+          "id": "app",
+          "label": "App",
+          "tone": "support",
+          "children": []
+        },
+        "educators": {
+          "id": "educators",
+          "label": "Educators",
+          "tone": "support",
+          "children": [
+            "direct-hiring",
+            "partnerships"
+          ]
+        },
+        "direct-hiring": {
+          "id": "direct-hiring",
+          "label": "Direct Hiring",
+          "tone": "support",
+          "children": []
+        },
+        "partnerships": {
+          "id": "partnerships",
+          "label": "Partnerships",
+          "tone": "support",
+          "children": []
+        },
+        "support-staff": {
+          "id": "support-staff",
+          "label": "Support Staff",
+          "tone": "support",
+          "children": [
+            "customer-service",
+            "it-team"
+          ]
+        },
+        "customer-service": {
+          "id": "customer-service",
+          "label": "Customer Service",
+          "tone": "support",
+          "children": []
+        },
+        "it-team": {
+          "id": "it-team",
+          "label": "IT Team",
+          "tone": "support",
+          "children": []
+        },
+        "marketing": {
+          "id": "marketing",
+          "label": "Marketing",
+          "tone": "support",
+          "children": []
+        },
+        "entry": {
+          "id": "entry",
+          "label": "Entry",
+          "tone": "support",
+          "children": [
+            "regulatory",
+            "market-access"
+          ]
+        },
+        "regulatory": {
+          "id": "regulatory",
+          "label": "Regulatory",
+          "tone": "support",
+          "children": []
+        },
+        "market-access": {
+          "id": "market-access",
+          "label": "Market Access",
+          "tone": "support",
+          "children": [
+            "high-cac",
+            "brand-loyalty",
+            "credibility-gap"
+          ]
+        },
+        "high-cac": {
+          "id": "high-cac",
+          "label": "High CAC (Financial Barrier)",
+          "tone": "support",
+          "children": []
+        },
+        "brand-loyalty": {
+          "id": "brand-loyalty",
+          "label": "Brand Loyalty (Competitive Barrier)",
+          "tone": "support",
+          "children": []
+        },
+        "credibility-gap": {
+          "id": "credibility-gap",
+          "label": "Credibility Gap (Perception Barrier)",
+          "tone": "support",
+          "children": []
+        },
+        "operation": {
+          "id": "operation",
+          "label": "Operation",
+          "tone": "support",
+          "children": [
+            "new-entrants",
+            "human-capital",
+            "platform-tech"
+          ]
+        },
+        "new-entrants": {
+          "id": "new-entrants",
+          "label": "New Entrants",
+          "tone": "support",
+          "children": [
+            "startups",
+            "big-tech"
+          ]
+        },
+        "startups": {
+          "id": "startups",
+          "label": "Startups",
+          "tone": "support",
+          "children": []
+        },
+        "big-tech": {
+          "id": "big-tech",
+          "label": "Big Tech Platforms",
+          "tone": "support",
+          "children": []
+        },
+        "human-capital": {
+          "id": "human-capital",
+          "label": "Human Capital",
+          "tone": "support",
+          "children": []
+        },
+        "platform-tech": {
+          "id": "platform-tech",
+          "label": "Platform / Tech",
+          "tone": "support",
+          "children": []
+        },
+        "exit": {
+          "id": "exit",
+          "label": "Exit",
+          "tone": "support",
+          "children": [
+            "sunk-costs",
+            "contract-obligation",
+            "reputation"
+          ]
+        },
+        "sunk-costs": {
+          "id": "sunk-costs",
+          "label": "Sunk Costs",
+          "tone": "support",
+          "children": []
+        },
+        "contract-obligation": {
+          "id": "contract-obligation",
+          "label": "Contract Obligation",
+          "tone": "support",
+          "children": []
+        },
+        "reputation": {
+          "id": "reputation",
+          "label": "Reputation",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "market-entry",
+        "market-attractiveness",
+        "market-size",
+        "digital-education",
+        "value-add",
+        "population",
+        "urban",
+        "umc-uc",
+        "age-18-24",
+        "interested-digital"
+      ],
+      "defaultFocusedId": "market-size-output",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "What is the objective?",
+            "Which segment & geography are we looking to enter?",
+            "Timeline & budget?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Clarify geography and timeline upfront",
+            "Cover the full lifecycle of risks: entry, operation, & exit"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Suggesting financial aid to increase market share and build reputation"
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: Interesting. Are they looking at a particular segment of the Education sector? What is their objective behind this?\nInterviewer: They would like to know what you think they should do. They are looking to capture a large market share.\nCandidate: Got it. Which geographies do they wish to enter? When are they planning to enter? Do they have a budget in mind?\nInterviewer: They are looking to enter the Education sector in India in the next 1 year. There is no budget.\nCandidate: I would like to divide my approach into 3 –\n1) Market Attractiveness – Here, we will decide which segment of the Education sector to enter and the market share we can expect.\n2) Set-up – Once we decide which segment to enter, we also have to look at the various permissions required and how we can go about setting up the business.\n3) Risks – Lastly, it is important to be cognizant of the roadblocks Airtel can face in this endeavour.\nInterviewer: Makes sense.\nCandidate: Let's start with which segment of the market Airtel should enter. They can either enter the physical education sector, the digital education sector or both. Keeping in mind the high set-up costs of physical centres and the timeline of 1 year, it will make more sense to enter the digital education sector. Airtel already has a platform of digital services like Wynk Music and Airtel TV which will make it easier to distribute educational content.\nCandidate: Next, we must decide if we wish to set up a traditional online school/college or an institute like Coursera which will provide value-added courses. Currently, there is limited credibility of traditional online institutes. People are suspicious of such institutes and it is not the right time to enter this sector. Therefore, we can follow a model similar to Coursera. Does this make sense?\nInterviewer: Yes. Sounds good. We can go ahead with this idea. We would like you to estimate the market size of this sector.\nCandidate: Sure. Out of the 1.4 billion people residing in India, the demand for digital courses comes primarily from the urban areas. This is due to the requirement of internet connectivity and smartphones/laptops. This leaves us with about 400 million (30%) people.\nCandidate: Since the average course costs about Rs. 500/week, we can go ahead and eliminate people who will not be able to afford this. About 30% of the population lies below the poverty line and makes less than Rs. 10,000/month. Another 30% lies in the lower middle-class segment which makes Rs 10,000 – Rs 20,000/month. These calculations are based on the assumption that there is no financial aid available. However, if we're looking to gain market share, we can also consider subsidizing our courses for those coming from lower-income backgrounds.\nInterviewer: Makes sense. For now, you can leave out financial aid.\nCandidate: The remaining 40% lies in the upper middle class and upper-class segments and makes more than Rs 20,000/month. We can safely eliminate the below poverty line and lower middle-class segments. This leaves us with 160 million people.\nCandidate: Digital courses are usually used by people between the age of 18 and 24 looking to learn something in addition to their regular academic courses. Approximately 10% of the country's population lies in this age bracket, leaving us with 16 million people.\nCandidate: Out of our target group of 16 million people, about 30% would be interested in digital courses which leaves us with about 5 million people. This is based on what I have observed in my peer group where 1 in 3 people I know complete such courses. On an average, a person completes about 2 courses a year and each course costs about Rs. 2000. This gives us a market size of Rs. 20 billion. Even though Airtel will be a new entrant to this sector, they do have a significant presence in the telecom sector of India. Therefore, they can probably expect a sizable market share of about 20% in their first year. Keeping in mind that this sector is in a high-growth phase, this seems like a promising opportunity.\nInterviewer: Sure, this sounds attractive. What would you like to look at next?\nCandidate: We need to look at how we can set up the institute. The following aspects will have to be looked at:\n1) Licenses and permissions: The education sector is regulated in India. There might be certain conditions we will have to fulfil and permissions we will have to seek.\n2) Platform: A platform will have to be set up where the students will be able to enrol for courses, watch the videos and download their certificates. This could be an application or a website or both.\n3) Educators: Top quality educators will have to be recruited to make course content for the students. Airtel can consider partnering with existing coaching centres or schools to get good educators on board.\n4) Customer service and other back-end staff: A team will have to be set up to assist students with their queries and concerns. Additionally, an IT team will be required to ensure uninterrupted service.\n5) Marketing: Advertisements and marketing campaigns will help Airtel create demand for its new service. It is important to establish credibility in this market. A degree or certificate from our platform should be valued by employers and educational institutes.\nInterviewer: This shouldn't be a problem.\nCandidate: Sure. There are a few risks which may arise.\n1) Regulatory – The government may introduce new regulations making it difficult to operate in India. Airtel can use its lobbying power to ensure this does not happen.\n2) New entrants – Airtel should look to differentiate their courses in some way. For example, they can offer authentic courses by the IIMs in India to create demand. This way they can retain their market share even if other companies enter.\nInterviewer: Perfect. Let's close the case here.\n\n[FLAG] Framework & Recommendations section with RECOMMENDATIONS line not visible in provided screenshots."
+  },
+{
+  "id": 23,
+  "docId": "case-23",
+  "title": "Mr. Worldwide",
+  "industry": "Hospitality",
+  "difficulty": "Medium",
+  "case_type": "Market Entry",
+  "company": "L.E.K. Consulting",
+  "round": "Principal",
+  "prompt": "Hey, let's begin with a quick case. Your client is the CEO of a famous hotel chain in India. He believes the Indian market has saturated and wants to open operations in another country. You are required to help him.",
+  "frameworkTree": {
+    "nodes": {
+      "enter-new-market": {
+        "id": "enter-new-market",
+        "label": "Enter New Market",
+        "tone": "root",
+        "children": ["financial-feasibility", "operational-feasibility", "risks"]
+      },
+      "financial-feasibility": {
+        "id": "financial-feasibility",
+        "label": "Financial Feasibility",
+        "tone": "branch",
+        "children": ["market-size", "market-share", "profit-formula", "market-growth-rate"]
+      },
+      "operational-feasibility": {
+        "id": "operational-feasibility",
+        "label": "Operational Feasibility",
+        "tone": "branch",
+        "children": ["pre-setup", "setup", "post-setup"]
+      },
+      "risks": {
+        "id": "risks",
+        "label": "Risks",
+        "tone": "branch",
+        "children": ["regulatory", "cost-capital", "market-economic"]
+      },
+      "market-size": {
+        "id": "market-size",
+        "label": "Market Size",
+        "tone": "branch",
+        "children": ["no-of-tourists", "avg-stay"]
+      },
+      "market-share": {
+        "id": "market-share",
+        "label": "Market Share",
+        "tone": "support",
+        "children": []
+      },
+      "profit-formula": {
+        "id": "profit-formula",
+        "label": "Profit: (R-VC) - FC",
+        "tone": "branch",
+        "children": ["revenue-per-night", "variable-cost-per-night", "fixed-investment"]
+      },
+      "market-growth-rate": {
+        "id": "market-growth-rate",
+        "label": "Market Growth Rate",
+        "tone": "leaf",
+        "children": []
+      },
+      "no-of-tourists": {
+        "id": "no-of-tourists",
+        "label": "No. Of Tourists",
+        "tone": "support",
+        "children": []
+      },
+      "avg-stay": {
+        "id": "avg-stay",
+        "label": "Avg Stay (Nights)",
+        "tone": "support",
+        "children": []
+      },
+      "revenue-per-night": {
+        "id": "revenue-per-night",
+        "label": "Revenue/Night",
+        "tone": "support",
+        "children": []
+      },
+      "variable-cost-per-night": {
+        "id": "variable-cost-per-night",
+        "label": "Variable Cost/Night",
+        "tone": "support",
+        "children": []
+      },
+      "fixed-investment": {
+        "id": "fixed-investment",
+        "label": "Fixed Investment",
+        "tone": "support",
+        "children": []
+      },
+      "pre-setup": {
+        "id": "pre-setup",
+        "label": "Pre-Setup",
+        "tone": "branch",
+        "children": ["permissions-licensing", "market-research", "land-acquisition"]
+      },
+      "setup": {
+        "id": "setup",
+        "label": "Setup",
+        "tone": "branch",
+        "children": ["establishing-hotels", "hiring-staffing", "marketing"]
+      },
+      "post-setup": {
+        "id": "post-setup",
+        "label": "Post-Setup",
+        "tone": "branch",
+        "children": ["service-delivery", "maintenance"]
+      },
+      "permissions-licensing": {
+        "id": "permissions-licensing",
+        "label": "Permissions & Licensing",
+        "tone": "leaf",
+        "children": []
+      },
+      "market-research": {
+        "id": "market-research",
+        "label": "Market Research",
+        "tone": "support",
+        "children": []
+      },
+      "land-acquisition": {
+        "id": "land-acquisition",
+        "label": "Land Acquisition",
+        "tone": "leaf",
+        "children": []
+      },
+      "establishing-hotels": {
+        "id": "establishing-hotels",
+        "label": "Establishing Hotels",
+        "tone": "support",
+        "children": []
+      },
+      "hiring-staffing": {
+        "id": "hiring-staffing",
+        "label": "Hiring & Staffing",
+        "tone": "support",
+        "children": []
+      },
+      "marketing": {
+        "id": "marketing",
+        "label": "Marketing",
+        "tone": "support",
+        "children": []
+      },
+      "service-delivery": {
+        "id": "service-delivery",
+        "label": "Service Delivery",
+        "tone": "support",
+        "children": []
+      },
+      "maintenance": {
+        "id": "maintenance",
+        "label": "Maintenance",
+        "tone": "support",
+        "children": []
+      },
+      "regulatory": {
+        "id": "regulatory",
+        "label": "Regulatory",
+        "tone": "branch",
+        "children": ["licensing-permits", "land-ownership-laws"]
+      },
+      "cost-capital": {
+        "id": "cost-capital",
+        "label": "Cost & Capital",
+        "tone": "branch",
+        "children": ["capex-overruns", "setup-cost-overruns"]
+      },
+      "market-economic": {
+        "id": "market-economic",
+        "label": "Market & Economic",
+        "tone": "branch",
+        "children": ["demand-volatility", "macroeconomic-conditions"]
+      },
+      "licensing-permits": {
+        "id": "licensing-permits",
+        "label": "Licensing & Permits",
+        "tone": "leaf",
+        "children": []
+      },
+      "land-ownership-laws": {
+        "id": "land-ownership-laws",
+        "label": "Land Ownership Laws",
+        "tone": "leaf",
+        "children": []
+      },
+      "capex-overruns": {
+        "id": "capex-overruns",
+        "label": "Capex Overruns",
+        "tone": "support",
+        "children": []
+      },
+      "setup-cost-overruns": {
+        "id": "setup-cost-overruns",
+        "label": "Setup Cost Overruns",
+        "tone": "support",
+        "children": []
+      },
+      "demand-volatility": {
+        "id": "demand-volatility",
+        "label": "Demand Volatility",
+        "tone": "support",
+        "children": []
+      },
+      "macroeconomic-conditions": {
+        "id": "macroeconomic-conditions",
+        "label": "Macroeconomic Conditions",
+        "tone": "support",
+        "children": []
+      }
+    },
+    "defaultExpanded": [
+      "enter-new-market",
+      "financial-feasibility",
+      "operational-feasibility",
+      "risks",
+      "market-size",
+      "profit-formula",
+      "pre-setup",
+      "regulatory"
+    ],
+    "defaultFocusedId": "land-acquisition",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "Primary Objective",
+          "Any particular countries being targeted?",
+          "Type of hotel chain",
+          "India market share and hotel count"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "Ask for average stay to calculate market size",
+          "Check operational constraints before final recommendation",
+          "Use long-term growth as tiebreaker"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Keeping in mind, long-term potential of Australia",
+          "Telling the interviewer the exact information required"
+        ]
+      }
+    ]
+  },
+  "framework": "Candidate: Oh wow, that's interesting! I'd like to get a better understanding of the problem. What kind of hotels does our client own? How has he fared in India? How many hotels does he own and where are they located in India?\nInterviewer: He owns premium hotels, similar to Taj. He has 50% share in the Indian market and believes the Indian hospitality industry has slow growth. He has 30 hotels in India, located in Tier 1 and 2 cities.\nCandidate: Okay. What is his primary objective of expanding? Is it profits?\nInterviewer: Yes, he wants to maximise profits.\nCandidate: Great. Do we have any countries in mind among which he wants to choose or is it open to us?\nInterviewer: Good question. We have 3 countries among which he wants to choose – Brazil, Australia and South Africa.\nCandidate: Lastly, are we planning on setting up premium hotels in these countries or are we open to other types of hotels too?\nInterviewer: Your client wants to be recognized in the premium segment only.\nCandidate: Okay brilliant. I would like to follow a 2 step approach. First, I'd like to analyse the profits he can earn in each of these three countries. Second, I'd like to see if operations can be easily set up in these countries. Based on these two steps, I shall make my recommendations.\nInterviewer: Sure. Let us begin.\nCandidate: To analyse the financial aspect of things, I would require the following information since I am unfamiliar with the demographics of the 3 countries.\nMarket size of the premium hospitality industry\nMarket share that we can expect\nMarket growth rate\nAverage revenue per night per customer\nAverage cost per night per customer\nFixed investment required to acquire above market share\nInterviewer: Sure! Have a look at the table.\nCandidate: (analyses for a minute) Interesting. I can calculate market size and our expected market share from this information. I shall multiply this into profit per night per customer to get our profits and then subtract the fixed costs.\nInterviewer: Are you sure you can calculate market size?\nCandidate: Oh wait. To get the number of nights occupied per year by tourists, I would also require the average number of nights occupied per premium tourist per stay.\nInterviewer: Exactly. The average stay is 3, 5 and 4 nights for Brazil, Australia and South Africa respectively.\nCandidate: Here are my calculations –\n(Refer to the next page)\nClearly, Australia seems like the best option according to financial attractiveness. Let us now move on to the operational feasibility test. There are 6 steps according to me in the setting up of operations.\nObtaining necessary permission and licenses – Research to analyse hotspots - Acquiring the requisite land – Setting up our hotels – Hiring the requisite staff – Marketing our hotel chain – Starting operations.\nI would like to understand the ease with which each of these can be done in the 3 locations.\nInterviewer: Great. There seems to be no issue in any of the steps in Brazil. In South Africa, there are certain regulatory issues regarding licenses and in Australia, an issue with purchasing of the land.\nCandidate: What are the particular issues in each of these countries?\nInterviewer: Australia has recently come up with regulations that limit the amount of land foreigners can purchase every ten years. Thus, we will only be able to acquire 50% of our initial estimates and the balance after 10 years. In South Africa, there are certain additional licenses to be obtained for premium Hotel Chains that would cost us an additional investment of $50 million not included in our previous estimates.\nCandidate: That's interesting. In light of the new information, our revised profits are as follows:\nAustralia: 50% of $700 Million = $350 Million\nSouth Africa: $400 Million - $50 million = $350 Million\nBrazil: $260 million.\nInterviewer: What are your final recommendations?\nCandidate: Since profit is our primary motive, the decision comes down to Australia and South Africa. We can consider various qualitative factors before finalising, in the absence of it, my suggestion would be Australia.\nThere is massive potential for increasing profits in the long term since we can acquire additional land in 10 years whereas in South Africa, the potential is maximised.\n\nMr. Worldwide Framework & Recommendations\nA HOTEL CHAIN ENTERING NEW MARKETS\nClarifying Questions: Primary Objective Any particular countries being targeted? Type of hotel chain\nBrownie Points: Keeping in mind, long-term potential of Australia Telling the interviewer the exact information required\nKeep In Mind: You might be required to present your working. So, ensure that you maintain it in a tabular format and that it is neat.\nRECOMMENDATIONS: We have decided to go with Australia, keeping in mind the long-term growth considerations"
+},
+{
+    "id": 24,
+    "docId": "case-24",
+    "title": "The Sun Won't Set On Us",
+    "industry": "Renewable Energy",
+    "difficulty": "Medium",
+    "case_type": "Market Entry",
+    "company": "Dalberg",
+    "round": "Buddy",
+    "prompt": "Your client is a solar TV manufacturer and has come to the realisation that the demand for the same has saturated in the home market and she wants to launch the product in India. She needs you to suggest whether this is a good idea.",
+    "frameworkTree": {
+      "nodes": {
+        "market-entry": {
+          "id": "market-entry",
+          "label": "Market Entry",
+          "tone": "root",
+          "children": [
+            "market-attractiveness",
+            "operational-feasibility",
+            "risks"
+          ]
+        },
+        "market-attractiveness": {
+          "id": "market-attractiveness",
+          "label": "Market Attractiveness",
+          "tone": "branch",
+          "children": [
+            "revenue"
+          ]
+        },
+        "operational-feasibility": {
+          "id": "operational-feasibility",
+          "label": "Operational Feasibility",
+          "tone": "support",
+          "children": [
+            "barriers-to-entry",
+            "setting-up-value-chain"
+          ]
+        },
+        "risks": {
+          "id": "risks",
+          "label": "Risks",
+          "tone": "support",
+          "children": [
+            "economic",
+            "legal"
+          ]
+        },
+        "barriers-to-entry": {
+          "id": "barriers-to-entry",
+          "label": "Barriers To Entry",
+          "tone": "support",
+          "children": []
+        },
+        "setting-up-value-chain": {
+          "id": "setting-up-value-chain",
+          "label": "Setting Up Value Chain",
+          "tone": "support",
+          "children": []
+        },
+        "economic": {
+          "id": "economic",
+          "label": "Economic",
+          "tone": "support",
+          "children": []
+        },
+        "legal": {
+          "id": "legal",
+          "label": "Legal",
+          "tone": "support",
+          "children": []
+        },
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "branch",
+          "children": [
+            "revenue-from-sales",
+            "recurring-revenue"
+          ]
+        },
+        "revenue-from-sales": {
+          "id": "revenue-from-sales",
+          "label": "Revenue from Sales",
+          "tone": "branch",
+          "children": [
+            "market-size",
+            "market-share",
+            "price-per-unit"
+          ]
+        },
+        "recurring-revenue": {
+          "id": "recurring-revenue",
+          "label": "Recurring Revenue",
+          "tone": "branch",
+          "children": [
+            "replacement-maintenance-revenue"
+          ]
+        },
+        "replacement-maintenance-revenue": {
+          "id": "replacement-maintenance-revenue",
+          "label": "Replacement / Maintenance Revenue",
+          "tone": "support",
+          "children": []
+        },
+        "market-size": {
+          "id": "market-size",
+          "label": "Market Size",
+          "tone": "branch",
+          "children": [
+            "rural-population",
+            "demand-enablers"
+          ]
+        },
+        "market-share": {
+          "id": "market-share",
+          "label": "Market Share",
+          "tone": "support",
+          "children": []
+        },
+        "price-per-unit": {
+          "id": "price-per-unit",
+          "label": "Price per Unit",
+          "tone": "support",
+          "children": []
+        },
+        "rural-population": {
+          "id": "rural-population",
+          "label": "Rural Population (100 crore)",
+          "tone": "branch",
+          "children": [
+            "rural-households"
+          ]
+        },
+        "demand-enablers": {
+          "id": "demand-enablers",
+          "label": "Demand Enablers",
+          "tone": "branch",
+          "children": [
+            "electricity-access",
+            "sunlight-availability",
+            "price-sensitivity"
+          ]
+        },
+        "rural-households": {
+          "id": "rural-households",
+          "label": "Rural Households (20 crore)",
+          "tone": "branch",
+          "children": [
+            "bpl",
+            "lmc-umc",
+            "uc"
+          ]
+        },
+        "electricity-access": {
+          "id": "electricity-access",
+          "label": "Electricity Access",
+          "tone": "support",
+          "children": []
+        },
+        "sunlight-availability": {
+          "id": "sunlight-availability",
+          "label": "Sunlight Availability",
+          "tone": "support",
+          "children": []
+        },
+        "price-sensitivity": {
+          "id": "price-sensitivity",
+          "label": "Price Sensitivity",
+          "tone": "support",
+          "children": []
+        },
+        "bpl": {
+          "id": "bpl",
+          "label": "BPL — 40% = 8 crore (Eliminated)",
+          "tone": "support",
+          "children": []
+        },
+        "lmc-umc": {
+          "id": "lmc-umc",
+          "label": "LMC + UMC — 50% = 10 crore",
+          "tone": "branch",
+          "children": [
+            "tv-ownership-lmc"
+          ]
+        },
+        "uc": {
+          "id": "uc",
+          "label": "UC — 10% = 2 crore",
+          "tone": "branch",
+          "children": [
+            "tv-ownership-uc"
+          ]
+        },
+        "tv-ownership-lmc": {
+          "id": "tv-ownership-lmc",
+          "label": "TV Ownership 80% = 8 crore HH",
+          "tone": "branch",
+          "children": [
+            "solar-tv-pref-lmc"
+          ]
+        },
+        "tv-ownership-uc": {
+          "id": "tv-ownership-uc",
+          "label": "TV Ownership 90% = 1.8 crore HH",
+          "tone": "branch",
+          "children": [
+            "solar-tv-pref-uc"
+          ]
+        },
+        "solar-tv-pref-lmc": {
+          "id": "solar-tv-pref-lmc",
+          "label": "Solar TV Preference 60% = 4.8 crore HH",
+          "tone": "leaf",
+          "children": []
+        },
+        "solar-tv-pref-uc": {
+          "id": "solar-tv-pref-uc",
+          "label": "Solar TV Preference 60% = 1.08 crore HH",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "market-entry",
+        "market-attractiveness",
+        "revenue",
+        "revenue-from-sales",
+        "market-size",
+        "rural-population",
+        "rural-households",
+        "lmc-umc",
+        "uc",
+        "tv-ownership-lmc",
+        "tv-ownership-uc"
+      ],
+      "defaultFocusedId": "solar-tv-pref-lmc",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Whether the client has entered a similar market recently?",
+            "Objective of market entry",
+            "Geography?",
+            "What part of the value chain does the client operate in — manufacturing, distribution, or both?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Electricity access drives rural solar TV demand",
+            "Sunlight availability filters market by geography",
+            "Eliminate BPL first, then apply TV ownership"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Identifying electricity as an important factor",
+            "Accounting for sunlight availability"
+          ]
+        }
+      ]
+    },
+    "tables": [
+      {
+        "title": "Rural Market Sizing Breakdown",
+        "headers": ["Segment", "% of Rural HH", "Households", "TV Ownership", "Solar TV Preference", "Addressable HH"],
+        "rows": [
+          ["BPL", "40%", "8 crore", "—", "—", "Eliminated"],
+          ["LMC + UMC", "50%", "10 crore", "80% = 8 crore", "60%", "4.8 crore"],
+          ["UC", "10%", "2 crore", "90% = 1.8 crore", "60%", "1.08 crore"],
+          ["Total", "100%", "20 crore", "—", "—", "~6 crore"]
+        ]
+      },
+      {
+        "title": "Year 1 Revenue Calculation",
+        "headers": ["Revenue Stream", "Formula", "Value"],
+        "rows": [
+          ["Revenue from New Sales", "6 crore HH × Rs 7,000 ÷ 5 years × 50% market share", "Rs 4,200 crore"],
+          ["Recurring (Replacement) Revenue", "6 crore × 20% replacement × 50% share × Rs 7,000", "Rs 4,200 crore"],
+          ["Total Year 1 Revenue", "Sum", "Rs 8,400 crore"]
+        ]
+      }
+    ],
+    "framework": "Candidate: Sure, I would like to begin by understanding where the client is currently based out of and if she has a specific geography in mind on where the product should be launched?\nInterviewer: The client is based out of the US. In fact, we would like you to tell us where in India we should launch the product.\nCandidate: Alright, to gauge the situation, I want to understand the product better. From what I know, Solar TVs are charged by sunlight and do not require electricity for working. I want to know if there are different types of TVs offered?\nInterviewer: Your understanding is correct and for the simplicity of this case, let's assume there to be a single type of TV.\nCandidate: Sure, sounds good. Next, I want to understand the specific objective of our client in terms of revenues or profits and if we have launched this product in a similar country recently?\nInterviewer: The client wants to maximise her revenue. After looking at the figure we can assess whether it is attractive. No, we have not undertaken any such expansion.\nCandidate: Sure, just to clarify, does our client only manufacture the TVs or does she carry out distribution too?\nInterviewer: Distribution is done through third party retailers.\nCandidate: We can analyse the situation in three parts:\n1) Market Attractiveness - Based on market size, market share, consumer acceptance, etc\n2) Operational Feasibility -\n   a) Barriers to entry\n   b) Setting up the value chain\n3) Risks Involved\nInterviewer: The structure looks comprehensive, focus only on market attractiveness for this case.\nCandidate: Thank you. In terms of determining the target market, I believe the rural part of India would serve as a lucrative market for this product primarily because of lack of electricity. Few environmentally conscious urban people would be interested in this product right now.\nInterviewer: Good observation, our client had something similar in mind.\nCandidate: Do we have information on the price of the product offered, cost of maintenance and the competition in this segment?\nInterviewer: We are pricing it at Rs 7,000/TV and Rs 7,000 is incurred annually on its maintenance. Currently, there is no other player in this segment.\nCandidate: Compared to the conventional TVs, the price including the maintenance of our product is cheaper. Are there any other significant differences that I should be aware of?\nInterviewer: Take the price of a conventional TV to be around Rs 30,000. Our display is inferior to that of a conventional TV.\nCandidate: Revenues = Market size * Market share * Price per unit\n\nIndia's population = 140 crore\nRural Population = Approx. 100 crore (70%)\nNumber of households = 20 crore (assuming rural household size of 5)\nThese households can now be split according to their income level:\n1) BPL = 40% = 8 crore\n2) LMC + UMC = 50% = 10 crore\n3) UC = 10% = 2 crore\n\nNext, we need to take into account, the willingness of our target market to buy a solar TV. The rural population of India is extremely price sensitive and would prefer this product. Poor electricity in most villages makes our product lucrative. While estimating the percentage of people buying the product, we will also have to keep in mind the availability of sunlight in the household depending on the direction their house faces, tree cover, etc.\n\n1) We can eliminate the population under BPL as they cannot afford the TV.\n2) In the middle class segment, 80% own a TV and 60% of this would prefer a solar TV = 10 crore * 0.8 *0.6 = 4.8 crore\n3) In the upper class segment, 90% would own a TV and 60% of this would prefer a solar TV = 2 crore * 0.9 * 0.6 = 1.08 crore\n\nTotal Revenue from sale = (6 crore (approx.) * Rs 7,000)/Life of a TV = Rs. 42,000 crore/5 = Rs. 8,400 crore/year\n\nSay, in the first year, due to lack of competition, we can acquire 50% of the market = Rs. 4,200 crore.\nIn addition to this, an additional Rs. 7,000 would be received from every household that buys our solar TV in the first year. 6 crore (market size) * 0.2 (in 5 households will replace their TV this year) * 0.5 (Expected market share) * Rs. 7,000 = 0.6 crore * Rs. 7,000 = 4,200 crore. Therefore, we are looking at a figure of Rs. 4,200 crore + Rs. 4,2000 crore = Rs. 8,400 crore revenue in our first year.\nInterviewer: Great, this number definitely seems attractive enough for our client. What is your final suggestion?\nCandidate: Based on the analysis of market attractiveness, I would recommend the client to enter the rural India market.\n\nThe Sun Won't Set On Us Framework & Recommendations\nNEW MARKET FOR SOLAR TV\nClarifying Questions: Whether the client has entered a similar market recently? Objective of market entry\nBrownie Points: Identifying electricity as an important factor Accounting for sunlight availability\nKeep In Mind: Calculation of revenue for maintenance and price has to be done separately.\nRECOMMENDATIONS: The client should enter the Indian market"
+},
+{
+    "id": 25,
+    "docId": "case-25",
+    "title": "Hotline Bling",
+    "industry": "Telecom",
+    "difficulty": "Medium",
+    "case_type": "Market Entry",
+    "company": "McKinsey & Co.",
+    "round": "Engagement Manager",
+    "prompt": "Hey. Your client is an Australian Telecom Company planning to enter India. Prepare a comprehensive market entry strategy for it.",
+    "frameworkTree": {
+      "nodes": {
+        "market-entry-strategy": {
+          "id": "market-entry-strategy",
+          "label": "Market Entry Strategy",
+          "tone": "root",
+          "children": [
+            "financial-feasibility",
+            "operational-feasibility",
+            "risks"
+          ]
+        },
+        "financial-feasibility": {
+          "id": "financial-feasibility",
+          "label": "Financial Feasibility",
+          "tone": "branch",
+          "children": [
+            "market-size",
+            "market-share",
+            "profit-per-unit",
+            "fixed-costs"
+          ]
+        },
+        "operational-feasibility": {
+          "id": "operational-feasibility",
+          "label": "Operational Feasibility",
+          "tone": "branch",
+          "children": [
+            "method",
+            "manner"
+          ]
+        },
+        "risks": {
+          "id": "risks",
+          "label": "Risks",
+          "tone": "branch",
+          "children": [
+            "entry-risks",
+            "operational-risks",
+            "exit-risks"
+          ]
+        },
+        "market-size": {
+          "id": "market-size",
+          "label": "Market Size",
+          "tone": "branch",
+          "children": [
+            "population",
+            "telecom-penetration",
+            "income-levels",
+            "age-distribution",
+            "mobile-phone-access",
+            "avg-subscription-value"
+          ]
+        },
+        "market-share": {
+          "id": "market-share",
+          "label": "Market Share",
+          "tone": "branch",
+          "children": [
+            "market-structure",
+            "customer-stickiness",
+            "competitive-positioning"
+          ]
+        },
+        "profit-per-unit": {
+          "id": "profit-per-unit",
+          "label": "Profit / Unit",
+          "tone": "branch",
+          "children": [
+            "revenue-per-unit",
+            "variable-cost-per-unit"
+          ]
+        },
+        "fixed-costs": {
+          "id": "fixed-costs",
+          "label": "Fixed Costs",
+          "tone": "branch",
+          "children": [
+            "overhead-costs",
+            "physical-capital",
+            "human-capital"
+          ]
+        },
+        "population": {
+          "id": "population",
+          "label": "Population",
+          "tone": "leaf",
+          "children": []
+        },
+        "telecom-penetration": {
+          "id": "telecom-penetration",
+          "label": "Telecom Penetration",
+          "tone": "branch",
+          "children": [
+            "urban",
+            "rural"
+          ]
+        },
+        "income-levels": {
+          "id": "income-levels",
+          "label": "Income Levels",
+          "tone": "leaf",
+          "children": []
+        },
+        "age-distribution": {
+          "id": "age-distribution",
+          "label": "Age Distribution",
+          "tone": "leaf",
+          "children": []
+        },
+        "mobile-phone-access": {
+          "id": "mobile-phone-access",
+          "label": "Mobile Phone Access",
+          "tone": "leaf",
+          "children": []
+        },
+        "avg-subscription-value": {
+          "id": "avg-subscription-value",
+          "label": "Avg. Subscription Value",
+          "tone": "leaf",
+          "children": []
+        },
+        "urban": {
+          "id": "urban",
+          "label": "Urban",
+          "tone": "leaf",
+          "children": []
+        },
+        "rural": {
+          "id": "rural",
+          "label": "Rural",
+          "tone": "leaf",
+          "children": []
+        },
+        "market-structure": {
+          "id": "market-structure",
+          "label": "Market Structure",
+          "tone": "branch",
+          "children": [
+            "fragmented-market",
+            "no-of-key-players"
+          ]
+        },
+        "customer-stickiness": {
+          "id": "customer-stickiness",
+          "label": "Customer Stickiness",
+          "tone": "branch",
+          "children": [
+            "switching-cost",
+            "service-quality"
+          ]
+        },
+        "competitive-positioning": {
+          "id": "competitive-positioning",
+          "label": "Competitive Positioning",
+          "tone": "branch",
+          "children": [
+            "service-cost",
+            "marketing-strength"
+          ]
+        },
+        "fragmented-market": {
+          "id": "fragmented-market",
+          "label": "Fragmented Market",
+          "tone": "leaf",
+          "children": []
+        },
+        "no-of-key-players": {
+          "id": "no-of-key-players",
+          "label": "No. of Key Players",
+          "tone": "leaf",
+          "children": []
+        },
+        "switching-cost": {
+          "id": "switching-cost",
+          "label": "Switching Cost",
+          "tone": "leaf",
+          "children": []
+        },
+        "service-quality": {
+          "id": "service-quality",
+          "label": "Service Quality",
+          "tone": "leaf",
+          "children": []
+        },
+        "service-cost": {
+          "id": "service-cost",
+          "label": "Service Cost",
+          "tone": "leaf",
+          "children": []
+        },
+        "marketing-strength": {
+          "id": "marketing-strength",
+          "label": "Marketing Strength",
+          "tone": "leaf",
+          "children": []
+        },
+        "revenue-per-unit": {
+          "id": "revenue-per-unit",
+          "label": "Revenue / Unit",
+          "tone": "leaf",
+          "children": []
+        },
+        "variable-cost-per-unit": {
+          "id": "variable-cost-per-unit",
+          "label": "Variable Cost / Unit",
+          "tone": "leaf",
+          "children": []
+        },
+        "overhead-costs": {
+          "id": "overhead-costs",
+          "label": "Overhead Costs",
+          "tone": "branch",
+          "children": [
+            "regulatory",
+            "financing",
+            "miscellaneous"
+          ]
+        },
+        "physical-capital": {
+          "id": "physical-capital",
+          "label": "Physical Capital",
+          "tone": "branch",
+          "children": [
+            "fc-telecom-towers",
+            "fc-offices"
+          ]
+        },
+        "human-capital": {
+          "id": "human-capital",
+          "label": "Human Capital",
+          "tone": "branch",
+          "children": [
+            "hiring",
+            "technical-training"
+          ]
+        },
+        "regulatory": {
+          "id": "regulatory",
+          "label": "Regulatory",
+          "tone": "leaf",
+          "children": []
+        },
+        "financing": {
+          "id": "financing",
+          "label": "Financing",
+          "tone": "leaf",
+          "children": []
+        },
+        "miscellaneous": {
+          "id": "miscellaneous",
+          "label": "Miscellaneous",
+          "tone": "leaf",
+          "children": []
+        },
+        "fc-telecom-towers": {
+          "id": "fc-telecom-towers",
+          "label": "Telecom Towers",
+          "tone": "leaf",
+          "children": []
+        },
+        "fc-offices": {
+          "id": "fc-offices",
+          "label": "Offices",
+          "tone": "leaf",
+          "children": []
+        },
+        "hiring": {
+          "id": "hiring",
+          "label": "Hiring",
+          "tone": "leaf",
+          "children": []
+        },
+        "technical-training": {
+          "id": "technical-training",
+          "label": "Technical Training",
+          "tone": "leaf",
+          "children": []
+        },
+        "method": {
+          "id": "method",
+          "label": "Method (Value Chain)",
+          "tone": "branch",
+          "children": [
+            "regulatory-and-certifications",
+            "infrastructure-setup",
+            "operational-setup",
+            "distribution",
+            "marketing-vc",
+            "after-sales"
+          ]
+        },
+        "manner": {
+          "id": "manner",
+          "label": "Manner",
+          "tone": "branch",
+          "children": [
+            "greenfield",
+            "joint-venture",
+            "m-and-a",
+            "public-private-partnership",
+            "outsourcing"
+          ]
+        },
+        "regulatory-and-certifications": {
+          "id": "regulatory-and-certifications",
+          "label": "Regulatory & Certifications",
+          "tone": "branch",
+          "children": [
+            "spectrum-bidding",
+            "operating-license"
+          ]
+        },
+        "infrastructure-setup": {
+          "id": "infrastructure-setup",
+          "label": "Infrastructure Setup",
+          "tone": "branch",
+          "children": [
+            "infra-telecom-towers",
+            "infra-offices"
+          ]
+        },
+        "operational-setup": {
+          "id": "operational-setup",
+          "label": "Operational Setup",
+          "tone": "branch",
+          "children": [
+            "human-capital-hiring-training",
+            "it-system-setup"
+          ]
+        },
+        "distribution": {
+          "id": "distribution",
+          "label": "Distribution",
+          "tone": "branch",
+          "children": [
+            "direct",
+            "indirect"
+          ]
+        },
+        "marketing-vc": {
+          "id": "marketing-vc",
+          "label": "Marketing",
+          "tone": "leaf",
+          "children": []
+        },
+        "after-sales": {
+          "id": "after-sales",
+          "label": "After-Sales",
+          "tone": "leaf",
+          "children": []
+        },
+        "spectrum-bidding": {
+          "id": "spectrum-bidding",
+          "label": "Spectrum Bidding",
+          "tone": "leaf",
+          "children": []
+        },
+        "operating-license": {
+          "id": "operating-license",
+          "label": "Operating License",
+          "tone": "leaf",
+          "children": []
+        },
+        "infra-telecom-towers": {
+          "id": "infra-telecom-towers",
+          "label": "Telecom Towers",
+          "tone": "leaf",
+          "children": []
+        },
+        "infra-offices": {
+          "id": "infra-offices",
+          "label": "Offices",
+          "tone": "leaf",
+          "children": []
+        },
+        "human-capital-hiring-training": {
+          "id": "human-capital-hiring-training",
+          "label": "Human Capital Hiring & Training",
+          "tone": "leaf",
+          "children": []
+        },
+        "it-system-setup": {
+          "id": "it-system-setup",
+          "label": "IT System Setup",
+          "tone": "leaf",
+          "children": []
+        },
+        "direct": {
+          "id": "direct",
+          "label": "Direct",
+          "tone": "leaf",
+          "children": []
+        },
+        "indirect": {
+          "id": "indirect",
+          "label": "Indirect",
+          "tone": "leaf",
+          "children": []
+        },
+        "greenfield": {
+          "id": "greenfield",
+          "label": "Greenfield",
+          "tone": "leaf",
+          "children": []
+        },
+        "joint-venture": {
+          "id": "joint-venture",
+          "label": "Joint Venture",
+          "tone": "leaf",
+          "children": []
+        },
+        "m-and-a": {
+          "id": "m-and-a",
+          "label": "M&A",
+          "tone": "leaf",
+          "children": []
+        },
+        "public-private-partnership": {
+          "id": "public-private-partnership",
+          "label": "Public Private Partnership",
+          "tone": "leaf",
+          "children": []
+        },
+        "outsourcing": {
+          "id": "outsourcing",
+          "label": "Outsourcing",
+          "tone": "leaf",
+          "children": []
+        },
+        "entry-risks": {
+          "id": "entry-risks",
+          "label": "Entry Risks",
+          "tone": "branch",
+          "children": [
+            "legal-and-regulatory-entry",
+            "market-access"
+          ]
+        },
+        "operational-risks": {
+          "id": "operational-risks",
+          "label": "Operational Risks",
+          "tone": "branch",
+          "children": [
+            "new-entrants-op",
+            "human-capital-op",
+            "tech"
+          ]
+        },
+        "exit-risks": {
+          "id": "exit-risks",
+          "label": "Exit Risks",
+          "tone": "branch",
+          "children": [
+            "sunk-costs",
+            "contractual-obligations",
+            "reputational-exposure"
+          ]
+        },
+        "legal-and-regulatory-entry": {
+          "id": "legal-and-regulatory-entry",
+          "label": "Legal & Regulatory",
+          "tone": "leaf",
+          "children": []
+        },
+        "market-access": {
+          "id": "market-access",
+          "label": "Market Access",
+          "tone": "branch",
+          "children": [
+            "high-cac",
+            "brand-loyalty",
+            "credibility-gap"
+          ]
+        },
+        "high-cac": {
+          "id": "high-cac",
+          "label": "High CAC (Financial Barrier)",
+          "tone": "leaf",
+          "children": []
+        },
+        "brand-loyalty": {
+          "id": "brand-loyalty",
+          "label": "Brand Loyalty (Competitive Barrier)",
+          "tone": "leaf",
+          "children": []
+        },
+        "credibility-gap": {
+          "id": "credibility-gap",
+          "label": "Credibility Gap (Perception Barrier)",
+          "tone": "leaf",
+          "children": []
+        },
+        "new-entrants-op": {
+          "id": "new-entrants-op",
+          "label": "New Entrants",
+          "tone": "leaf",
+          "children": []
+        },
+        "human-capital-op": {
+          "id": "human-capital-op",
+          "label": "Human Capital",
+          "tone": "leaf",
+          "children": []
+        },
+        "tech": {
+          "id": "tech",
+          "label": "Tech",
+          "tone": "leaf",
+          "children": []
+        },
+        "sunk-costs": {
+          "id": "sunk-costs",
+          "label": "Sunk Costs",
+          "tone": "leaf",
+          "children": []
+        },
+        "contractual-obligations": {
+          "id": "contractual-obligations",
+          "label": "Contractual Obligations",
+          "tone": "leaf",
+          "children": []
+        },
+        "reputational-exposure": {
+          "id": "reputational-exposure",
+          "label": "Reputational Exposure",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "market-entry-strategy",
+        "financial-feasibility",
+        "operational-feasibility",
+        "risks",
+        "market-size",
+        "telecom-penetration",
+        "market-share",
+        "market-structure",
+        "customer-stickiness",
+        "competitive-positioning",
+        "profit-per-unit",
+        "fixed-costs",
+        "overhead-costs",
+        "physical-capital",
+        "human-capital",
+        "method",
+        "regulatory-and-certifications",
+        "infrastructure-setup",
+        "operational-setup",
+        "distribution",
+        "manner",
+        "entry-risks",
+        "market-access",
+        "operational-risks",
+        "exit-risks"
+      ],
+      "defaultFocusedId": "new-entrants-op",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "End-to-end value chain?",
+            "Objective of entering the market?",
+            "Time frame?",
+            "Prior foreign market experience?",
+            "Current Australia business performance?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Clarify if it is go-to-market or entry evaluation",
+            "Client objective sets the financial threshold",
+            "India is more price-sensitive than Australia"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Importance of cultural fit",
+            "Contrasting the Indian market with that in Australia to identify potential risks"
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: Interesting. I'd like to clarify if the telecom company has already decided to enter India and we are to develop a \"Go-to-Market\" strategy or are we to first evaluate whether the company should enter India or not?\nInterviewer: Why don't you come up with key metrics the company should look at while determining whether it should enter the country or not?\nCandidate: Great. I'd like to first know what the primary objective of the client is? Is it increased profits, larger market share or a social endeavor?\nInterviewer: The client would like to maximize profits.\nCandidate: Okay. Does the client have any prior experience when it comes to entering a foreign market?\nInterviewer: No, India would be the first.\nCandidate: Sure. I'd like to understand the client a little better. Can you tell me more about our client's business and value chain? Also, when would they like to enter the market?\nInterviewer: Our client handles all parts of the telecom value chain. They are looking at a time frame of 2-3 years for entering the country.\nCandidate: How is our client fairing in Australia?\nInterviewer: Our client is one of the leading telecom operators with a large market share in Australia.\nCandidate: Great. I'd like to now come up with my approach keeping in mind the present Indian Telecom Industry dominated by 2-3 large players.\nI'd like to look at Financial feasibility, operational feasibility and risks. Under financial feasibility I want to look at the total profits we can make which would be equal to (Market size*Market share*Profit/unit) – (Fixed costs). This number shall then be evaluated to see if it is lucrative enough.\nUnder Operational feasibility, I'd like to evaluate the various steps of the value chain and analyse it through a two-step approach: Method and Manner. In the method we shall evaluate whether we want to set up the operation on our own or merge, acquire or opt for a joint venture with someone. Under mode, we shall determine how to achieve the method as obtained in step 1.\nLastly, under risks I'd evaluate the various risks associated with such a venture.\nInterviewer: Comprehensive! Why don't you tell me the various parameters you would consider for arriving at the market size and market share under financial feasibility.\nCandidate: Sure. I'd like to look at the following metrics to arrive at market size – the population of India, telecom penetration rate in urban and rural India as determined by income levels and age distribution, access to mobile phones, average subscription amount amongst other factors. To arrive at market share, I look at how fragmented the market is, switching costs in the industry, product quality compared to competitors. Per unit can be calculated by understanding the price we will charge and the variable costs associated with it. Lastly, we will estimate our fixed costs and reduce this from our expected profits.\nInterviewer: Great, let's look at operational feasibility now.\nCandidate: Sure, we need to first determine if we want to be an end-to-end service provider or operate only in certain steps of the value chain. Considering we are end-to-end in Australia, I think we might follow the same model here. We can evaluate the following options: On our own, Merger, Acquisition, Joint Venture and Outsourcing. These options can be selected based on the following factors: Degree of control desired, Competence of other parties, Financial benefits, Feasibility, Legal requirements, Cultural fit, etc.\nOnce we select the mode, we need to develop the following steps of the value chain.\nLegal certifications and requirements – Setting up offices and Telecom Towers – Hiring requisite staff – Setting up a distribution network – Marketing and advertising – After sales-services.\nInterviewer: Great. Why don't you quickly sum up the risk factors involved too.\nCandidate: Sure, there would be:\n1) General risks – Adjusting to Indian landscape and business environment (India is not as technologically-advanced as Australia)\n2) Legal Risks - Getting permissions in an industry that has huge lobbying influence\n3) Labour-related - Getting the right people with required competence\n4) Barriers - Presence of big players who would not want to concede market share\n5) New entrant risks - Entrance of Jio shook the market and led to massive price reduction. The company should be prepared for such threats.\nInterviewer: Perfect. That should be all.\n\nHotline Bling Framework & Recommendations\nMARKET ENTRY STRATEGY FOR AN AUSTRALIAN TELECOM COMPANY\nClarifying Questions: End-to-end value chain? Objective of entering the market? Time frame?\nBrownie Points: Importance of cultural fit Contrasting the Indian market with that in Australia to identify potential risks\nKeep In Mind: Ask the interviewer if your structure is okay before proceeding\n[FLAG] RECOMMENDATIONS section not visible in provided screenshots."
+  },
+  {
+    "id": 26,
+    "docId": "case-26",
+    "title": "Wat-uh Product",
+    "industry": "Chemicals",
+    "difficulty": "Hard",
+    "case_type": "Market Entry",
+    "company": "Bain & Company",
+    "round": "Manager",
+    "prompt": "Hey. Your client has made a powder that can kill germs when added to water. He believes India would be a good market to launch this product. Should we enter the market?",
+    "frameworkTree": {
+      "nodes": {
+        "should-we-enter": {
+          "id": "should-we-enter",
+          "label": "Should We Enter The Indian Market?",
+          "tone": "root",
+          "children": ["financial-feasibility", "operational-feasibility", "risks"]
+        },
+        "financial-feasibility": {
+          "id": "financial-feasibility",
+          "label": "Financial Feasibility",
+          "tone": "branch",
+          "children": ["market-size", "market-share", "profit-per-unit"]
+        },
+        "operational-feasibility": {
+          "id": "operational-feasibility",
+          "label": "Operational Feasibility",
+          "tone": "support",
+          "children": ["license", "sourcing-manufacturing", "staff", "distribution-outlet", "marketing", "after-sales"]
+        },
+        "risks": {
+          "id": "risks",
+          "label": "Risks",
+          "tone": "support",
+          "children": ["entry-risks", "operational-risks", "exit-risks"]
+        },
+        "market-size": {
+          "id": "market-size",
+          "label": "Market Size",
+          "tone": "branch",
+          "children": ["india-pop"]
+        },
+        "market-share": {
+          "id": "market-share",
+          "label": "Market Share",
+          "tone": "support",
+          "children": ["capture-25"]
+        },
+        "profit-per-unit": {
+          "id": "profit-per-unit",
+          "label": "Profit / Unit",
+          "tone": "support",
+          "children": ["profit-rs-2"]
+        },
+        "india-pop": {
+          "id": "india-pop",
+          "label": "India Pop. (140 CR)",
+          "tone": "branch",
+          "children": ["urban", "rural"]
+        },
+        "urban": {
+          "id": "urban",
+          "label": "Urban (30% = 40 CR)",
+          "tone": "support",
+          "children": []
+        },
+        "rural": {
+          "id": "rural",
+          "label": "Rural (70% = 100 CR)",
+          "tone": "branch",
+          "children": ["families"]
+        },
+        "families": {
+          "id": "families",
+          "label": "Families (20 CR)",
+          "tone": "branch",
+          "children": ["municipal-supply", "no-connection"]
+        },
+        "municipal-supply": {
+          "id": "municipal-supply",
+          "label": "Municipal Supply (60% = 12 CR)",
+          "tone": "branch",
+          "children": ["full-time-supply", "part-time-supply"]
+        },
+        "no-connection": {
+          "id": "no-connection",
+          "label": "No Connection (40% = 8 CR)",
+          "tone": "support",
+          "children": ["addressable"]
+        },
+        "full-time-supply": {
+          "id": "full-time-supply",
+          "label": "Full-Time Supply (30% ≈ 5 CR)",
+          "tone": "support",
+          "children": []
+        },
+        "part-time-supply": {
+          "id": "part-time-supply",
+          "label": "Part-Time Supply (70% ≈ 7 CR)",
+          "tone": "branch",
+          "children": ["addressable"]
+        },
+        "addressable": {
+          "id": "addressable",
+          "label": "Addressable (15 CR)",
+          "tone": "branch",
+          "children": ["upper-class", "middle-class", "bpl"]
+        },
+        "upper-class": {
+          "id": "upper-class",
+          "label": "Upper Class (10% = 1.5 CR)",
+          "tone": "branch",
+          "children": ["target-market"]
+        },
+        "middle-class": {
+          "id": "middle-class",
+          "label": "Middle Class (40% = 6 CR)",
+          "tone": "support",
+          "children": ["target-market"]
+        },
+        "bpl": {
+          "id": "bpl",
+          "label": "BPL (50% = 7.5 CR)",
+          "tone": "support",
+          "children": []
+        },
+        "target-market": {
+          "id": "target-market",
+          "label": "Target Market 7.5 CR families = 685 CR boxes/yr",
+          "tone": "leaf",
+          "children": []
+        },
+        "capture-25": {
+          "id": "capture-25",
+          "label": "25% Capture ≈ 170 CR boxes",
+          "tone": "support",
+          "children": []
+        },
+        "profit-rs-2": {
+          "id": "profit-rs-2",
+          "label": "Rs. 2 / box → Rs. 340 CR profit",
+          "tone": "support",
+          "children": []
+        },
+        "license": {
+          "id": "license",
+          "label": "License & Certifications",
+          "tone": "support",
+          "children": []
+        },
+        "sourcing-manufacturing": {
+          "id": "sourcing-manufacturing",
+          "label": "Sourcing / Manufacturing",
+          "tone": "support",
+          "children": ["germany-import", "india-manufacture"]
+        },
+        "germany-import": {
+          "id": "germany-import",
+          "label": "Import from Germany",
+          "tone": "support",
+          "children": []
+        },
+        "india-manufacture": {
+          "id": "india-manufacture",
+          "label": "Manufacture in India",
+          "tone": "support",
+          "children": []
+        },
+        "staff": {
+          "id": "staff",
+          "label": "Staff",
+          "tone": "support",
+          "children": ["production-personnel", "ground-level-salesmen"]
+        },
+        "production-personnel": {
+          "id": "production-personnel",
+          "label": "Production Personnel",
+          "tone": "support",
+          "children": []
+        },
+        "ground-level-salesmen": {
+          "id": "ground-level-salesmen",
+          "label": "Ground-Level Salesmen",
+          "tone": "support",
+          "children": []
+        },
+        "distribution-outlet": {
+          "id": "distribution-outlet",
+          "label": "Distribution Outlet",
+          "tone": "support",
+          "children": ["kirana-shops", "small-scale-markets"]
+        },
+        "kirana-shops": {
+          "id": "kirana-shops",
+          "label": "Kirana Shops",
+          "tone": "support",
+          "children": []
+        },
+        "small-scale-markets": {
+          "id": "small-scale-markets",
+          "label": "Small-Scale Markets",
+          "tone": "support",
+          "children": []
+        },
+        "marketing": {
+          "id": "marketing",
+          "label": "Marketing",
+          "tone": "support",
+          "children": ["radio", "melas", "billboards"]
+        },
+        "radio": {
+          "id": "radio",
+          "label": "Radio",
+          "tone": "support",
+          "children": []
+        },
+        "melas": {
+          "id": "melas",
+          "label": "Melas & Panchayats",
+          "tone": "support",
+          "children": []
+        },
+        "billboards": {
+          "id": "billboards",
+          "label": "Billboards",
+          "tone": "support",
+          "children": []
+        },
+        "after-sales": {
+          "id": "after-sales",
+          "label": "After-Sales",
+          "tone": "support",
+          "children": []
+        },
+        "entry-risks": {
+          "id": "entry-risks",
+          "label": "Entry Risks",
+          "tone": "support",
+          "children": ["legal-regulatory", "market-access"]
+        },
+        "legal-regulatory": {
+          "id": "legal-regulatory",
+          "label": "Legal & Regulatory",
+          "tone": "support",
+          "children": []
+        },
+        "market-access": {
+          "id": "market-access",
+          "label": "Market Access",
+          "tone": "support",
+          "children": ["high-cac", "demand-volatility", "credibility-gap"]
+        },
+        "high-cac": {
+          "id": "high-cac",
+          "label": "High CAC (Financial Barrier)",
+          "tone": "support",
+          "children": []
+        },
+        "demand-volatility": {
+          "id": "demand-volatility",
+          "label": "Demand Volatility (Acceptance Barrier)",
+          "tone": "support",
+          "children": []
+        },
+        "credibility-gap": {
+          "id": "credibility-gap",
+          "label": "Credibility Gap (Perception Barrier)",
+          "tone": "support",
+          "children": []
+        },
+        "operational-risks": {
+          "id": "operational-risks",
+          "label": "Operational Risks",
+          "tone": "support",
+          "children": ["new-entrants", "human-capital", "technology"]
+        },
+        "new-entrants": {
+          "id": "new-entrants",
+          "label": "New Entrants",
+          "tone": "support",
+          "children": []
+        },
+        "human-capital": {
+          "id": "human-capital",
+          "label": "Human Capital",
+          "tone": "support",
+          "children": []
+        },
+        "technology": {
+          "id": "technology",
+          "label": "Technology",
+          "tone": "support",
+          "children": []
+        },
+        "exit-risks": {
+          "id": "exit-risks",
+          "label": "Exit Risks",
+          "tone": "support",
+          "children": ["sunk-costs", "contractual-obligations", "reputational-exposure"]
+        },
+        "sunk-costs": {
+          "id": "sunk-costs",
+          "label": "Sunk Costs",
+          "tone": "support",
+          "children": []
+        },
+        "contractual-obligations": {
+          "id": "contractual-obligations",
+          "label": "Contractual Obligations",
+          "tone": "support",
+          "children": []
+        },
+        "reputational-exposure": {
+          "id": "reputational-exposure",
+          "label": "Reputational Exposure",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "should-we-enter",
+        "financial-feasibility",
+        "market-size",
+        "india-pop",
+        "rural",
+        "families",
+        "municipal-supply",
+        "part-time-supply",
+        "addressable",
+        "upper-class"
+      ],
+      "defaultFocusedId": "target-market",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Product specification and price",
+            "Existence of competitors",
+            "Primary objective",
+            "Timeline for market entry"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "When determining market share, you might be tempted to give higher percentages. Try to be realistic and come up with a more conservative number."
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Considering connection to municipal water supply while estimating market size",
+            "Keeping in mind the type of salesmen required for this product",
+            "Partnering with the Government or an NGO"
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: I'd like to understand the problem a little better. What does our client do? Can you tell me a little more about the product?\nInterviewer: Your client is in the chemicals business and is based in Germany. He came up with this product recently. One sachet of the powder, when added to 10 litres of water, cleans the water in 30 minutes and makes it fit for drinking.\nCandidate: Great. Is India the only market we are considering? What is our primary objective? Is it profits?\nInterviewer: Yes, the client is focused only on India. The objective is to maximise profits.\nCandidate: What is the price of the product? Also, are there any similar products already in the market?\nInterviewer: Sure. We sell 12 sachets in a box at Rs. 10 per box. There are no other products exactly like ours in the market. However, there are certain powders that claim to have similar results. These are mainly fake.\nCandidate: Okay. When do we want to enter?\nInterviewer: Your client would like to enter in the next 1 year. You can begin now.\nCandidate: Sure. I'd like to divide my approach into 3. First, I shall analyse the financial feasibility of launching the product in India. Second, I shall analyse the manner of setting up operations in India. Third, I shall analyse the risks associated with a project of this nature.\nInterviewer: Sounds good. You can begin now.\nCandidate: Sure.\n1) Financial Feasibility:\nIn this step, I would like to estimate the profits we will make and analyse if this is a good enough figure.\nProfits = (Market size*Market share*Profit per unit) – Fixed Investment.\nI'd also like to keep in mind the market growth rate and ease of entry as pertinent considerations.\nEstimating Market size and Market share (Refer to the framework page for complete calculations):\nWe begin by dividing the country into urban and rural areas. For the purpose of this case, I would like to ignore those living in urban areas since most urban areas have access to clean drinking water and the availability of cheap bottled water. It is highly unlikely that such a product will succeed in urban areas given the plethora of alternatives. Our product is one that would be consumed by families as a whole and not one that is individually purchased by every member of the household (eg. Phones). So, we divide the rural population by the average family size.\nNext, we estimate the percentage of rural families that have connection to municipal water supplies and whether this access is throughout the day or during parts of the day. We arrive at the total number of families that would require a product like this. We shall now divide the remaining families into different income groups. The reason for doing this is that on an average, every family would require around 30 litres of water every day, for drinking and cooking. This would mean the purchase of 3 sachets every day. Thus, they use up a box in 4 days. This comes up to approximately Rs. 70 per family in a month. Some families will not be able to afford such an expenditure on cleaning water every month and hence we need to rule them out.\nOut of the remaining families, we can assume an average of 3 sachets every day, multiplied into 365, divided by the box size of 12 sachets, to give us the annual market size of approximately 685 crore boxes.\nKeeping in mind the availability of certain substitutes and the fact that we might not be able to capture the entire market on arrival, we can estimate around 25% (170 crore) to be captured by us in the first year. We are taking only 25% since it would take time to gain the trust of the people. Next, I would like to know the profit/unit and the fixed investments required.\nInterviewer: Sure, the variable cost of the product is Rs 8 per box. You can ignore fixed costs for now.\nCandidate: Okay. That gives us a profit/unit of Rs. 2 per box. Thus, our total profits, without considering the fixed element, will be 170 crores x Rs. 2 = Rs. 340 crores.\nIs this figure good enough?\nInterviewer: How would you decide if it is?\nCandidate: I would compare this to our existing profits and see if it causes a sizable increase. I would also compare it to the fixed investments required.\nInterviewer: Great. Based on these metrics, you can assume that the profits are lucrative!\nCandidate: Great. Next, I'd like to analyse how we will set up the value chain. The following factors have to be looked at –\nObtaining necessary certification and licenses - Setting up manufacturing units in India – Developing distribution outlets – Hiring the required staff – Marketing the product – After-sales service.\nFirst, we need to obtain the requisite permissions since this is a product that can cause great harm to society if it has side effects or does not perform as promised.\nUnder manufacturing, we need to decide whether we want to import from Germany or manufacture it within the country. Manufacturing within the country not only reduces transportation and import costs but also develops trust since it is made in India.\nUnder distribution outlets, we need to ensure that our product is available in most kirana shops and small-scale markets as this is the primary point of access to rural families.\nUnder staff, we need competent people to make the product. More importantly, we would require ground-level salesmen to sell the product in the poorest parts of India.\nGaining their trust would be a huge barrier to overcome and hence this segment of manpower must be carefully selected.\nWe can market the product through a variety of ways – Radio, Melas, Village panchayats and billboards. We need to keep in mind that usual methods of marketing such as TV would not be applicable in this case.\nLastly, we need to ensure we have a proper system in case customers have any grievances or queries regarding the product.\nInterviewer: Brilliant. Anything else you would like to look at?\nCandidate: We can consider partnering with the Government or certain NGO's. This increases our credibility, provides us with subsidies and helps us in setting up operations. They benefit too, from the social initiative.\nApart from this, I'd like to look at risks that we may face.\nPrimarily, the biggest risk would be getting rural families to accept the product. There will also be risks of new competitors entering the market. Ensuring that our product performs as promised would be very important as there would be a lot of legal barriers to develop such a product.\nInterviewer: Great. We can end the case here!\n\nWat-uh Product Framework & Recommendations\nLAUNCHING A POWDER THAT CAN KILL GERMS WHEN ADDED TO WATER\nClarifying Questions: Product specification and price Existence of competitors Primary objective\nBrownie Points: Considering connection to municipal water supply while estimating market size Keeping in mind the type of salesmen required for this product Partnering with the Government or an NGO\nKeep In Mind: When determining market share, you might be tempted to give higher percentages. Try to be realistic and come up with a more conservative number.\nRECOMMENDATIONS: Macro Recommendation: Enter the Indian market — profits of Rs. 340 CR are lucrative and operationally feasible.\nMicro Recommendation: Partner with Government / NGOs for subsidies and support in establishing ground operations"
+  },
+  {
+    "id": 27,
+    "docId": "case-27",
+    "title": "Ferry Tales",
+    "industry": "Tourism",
+    "difficulty": "Hard",
+    "case_type": "Market Entry",
+    "company": "Kepler Cannon",
+    "round": "Partner",
+    "prompt": "Your client operates various ferries across India and is now deciding whether he should launch a cruise from Chennai to Port Blair and wants your opinion on the same.",
+    "frameworkTree": {
+      "nodes": {
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue",
+          "tone": "root",
+          "children": [
+            "step-1-indians-that-travel",
+            "step-2-go-to-port-blair",
+            "step-3-travel-by-ferry",
+            "step-4-choose-our-service",
+            "revenue-per-family"
+          ]
+        },
+        "step-1-indians-that-travel": {
+          "id": "step-1-indians-that-travel",
+          "label": "No. Of Indians That Travel",
+          "tone": "branch",
+          "children": [
+            "urban",
+            "rural"
+          ]
+        },
+        "step-2-go-to-port-blair": {
+          "id": "step-2-go-to-port-blair",
+          "label": "% Go To Port Blair",
+          "tone": "branch",
+          "children": [
+            "total-trips"
+          ]
+        },
+        "step-3-travel-by-ferry": {
+          "id": "step-3-travel-by-ferry",
+          "label": "% Travel By Ferry",
+          "tone": "branch",
+          "children": [
+            "flights",
+            "ferry"
+          ]
+        },
+        "step-4-choose-our-service": {
+          "id": "step-4-choose-our-service",
+          "label": "% Choose Our Service",
+          "tone": "branch",
+          "children": [
+            "competitor-benchmarking",
+            "brand-and-service-quality"
+          ]
+        },
+        "revenue-per-family": {
+          "id": "revenue-per-family",
+          "label": "Revenue/Family = Rs. 32,000",
+          "tone": "support",
+          "children": [
+            "family-size",
+            "ticket-price"
+          ]
+        },
+        "urban": {
+          "id": "urban",
+          "label": "Urban (30% = 420M)",
+          "tone": "branch",
+          "children": [
+            "bpl",
+            "lmc",
+            "umc",
+            "uc"
+          ]
+        },
+        "rural": {
+          "id": "rural",
+          "label": "Rural (70% = 1B)",
+          "tone": "support",
+          "children": []
+        },
+        "bpl": {
+          "id": "bpl",
+          "label": "BPL (0% travel)",
+          "tone": "support",
+          "children": []
+        },
+        "lmc": {
+          "id": "lmc",
+          "label": "LMC (9M families)",
+          "tone": "support",
+          "children": []
+        },
+        "umc": {
+          "id": "umc",
+          "label": "UMC (18M families)",
+          "tone": "support",
+          "children": []
+        },
+        "uc": {
+          "id": "uc",
+          "label": "UC (8M families)",
+          "tone": "support",
+          "children": []
+        },
+        "total-trips": {
+          "id": "total-trips",
+          "label": "Total Trips = 35M",
+          "tone": "branch",
+          "children": [
+            "domestic",
+            "international"
+          ]
+        },
+        "domestic": {
+          "id": "domestic",
+          "label": "Domestic (90% = 31.5M)",
+          "tone": "branch",
+          "children": [
+            "twenty-destinations"
+          ]
+        },
+        "international": {
+          "id": "international",
+          "label": "International (10% = 3.5M)",
+          "tone": "support",
+          "children": []
+        },
+        "twenty-destinations": {
+          "id": "twenty-destinations",
+          "label": "20 Locations \u2192 1.6M",
+          "tone": "support",
+          "children": []
+        },
+        "flights": {
+          "id": "flights",
+          "label": "Flights (70% = 1.1M)",
+          "tone": "support",
+          "children": []
+        },
+        "ferry": {
+          "id": "ferry",
+          "label": "Ferry (30% = 0.5M)",
+          "tone": "support",
+          "children": []
+        },
+        "competitor-benchmarking": {
+          "id": "competitor-benchmarking",
+          "label": "Competitor Benchmarking",
+          "tone": "support",
+          "children": []
+        },
+        "brand-and-service-quality": {
+          "id": "brand-and-service-quality",
+          "label": "Brand & Service Quality \u2192 40% = 200,000 Families",
+          "tone": "leaf",
+          "children": []
+        },
+        "family-size": {
+          "id": "family-size",
+          "label": "Family Size = 4",
+          "tone": "support",
+          "children": []
+        },
+        "ticket-price": {
+          "id": "ticket-price",
+          "label": "Ticket Price = Rs. 8,000",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "revenue",
+        "step-1-indians-that-travel",
+        "urban",
+        "step-2-go-to-port-blair",
+        "total-trips",
+        "domestic",
+        "step-3-travel-by-ferry",
+        "step-4-choose-our-service"
+      ],
+      "defaultFocusedId": "brand-and-service-quality",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "What is the objective?",
+            "Which other ferries do we operate?",
+            "Competitors on this route?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Lay out all four steps upfront before calculating",
+            "Convert travellers to families by dividing by four",
+            "Acknowledge international travel then exclude from estimate"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Keeping international trips in mind"
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: Sure. I want to begin by understanding our client better. Where are we currently operating and what is our objective out of this new venture?\nInterviewer: Our client currently has Panjim-Vasco Ferry, Port Blair-Havelock Ferry and Jorhat-Majuli Ferry. We would like you to assess the financial attractiveness of the Chennai-Port Blair Ferry in terms of expected revenue from Indian tourists. Assume that all ferry services to Port Blair depart from Chennai.\nCandidate: Interesting. So, our client has experience in this business. I would like to now understand the proposed ferry and the market better. What kind of ferry do we have in mind: Luxury/Economy? How long is the journey? Do we have competitors on this route?\nInterviewer: Our cruise will be luxurious. The journey is about 60 hours long and we have a few players in the market.\nCandidate: Understood. To analyse the revenue, I would like to calculate the market size and market share with the following steps:\nSTEP 1: Estimate the number of people who travel\nSTEP 2: Estimate the number of people who would go to Port Blair\nSTEP 3: Estimate the number of people who would travel by ferry\nSTEP 4: Estimate the share of the above that would choose our service\nSTEP 1: Estimate the number of people who travel for recreational purposes at least once in two years\nA good place to start is India's population. We can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. Next, we can slice the urban population according to different income levels:\nCategory | Income | Percentage | Population | % that travel | Number of families = Total/4\nBelow Poverty Line | < Rs 10,000/month | 30% | 120 million | 0% | 0\nLower Middle Class | Rs 10,000 – Rs 20,000/month | 30% | 120 million | 30% | 9 million (36 million/4)\nUpper Middle Class | Rs 20,000 – Rs 80,000/month | 30% | 120 million | 60% | 18 million (72 million/4)\nUpper Class | > Rs 80,000/month | 10% | 40 million | 80% | 8 million (32 million/4)\nCan we move forward with the above estimation on the basis of income segmentation?\nInterviewer: Sure.\nCandidate: Total number of families that go on a trip every year = 35 million\nAssumption: Average number of trips per year per family = 1\nTotal number of trips in a year = 35 million\nWe can say about 10% of these would be international\nTotal number of domestic trips = 31.5 million ≈ 32 million (approx.)\nSTEP 2: Estimate the number of families that would go to Port Blair:\nWe can assume that there are about 20 popular tourist destinations in India with an equal probability of being chosen\nHence, number of family trips made to Port Blair = 32 million/20 = 1.6 million\nSTEP 3: Estimate the number of families that would travel by ferry:\nHere, I would like to know the price of ferry tickets and the price of an airline ticket.\nInterviewer: Sure, ferry prices are Rs. 8000 per ticket. We as well as our competitors are charging the same price. An airline ticket costs around Rs. 4000.\nCandidate: Thank you. We can further analyse this by segmenting families based on the mode of transportation. Since flights are cheaper and faster, most people, especially those belonging to the middle class will opt for this. About 30% would prefer a ferry given the luxurious and leisurely experience.\nMode | Percentage | Total\nFlights | 70% | 1.1 million (approx.)\nFerry | 30% | 0.5 million (approx.)\nSTEP 4: Estimate the share of the above that would choose our service\nI would now like to benchmark our cruise with those of our competitors.\nInterviewer: We have a well established brand name unlike our competitors and in addition to that the service that we provide is superior to that of our competitors. Assume we will be able to capture 40% of the market.\nCandidate: Number of families that travel by our cruise = 500,000 * 40% = 200,000 families. Expected revenue = 2,00,000*4* 8,000 = 6,400,000,000 = Rs. 6.4 billion. Keeping the cost in mind, our client can make decisions based on this revenue figure.\nInterviewer: Yes, indeed, thank you for your time."
   }
 ]

@@ -4,6 +4,7 @@ import { Fragment, ReactNode, useCallback, useEffect, useMemo, useRef, useState,
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
+import { createPortal } from 'react-dom'
 
 /* ═══════════════════════════════════════════════════════════
    Types
@@ -673,18 +674,10 @@ function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview'): b
   }
   if (Object.values(byDepth).some(count => count >= threshold)) return true
 
-  // Check 2: any parent whose children include both an expandable node
-  // (has children of its own) AND another expandable sibling — meaning
-  // multiple drill-downs are possible at the same level simultaneously.
-  for (const node of Object.values(NODES)) {
-    if (node.children.length < 2) continue
-    const expandableChildren = node.children.filter(
-      cid => (NODES[cid]?.children.length ?? 0) > 0
-    )
-    if (expandableChildren.length >= 2) return true
-  }
-
-  return false
+  // Check 2 removed: inactive (off-path) drill-downs no longer force the
+// left-to-right layout. They are shown via the hover/tap glass overlay
+// (InactiveDrilldownOverlay), so the top-to-bottom layout stays clean.
+return false
 }
 
 const V_GAP_V = 16     // vertical gap between leaf rows
@@ -1205,6 +1198,275 @@ className="absolute left-full ml-1.5 transition-all duration-300 hover:scale-105
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Inactive-node drill-down — hover/tap glass overlay
+   Renders the FULL static subtree of an off-path ("inactive")
+   node in a floating glass panel. No in-chart expansion, so the
+   main flowchart never reflows, shifts, or collides.
+   Binds externally via [data-node-button] index → visibleIds,
+   so the chart components need ZERO JSX changes.
+   ═══════════════════════════════════════════════════════════ */
+function InactiveDrilldownOverlay({
+  hostRef, visibleIds, mode = 'preview',
+}: {
+  hostRef: React.RefObject<HTMLElement | null>
+  visibleIds: string[]
+  mode?: 'preview' | 'interviewer'
+}) {
+  const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
+  const [active, setActive] = useState<{
+    id: string
+    rect: { top: number; left: number; right: number; bottom: number; width: number; height: number }
+  } | null>(null)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const cancelClose = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null } }
+  const scheduleClose = () => { cancelClose(); closeTimer.current = setTimeout(() => setActive(null), 140) }
+
+  // Wire hover (desktop) / tap (touch) on every inactive node that still has children.
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+    const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches
+    const btns = Array.from(host.querySelectorAll<HTMLElement>('[data-node-button]'))
+    const cleanups: Array<() => void> = []
+
+    btns.forEach((btn, i) => {
+      const id = visibleIds[i]
+      if (!id) return
+      const node = NODES[id]
+      const inactive = !defaultPath.includes(id)
+      if (!node || !inactive || node.children.length === 0) return
+
+      const prevCursor = btn.style.cursor
+      btn.style.cursor = 'help'
+
+      const open = () => {
+        cancelClose()
+        const r = btn.getBoundingClientRect()
+        setActive({ id, rect: { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height } })
+      }
+      const onEnter = () => open()
+      const onLeave = () => scheduleClose()
+      const onTap = (e: Event) => { e.stopPropagation(); setActive(prev => (prev?.id === id ? null : null)); open() }
+
+      if (isTouch) {
+        btn.addEventListener('click', onTap)
+      } else {
+        btn.addEventListener('mouseenter', onEnter)
+        btn.addEventListener('mouseleave', onLeave)
+      }
+      cleanups.push(() => {
+        btn.style.cursor = prevCursor
+        btn.removeEventListener('click', onTap)
+        btn.removeEventListener('mouseenter', onEnter)
+        btn.removeEventListener('mouseleave', onLeave)
+      })
+    })
+    return () => cleanups.forEach(fn => fn())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostRef, visibleIds, defaultPath])
+
+  // Close on scroll / resize / outside tap.
+  useEffect(() => {
+    if (!active) return
+    const close = () => setActive(null)
+    const onDocClick = (e: MouseEvent) => {
+      const t = e.target as HTMLElement
+      if (!t.closest('[data-cpm-overlay]') && !t.closest('[data-node-button]')) setActive(null)
+    }
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    document.addEventListener('click', onDocClick)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+      document.removeEventListener('click', onDocClick)
+    }
+  }, [active])
+
+  if (typeof document === 'undefined' || !active) return null
+
+  // ── Positioning: prefer right of node, then left, then below; clamp to viewport. ──
+  const MARGIN = 14
+  const PANEL_W = 300
+  const reservedRight = mode === 'interviewer' ? 380 : 0 // keep clear of the ratings panel
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const r = active.rect
+  const rightSpace = vw - r.right - reservedRight - MARGIN
+  const leftSpace = r.left - MARGIN
+
+  let left: number
+  let top = Math.max(MARGIN, Math.min(r.top - 8, vh - MARGIN - 160))
+  if (rightSpace >= PANEL_W) {
+    left = r.right + MARGIN
+  } else if (leftSpace >= PANEL_W) {
+    left = r.left - MARGIN - PANEL_W
+  } else {
+    left = Math.min(Math.max(MARGIN, r.left), Math.max(MARGIN, vw - reservedRight - MARGIN - PANEL_W))
+    top = r.bottom + MARGIN
+  }
+  const maxHeight = Math.max(140, vh - top - MARGIN)
+
+  return createPortal(
+    <div
+      data-cpm-overlay
+      onMouseEnter={cancelClose}
+      onMouseLeave={scheduleClose}
+      className="cpm-overlay-pop"
+      style={{
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${left}px`,
+        width: `${PANEL_W}px`,
+        maxHeight: `${maxHeight}px`,
+        overflow: 'auto',
+        zIndex: 80,
+        padding: '14px 14px 16px',
+        borderRadius: '14px',
+        background: 'rgba(255,248,240,0.72)',
+        backdropFilter: 'blur(22px) saturate(1.6)',
+        WebkitBackdropFilter: 'blur(22px) saturate(1.6)',
+        border: '1px solid rgba(61,90,53,0.18)',
+        boxShadow: '0 24px 60px -20px rgba(59,47,47,0.35), 0 1px 0 rgba(255,255,255,0.7) inset',
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "'Work Sans', sans-serif",
+          fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.18em',
+          textTransform: 'uppercase', color: 'rgba(92,64,51,0.55)', marginBottom: '10px',}}
+        
+      >
+        Drill-down preview
+      </div>
+      <OverlaySubtree id={active.id} depth={0} idxRef={{ n: 0 }} />
+    </div>,
+    document.body,
+  )
+}
+
+/** Static, non-interactive recursive subtree — mirrors DesktopChart node styling. */
+function OverlaySubtree({ id, depth, idxRef }: { id: string; depth: number; idxRef: { n: number } }) {
+  const node = NODES[id]
+  if (!node) return null
+  const order = idxRef.n++
+  return (
+    <div style={{ marginLeft: depth === 0 ? 0 : 14, position: 'relative' }}>
+      {depth > 0 && (
+        <span aria-hidden style={{ position: 'absolute', left: '-9px', top: 0, bottom: 0, width: '1px', background: 'rgba(92,64,51,0.14)' }} />
+      )}
+      <div
+        className="cpm-overlay-node"
+        style={{
+          animationDelay: `${order * 45}ms`,
+          marginTop: depth === 0 ? 0 : 8,
+          borderRadius: '4px',
+          border: '1px solid rgba(92,64,51,0.10)',
+          background: 'rgba(255,248,240,1)',
+          color: '#5C4033',
+          padding: '9px 12px',
+          fontFamily: "'Work Sans', sans-serif",
+          fontSize: '12.25px',   // matches DesktopChart labelFs
+          fontWeight: 500,
+          lineHeight: 1.18,
+          letterSpacing: '0.01em',
+          boxShadow: '0 4px 14px rgba(59,47,47,0.05)',
+        }}
+      >
+        {node.label}
+      </div>
+      {node.children.length > 0 && (
+        <div style={{ marginTop: 2 }}>
+          {node.children.map(cid => (
+            <OverlaySubtree key={cid} id={cid} depth={depth + 1} idxRef={idxRef} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Mobile/touch variant — tap an inactive node to open the same
+   static glass subtree panel. Binds globally via data-mnode-id,
+   so no host ref / index mapping is needed.
+   ═══════════════════════════════════════════════════════════ */
+function MobileDrilldownOverlay() {
+  const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
+  const [active, setActive] = useState<{
+    id: string
+    rect: { top: number; left: number; right: number; bottom: number; width: number; height: number }
+  } | null>(null)
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const t = e.target as HTMLElement
+      if (t.closest('[data-cpm-overlay]')) return // tap inside panel → keep open
+      const btn = t.closest<HTMLElement>('[data-mnode-id]')
+      if (!btn) { setActive(null); return }
+      const id = btn.getAttribute('data-mnode-id') || ''
+      const node = NODES[id]
+      if (!node || defaultPath.includes(id) || node.children.length === 0) { setActive(null); return }
+      const r = btn.getBoundingClientRect()
+      setActive(prev => (prev?.id === id ? null : {
+        id, rect: { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height },
+      }))
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [defaultPath])
+
+  useEffect(() => {
+    if (!active) return
+    const close = () => setActive(null)
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
+  }, [active])
+
+  if (typeof document === 'undefined' || !active) return null
+
+  const MARGIN = 12
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const r = active.rect
+  const PANEL_W = Math.min(320, vw - MARGIN * 2)
+  const left = Math.min(Math.max(MARGIN, r.left), vw - MARGIN - PANEL_W)
+  const placeAbove = (r.bottom + 180 > vh) && (r.top > vh - r.bottom)
+  const top = placeAbove ? Math.max(MARGIN, r.top - MARGIN - 220) : r.bottom + MARGIN
+  const maxHeight = placeAbove ? r.top - MARGIN * 2 : Math.max(140, vh - top - MARGIN)
+
+  return createPortal(
+    <div
+      data-cpm-overlay
+      className="cpm-overlay-pop"
+      style={{
+        position: 'fixed', top: `${top}px`, left: `${left}px`,
+        width: `${PANEL_W}px`, maxHeight: `${maxHeight}px`, overflow: 'auto',
+        zIndex: 80, padding: '14px 14px 16px', borderRadius: '14px',
+        background: 'rgba(255,248,240,0.78)',
+        backdropFilter: 'blur(22px) saturate(1.6)', WebkitBackdropFilter: 'blur(22px) saturate(1.6)',
+        border: '1px solid rgba(61,90,53,0.18)',
+        boxShadow: '0 24px 60px -20px rgba(59,47,47,0.35), 0 1px 0 rgba(255,255,255,0.7) inset',
+      }}
+    >
+      <div style=
+        {{fontFamily: "'Work Sans', sans-serif", fontSize: '9.5px', fontWeight: 600,
+        letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(92,64,51,0.55)', marginBottom: '10px',}}
+      >
+        Drill-down preview
+      </div>
+      <OverlaySubtree id={active.id} depth={0} idxRef= {{ n: 0 }} />
+    </div>,
+    document.body,
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    Mobile Framework Tree
    ═══════════════════════════════════════════════════════════ */
 
@@ -1224,7 +1486,7 @@ function MobileTreeNode({
               : 'border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)]'
       }`}>
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => onSelect(nodeId)}
+          <button data-node-button type="button" onClick={() => onSelect(nodeId)}
             className={`flex-1 text-left text-[13px] leading-relaxed ${isFoc ? 'font-semibold text-[#3B2F2F]' : 'font-medium text-[#5C4033]/80'}`}>
             {node.label}
           </button>
@@ -2470,6 +2732,7 @@ export default function CasePreviewMaster({
   const chartRef = useRef<HTMLDivElement>(null)
   const walkthroughRef = useRef<HTMLElement>(null)
   const drilldownRef = useRef<HTMLElement>(null)
+  const overlayHostRef = useRef<HTMLDivElement | null>(null)
   const drilldownBottomRef = useRef<HTMLDivElement>(null)
   const activeStepRef = useRef(0)
 
@@ -2572,7 +2835,10 @@ export default function CasePreviewMaster({
   ]
 
   // ─── Chart state ─────────────────────────────
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+  const dp = pathTo(tree.defaultFocusedId)
+  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+})
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   // Add this after the focusedId state declaration:
@@ -2656,7 +2922,10 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   // ─── Horizontal swipe / trackpad navigation ───────────────
   useSwipeNavigation(navigate)
 
-  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
+  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
+  const dp = pathTo(tree.defaultFocusedId)
+  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+})
   const [mobileFocId, setMobileFocId] = useState(() => tree.defaultFocusedId || '')
 
   // ─── Derived data ────────────────────────────
@@ -2699,9 +2968,10 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   const [, startChartTransition] = useTransition()
 
   const handleSelect = (id: string) => {
-    setFocusedId(id)
-    const node = NODES[id]
-    startChartTransition(() => {
+  setFocusedId(id)
+  const node = NODES[id]
+  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && node?.children.length) return // inactive → overlay only
+  startChartTransition(() => {
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
           const next = new Set(prev)
@@ -2721,7 +2991,9 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   }
 
   const handleToggle = (id: string) => {
-    const node = NODES[id]; if (!node?.children.length) return
+  const node = NODES[id]; if (!node?.children.length) return
+  // Inactive (off chosen-path) nodes never expand in-chart — they use the hover/tap overlay.
+  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
     startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
@@ -2742,7 +3014,8 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   }
 
   const handleMobileSelect = (id: string) => {
-    setMobileFocId(id)
+  setMobileFocId(id)
+  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return // inactive → tap overlay only
     setMobileExpIds(prev => {
       const next = new Set(prev)
       pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
@@ -2751,7 +3024,8 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   }
 
   const handleMobileToggle = (id: string) => {
-    const node = NODES[id]; if (!node?.children.length) return
+  const node = NODES[id]; if (!node?.children.length) return
+  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return // inactive → tap overlay only
     setMobileExpIds(prev => {
       const next = new Set(prev)
       if (next.has(id)) {
@@ -2782,6 +3056,11 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
         @keyframes cpm-glow { 0%,100% { opacity:.42; transform:translate3d(0,0,0) scale(1) } 50% { opacity:.7; transform:translate3d(12px,-8px,0) scale(1.04) } }
         @keyframes cpm-connector { from { opacity:0; stroke-dashoffset:1 } to { opacity:1; stroke-dashoffset:0 } }
         @keyframes cpm-node-in { from { opacity:0; transform:translateY(16px) scale(.96); filter:blur(6px) } to { opacity:1; transform:translateY(0) scale(1); filter:blur(0) } }
+@keyframes cpm-overlay-pop { from { opacity:0; transform:translateY(6px) scale(0.97); filter:blur(8px) } to { opacity:1; transform:translateY(0) scale(1); filter:blur(0) } }
+@keyframes cpm-overlay-node { from { opacity:0; transform:translateY(8px) scale(0.98); filter:blur(4px) } to { opacity:1; transform:translateY(0) scale(1); filter:blur(0) } }
+.cpm-overlay-pop { animation: cpm-overlay-pop 0.34s cubic-bezier(0.16,1,0.3,1) both; }
+.cpm-overlay-node { animation: cpm-overlay-node 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+@media (prefers-reduced-motion: reduce) { .cpm-overlay-pop, .cpm-overlay-node { animation-duration: 0.001s !important; filter: none !important; } }
         @keyframes cpm-helper-breathe { 0%,100% { opacity:.42; transform:translateY(0) } 50% { opacity:.78; transform:translateY(-1px) } }
         @keyframes cpm-sidebar-card-in {
   from { opacity: 0; transform: translateY(16px) scale(0.97); filter: blur(5px); }
@@ -2865,6 +3144,9 @@ html::-webkit-scrollbar {
 }
       `}
       </style>
+
+      <MobileDrilldownOverlay />
+
 
       <Navbar currentPage="repository" />
 
@@ -3126,7 +3408,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
 
                       {/* Desktop chart */}
                       <div
-                        ref={chartRef}
+                        ref={(el) => { chartRef.current = el; overlayHostRef.current = el }}
                         className={(() => {
                           const hasViz = !!(recommendationsTable || visualisations?.some(v => v.type === 'table' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
@@ -3150,6 +3432,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                             focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                         )}
                       </div>
+<InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" />
 
                       {/* Drilldown table visualizations */}
                       {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
@@ -3325,6 +3608,7 @@ export function CaseInterviewerMaster({
 
   const chartRef = useRef<HTMLDivElement>(null)
   const drilldownBottomRef2 = useRef<HTMLDivElement>(null)
+  const overlayHostRef = useRef<HTMLDivElement | null>(null)
   const activeStepRef = useRef(0)
 
   // ─── Detect when drilldown container bottom border is visible ─
@@ -3375,10 +3659,16 @@ export function CaseInterviewerMaster({
     { label: 'Drill Down',  number: 2 },
   ]
 
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+  const dp = pathTo(tree.defaultFocusedId)
+  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+})
   const [focusedId, setFocusedId]     = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
-  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
+  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
+  const dp = pathTo(tree.defaultFocusedId)
+  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+})
   const [mobileFocId, setMobileFocId]   = useState(() => tree.defaultFocusedId || '')
 
   const HEADER_OFFSET = 144
@@ -3449,8 +3739,10 @@ export function CaseInterviewerMaster({
 
   // Node select — collapse if already expanded, expand path otherwise
   const handleSelect = (id: string) => {
-    setFocusedId(id)
-    const node = NODES[id]
+  setFocusedId(id)
+  const node = NODES[id]
+  // Inactive nodes only focus; their drill-down is shown via the overlay, not in-chart.
+  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && node?.children.length) return
     startChartTransition(() => {
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
@@ -3469,7 +3761,8 @@ export function CaseInterviewerMaster({
     })
   }
   const handleToggle = (id: string) => {
-    startChartTransition(() => {
+  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return // inactive → overlay only
+  startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
         if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)) }
@@ -3479,9 +3772,10 @@ export function CaseInterviewerMaster({
       setEdgeAnimKey(k => k + 1)
     })
   }
-  const handleMobileSelect = (id: string) => { setMobileFocId(id); setMobileExpIds(prev => { const next = new Set(prev); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
+  const handleMobileSelect = (id: string) => { setMobileFocId(id); if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return; setMobileExpIds(prev => { const next = new Set(prev); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
   const handleMobileToggle = (id: string) => {
-    setMobileExpIds(prev => {
+  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return // inactive → tap overlay only
+  setMobileExpIds(prev => {
       const next = new Set(prev)
       if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)); if (pathTo(mobileFocId).includes(id)) setMobileFocId(id) }
       else { next.add(id); const parent = PARENTS[id]; if (parent) NODES[parent].children.forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
@@ -3499,6 +3793,11 @@ export function CaseInterviewerMaster({
         @keyframes cpm-glow { 0%,100% { opacity:.42; transform:translate3d(0,0,0) scale(1) } 50% { opacity:.7; transform:translate3d(12px,-8px,0) scale(1.04) } }
         @keyframes cpm-connector { from { opacity:0; stroke-dashoffset:1 } to { opacity:1; stroke-dashoffset:0 } }
         @keyframes cpm-node-in { from { opacity:0; transform:translateY(16px) scale(.96); filter:blur(6px) } to { opacity:1; transform:translateY(0) scale(1); filter:blur(0) } }
+@keyframes cpm-overlay-pop { from { opacity:0; transform:translateY(6px) scale(0.97); filter:blur(8px) } to { opacity:1; transform:translateY(0) scale(1); filter:blur(0) } }
+@keyframes cpm-overlay-node { from { opacity:0; transform:translateY(8px) scale(0.98); filter:blur(4px) } to { opacity:1; transform:translateY(0) scale(1); filter:blur(0) } }
+.cpm-overlay-pop { animation: cpm-overlay-pop 0.34s cubic-bezier(0.16,1,0.3,1) both; }
+.cpm-overlay-node { animation: cpm-overlay-node 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+@media (prefers-reduced-motion: reduce) { .cpm-overlay-pop, .cpm-overlay-node { animation-duration: 0.001s !important; filter: none !important; } }
         @keyframes cpm-sidebar-card-in { from { opacity:0; transform:translateY(16px) scale(0.97); filter:blur(5px) } to { opacity:1; transform:translateY(0) scale(1); filter:blur(0) } }
         @keyframes cpm-card-warmth { 0% { box-shadow:inset 0 0 0 rgba(61,90,53,0) } 40% { box-shadow:inset 0 0 24px rgba(61,90,53,0.04) } 100% { box-shadow:inset 0 0 0 rgba(61,90,53,0) } }
         @keyframes cpm-sidebar-glow { 0%,100% { opacity:0.4; transform:scale(1) } 50% { opacity:0.7; transform:scale(1.05) } }
@@ -3507,6 +3806,8 @@ export function CaseInterviewerMaster({
         html { scrollbar-width:none; -ms-overflow-style:none; }
         html::-webkit-scrollbar { display:none; }
       `}</style>
+
+      <MobileDrilldownOverlay />
 
       <Navbar currentPage="repository" />
 
@@ -3644,7 +3945,7 @@ export function CaseInterviewerMaster({
                             </div>
                           </Reveal>
                         </>)}
-                        <div ref={chartRef} className={(() => {
+                        <div ref={(el) => { chartRef.current = el; overlayHostRef.current = el }} className={(() => {
                           const hasViz = !!(recommendationsTable || visualisations?.some(v => v.type === 'table' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
                           if (!hasContent) return 'flex items-center'
@@ -3663,6 +3964,7 @@ export function CaseInterviewerMaster({
                             <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                           )}
                         </div>
+                        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="interviewer" />
                         {/* Drilldown table */}
                         {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                           <Reveal key={`vis-tbl-id-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
