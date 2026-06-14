@@ -1330,17 +1330,29 @@ function InactiveDrilldownOverlay({
   const isDrillable = (id: string | null | undefined): id is string =>
     !!id && !!NODES[id] && !defaultPath.includes(id) && (NODES[id].children?.length ?? 0) > 0
   const openEl = (el: Element, pin: boolean) => {
-    const id = el.getAttribute('data-node-id')
-    if (!isDrillable(id)) return
-    cancelClose()
+  const id = el.getAttribute('data-node-id')
+  if (!isDrillable(id)) return
+  // First deep dive of the session retires the discovery dots everywhere.
+  try {
+    if (!sessionStorage.getItem('cpm-drill-seen')) {
+      sessionStorage.setItem('cpm-drill-seen', '1')
+      document.documentElement.classList.add('cpm-drill-seen')
+    }
+  } catch {}
+  cancelClose()
     const r = el.getBoundingClientRect()
     pinnedRef.current = pin
     setActive({ id, rect: { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height } })
   }
   useEffect(() => {
-    const host = hostRef.current
-    if (!host) return
-    const onOver = (e: Event) => {
+  try {
+    if (sessionStorage.getItem('cpm-drill-seen')) document.documentElement.classList.add('cpm-drill-seen')
+  } catch {}
+}, [])
+useEffect(() => {
+  const host = hostRef.current
+  if (!host) return
+  const onOver = (e: Event) => {
       const t = (e.target as HTMLElement)?.closest('[data-node-id]')
       if (t && isDrillable(t.getAttribute('data-node-id'))) openEl(t, false)
     }
@@ -1444,7 +1456,17 @@ backdropFilter: 'blur(30px) saturate(118%) brightness(1.05)', WebkitBackdropFilt
 boxShadow: '0 30px 80px -30px rgba(46,38,32,0.26), 0 0 60px rgba(196,168,130,0.12), inset 0 1px 0 rgba(255,255,255,0.6)',}}
         
       >
-        <OverlaySubtree id={active.id} orient={L.orient} scale={scale} />
+        <div
+  style=
+    {{    position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)', zIndex: 2,
+    fontSize: 9, fontWeight: 600, letterSpacing: '0.3em',
+    textTransform: 'uppercase', color: 'rgba(61,90,53,0.5)',
+    pointerEvents: 'none', userSelect: 'none', whiteSpace: 'nowrap',}}
+  
+>
+  Deep Dive
+</div>
+<OverlaySubtree id={active.id} orient={L.orient} scale={scale} />
         <style>{`
           @keyframes cpm-sub-backdrop { from { opacity: 0; } to { opacity: 1; } }
           @keyframes cpm-sub-pop  { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
