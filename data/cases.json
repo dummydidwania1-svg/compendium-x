@@ -1648,7 +1648,7 @@
         },
         "percent-opting-for-our-tests": {
           "id": "percent-opting-for-our-tests",
-          "label": "% Opting For Our Tests/Scans",
+          "label": "% Opting For Tests/Scans",
           "tone": "branch",
           "children": [
             "not-getting-tests-done",

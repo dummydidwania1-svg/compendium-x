@@ -663,21 +663,25 @@ function walkthroughSpacingClass(block: WalkthroughBlock, previous?: Walkthrough
  *     (has children but is currently collapsed). This mixed active/inactive
  *     drill-down state causes overlap in horizontal layout.
  */
+
 function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview'): boolean {
   const threshold = mode === 'interviewer' ? 7 : 8
 
-  // Check 1: any depth row in the full tree hits threshold+
+  // Build the DEFAULT-VISIBLE set: green path expanded, inactive subtrees collapsed
+  const defaultPath = pathTo(DEFAULT_FOCUSED_ID)
+  const defaultExpanded = new Set(
+    Array.from(DEFAULT_EXPANDED).filter(id => defaultPath.includes(id))
+  )
+  const visible = new Set<string>()
+  collectVisible(ROOT_ID, defaultExpanded, visible)
+
+  // Check 1: any depth row among the VISIBLE nodes hits threshold+
   const byDepth: Record<number, number> = {}
-  for (const id of Object.keys(NODES)) {
+  Array.from(visible).forEach(id => {
     const d = pathTo(id).length - 1
     byDepth[d] = (byDepth[d] ?? 0) + 1
-  }
-  if (Object.values(byDepth).some(count => count >= threshold)) return true
-
-  // Check 2 removed: inactive (off-path) drill-downs no longer force the
-// left-to-right layout. They are shown via the hover/tap glass overlay
-// (InactiveDrilldownOverlay), so the top-to-bottom layout stays clean.
-return false
+  })
+  return Object.values(byDepth).some(count => count >= threshold)
 }
 
 const V_GAP_V = 16     // vertical gap between leaf rows
@@ -967,6 +971,7 @@ function VerticalChart({
                 <button
                   type="button"
                   data-node-button
+                    data-node-id={id}
                   onClick={() => onSelect(id)}
                   className={`flex items-center justify-center rounded-[4px] border px-2 py-2 text-center font-medium tracking-[0.01em] transition-all duration-300 hover:-translate-y-0.5 ${cls}`}
                   style={{
@@ -1011,9 +1016,9 @@ function VerticalChart({
                   <button
                     type="button"
                     data-node-button
-                    onClick={e => { e.stopPropagation(); onToggle(id) }}
+                    onClick={e => { e.stopPropagation(); if (!isDefaultPath && hasCh) { e.currentTarget.dispatchEvent(new CustomEvent('cpm-drill', { bubbles: true, detail: { id } })) } else { onToggle(id) } }}
                     className="absolute transition-all duration-300 hover:scale-110 z-30 opacity-70 hover:opacity-100"
-                    style={chevronStyle}
+                    data-node-id={id} data-cpm-drill={!isDefaultPath && hasCh ? 'true' : undefined} style={chevronStyle}
                     aria-label={`${isExp ? 'Collapse' : 'Expand'} ${node.label}`}
                   >
                     <ChevronChip expanded={isExp} />
@@ -1176,14 +1181,13 @@ const sY = pp.y + halfH(pid), eY = cp.y - halfH(cid), mY = sY + (eY - sY) / 2
               style={{ left: p.x, top: p.y, transform: 'translate(-50%,-50%)', opacity: isRevealed ? 1 : 0, transitionDelay: `${stagger}ms` }}>
               <div className="relative inline-flex items-center"
                 style={{ animation: isRevealed ? `cpm-node-in 420ms cubic-bezier(0.22,1,0.36,1) ${stagger}ms both` : 'none' }}>
-                <button type="button" data-node-button onClick={() => onSelect(id)}
+                <button type="button" data-node-button  data-node-id={id} onClick={() => onSelect(id)}
   className={`flex items-center justify-center rounded-[4px] border px-4 py-3 text-center font-medium tracking-[0.01em] transition-all duration-300 hover:-translate-y-0.5 ${cls}`}
   style={{ width: `${lw}px`, minHeight: `${labelMinH}px`, fontSize: `${labelFs}px`, lineHeight: '1.18', whiteSpace: 'normal' }}>
   {node.label}
 </button>
                 {hasCh && (
-                  <button type="button" data-node-button onClick={e => { e.stopPropagation(); onToggle(id) }}
-className="absolute left-full ml-1.5 transition-all duration-300 hover:scale-105"
+                  <button type="button" data-node-button data-node-id={id} data-cpm-drill={!isDefaultPath && hasCh ? 'true' : undefined} onClick={e => { e.stopPropagation(); if (!isDefaultPath && hasCh) { e.currentTarget.dispatchEvent(new CustomEvent('cpm-drill', { bubbles: true, detail: { id } })) } else { onToggle(id) } }} className="absolute left-full ml-1.5 transition-all duration-300 hover:scale-105"
                     aria-label={`${isExp ? 'Collapse' : 'Expand'} ${node.label}`}>
                     <ChevronChip expanded={isExp} />
                   </button>
@@ -1205,11 +1209,112 @@ className="absolute left-full ml-1.5 transition-all duration-300 hover:scale-105
    Binds externally via [data-node-button] index → visibleIds,
    so the chart components need ZERO JSX changes.
    ═══════════════════════════════════════════════════════════ */
+
+   /* ═══════════════════════════════════════════════════════════
+   Inactive-node drill-down — hover/tap glass overlay
+   Renders the hovered inactive node's FULL subtree as a static
+   top-to-bottom mini-flowchart (DesktopChart styling) inside a
+   floating glass panel. Auto-scales to fit — never scrolls.
+   Binds by data-node-id, so it triggers ONLY on the hovered node.
+   ═══════════════════════════════════════════════════════════ */
+
+
+/** Static top-to-bottom layout for an inactive node's full subtree.
+ *  Mirrors the main DesktopChart node sizing (estNodeW / estimateNodeH). */
+/** Static subtree layout, orientation-aware.
+ *  'TB' = top-to-bottom (like the main chart); 'LR' = left-to-right (narrower/taller).
+ *  Node sizing mirrors the main DesktopChart (estNodeW / estimateNodeH). */
+/** Static subtree layout, orientation-aware (TB = top-to-bottom like the main chart, LR = left-to-right). */
+function buildSubtreeLayout(rootId: string, orient: 'TB' | 'LR' = 'TB') {
+  const FS = 12.25
+  const BASE_H = 54
+  const PAD = 16
+  const GAP_MAIN = orient === 'TB' ? 30 : 34
+  const GAP_CROSS = orient === 'TB' ? 18 : 16
+
+  const widthOf = (id: string) => Math.max(96, estNodeW(id))
+  const heightOf = (id: string) => estimateNodeH(NODES[id]?.label ?? '', widthOf(id), BASE_H, FS)
+
+  const depth = new Map<string, number>()
+  const walk = (id: string, d: number) => { depth.set(id, d); (NODES[id]?.children ?? []).forEach(c => walk(c, d + 1)) }
+  walk(rootId, 0)
+  const maxDepth = Math.max(0, ...Array.from(depth.values()))
+  const pos = new Map<string, { cx: number; cy: number }>()
+
+  if (orient === 'TB') {
+    const rowMaxH: number[] = []
+    depth.forEach((d, id) => { rowMaxH[d] = Math.max(rowMaxH[d] ?? 0, heightOf(id)) })
+    const rowCY: number[] = []
+    let acc = PAD
+    for (let d = 0; d <= maxDepth; d++) { rowCY[d] = acc + (rowMaxH[d] ?? BASE_H) / 2; acc += (rowMaxH[d] ?? BASE_H) + GAP_MAIN }
+    const totalH = acc - GAP_MAIN + PAD
+    const sub = new Map<string, number>()
+    const measure = (id: string): number => {
+      const kids = NODES[id]?.children ?? []
+      const own = widthOf(id)
+      if (!kids.length) { sub.set(id, own); return own }
+      const cw = kids.reduce((s, c, i) => s + measure(c) + (i > 0 ? GAP_CROSS : 0), 0)
+      const tw = Math.max(own, cw); sub.set(id, tw); return tw
+    }
+    measure(rootId)
+    const assign = (id: string, sx: number, ex: number) => {
+      const cy = rowCY[depth.get(id) ?? 0]
+      const kids = NODES[id]?.children ?? []
+      if (!kids.length) { pos.set(id, { cx: (sx + ex) / 2, cy }); return }
+      const cw = kids.reduce((s, c, i) => s + (sub.get(c) ?? widthOf(c)) + (i > 0 ? GAP_CROSS : 0), 0)
+      const tw = Math.max(ex - sx, cw)
+      let cur = sx + (tw - cw) / 2
+      kids.forEach(c => { const w = sub.get(c) ?? widthOf(c); assign(c, cur, cur + w); cur += w + GAP_CROSS })
+      const cxs = kids.map(c => pos.get(c)?.cx).filter((v): v is number => typeof v === 'number')
+      pos.set(id, { cx: cxs.length ? cxs.reduce((a, b) => a + b, 0) / cxs.length : (sx + ex) / 2, cy })
+    }
+    assign(rootId, PAD, PAD + (sub.get(rootId) ?? widthOf(rootId)))
+    let minX = Infinity, maxX = -Infinity
+    pos.forEach((p, id) => { const w = widthOf(id); minX = Math.min(minX, p.cx - w / 2); maxX = Math.max(maxX, p.cx + w / 2) })
+    const dx = PAD - minX
+    pos.forEach(p => { p.cx += dx })
+    return { pos, widthOf, heightOf, depth, w: (maxX - minX) + PAD * 2, h: totalH, fs: FS, orient }
+  }
+
+  const colMaxW: number[] = []
+  depth.forEach((d, id) => { colMaxW[d] = Math.max(colMaxW[d] ?? 0, widthOf(id)) })
+  const colCX: number[] = []
+  let accx = PAD
+  for (let d = 0; d <= maxDepth; d++) { colCX[d] = accx + (colMaxW[d] ?? 96) / 2; accx += (colMaxW[d] ?? 96) + GAP_MAIN }
+  const totalW = accx - GAP_MAIN + PAD
+  const sub = new Map<string, number>()
+  const measure = (id: string): number => {
+    const kids = NODES[id]?.children ?? []
+    const own = heightOf(id)
+    if (!kids.length) { sub.set(id, own); return own }
+    const ch = kids.reduce((s, c, i) => s + measure(c) + (i > 0 ? GAP_CROSS : 0), 0)
+    const th = Math.max(own, ch); sub.set(id, th); return th
+  }
+  measure(rootId)
+  const assign = (id: string, sy: number, ey: number) => {
+    const cx = colCX[depth.get(id) ?? 0]
+    const kids = NODES[id]?.children ?? []
+    if (!kids.length) { pos.set(id, { cx, cy: (sy + ey) / 2 }); return }
+    const ch = kids.reduce((s, c, i) => s + (sub.get(c) ?? heightOf(c)) + (i > 0 ? GAP_CROSS : 0), 0)
+    const th = Math.max(ey - sy, ch)
+    let cur = sy + (th - ch) / 2
+    kids.forEach(c => { const h = sub.get(c) ?? heightOf(c); assign(c, cur, cur + h); cur += h + GAP_CROSS })
+    const cys = kids.map(c => pos.get(c)?.cy).filter((v): v is number => typeof v === 'number')
+    pos.set(id, { cx, cy: cys.length ? cys.reduce((a, b) => a + b, 0) / cys.length : (sy + ey) / 2 })
+  }
+  assign(rootId, PAD, PAD + (sub.get(rootId) ?? heightOf(rootId)))
+  let minY = Infinity, maxY = -Infinity
+  pos.forEach((p, id) => { const h = heightOf(id); minY = Math.min(minY, p.cy - h / 2); maxY = Math.max(maxY, p.cy + h / 2) })
+  const dy = PAD - minY
+  pos.forEach(p => { p.cy += dy })
+  return { pos, widthOf, heightOf, depth, w: totalW, h: (maxY - minY) + PAD * 2, fs: FS, orient }
+}
+
 function InactiveDrilldownOverlay({
   hostRef, visibleIds, mode = 'preview',
 }: {
-  hostRef: React.RefObject<HTMLElement | null>
-  visibleIds: string[]
+  hostRef: React.RefObject<HTMLDivElement | null>
+  visibleIds?: string[]
   mode?: 'preview' | 'interviewer'
 }) {
   const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
@@ -1217,176 +1322,213 @@ function InactiveDrilldownOverlay({
     id: string
     rect: { top: number; left: number; right: number; bottom: number; width: number; height: number }
   } | null>(null)
+  const pinnedRef = useRef(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
   const cancelClose = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null } }
-  const scheduleClose = () => { cancelClose(); closeTimer.current = setTimeout(() => setActive(null), 140) }
-
-  // Wire hover (desktop) / tap (touch) on every inactive node that still has children.
+  const scheduleClose = () => { if (pinnedRef.current) return; cancelClose(); closeTimer.current = setTimeout(() => setActive(null), 160) }
+  const closeNow = () => { pinnedRef.current = false; cancelClose(); setActive(null) }
+  const isDrillable = (id: string | null | undefined): id is string =>
+    !!id && !!NODES[id] && !defaultPath.includes(id) && (NODES[id].children?.length ?? 0) > 0
+  const openEl = (el: Element, pin: boolean) => {
+    const id = el.getAttribute('data-node-id')
+    if (!isDrillable(id)) return
+    cancelClose()
+    const r = el.getBoundingClientRect()
+    pinnedRef.current = pin
+    setActive({ id, rect: { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height } })
+  }
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
-    const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches
-    const btns = Array.from(host.querySelectorAll<HTMLElement>('[data-node-button]'))
-    const cleanups: Array<() => void> = []
-
-    btns.forEach((btn, i) => {
-      const id = visibleIds[i]
-      if (!id) return
-      const node = NODES[id]
-      const inactive = !defaultPath.includes(id)
-      if (!node || !inactive || node.children.length === 0) return
-
-      const prevCursor = btn.style.cursor
-      btn.style.cursor = 'help'
-
-      const open = () => {
-        cancelClose()
-        const r = btn.getBoundingClientRect()
-        setActive({ id, rect: { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height } })
-      }
-      const onEnter = () => open()
-      const onLeave = () => scheduleClose()
-      const onTap = (e: Event) => { e.stopPropagation(); setActive(prev => (prev?.id === id ? null : null)); open() }
-
-      if (isTouch) {
-        btn.addEventListener('click', onTap)
-      } else {
-        btn.addEventListener('mouseenter', onEnter)
-        btn.addEventListener('mouseleave', onLeave)
-      }
-      cleanups.push(() => {
-        btn.style.cursor = prevCursor
-        btn.removeEventListener('click', onTap)
-        btn.removeEventListener('mouseenter', onEnter)
-        btn.removeEventListener('mouseleave', onLeave)
-      })
-    })
-    return () => cleanups.forEach(fn => fn())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hostRef, visibleIds, defaultPath])
-
-  // Close on scroll / resize / outside tap.
+    const onOver = (e: Event) => {
+      const t = (e.target as HTMLElement)?.closest('[data-node-id]')
+      if (t && isDrillable(t.getAttribute('data-node-id'))) openEl(t, false)
+    }
+    const onOut = (e: Event) => {
+      const to = (e as MouseEvent).relatedTarget as HTMLElement | null
+      if (to && (to.closest('[data-cpm-overlay]') || to.closest('[data-node-id]'))) return
+      scheduleClose()
+    }
+    const onDrill = (e: Event) => {
+      const id = (e as CustomEvent).detail?.id as string | undefined
+      if (!id || !isDrillable(id)) return
+      const sel = (window.CSS && CSS.escape) ? CSS.escape(id) : id
+      const el = host.querySelector(`[data-node-id="${sel}"]`)
+      if (el) openEl(el, true)
+    }
+    const onDocClick = (e: Event) => {
+      const t = e.target as HTMLElement
+      if (t.closest('[data-cpm-overlay]') || t.closest('[data-cpm-drill="true"]')) return
+      closeNow()
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeNow() }
+    host.addEventListener('mouseover', onOver)
+    host.addEventListener('mouseout', onOut)
+    host.addEventListener('cpm-drill', onDrill as EventListener)
+    document.addEventListener('click', onDocClick)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      host.removeEventListener('mouseover', onOver)
+      host.removeEventListener('mouseout', onOut)
+      host.removeEventListener('cpm-drill', onDrill as EventListener)
+      document.removeEventListener('click', onDocClick)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [hostRef, defaultPath])
   useEffect(() => {
     if (!active) return
-    const close = () => setActive(null)
-    const onDocClick = (e: MouseEvent) => {
-      const t = e.target as HTMLElement
-      if (!t.closest('[data-cpm-overlay]') && !t.closest('[data-node-button]')) setActive(null)
-    }
+    const close = () => closeNow()
     window.addEventListener('scroll', close, true)
     window.addEventListener('resize', close)
-    document.addEventListener('click', onDocClick)
     return () => {
       window.removeEventListener('scroll', close, true)
       window.removeEventListener('resize', close)
-      document.removeEventListener('click', onDocClick)
     }
   }, [active])
-
   if (typeof document === 'undefined' || !active) return null
 
-  // ── Positioning: prefer right of node, then left, then below; clamp to viewport. ──
-  const MARGIN = 14
-  const PANEL_W = 300
-  const reservedRight = mode === 'interviewer' ? 380 : 0 // keep clear of the ratings panel
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-  const r = active.rect
-  const rightSpace = vw - r.right - reservedRight - MARGIN
-  const leftSpace = r.left - MARGIN
-
-  let left: number
-  let top = Math.max(MARGIN, Math.min(r.top - 8, vh - MARGIN - 160))
-  if (rightSpace >= PANEL_W) {
-    left = r.right + MARGIN
-  } else if (leftSpace >= PANEL_W) {
-    left = r.left - MARGIN - PANEL_W
-  } else {
-    left = Math.min(Math.max(MARGIN, r.left), Math.max(MARGIN, vw - reservedRight - MARGIN - PANEL_W))
-    top = r.bottom + MARGIN
-  }
-  const maxHeight = Math.max(140, vh - top - MARGIN)
+const vw = window.innerWidth
+const vh = window.innerHeight
+const MARGIN = 24
+const PANEL_PAD = 18
+const reservedRight = mode === 'interviewer' ? 360 : 0
+// Reserve the fixed top navbar's height so the panel (and its top border) is never
+// clipped behind it. Measured from the page header, with a safe fallback.
+const navEl = typeof document !== 'undefined' ? document.querySelector('header') : null
+const navH = navEl ? Math.min(200, Math.round(navEl.getBoundingClientRect().bottom)) : 80
+const TOP_SAFE = navH + 14
+// Centre the panel within the safe band *below* the navbar and size it to fit fully —
+// never clipped, never touching edges, never needing a scroll.
+const availW = Math.max(280, (vw - reservedRight) - MARGIN * 2 - PANEL_PAD * 2)
+const availH = Math.max(220, (vh - TOP_SAFE - MARGIN) - PANEL_PAD * 2)
+  // Pick whichever orientation zooms in more (TB matches the main chart; LR wins for deep/narrow trees).
+  const tb = buildSubtreeLayout(active.id, 'TB')
+  const lr = buildSubtreeLayout(active.id, 'LR')
+  const fit = (l: { w: number; h: number }) => Math.min(1, availW / l.w, availH / l.h)
+  const tbS = fit(tb), lrS = fit(lr)
+  const useLR = lrS > tbS * 1.05
+  const L = useLR ? lr : tb
+  const scale = useLR ? lrS : tbS
+  const panelW = L.w * scale + PANEL_PAD * 2
+  const panelH = L.h * scale + PANEL_PAD * 2
+ // Centre horizontally; centre vertically *within the band below the navbar*.
+const left = Math.round(Math.max(MARGIN, (vw - reservedRight - panelW) / 2))
+const bandH = vh - TOP_SAFE - MARGIN
+const top = Math.round(TOP_SAFE + Math.max(0, (bandH - panelH) / 2))
 
   return createPortal(
-    <div
-      data-cpm-overlay
-      onMouseEnter={cancelClose}
-      onMouseLeave={scheduleClose}
-      className="cpm-overlay-pop"
-      style={{
-        position: 'fixed',
-        top: `${top}px`,
-        left: `${left}px`,
-        width: `${PANEL_W}px`,
-        maxHeight: `${maxHeight}px`,
-        overflow: 'auto',
-        zIndex: 80,
-        padding: '14px 14px 16px',
-        borderRadius: '14px',
-        background: 'rgba(255,248,240,0.72)',
-        backdropFilter: 'blur(22px) saturate(1.6)',
-        WebkitBackdropFilter: 'blur(22px) saturate(1.6)',
-        border: '1px solid rgba(61,90,53,0.18)',
-        boxShadow: '0 24px 60px -20px rgba(59,47,47,0.35), 0 1px 0 rgba(255,255,255,0.7) inset',
-      }}
-    >
+    <div data-cpm-overlay onMouseEnter={cancelClose} onMouseLeave={scheduleClose}>
+      {/* Full-window dim + blur scrim. Purely visual (pointer-events off) so the
+          existing hover / click-away logic keeps working untouched. */}
       <div
-        style={{
-          fontFamily: "'Work Sans', sans-serif",
-          fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.18em',
-          textTransform: 'uppercase', color: 'rgba(92,64,51,0.55)', marginBottom: '10px',}}
+        className="cpm-sub-backdrop"
+        style=
+          {{
+
+            position: 'fixed', inset: 0, zIndex: 70, pointerEvents: 'none',
+background: 'rgba(52,44,34,0.16)',
+backdropFilter: 'blur(10px) saturate(115%)', WebkitBackdropFilter: 'blur(10px) saturate(115%)',
+
+          }}
+        
+      />
+      {/* Glass panel — centred, fully on screen, clean and minimal. */}
+      <div
+        className="cpm-sub-pop"
+        style=
+          {{position: 'fixed', left, top, width: panelW, height: panelH, zIndex: 80,
+padding: PANEL_PAD, borderRadius: 22, overflow: 'hidden',
+border: '1px solid rgba(255,255,255,0.5)',
+background: 'linear-gradient(135deg, rgba(249,244,236,0.55), rgba(246,240,231,0.44))',
+backdropFilter: 'blur(30px) saturate(118%) brightness(1.05)', WebkitBackdropFilter: 'blur(30px) saturate(118%) brightness(1.05)',
+boxShadow: '0 30px 80px -30px rgba(46,38,32,0.26), 0 0 60px rgba(196,168,130,0.12), inset 0 1px 0 rgba(255,255,255,0.6)',}}
         
       >
-        Drill-down preview
+        <OverlaySubtree id={active.id} orient={L.orient} scale={scale} />
+        <style>{`
+          @keyframes cpm-sub-backdrop { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes cpm-sub-pop  { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+          @keyframes cpm-sub-node { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+          @keyframes cpm-sub-draw { to { stroke-dashoffset: 0; } }
+          .cpm-sub-backdrop { animation: cpm-sub-backdrop 220ms ease-out both; }
+          .cpm-sub-pop  { animation: cpm-sub-pop 240ms cubic-bezier(0.22,1,0.36,1) both; }
+          .cpm-sub-node { animation: cpm-sub-node 360ms cubic-bezier(0.22,1,0.36,1) both; }
+          .cpm-sub-edge { stroke-dasharray: 1; stroke-dashoffset: 1; animation: cpm-sub-draw 460ms ease-out both; }
+          @media (prefers-reduced-motion: reduce) {
+            .cpm-sub-backdrop, .cpm-sub-pop, .cpm-sub-node { animation: none !important; }
+            .cpm-sub-edge { stroke-dashoffset: 0 !important; animation: none !important; }
+          }
+        `}</style>
       </div>
-      <OverlaySubtree id={active.id} depth={0} idxRef={{ n: 0 }} />
     </div>,
-    document.body,
+    document.body
   )
 }
 
-/** Static, non-interactive recursive subtree — mirrors DesktopChart node styling. */
-function OverlaySubtree({ id, depth, idxRef }: { id: string; depth: number; idxRef: { n: number } }) {
-  const node = NODES[id]
-  if (!node) return null
-  const order = idxRef.n++
+/** Static subtree, rendered like the main chart — cream nodes + clean per-parent
+ *  bus connectors (no overlapping strokes), with a draw-on + cascade load animation. */
+function OverlaySubtree({
+  id, orient = 'TB', scale = 1,
+}: { id: string; orient?: 'TB' | 'LR'; scale?: number; depth?: number; idxRef?: { n: number } }) {
+  const L = useMemo(() => buildSubtreeLayout(id, orient), [id, orient])
+  const ids = Array.from(L.pos.keys())
+  const parents = ids.filter(pid => (NODES[pid]?.children ?? []).some(c => L.pos.has(c)))
+  const idxByDepth = new Map<number, number>()
+
   return (
-    <div style={{ marginLeft: depth === 0 ? 0 : 14, position: 'relative' }}>
-      {depth > 0 && (
-        <span aria-hidden style={{ position: 'absolute', left: '-9px', top: 0, bottom: 0, width: '1px', background: 'rgba(92,64,51,0.14)' }} />
-      )}
-      <div
-        className="cpm-overlay-node"
-        style={{
-          animationDelay: `${order * 45}ms`,
-          marginTop: depth === 0 ? 0 : 8,
-          borderRadius: '4px',
-          border: '1px solid rgba(92,64,51,0.10)',
-          background: 'rgba(255,248,240,1)',
-          color: '#5C4033',
-          padding: '9px 12px',
-          fontFamily: "'Work Sans', sans-serif",
-          fontSize: '12.25px',   // matches DesktopChart labelFs
-          fontWeight: 500,
-          lineHeight: 1.18,
-          letterSpacing: '0.01em',
-          boxShadow: '0 4px 14px rgba(59,47,47,0.05)',
-        }}
-      >
-        {node.label}
-      </div>
-      {node.children.length > 0 && (
-        <div style={{ marginTop: 2 }}>
-          {node.children.map(cid => (
-            <OverlaySubtree key={cid} id={cid} depth={depth + 1} idxRef={idxRef} />
-          ))}
-        </div>
-      )}
+    <div style={{ position: 'relative', width: L.w, height: L.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+      <svg width={L.w} height={L.h} style= {{position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}>
+        {parents.map(pid => {
+          const pp = L.pos.get(pid)!
+          const kids = (NODES[pid]?.children ?? []).filter(c => L.pos.has(c))
+          let d = ''
+          if (L.orient === 'TB') {
+            const pB = pp.cy + L.heightOf(pid) / 2
+            const tops = kids.map(c => { const cp = L.pos.get(c)!; return { cx: cp.cx, top: cp.cy - L.heightOf(c) / 2 } })
+            const busY = pB + (Math.min(...tops.map(t => t.top)) - pB) / 2
+            const xs = [pp.cx, ...tops.map(t => t.cx)]
+            d += `M ${pp.cx} ${pB} L ${pp.cx} ${busY} `
+            d += `M ${Math.min(...xs)} ${busY} L ${Math.max(...xs)} ${busY} `
+            tops.forEach(t => { d += `M ${t.cx} ${busY} L ${t.cx} ${t.top} ` })
+          } else {
+            const pR = pp.cx + L.widthOf(pid) / 2
+            const lefts = kids.map(c => { const cp = L.pos.get(c)!; return { cy: cp.cy, left: cp.cx - L.widthOf(c) / 2 } })
+            const busX = pR + (Math.min(...lefts.map(l => l.left)) - pR) / 2
+            const ys = [pp.cy, ...lefts.map(l => l.cy)]
+            d += `M ${pR} ${pp.cy} L ${busX} ${pp.cy} `
+            d += `M ${busX} ${Math.min(...ys)} L ${busX} ${Math.max(...ys)} `
+            lefts.forEach(l => { d += `M ${busX} ${l.cy} L ${l.left} ${l.cy} ` })
+          }
+          const delay = (L.depth.get(pid) ?? 0) * 90 + 40
+          return (
+            <path key={pid} d={d} fill="none" stroke="rgba(92,64,51,0.3)" strokeWidth={1.5}
+              strokeLinecap="round" strokeLinejoin="round" pathLength={1}
+              className="cpm-sub-edge" style={{ animationDelay: `${delay}ms` }} />
+          )
+        })}
+      </svg>
+
+      {ids.map(nid => {
+        const p = L.pos.get(nid)!
+        const w = L.widthOf(nid), h = L.heightOf(nid)
+        const dd = L.depth.get(nid) ?? 0
+        const k = idxByDepth.get(dd) ?? 0
+        idxByDepth.set(dd, k + 1)
+        const delay = dd * 90 + 90 + k * 24
+        return (
+          <div key={nid} className="cpm-sub-node"
+            style={{ position: 'absolute', left: p.cx - w / 2, top: p.cy - h / 2, width: w, animationDelay: `${delay}ms` }}>
+            <div
+              className="flex items-center justify-center rounded-[4px] border px-4 py-3 text-center font-medium tracking-[0.01em] border-[rgba(92,64,51,0.08)] bg-[rgba(255,248,240,1)] text-[#5C4033] shadow-[0_2px_8px_rgba(59,47,47,0.04)]"
+              style={{ width: `${w}px`, minHeight: `${h}px`, fontSize: `${L.fs}px`, lineHeight: '1.3', whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              {NODES[nid]?.label}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
-
 /* ═══════════════════════════════════════════════════════════
    Mobile/touch variant — tap an inactive node to open the same
    static glass subtree panel. Binds globally via data-mnode-id,
@@ -1435,6 +1577,8 @@ function MobileDrilldownOverlay() {
   const vh = window.innerHeight
   const r = active.rect
   const PANEL_W = Math.min(320, vw - MARGIN * 2)
+  const layout = buildSubtreeLayout(active.id)
+  const scale = Math.min(1, Math.max(0.5, (PANEL_W - 28) / layout.w))
   const left = Math.min(Math.max(MARGIN, r.left), vw - MARGIN - PANEL_W)
   const placeAbove = (r.bottom + 180 > vh) && (r.top > vh - r.bottom)
   const top = placeAbove ? Math.max(MARGIN, r.top - MARGIN - 220) : r.bottom + MARGIN
@@ -1460,7 +1604,7 @@ function MobileDrilldownOverlay() {
       >
         Drill-down preview
       </div>
-      <OverlaySubtree id={active.id} depth={0} idxRef= {{ n: 0 }} />
+      <OverlaySubtree id={active.id} scale={scale} />
     </div>,
     document.body,
   )
