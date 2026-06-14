@@ -81,12 +81,22 @@ payload.slug =
   } else if (rawCase.recommendationsTable && typeof rawCase.recommendationsTable === 'object') {
     payload.recommendationsTable = rawCase.recommendationsTable
   }
-  if (rawCase.recommendationsMatrix === null) {
-    payload.recommendationsMatrix = admin.firestore.FieldValue.delete()
-  } else if (rawCase.recommendationsMatrix && typeof rawCase.recommendationsMatrix === 'object') {
-    payload.recommendationsMatrix = rawCase.recommendationsMatrix
-  }
-  return payload
+if (rawCase.recommendationsMatrix === null) {
+  payload.recommendationsMatrix = admin.firestore.FieldValue.delete()
+} else if (rawCase.recommendationsMatrix && typeof rawCase.recommendationsMatrix === 'object') {
+  payload.recommendationsMatrix = rawCase.recommendationsMatrix
+}
+if (rawCase.abbreviations === null) {
+  payload.abbreviations = admin.firestore.FieldValue.delete()
+} else if (Array.isArray(rawCase.abbreviations)) {
+  payload.abbreviations = rawCase.abbreviations
+}
+if (rawCase.abbreviations === null) {
+  payload.abbreviations = admin.firestore.FieldValue.delete()
+} else if (Array.isArray(rawCase.abbreviations)) {
+  payload.abbreviations = rawCase.abbreviations
+}
+return payload
 }
 
 async function main() {

@@ -31,18 +31,19 @@ class CaseErrorBoundary extends Component<{ children: ReactNode }, { crashed: bo
 }
 
 type CaseDocument = {
-	title: string
-	industry?: string
-	case_type?: string
-	caseType?: string
-	company?: string
-	round?: string
-	difficulty?: string
-	prompt?: string
-	framework?: string
-	frameworkTree?: import('@/components/case/CasePreviewMaster').FrameworkTree
-	visualisations?: import('@/components/case/CasePreviewMaster').Visualisation[]
-	recommendationsTable?: import('@/components/case/CasePreviewMaster').RecommendationsTable
+  title: string
+  industry?: string
+  case_type?: string
+  caseType?: string
+  company?: string
+  round?: string
+  difficulty?: string
+  prompt?: string
+  framework?: string
+  frameworkTree?: import('@/components/case/CasePreviewMaster').FrameworkTree
+  visualisations?: import('@/components/case/CasePreviewMaster').Visualisation[]
+  recommendationsTable?: import('@/components/case/CasePreviewMaster').RecommendationsTable
+  abbreviations?: string[]
 }
 
 type ScoreState = {
@@ -107,8 +108,9 @@ function RevealBlock({ children, delay = 'delay-0' }: { children: ReactNode; del
 type ParsedFramework = {
 	transcriptLines: string[]
 	summaryTitle: string | null
-	summaryRows: Array<{ label: string; value: string }>
-	recommendations: string[]
+	  summaryRows: Array<{ label: string; value: string }>
+  recommendations: string[]
+  abbreviations: string[]
 }
 
 type TranscriptSpeaker = 'candidate' | 'interviewer' | 'neutral'
@@ -144,13 +146,12 @@ function parseFramework(rawFramework: string): ParsedFramework {
 		.filter((line) => line.length > 0)
 
 	if (lines.length === 0) {
-		return { transcriptLines: [], summaryTitle: null, summaryRows: [], recommendations: [] }
-	}
+		return { transcriptLines: [], summaryTitle: null, summaryRows: [], recommendations: [], abbreviations: [] }	}
 
 	const markerIndex = lines.findIndex((line) => /framework(?:\s*&\s*recommendations)?/i.test(line))
 
 	if (markerIndex === -1) {
-		return { transcriptLines: lines, summaryTitle: null, summaryRows: [], recommendations: [] }
+		return { transcriptLines: lines, summaryTitle: null, summaryRows: [], recommendations: [], abbreviations: [] }
 	}
 
 	const transcriptLines = lines.slice(0, markerIndex)
@@ -158,20 +159,30 @@ function parseFramework(rawFramework: string): ParsedFramework {
 	let summaryTitle: string | null = null
 	const summaryRows: Array<{ label: string; value: string }> = []
 	let recommendations: string[] = []
-
+let abbreviations: string[] = []
 	if (summaryLines.length > 0 && !summaryLines[0].includes(':')) {
 		summaryTitle = summaryLines[0]
 		summaryLines.shift()
 	}
 
 	let inRecommendationBlock = false
-	for (const line of summaryLines) {
-		const normalizedLine = normalizeInline(line)
-		if (!normalizedLine) continue
-		if (/^recommendations?\s*:?$/i.test(normalizedLine)) {
-			inRecommendationBlock = true
-			continue
-		}
+let inAbbreviationBlock = false
+for (const line of summaryLines) {
+  const normalizedLine = normalizeInline(line)
+  if (!normalizedLine) continue
+  if (/^abbreviations?\s*:?$/i.test(normalizedLine)) {
+    inAbbreviationBlock = true
+    inRecommendationBlock = false
+    continue
+  }
+  if (inAbbreviationBlock) {
+    abbreviations.push(normalizedLine)
+    continue
+  }
+  if (/^recommendations?\s*:?$/i.test(normalizedLine)) {
+    inRecommendationBlock = true
+    continue
+  }
 
 		const labelMatch = normalizedLine.match(/^([A-Za-z][A-Za-z\s&]+):\s*(.*)$/)
 		if (labelMatch) {
@@ -200,8 +211,7 @@ function parseFramework(rawFramework: string): ParsedFramework {
 		summaryRows.push({ label: 'Key Insight', value: normalizedLine })
 	}
 
-	return { transcriptLines, summaryTitle, summaryRows, recommendations }
-}
+	return { transcriptLines, summaryTitle, summaryRows, recommendations, abbreviations }}
 
 function formatTranscriptEquation(value: string) {
 	return normalizeInline(value).replace(/\s*\*\s*/g, ' × ')
@@ -544,6 +554,22 @@ function DefaultFramework({ framework }: { framework: ParsedFramework }) {
 						</ul>
 					</div>
 				)}
+
+				{framework.abbreviations.length > 0 && (
+					<div className="mt-6 rounded-2xl border border-[#d5ccbf] bg-[#efe7dc] p-6">
+						<h4 className="mb-3 text-[12px] font-black uppercase tracking-[0.1em] text-[#4d3423]">
+							Abbreviations
+						</h4>
+						<ul className="space-y-3 text-[15px] leading-relaxed text-[#2e2722]">
+							{framework.abbreviations.map((item, index) => (
+								<li key={`${item}-${index + 1}`} className="flex gap-3">
+									<span className="mt-0.5 font-bold text-[#4d3423]">•</span>
+									<span>{item}</span>
+								</li>
+							))}
+						</ul>
+					</div>
+				)}
 			</section>
 		</RevealBlock>
 	)
@@ -839,6 +865,7 @@ if (previewMode && !forcePreview) {
 				frameworkTree={caseData.frameworkTree}
 				visualisations={caseData.visualisations}
 				recommendationsTable={caseData.recommendationsTable}
+				abbreviations={caseData.abbreviations}
 				notes={notes}
 				setNotes={setNotes}
 				scores={scores}

@@ -87,7 +87,8 @@ export type CasePreviewMasterProps = {
   ForumSection?: ReactNode
   frameworkTree?: FrameworkTree
   visualisations?: Visualisation[]
-  recommendationsTable?: RecommendationsTable
+    recommendationsTable?: RecommendationsTable
+  abbreviations?: string[]
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2878,7 +2879,7 @@ export default function CasePreviewMaster({
   caseData, previewMode, transcriptDisplayLines, parsedFramework,
   promptLines, caseTypeLabel, industryLabel, difficultyLabel,
   companyLabel, roundLabel, ForumSection, frameworkTree,
-  visualisations, recommendationsTable,
+  visualisations, recommendationsTable, abbreviations,
 }: CasePreviewMasterProps) {
   // ─── Sync module-level tree data from props ──────────
   const tree = frameworkTree ?? BANKING_ON_YOU_TREE
@@ -3644,6 +3645,29 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                           </>)}
                         </div>
                       )}
+
+                                             {abbreviations && abbreviations.length > 0 && (
+                          <div className="pt-16">
+                            <Reveal>
+                              <div className="mb-4 flex items-center gap-4">
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Abbreviations</span>
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                              </div>
+                            </Reveal>
+                            <ul className="space-y-2">
+                              {(abbreviations ?? []).map((item, i) => (
+                                <Reveal key={`rec-${i}`}>
+                                  <li className="flex items-start gap-2">
+                                    <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                  </li>
+                                </Reveal>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
                       {recommendationsTable && (
                         <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
                       )}
@@ -3722,6 +3746,29 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                   </>)}
                 </div>
               )}
+
+                       {abbreviations && abbreviations.length > 0 && (
+                          <div className="pt-16">
+                            <Reveal>
+                              <div className="mb-4 flex items-center gap-4">
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Abbreviations</span>
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                              </div>
+                            </Reveal>
+                            <ul className="space-y-2">
+                              {(abbreviations ?? []).map((item, i) => (
+                                <Reveal key={`rec-${i}`}>
+                                  <li className="flex items-start gap-2">
+                                    <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                  </li>
+                                </Reveal>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
               {recommendationsTable && (
                 <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
               )}
@@ -3755,7 +3802,7 @@ export function CaseInterviewerMaster({
   caseData, transcriptDisplayLines, parsedFramework,
   promptLines, caseTypeLabel, industryLabel, difficultyLabel,
   companyLabel, roundLabel, frameworkTree,
-  visualisations, recommendationsTable,
+  visualisations, recommendationsTable, abbreviations,
   notes, setNotes, scores, setScores, onEndCase,
 }: CaseInterviewerMasterProps) {
   // ─── Sync tree data (same as preview) ────────────────
@@ -4172,6 +4219,74 @@ export function CaseInterviewerMaster({
                             </>)}
                           </div>
                         )}
+
+
+                        {abbreviations && abbreviations.length > 0 && (
+                          <div className="pt-16">
+                            <Reveal>
+                              <div className="mb-4 flex items-center gap-4">
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Abbreviations</span>
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                              </div>
+                            </Reveal>
+                            <ul className="space-y-2">
+                              {(abbreviations ?? []).map((item, i) => (
+                                <Reveal key={`rec-${i}`}>
+                                  <li className="flex items-start gap-2">
+                                    <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                  </li>
+                                </Reveal>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                                               {abbreviations && abbreviations.length > 0 && (
+                          <div className="pt-16">
+                            <Reveal>
+                              <div className="mb-4 flex items-center gap-4">
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Abbreviations</span>
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                              </div>
+                            </Reveal>
+                            <ul className="space-y-2">
+                              {(abbreviations ?? []).map((item, i) => (
+                                <Reveal key={`rec-${i}`}>
+                                  <li className="flex items-start gap-2">
+                                    <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                  </li>
+                                </Reveal>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                                               {abbreviations && abbreviations.length > 0 && (
+                          <div className="pt-16">
+                            <Reveal>
+                              <div className="mb-4 flex items-center gap-4">
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Abbreviations</span>
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                              </div>
+                            </Reveal>
+                            <ul className="space-y-2">
+                              {(abbreviations ?? []).map((item, i) => (
+                                <Reveal key={`rec-${i}`}>
+                                  <li className="flex items-start gap-2">
+                                    <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                  </li>
+                                </Reveal>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
                         {recommendationsTable && (
                           <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
                         )}
@@ -4246,6 +4361,28 @@ export function CaseInterviewerMaster({
                     </>)}
                   </div>
                 )}
+                       {abbreviations && abbreviations.length > 0 && (
+                          <div className="pt-16">
+                            <Reveal>
+                              <div className="mb-4 flex items-center gap-4">
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Abbreviations</span>
+                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+                              </div>
+                            </Reveal>
+                            <ul className="space-y-2">
+                              {(abbreviations ?? []).map((item, i) => (
+                                <Reveal key={`rec-${i}`}>
+                                  <li className="flex items-start gap-2">
+                                    <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                  </li>
+                                </Reveal>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
                 {recommendationsTable && (
                   <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
                 )}
