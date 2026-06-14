@@ -28,6 +28,7 @@ type CasePreviewProps = {
   frameworkTree?: FrameworkTree
   visualisations?: Visualisation[]
   recommendationsTable?: RecommendationsTable
+  abbreviations?: string[]
   ForumSection?: ReactNode
 }
 
