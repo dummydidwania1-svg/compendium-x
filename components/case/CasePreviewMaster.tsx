@@ -49,7 +49,7 @@ export type VisFormula = {
   rhs?: string
   derivations?: { lhs: string; rhs: string }[]
 }
-export type VisTable   = { type: 'table';   title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; noTitle?: boolean; summaryRows?: number[]; columnWidths?: string[]; insight?: string }
+export type VisTable = { type: 'table'; title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; noTitle?: boolean; summaryRows?: number[]; columnWidths?: string[]; insight?: string; header?: string }
 export type VisDecisionNode = {
   id: string
   label: string
@@ -2192,6 +2192,18 @@ function VisDivider({ label }: { label: string }) {
   )
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-4 flex items-center gap-4">
+      <div className="h-px flex-1" style= {{background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))'}} />
+      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">
+        {children}
+      </span>
+      <div className="h-px flex-1" style= {{background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)'}} />
+    </div>
+  )
+}
+
 /* ═══════════════════════════════════════════════════════════
    Visualization: Formula block (drilldown, between chart and recs)
    ═══════════════════════════════════════════════════════════ */
@@ -2442,10 +2454,16 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
   const cols: string[] = (vis as { columns?: string[]; headers?: string[] }).columns ?? (vis as { headers?: string[] }).headers ?? []
   const summarySet = new Set(vis.summaryRows ?? [])
   // Only the first summaryRow gets the separator line above it; subsequent ones just bold
-  const separatorRow = vis.summaryRows?.length ? Math.min(...vis.summaryRows) : -1
   const lastCol = cols.length - 1
+  const headerStyle: React.CSSProperties = {
+  fontFamily: "'Work Sans', sans-serif",
+  fontSize: '10px', fontWeight: 600,
+  textTransform: 'uppercase', letterSpacing: '0.2em',
+  color: '#f0f5ee', background: '#3D5A35',
+}
   return (
     <div className="pt-10">
+{vis.header && <SectionLabel>{vis.header}</SectionLabel>}
       {!vis.noTitle && <VisDivider label={vis.title} />}
       <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
         <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
@@ -2459,10 +2477,10 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
               {cols.map((col, i) => (
                 <th key={i} className="px-4 py-2"
                   style={{
+textAlign: i  === 0 ? 'left' : 'center',   // th
                     fontFamily: "'Work Sans', sans-serif",
                     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
                     color: '#f0f5ee', background: '#3D5A35', whiteSpace: 'nowrap',
-                    textAlign: i === lastCol ? 'right' : 'left',
                     borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined,
                   }}>
                   {col}
@@ -2470,34 +2488,38 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
               ))}
             </tr>
           </thead>
-          <tbody>
-            {rows.map((row, ri) => {
-              const isSummary = summarySet.has(ri)
-              const hasSeparator = ri === separatorRow
-              return (
-                <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
-                  {row.map((cell, ci) => (
-                    <td key={ci} className="px-4 py-2 align-middle"
-                      style={{
-                        fontFamily: "'Newsreader', serif",
-                        fontSize: '14px',
-                        fontWeight: isSummary && (ci === 0 || ci === lastCol) ? 600 : 400,
-                        color: '#3B2F2F',
-                        lineHeight: 1.5,
-                        whiteSpace: ci === 0 ? 'normal' : 'nowrap',
-                        textAlign: ci === lastCol ? 'right' : 'left',
-                        borderTop: hasSeparator
-                          ? '2px solid rgba(61,90,53,0.25)'
-                          : '1px solid rgba(61,90,53,0.08)',
-                        borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
-                      }}>
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              )
-            })}
-          </tbody>
+<tbody>
+  {rows.map((row, ri) => {
+    const isSummary = summarySet.has(ri)
+
+    const trStyle: React.CSSProperties = {
+      background: isSummary
+        ? 'linear-gradient(90deg, rgba(61,90,53,0.06) 0%, rgba(61,90,53,0.025) 100%)'
+        : 'transparent',
+      transition: 'background 0.25s cubic-bezier(0.22,1,0.36,1)',
+    }
+
+    return (
+      <tr key={ri} className={isSummary ? 'cpm-sum-row' : undefined} style={trStyle}>
+        {row.map((cell, ci) => {
+          const tdStyle: React.CSSProperties = {
+            padding: '11px 16px',
+            textAlign: ci === 0 ? 'left' : 'center',                       // step 3: center the 3 data cols
+            fontWeight: isSummary ? (ci === 0 ? 600 : 700) : (ci === 0 ? 500 : 400), // step 4: bold all summary cells
+            color: '#3B2F2F',
+            fontFamily: "'Newsreader', serif",
+            whiteSpace: 'nowrap',
+          }
+          return (
+            <td key={ci} style={tdStyle}>
+              {cell}
+            </td>
+          )
+        })}
+      </tr>
+    )
+  })}
+</tbody>
         </table>
       </div>
       {vis.insight && (
@@ -2825,23 +2847,28 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
       <VisDivider label="Recommendations" />
       <div className="overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
         <table className="border-collapse" style={{ tableLayout: 'auto', width: 'fit-content', maxWidth: '100%' }}>
-          <thead>
-            <tr>
-              {/* Top-left corner header cell in matrix mode — shrinks to content */}
-              {!hideDimension && (
-                <th className="px-4 py-2.5 text-left"
-                  style={{ ...headerStyle, whiteSpace: 'nowrap', width: '1%', borderRight: '1px solid rgba(240,245,238,0.15)' }}>
-                  {matrixMode ? (d.dimensionHeader ?? '') : ''}
-                </th>
-              )}
-              {cols.map((col, i) => (
-                <th key={i} className="px-4 py-2.5 text-left"
-                  style={{ ...headerStyle, whiteSpace: 'nowrap', borderLeft: (hideDimension && i === 0) ? undefined : '1px solid rgba(240,245,238,0.15)' }}>
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
+<thead>
+  <tr>
+    {cols.map((col, ci) => {
+      const thStyle: React.CSSProperties = {
+        padding: '11px 16px',
+        textAlign: ci === 0 ? 'left' : 'center',
+        fontFamily: "'Work Sans', sans-serif",
+        fontSize: '10px',
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.18em',
+        color: '#5C4033',
+        opacity: 0.55,
+      }
+      return (
+        <th key={ci} style={thStyle}>
+          {col}
+        </th>
+      )
+    })}
+  </tr>
+</thead>
           <tbody>
             {d.rows.map((row, ri) => (
               <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
@@ -3291,6 +3318,18 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   opacity: 0.35 !important;
   transition: width 0.22s cubic-bezier(0.22, 1, 0.36, 1) 40ms,
               opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1) 40ms !important;
+}
+
+.cpm-sum-row:hover {
+  background: linear-gradient(90deg, rgba(61,90,53,0.11) 0%, rgba(61,90,53,0.05) 100%) !important;
+}
+
+.cpm-sum-row td:first-child {
+  box-shadow: inset 2px 0 0 rgba(61,90,53,0); /* hidden by default */
+  transition: box-shadow 0.25s cubic-bezier(0.22,1,0.36,1);
+}
+.cpm-sum-row:hover td:first-child {
+  box-shadow: inset 2px 0 0 rgba(61,90,53,0.4);
 }
 
 /* Two-away sibling: even lighter ripple */
@@ -3780,6 +3819,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
   </div>
 </section>
           </>)}
+          
 
 {/* ── Forum ──────────────────────────── */}
 {inForum && ForumSection && (
@@ -4396,7 +4436,7 @@ export function CaseInterviewerMaster({
                             </ul>
                           </div>
                         )}
-                        
+
               </div>
             </section>
           </main>

@@ -4097,6 +4097,7 @@
         "id": "variable-cost-per-km",
         "type": "table",
         "title": "Variable Cost per km: Calculated vs. Contractor",
+        "header": "Cost Analysis",
         "rows": [
           [
             "Fuel",
@@ -5734,7 +5735,6 @@
     },
     "defaultExpanded": [
       "enter-new-market",
-      "financial-feasibility",
       "operational-feasibility",
       "risks",
       "market-size",
@@ -5757,15 +5757,14 @@
         "title": "Keep In Mind",
         "items": [
           "Ask for average stay to calculate market size",
-          "Check operational constraints before final recommendation",
+          "Check operational constraints before final suggestion",
           "Use long-term growth as tiebreaker"
         ]
       },
       {
         "title": "Brownie Points",
         "items": [
-          "Keeping in mind, long-term potential of Australia",
-          "Telling the interviewer the exact information required"
+          "Keeping in mind, long-term potential of Australia"
         ]
       }
     ]
@@ -5775,6 +5774,7 @@
         "id": "financial-feasibility",
         "type": "table",
         "title": "Financial Feasibility: Brazil vs Australia vs South Africa",
+          "header": "Financial Feasibility",
 "rows": [
   ["Number of tourists/year (A)", "2 million", "4 million", "5 million"],
   ["Average stay in nights (B)", "3", "5", "4"],
@@ -5802,10 +5802,37 @@
           9
         ],
         "columnWidths": [
-          "auto",
-          "auto",
-          "auto",
-          "auto"
+          "40%",
+          "20%",
+          "20%",
+          "20%"
+        ]
+      },
+            {
+        "id": "operational-constraints",
+        "type": "table",
+        "title": "Profit Adjustments Post-Operational Constraints",
+       "insight": "We have decided to go with Australia, keeping in mind the long-term growth considerations",
+"rows": [
+  ["Proposed profit", "$260 million", "$700 million", "$400 million"],
+  ["Adjustment", "-", "($350 million)", "($50 million)"],
+  ["Revised profit", "$260 million", "$350 million", "$350 million"]
+],
+        "noTitle": true,
+        "columns": [
+          "Particulars",
+          "Brazil",
+          "Australia",
+          "South Africa"
+        ],
+        "summaryRows": [
+          2
+        ],
+        "columnWidths": [
+          "40%",
+          "20%",
+          "20%",
+          "20%"
         ]
       },
             {
@@ -5858,7 +5885,7 @@
         ]
       }
     ],
-  "framework": "Candidate: Oh wow, that's interesting! I'd like to get a better understanding of the problem. What kind of hotels does our client own? How has he fared in India? How many hotels does he own and where are they located in India?\nInterviewer: He owns premium hotels, similar to Taj. He has 50% share in the Indian market and believes the Indian hospitality industry has slow growth. He has 30 hotels in India, located in Tier 1 and 2 cities.\nCandidate: Okay. What is his primary objective of expanding? Is it profits?\nInterviewer: Yes, he wants to maximise profits.\nCandidate: Great. Do we have any countries in mind among which he wants to choose or is it open to us?\nInterviewer: Good question. We have 3 countries among which he wants to choose - Brazil, Australia and South Africa.\nCandidate: Lastly, are we planning on setting up premium hotels in these countries or are we open to other types of hotels too?\nInterviewer: Your client wants to be recognized in the premium segment only.\nCandidate: Okay brilliant. I would like to follow a 2 step approach. First, I'd like to analyse the profits he can earn in each of these three countries. Second, I'd like to see if operations can be easily set up in these countries. Based on these two steps, I shall make my recommendations.\nInterviewer: Sure. Let us begin.\nCandidate: To analyse the financial aspect of things, I would require the following information since I am unfamiliar with the demographics of the 3 countries.\n1. Market size of the premium hospitality industry\n2. Market share that we can expect\n3. Market growth rate\n4. Average revenue per night per customer\n5. Average cost per night per customer\n6. Fixed investment required to acquire above market share\nInterviewer: Sure! Have a look at the table.\n[VIS:1]\nCandidate: _(analyses for a minute)_ Interesting. I can calculate market size and our expected market share from this information. I shall multiply this into profit per night per customer to get our profits and then subtract the fixed costs.\nInterviewer: Are you sure you can calculate market size?\nCandidate: Oh wait. To get the number of nights occupied per year by tourists, I would also require the average number of nights occupied per premium tourist per stay.\nInterviewer: Exactly. The average stay is 3, 5 and 4 nights for Brazil, Australia and South Africa respectively.\nCandidate: Here are my calculations -\n_(Refer to the next page)_\nClearly, Australia seems like the best option according to financial attractiveness. Let us now move on to the operational feasibility test. There are 6 steps according to me in the setting up of operations.\nValue Chain = Obtaining necessary permission and licenses – Research to analyse hotspots – Acquiring the requisite land – Setting up our hotels – Hiring the requisite staff – Marketing our hotel chain – Starting operations.\nI would like to understand the ease with which each of these can be done in the 3 locations.\nInterviewer: Great. There seems to be no issue in any of the steps in Brazil. In South Africa, there are certain regulatory issues regarding licenses and in Australia, an issue with purchasing of the land.\nCandidate: What are the particular issues in each of these countries?\nInterviewer: Australia has recently come up with regulations that limit the amount of land foreigners can purchase every ten years. Thus, we will only be able to acquire 50% of our initial estimates and the balance after 10 years. In South Africa, there are certain additional licenses to be obtained for premium Hotel Chains that would cost us an additional investment of $50 million not included in our previous estimates.\nCandidate: That's interesting. In light of the new information, our revised profits are as follows:\n1. Australia: 50% of $700 Million = $350 Million\n2. South Africa: $400 Million - $50 million = $350 Million\n3. Brazil: $260 million.\nInterviewer: What are your final recommendations?\nCandidate: Since profit is our primary motive, the decision comes down to Australia and South Africa. We can consider various qualitative factors before finalising, in the absence of it, my suggestion would be Australia.\nThere is massive potential for increasing profits in the long term since we can acquire additional land in 10 years whereas in South Africa, the potential is maximised.\n\nMr. Worldwide Framework & Recommendations\nA HOTEL CHAIN ENTERING NEW MARKETS\nClarifying Questions: Primary Objective Any particular countries being targeted? Type of hotel chain\nBrownie Points: Keeping in mind, long-term potential of Australia Telling the interviewer the exact information required\nKeep In Mind: You might be required to present your working. So, ensure that you maintain it in a tabular format and that it is neat.\nRECOMMENDATIONS: We have decided to go with Australia, keeping in mind the long-term growth considerations"
+  "framework": "Candidate: Oh wow, that's interesting! I'd like to get a better understanding of the problem. What kind of hotels does our client own? How has he fared in India? How many hotels does he own and where are they located in India?\nInterviewer: He owns premium hotels, similar to Taj. He has 50% share in the Indian market and believes the Indian hospitality industry has slow growth. He has 30 hotels in India, located in Tier 1 and 2 cities.\nCandidate: Okay. What is his primary objective of expanding? Is it profits?\nInterviewer: Yes, he wants to maximise profits.\nCandidate: Great. Do we have any countries in mind among which he wants to choose or is it open to us?\nInterviewer: Good question. We have 3 countries among which he wants to choose - Brazil, Australia and South Africa.\nCandidate: Lastly, are we planning on setting up premium hotels in these countries or are we open to other types of hotels too?\nInterviewer: Your client wants to be recognized in the premium segment only.\nCandidate: Okay brilliant. I would like to follow a 2 step approach. First, I'd like to analyse the profits he can earn in each of these three countries. Second, I'd like to see if operations can be easily set up in these countries. Based on these two steps, I shall make my recommendations.\nInterviewer: Sure. Let us begin.\nCandidate: To analyse the financial aspect of things, I would require the following information since I am unfamiliar with the demographics of the 3 countries.\n1. Market size of the premium hospitality industry\n2. Market share that we can expect\n3. Market growth rate\n4. Average revenue per night per customer\n5. Average cost per night per customer\n6. Fixed investment required to acquire above market share\nInterviewer: Sure! Have a look at the table.\n[VIS:2]\nCandidate: _(analyses for a minute)_ Interesting. I can calculate market size and our expected market share from this information. I shall multiply this into profit per night per customer to get our profits and then subtract the fixed costs.\nInterviewer: Are you sure you can calculate market size?\nCandidate: Oh wait. To get the number of nights occupied per year by tourists, I would also require the average number of nights occupied per premium tourist per stay.\nInterviewer: Exactly. The average stay is 3, 5 and 4 nights for Brazil, Australia and South Africa respectively.\nCandidate: Here are my calculations -\n_(Refer to the next page)_\nClearly, Australia seems like the best option according to financial attractiveness. Let us now move on to the operational feasibility test. There are 6 steps according to me in the setting up of operations.\nValue Chain = Obtaining necessary permission and licenses – Research to analyse hotspots – Acquiring the requisite land – Setting up our hotels – Hiring the requisite staff – Marketing our hotel chain – Starting operations.\nI would like to understand the ease with which each of these can be done in the 3 locations.\nInterviewer: Great. There seems to be no issue in any of the steps in Brazil. In South Africa, there are certain regulatory issues regarding licenses and in Australia, an issue with purchasing of the land.\nCandidate: What are the particular issues in each of these countries?\nInterviewer: Australia has recently come up with regulations that limit the amount of land foreigners can purchase every ten years. Thus, we will only be able to acquire 50% of our initial estimates and the balance after 10 years. In South Africa, there are certain additional licenses to be obtained for premium Hotel Chains that would cost us an additional investment of $50 million not included in our previous estimates.\nCandidate: That's interesting. In light of the new information, our revised profits are as follows:\n1. Australia: 50% of $700 Million = $350 Million\n2. South Africa: $400 Million - $50 million = $350 Million\n3. Brazil: $260 million.\nInterviewer: What are your final recommendations?\nCandidate: Since profit is our primary motive, the decision comes down to Australia and South Africa. We can consider various qualitative factors before finalising, in the absence of it, my suggestion would be Australia.\nThere is massive potential for increasing profits in the long term since we can acquire additional land in 10 years whereas in South Africa, the potential is maximised.\n\nMr. Worldwide Framework & Recommendations\nA HOTEL CHAIN ENTERING NEW MARKETS\nClarifying Questions: Primary Objective Any particular countries being targeted? Type of hotel chain\nBrownie Points: Keeping in mind, long-term potential of Australia Telling the interviewer the exact information required\nKeep In Mind: You might be required to present your working. So, ensure that you maintain it in a tabular format and that it is neat."
 },
 {
     "id": 24,
