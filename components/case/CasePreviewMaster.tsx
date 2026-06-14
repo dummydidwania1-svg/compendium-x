@@ -21,10 +21,10 @@ type ParsedFramework = {
 
 type WalkthroughBlock =
   | { key: string; kind: 'heading'; text: string }
-  | { key: string; kind: 'equation'; text: string; speaker: TranscriptSpeaker }
-  | { key: string; kind: 'indent'; text: string; speaker: TranscriptSpeaker }
-  | { key: string; kind: 'bullet'; marker: string; text: string; speaker: TranscriptSpeaker }
-  | { key: string; kind: 'line'; text: string; speaker: TranscriptSpeaker }
+  | { key: string; kind: 'equation'; text: string; speaker: TranscriptSpeaker; level?: number }
+  | { key: string; kind: 'indent'; text: string; speaker: TranscriptSpeaker; level?: number }
+  | { key: string; kind: 'bullet'; marker: string; text: string; speaker: TranscriptSpeaker; level?: number }
+  | { key: string; kind: 'line'; text: string; speaker: TranscriptSpeaker; level?: number }
   | { key: string; kind: 'vis-inline'; visIndex: number }
 
 export type FrameworkNode = {
@@ -181,14 +181,29 @@ function buildBlocks(lines: TranscriptDisplayLine[]): WalkthroughBlock[] {
   return lines.flatMap((e, i): WalkthroughBlock[] => {
     const n = e.text.trim()
     if (!n) return []
+
+    // Indent level from leading whitespace (2 spaces = 1 level; a tab = 2 spaces)
+    const lead = (e.text.match(/^[ \t]*/)?.[0] ?? '').replace(/\t/g, '  ')
+    const level = Math.min(6, Math.floor(lead.length / 2))
+
     const visMatch = n.match(/^\[VIS:(\d+)\]$/)
     if (visMatch) return [{ key: `vis-${i}`, kind: 'vis-inline', visIndex: parseInt(visMatch[1], 10) }]
     if (isSectionHeading(n)) return [{ key: `h-${i}`, kind: 'heading', text: n }]
-    if (/^=\s/.test(n)) return [{ key: `ind-${i}`, kind: 'indent', text: fmtEquation(n), speaker: e.speaker }]
-    if (isEquation(n)) return [{ key: `eq-${i}`, kind: 'equation', text: fmtEquation(n), speaker: e.speaker }]
-    const bm = n.match(/^(\d+[\).]|[-•])\s*(.+)$/)
-    if (bm) return [{ key: `b-${i}`, kind: 'bullet', marker: bm[1], text: bm[2], speaker: e.speaker }]
-    return [{ key: `l-${i}`, kind: 'line', text: n, speaker: e.speaker }]
+
+    // Explicit centering overrides (authored in JSON):
+    //   "^ ..."  -> force CENTERED (equation style), even if not an equation
+    //   "~ ..."  -> force normal LEFT line, even if it looks like an equation
+    if (/^\^\s/.test(n)) return [{ key: `eq-${i}`, kind: 'equation', text: fmtEquation(n.replace(/^\^\s*/, '')), speaker: e.speaker, level }]
+    if (/^~\s/.test(n)) return [{ key: `l-${i}`, kind: 'line', text: n.replace(/^~\s*/, ''), speaker: e.speaker, level }]
+
+    if (/^=\s/.test(n)) return [{ key: `ind-${i}`, kind: 'indent', text: fmtEquation(n), speaker: e.speaker, level }]
+    if (isEquation(n)) return [{ key: `eq-${i}`, kind: 'equation', text: fmtEquation(n), speaker: e.speaker, level }]
+const bm = n.match(/^(\d+[\).]|[a-zA-Z]\)|[-•])\s*(.+)$/)
+if (bm) {
+  const letterIndent = /^[a-zA-Z]\)/.test(bm[1]) ? 1 : 0
+  return [{ key: `b-${i}`, kind: 'bullet', marker: bm[1], text: bm[2], speaker: e.speaker, level: level + letterIndent }]
+}
+    return [{ key: `l-${i}`, kind: 'line', text: n, speaker: e.speaker, level }]
   })
 }
 
@@ -594,11 +609,17 @@ function renderInline(text: string) {
 
 function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
   if (block.kind === 'vis-inline') return null
+
+  const lvl = ('level' in block && block.level) ? block.level : 0
+  const indentStyle = lvl ? { marginLeft: `${lvl * 24}px` } : undefined
+  const bulletStyle = { marginLeft: `${20 + lvl * 24}px` }
+  const dividerStyle = { background: 'linear-gradient(90deg, rgba(61,90,53,0.2), transparent)' }
+
   if (block.kind === 'heading') {
     return (
       <div className="pt-3 pb-0.5">
         <h4 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3D5A35]/50">{renderInline(block.text)}</h4>
-        <div className="mt-1.5 h-[1px] w-14" style={{ background: 'linear-gradient(90deg, rgba(61,90,53,0.2), transparent)' }} />
+        <div className="mt-1.5 h-[1px] w-14" style={dividerStyle} />
       </div>
     )
   }
@@ -611,21 +632,23 @@ function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
   }
   if (block.kind === 'indent') {
     return (
-      <p className={`pl-10 text-[16px] leading-[1.5] tracking-[0.01em] ${walkthroughSpeakerTone(block.speaker)}`}>
+      <p className={`pl-10 text-[16px] leading-[1.5] tracking-[0.01em] ${walkthroughSpeakerTone(block.speaker)}`} style={indentStyle}>
         {renderInline(block.text)}
       </p>
     )
   }
   if (block.kind === 'bullet') {
     return (
-      <div className={`ml-5 flex gap-3 ${walkthroughSpeakerTone(block.speaker)}`}>
+      <div className={`flex gap-3 ${walkthroughSpeakerTone(block.speaker)}`} style={bulletStyle}>
         <span className="min-w-[1.2rem] text-[16px] leading-[1.5]">{block.marker}</span>
-        <p className="text-[16px] leading-[1.5]">{renderInline(block.text)}</p>
+        <p className="text-[16px] leading-[1.5]">
+          {renderInline(block.text)}
+        </p>
       </div>
     )
   }
   return (
-    <p className={`text-[16px] leading-[1.5] ${walkthroughSpeakerTone(block.speaker)}`}>
+    <p className={`text-[16px] leading-[1.5] ${walkthroughSpeakerTone(block.speaker)}`} style={indentStyle}>
       {renderInline(block.text)}
     </p>
   )

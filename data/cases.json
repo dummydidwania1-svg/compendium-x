@@ -5747,7 +5747,7 @@
       {
         "title": "Questions",
         "items": [
-          "Primary Objective",
+          "Primary objective",
           "Any particular countries being targeted?",
           "Type of hotel chain",
           "India market share and hotel count"
@@ -5997,7 +5997,9 @@
           "label": "Market Size",
           "tone": "branch",
           "children": [
-            "rural-population",
+            "income-levels",
+            "tv-ownership-rate",
+            "solar-tv-preference",
             "demand-enablers"
           ]
         },
@@ -6013,12 +6015,25 @@
           "tone": "support",
           "children": []
         },
-        "rural-population": {
-          "id": "rural-population",
-          "label": "Rural Population (100 crore)",
+        "income-levels": {
+          "id": "income-levles",
+          "label": "Income Level",
           "tone": "branch",
           "children": [
-            "rural-households"
+          ]
+        },
+                "tv-ownership-rate": {
+          "id": "tv-ownership-rate",
+          "label": "Ownership Rate",
+          "tone": "branch",
+          "children": [
+          ]
+        },
+                "solar-tv-preference": {
+          "id": "solar-tv-preference",
+          "label": "Solar TV Preference",
+          "tone": "branch",
+          "children": [
           ]
         },
         "demand-enablers": {
@@ -6029,16 +6044,6 @@
             "electricity-access",
             "sunlight-availability",
             "price-sensitivity"
-          ]
-        },
-        "rural-households": {
-          "id": "rural-households",
-          "label": "Rural Households (20 crore)",
-          "tone": "branch",
-          "children": [
-            "bpl",
-            "lmc-umc",
-            "uc"
           ]
         },
         "electricity-access": {
@@ -6058,56 +6063,6 @@
           "label": "Price Sensitivity",
           "tone": "support",
           "children": []
-        },
-        "bpl": {
-          "id": "bpl",
-          "label": "BPL — 40% = 8 crore (Eliminated)",
-          "tone": "support",
-          "children": []
-        },
-        "lmc-umc": {
-          "id": "lmc-umc",
-          "label": "LMC + UMC — 50% = 10 crore",
-          "tone": "branch",
-          "children": [
-            "tv-ownership-lmc"
-          ]
-        },
-        "uc": {
-          "id": "uc",
-          "label": "UC — 10% = 2 crore",
-          "tone": "branch",
-          "children": [
-            "tv-ownership-uc"
-          ]
-        },
-        "tv-ownership-lmc": {
-          "id": "tv-ownership-lmc",
-          "label": "TV Ownership 80% = 8 crore HH",
-          "tone": "branch",
-          "children": [
-            "solar-tv-pref-lmc"
-          ]
-        },
-        "tv-ownership-uc": {
-          "id": "tv-ownership-uc",
-          "label": "TV Ownership 90% = 1.8 crore HH",
-          "tone": "branch",
-          "children": [
-            "solar-tv-pref-uc"
-          ]
-        },
-        "solar-tv-pref-lmc": {
-          "id": "solar-tv-pref-lmc",
-          "label": "Solar TV Preference 60% = 4.8 crore HH",
-          "tone": "leaf",
-          "children": []
-        },
-        "solar-tv-pref-uc": {
-          "id": "solar-tv-pref-uc",
-          "label": "Solar TV Preference 60% = 1.08 crore HH",
-          "tone": "leaf",
-          "children": []
         }
       },
       "defaultExpanded": [
@@ -6116,29 +6071,23 @@
         "revenue",
         "revenue-from-sales",
         "market-size",
-        "rural-population",
-        "rural-households",
-        "lmc-umc",
-        "uc",
-        "tv-ownership-lmc",
-        "tv-ownership-uc"
+        "demand-enablers"
       ],
-      "defaultFocusedId": "solar-tv-pref-lmc",
+      "defaultFocusedId": "demand-enablers",
+
       "notes": [
         {
           "title": "Questions",
           "items": [
-            "Whether the client has entered a similar market recently?",
-            "Objective of market entry",
-            "Geography?",
-            "What part of the value chain does the client operate in — manufacturing, distribution, or both?"
+            "Similar markets entered recently?",
+            "Objective",
+            "Geography of operations",
+            "Value chain of operations"
           ]
         },
         {
           "title": "Keep In Mind",
           "items": [
-            "Electricity access drives rural solar TV demand",
-            "Sunlight availability filters market by geography",
             "Eliminate BPL first, then apply TV ownership"
           ]
         },
@@ -6172,7 +6121,7 @@
         ]
       }
     ],
-    "framework": "Candidate: Sure, I would like to begin by understanding where the client is currently based out of and if she has a specific geography in mind on where the product should be launched?\nInterviewer: The client is based out of the US. In fact, we would like you to tell us where in India we should launch the product.\nCandidate: Alright, to gauge the situation, I want to understand the product better. From what I know, Solar TVs are charged by sunlight and do not require electricity for working. I want to know if there are different types of TVs offered?\nInterviewer: Your understanding is correct and for the simplicity of this case, let's assume there to be a single type of TV.\nCandidate: Sure, sounds good. Next, I want to understand the specific objective of our client in terms of revenues or profits and if we have launched this product in a similar country recently?\nInterviewer: The client wants to maximise her revenue. After looking at the figure we can assess whether it is attractive. No, we have not undertaken any such expansion.\nCandidate: Sure, just to clarify, does our client only manufacture the TVs or does she carry out distribution too?\nInterviewer: Distribution is done through third party retailers.\nCandidate: We can analyse the situation in three parts:\n1) Market Attractiveness - Based on market size, market share, consumer acceptance, etc\n2) Operational Feasibility -\n   a) Barriers to entry\n   b) Setting up the value chain\n3) Risks Involved\nInterviewer: The structure looks comprehensive, focus only on market attractiveness for this case.\nCandidate: Thank you. In terms of determining the target market, I believe the rural part of India would serve as a lucrative market for this product primarily because of lack of electricity. Few environmentally conscious urban people would be interested in this product right now.\nInterviewer: Good observation, our client had something similar in mind.\nCandidate: Do we have information on the price of the product offered, cost of maintenance and the competition in this segment?\nInterviewer: We are pricing it at Rs 7,000/TV and Rs 7,000 is incurred annually on its maintenance. Currently, there is no other player in this segment.\nCandidate: Compared to the conventional TVs, the price including the maintenance of our product is cheaper. Are there any other significant differences that I should be aware of?\nInterviewer: Take the price of a conventional TV to be around Rs 30,000. Our display is inferior to that of a conventional TV.\nCandidate: Revenues = Market size * Market share * Price per unit\n\nIndia's population = 140 crore\nRural Population = Approx. 100 crore (70%)\nNumber of households = 20 crore (assuming rural household size of 5)\nThese households can now be split according to their income level:\n1) BPL = 40% = 8 crore\n2) LMC + UMC = 50% = 10 crore\n3) UC = 10% = 2 crore\n\nNext, we need to take into account, the willingness of our target market to buy a solar TV. The rural population of India is extremely price sensitive and would prefer this product. Poor electricity in most villages makes our product lucrative. While estimating the percentage of people buying the product, we will also have to keep in mind the availability of sunlight in the household depending on the direction their house faces, tree cover, etc.\n\n1) We can eliminate the population under BPL as they cannot afford the TV.\n2) In the middle class segment, 80% own a TV and 60% of this would prefer a solar TV = 10 crore * 0.8 *0.6 = 4.8 crore\n3) In the upper class segment, 90% would own a TV and 60% of this would prefer a solar TV = 2 crore * 0.9 * 0.6 = 1.08 crore\n\nTotal Revenue from sale = (6 crore (approx.) * Rs 7,000)/Life of a TV = Rs. 42,000 crore/5 = Rs. 8,400 crore/year\n\nSay, in the first year, due to lack of competition, we can acquire 50% of the market = Rs. 4,200 crore.\nIn addition to this, an additional Rs. 7,000 would be received from every household that buys our solar TV in the first year. 6 crore (market size) * 0.2 (in 5 households will replace their TV this year) * 0.5 (Expected market share) * Rs. 7,000 = 0.6 crore * Rs. 7,000 = 4,200 crore. Therefore, we are looking at a figure of Rs. 4,200 crore + Rs. 4,2000 crore = Rs. 8,400 crore revenue in our first year.\nInterviewer: Great, this number definitely seems attractive enough for our client. What is your final suggestion?\nCandidate: Based on the analysis of market attractiveness, I would recommend the client to enter the rural India market.\n\nThe Sun Won't Set On Us Framework & Recommendations\nNEW MARKET FOR SOLAR TV\nClarifying Questions: Whether the client has entered a similar market recently? Objective of market entry\nBrownie Points: Identifying electricity as an important factor Accounting for sunlight availability\nKeep In Mind: Calculation of revenue for maintenance and price has to be done separately.\nRECOMMENDATIONS: The client should enter the Indian market"
+    "framework": "Candidate: Sure, I would like to begin by understanding where the client is currently based out of and if she has a specific geography in mind on where the product should be launched?\nInterviewer: The client is based out of the US. In fact, we would like you to tell us where in India we should launch the product.\nCandidate: Alright, to gauge the situation, I want to understand the product better. From what I know, Solar TVs are charged by sunlight and do not require electricity for working. I want to know if there are different types of TVs offered?\nInterviewer: Your understanding is correct and for the simplicity of this case, let's assume there to be a single type of TV.\nCandidate: Sure, sounds good. Next, I want to understand the specific objective of our client in terms of revenues or profits and if we have launched this product in a similar country recently?\nInterviewer: The client wants to maximise her revenue. After looking at the figure we can assess whether it is attractive. No, we have not undertaken any such expansion.\nCandidate: Sure, just to clarify, does our client only manufacture the TVs or does she carry out distribution too?\nInterviewer: Distribution is done through third party retailers.\nCandidate: We can analyse the situation in three parts:\n1) Market Attractiveness - Based on market size, market share, consumer acceptance, etc\n2) Operational Feasibility -\n  a) Barriers to entry\n  b) Setting up the value chain\n3) Risks Involved\nInterviewer: The structure looks comprehensive, focus only on market attractiveness for this case.\nCandidate: Thank you. In terms of determining the target market, I believe the rural part of India would serve as a lucrative market for this product primarily because of lack of electricity. Few environmentally conscious urban people would be interested in this product right now.\nInterviewer: Good observation, our client had something similar in mind.\nCandidate: Do we have information on the price of the product offered, cost of maintenance and the competition in this segment?\nInterviewer: We are pricing it at Rs 7,000/TV and Rs 7,000 is incurred annually on its maintenance. Currently, there is no other player in this segment.\nCandidate: Compared to the conventional TVs, the price including the maintenance of our product is cheaper. Are there any other significant differences that I should be aware of?\nInterviewer: Take the price of a conventional TV to be around Rs 30,000. Our display is inferior to that of a conventional TV.\nCandidate: Revenues = Market size * Market share * Price per unit\n\nIndia's population = 140 crore\n~ Rural Population = Approx. 100 crore (70%)\nNumber of households = 20 crore (assuming rural household size of 5)\nThese households can now be split according to their income level:\n1) BPL = 40% = 8 crore\n2) LMC + UMC = 50% = 10 crore\n3) UC = 10% = 2 crore\n\nNext, we need to take into account, the willingness of our target market to buy a solar TV. The rural population of India is extremely price sensitive and would prefer this product. Poor electricity in most villages makes our product lucrative. While estimating the percentage of people buying the product, we will also have to keep in mind the availability of sunlight in the household depending on the direction their house faces, tree cover, etc.\n\n1) We can eliminate the population under BPL as they cannot afford the TV.\n 2) In the middle class segment, 80% own a TV and 60% of this would prefer a solar TV.\n^ Middle Class Segment = 10 crore * 0.8 *0.6 = 4.8 crore\n3) In the upper class segment, 90% would own a TV and 60% of this would prefer a solar TV\n^ Upper Class Segment= 2 crore * 0.9 * 0.6 = 1.08 crore\n~ Total Revenue from sale = (6 crore (approx.) * Rs 7,000)/Life of a TV = Rs. 42,000 crore/5 = Rs. 8,400 crore/year\nSay, in the first year, due to lack of competition, we can acquire 50% of the market = Rs. 4,200 crore.\n~ In addition to this, an additional Rs. 7,000 would be received from every household that buys our solar TV in the first year. 6 crore (market size) * 0.2 (in 5 households will replace their TV this year) * 0.5 (Expected market share) * Rs. 7,000 = 0.6 crore * Rs. 7,000 = 4,200 crore. Therefore, we are looking at a figure of Rs. 4,200 crore + Rs. 4,2000 crore = Rs. 8,400 crore revenue in our first year.\nInterviewer: Great, this number definitely seems attractive enough for our client. What is your final suggestion?\nCandidate: Based on the analysis of market attractiveness, I would recommend the client to enter the rural India market.\n\nThe Sun Won't Set On Us Framework & Recommendations\nNEW MARKET FOR SOLAR TV\nClarifying Questions: Whether the client has entered a similar market recently? Objective of market entry\nBrownie Points: Identifying electricity as an important factor Accounting for sunlight availability\nKeep In Mind: Calculation of revenue for maintenance and price has to be done separately.\nRECOMMENDATIONS: The client should enter the Indian market"
 },
 {
     "id": 25,

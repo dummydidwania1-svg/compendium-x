@@ -140,9 +140,9 @@ function splitRecommendationItems(value: string): string[] {
 
 function parseFramework(rawFramework: string): ParsedFramework {
 	const lines = rawFramework
-		.split(/\r?\n/)
-		.map((line) => line.trim())
-		.filter((line) => line.length > 0)
+  .split(/\r?\n/)
+  .map((line) => line.replace(/[ \t]+$/, ''))
+  .filter((line) => line.trim().length > 0)
 
 	if (lines.length === 0) {
 		return { transcriptLines: [], summaryTitle: null, summaryRows: [], recommendations: [] }	}
@@ -247,13 +247,13 @@ function buildTranscriptDisplayLines(lines: string[]): TranscriptDisplayLine[] {
 
 		if (hasExplicitSpeakers) {
 			return {
-				text: normalized,
+				text: line.replace(/[ \t]+$/, ''),
 				speaker: 'candidate',
 			}
 		}
 
 		return {
-			text: normalized,
+			text: line.replace(/[ \t]+$/, ''),
 			speaker: inferImplicitTranscriptSpeaker(normalized),
 		}
 	})
