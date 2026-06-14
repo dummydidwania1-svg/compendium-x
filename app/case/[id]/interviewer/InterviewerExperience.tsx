@@ -110,7 +110,6 @@ type ParsedFramework = {
 	summaryTitle: string | null
 	  summaryRows: Array<{ label: string; value: string }>
   recommendations: string[]
-  abbreviations: string[]
 }
 
 type TranscriptSpeaker = 'candidate' | 'interviewer' | 'neutral'
@@ -146,12 +145,12 @@ function parseFramework(rawFramework: string): ParsedFramework {
 		.filter((line) => line.length > 0)
 
 	if (lines.length === 0) {
-		return { transcriptLines: [], summaryTitle: null, summaryRows: [], recommendations: [], abbreviations: [] }	}
+		return { transcriptLines: [], summaryTitle: null, summaryRows: [], recommendations: [] }	}
 
 	const markerIndex = lines.findIndex((line) => /framework(?:\s*&\s*recommendations)?/i.test(line))
 
 	if (markerIndex === -1) {
-		return { transcriptLines: lines, summaryTitle: null, summaryRows: [], recommendations: [], abbreviations: [] }
+		return { transcriptLines: lines, summaryTitle: null, summaryRows: [], recommendations: [] }
 	}
 
 	const transcriptLines = lines.slice(0, markerIndex)
@@ -159,24 +158,17 @@ function parseFramework(rawFramework: string): ParsedFramework {
 	let summaryTitle: string | null = null
 	const summaryRows: Array<{ label: string; value: string }> = []
 	let recommendations: string[] = []
-let abbreviations: string[] = []
 	if (summaryLines.length > 0 && !summaryLines[0].includes(':')) {
 		summaryTitle = summaryLines[0]
 		summaryLines.shift()
 	}
 
-	let inRecommendationBlock = false
-let inAbbreviationBlock = false
+let inRecommendationBlock = false
 for (const line of summaryLines) {
   const normalizedLine = normalizeInline(line)
   if (!normalizedLine) continue
-  if (/^abbreviations?\s*:?$/i.test(normalizedLine)) {
-    inAbbreviationBlock = true
-    inRecommendationBlock = false
-    continue
-  }
-  if (inAbbreviationBlock) {
-    abbreviations.push(normalizedLine)
+  if (/^recommendations?\s*:?$/i.test(normalizedLine)) {
+    inRecommendationBlock = true
     continue
   }
   if (/^recommendations?\s*:?$/i.test(normalizedLine)) {
@@ -211,7 +203,7 @@ for (const line of summaryLines) {
 		summaryRows.push({ label: 'Key Insight', value: normalizedLine })
 	}
 
-	return { transcriptLines, summaryTitle, summaryRows, recommendations, abbreviations }}
+	return { transcriptLines, summaryTitle, summaryRows, recommendations }}
 
 function formatTranscriptEquation(value: string) {
 	return normalizeInline(value).replace(/\s*\*\s*/g, ' × ')
@@ -555,21 +547,6 @@ function DefaultFramework({ framework }: { framework: ParsedFramework }) {
 					</div>
 				)}
 
-				{framework.abbreviations.length > 0 && (
-					<div className="mt-6 rounded-2xl border border-[#d5ccbf] bg-[#efe7dc] p-6">
-						<h4 className="mb-3 text-[12px] font-black uppercase tracking-[0.1em] text-[#4d3423]">
-							Abbreviations
-						</h4>
-						<ul className="space-y-3 text-[15px] leading-relaxed text-[#2e2722]">
-							{framework.abbreviations.map((item, index) => (
-								<li key={`${item}-${index + 1}`} className="flex gap-3">
-									<span className="mt-0.5 font-bold text-[#4d3423]">•</span>
-									<span>{item}</span>
-								</li>
-							))}
-						</ul>
-					</div>
-				)}
 			</section>
 		</RevealBlock>
 	)
@@ -672,7 +649,7 @@ export function InterviewerPageInner({
 				const resolvedParams = await params
 				const caseId = resolvedParams.id
 				setResolvedCaseId(caseId)
-				const cacheKey = `compendium-case-v8-${caseId}`
+				const cacheKey = `compendium-case-v9-${caseId}`
 				const cachedValue = localStorage.getItem(cacheKey)
 				let hasValidCache = false
 				if (cachedValue) {
@@ -839,6 +816,7 @@ useEffect(() => {
 					frameworkTree={caseData.frameworkTree}
 					visualisations={caseData.visualisations}
 					recommendationsTable={caseData.recommendationsTable}
+					abbreviations={caseData?.abbreviations}
 					ForumSection={resolvedCaseId ? <CaseForumSection caseId={resolvedCaseId} caseTitle={caseData!.title} /> : undefined}
 				/>
 			)

@@ -91,11 +91,6 @@ if (rawCase.abbreviations === null) {
 } else if (Array.isArray(rawCase.abbreviations)) {
   payload.abbreviations = rawCase.abbreviations
 }
-if (rawCase.abbreviations === null) {
-  payload.abbreviations = admin.firestore.FieldValue.delete()
-} else if (Array.isArray(rawCase.abbreviations)) {
-  payload.abbreviations = rawCase.abbreviations
-}
 return payload
 }
 

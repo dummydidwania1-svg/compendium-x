@@ -3646,7 +3646,13 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         </div>
                       )}
 
-                                             {abbreviations && abbreviations.length > 0 && (
+
+
+                      {recommendationsTable && (
+                        <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
+                      )}
+
+                                                                   {abbreviations && abbreviations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
                               <div className="mb-4 flex items-center gap-4">
@@ -3668,9 +3674,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                           </div>
                         )}
 
-                      {recommendationsTable && (
-                        <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
-                      )}
                       {/* Sentinel for bottom-border visibility detection */}
                       <div ref={drilldownBottomRef} className="h-px w-full" />
                     </div>
@@ -3747,7 +3750,13 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 </div>
               )}
 
-                       {abbreviations && abbreviations.length > 0 && (
+
+
+              {recommendationsTable && (
+                <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
+              )}
+
+                                     {abbreviations && abbreviations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
                               <div className="mb-4 flex items-center gap-4">
@@ -3768,10 +3777,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                             </ul>
                           </div>
                         )}
-
-              {recommendationsTable && (
-                <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
-              )}
   </div>
 </section>
           </>)}
@@ -4265,7 +4270,12 @@ export function CaseInterviewerMaster({
                           </div>
                         )}
 
-                                               {abbreviations && abbreviations.length > 0 && (
+
+                        {recommendationsTable && (
+                          <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
+                        )}
+
+                                                                       {abbreviations && abbreviations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
                               <div className="mb-4 flex items-center gap-4">
@@ -4287,9 +4297,7 @@ export function CaseInterviewerMaster({
                           </div>
                         )}
 
-                        {recommendationsTable && (
-                          <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
-                        )}
+
                         {/* Sentinel for bottom-border visibility detection */}
                         <div ref={drilldownBottomRef2} className="h-px w-full" />
                       </div>
@@ -4361,7 +4369,13 @@ export function CaseInterviewerMaster({
                     </>)}
                   </div>
                 )}
-                       {abbreviations && abbreviations.length > 0 && (
+
+
+                {recommendationsTable && (
+                  <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
+                )}
+
+                                       {abbreviations && abbreviations.length > 0 && (
                           <div className="pt-16">
                             <Reveal>
                               <div className="mb-4 flex items-center gap-4">
@@ -4382,10 +4396,7 @@ export function CaseInterviewerMaster({
                             </ul>
                           </div>
                         )}
-
-                {recommendationsTable && (
-                  <Reveal><RecTableBlock data={recommendationsTable} /></Reveal>
-                )}
+                        
               </div>
             </section>
           </main>
