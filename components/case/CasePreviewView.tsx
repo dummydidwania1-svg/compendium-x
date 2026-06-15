@@ -26,6 +26,7 @@ type CasePreviewProps = {
   roundLabel: string
   isBankingOnYou: boolean
   frameworkTree?: FrameworkTree
+  additionalFrameworkTrees?: FrameworkTree[]
   visualisations?: Visualisation[]
   recommendationsTable?: RecommendationsTable
   abbreviations?: string[]

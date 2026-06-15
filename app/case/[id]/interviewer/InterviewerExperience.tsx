@@ -41,6 +41,7 @@ type CaseDocument = {
   prompt?: string
   framework?: string
   frameworkTree?: import('@/components/case/CasePreviewMaster').FrameworkTree
+  additionalFrameworkTrees?: import('@/components/case/CasePreviewMaster').FrameworkTree[]
   visualisations?: import('@/components/case/CasePreviewMaster').Visualisation[]
   recommendationsTable?: import('@/components/case/CasePreviewMaster').RecommendationsTable
   abbreviations?: string[]
@@ -814,6 +815,7 @@ useEffect(() => {
 					roundLabel={roundLabel}
 					isBankingOnYou={isBankingOnYou}
 					frameworkTree={caseData.frameworkTree}
+					additionalFrameworkTrees={caseData.additionalFrameworkTrees}
 					visualisations={caseData.visualisations}
 					recommendationsTable={caseData.recommendationsTable}
 					abbreviations={caseData?.abbreviations}
@@ -841,6 +843,7 @@ if (previewMode && !forcePreview) {
 				companyLabel={companyLabel}
 				roundLabel={roundLabel}
 				frameworkTree={caseData.frameworkTree}
+				additionalFrameworkTrees={caseData.additionalFrameworkTrees}
 				visualisations={caseData.visualisations}
 				recommendationsTable={caseData.recommendationsTable}
 				abbreviations={caseData.abbreviations}

@@ -72,6 +72,7 @@ export const caseSchema = z
     prompt: z.string(),
     framework: z.string(),
     frameworkTree: z.unknown().optional(),
+    additionalFrameworkTrees: z.array(z.unknown()).optional(),
     company: z.string().optional(),
     round: z.string().optional(),
     createdAt: timestamp.optional(),

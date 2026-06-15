@@ -39,6 +39,7 @@ export type FrameworkTree = {
   defaultExpanded: string[]
   defaultFocusedId: string
   notes: { title: string; items: string[] }[]
+  label?: string
 }
 
 export type VisFormula = {
@@ -86,6 +87,7 @@ export type CasePreviewMasterProps = {
   roundLabel: string
   ForumSection?: ReactNode
   frameworkTree?: FrameworkTree
+  additionalFrameworkTrees?: FrameworkTree[]
   visualisations?: Visualisation[]
     recommendationsTable?: RecommendationsTable
   abbreviations?: string[]
@@ -2936,10 +2938,259 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
   )
 }
 
+/* ═══════════════════════════════════════════════════════════
+   Global-swap helper — allows multiple independent trees to
+   render sequentially. Since React render is synchronous within
+   a single JS frame, swapping the module globals before each
+   tree renders and restoring them after is safe.
+   ═══════════════════════════════════════════════════════════ */
+
+function loadTree(tree: FrameworkTree) {
+  NODES = tree.nodes
+  PARENTS = {}
+  for (const [id, node] of Object.entries(tree.nodes)) {
+    for (const ch of node.children) PARENTS[ch] = id
+  }
+  ROOT_ID = Object.keys(NODES).find(id => !PARENTS[id]) ?? ''
+  DEFAULT_EXPANDED = new Set(tree.defaultExpanded)
+  DEFAULT_FOCUSED_ID = tree.defaultFocusedId
+  NOTES = tree.notes
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AdditionalFrameworkPanel — a standalone interactive chart
+   for a secondary FrameworkTree. Renders below the primary one
+   with the same design: desktop/vertical chart + mobile tree +
+   notes sidebar.
+   ═══════════════════════════════════════════════════════════ */
+
+function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?: string }) {
+  // Swap globals so all layout utilities operate on this tree
+  loadTree(tree)
+
+  const maxTreeDepth = ROOT_ID ? Math.max(...Object.keys(NODES).map(nodeDepth), 0) : 0
+  const useVerticalLayout = shouldUseVerticalLayout('preview')
+
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+    const dp = pathTo(tree.defaultFocusedId)
+    return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+  })
+  const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
+  const [edgeAnimKey, setEdgeAnimKey] = useState(0)
+  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
+    const dp = pathTo(tree.defaultFocusedId)
+    return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+  })
+  const [mobileFocId, setMobileFocId] = useState(() => tree.defaultFocusedId || '')
+  const [chartVisible, setChartVisible] = useState(false)
+  const chartRef = useRef<HTMLDivElement>(null)
+  const overlayHostRef = useRef<HTMLDivElement | null>(null)
+  const [drilldownBottomVisible, setDrilldownBottomVisible] = useState(false)
+  const drilldownBottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = chartRef.current; if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setChartVisible(true); obs.disconnect() } },
+      { rootMargin: '0px 0px -60px 0px', threshold: 0.1 }
+    )
+    obs.observe(el); return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const el = drilldownBottomRef.current; if (!el) return
+    const obs = new IntersectionObserver(([e]) => setDrilldownBottomVisible(e.isIntersecting), { threshold: 0 })
+    obs.observe(el); return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-node-button]')) setFocusedId(null)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Before computing visibleIds we must ensure globals reflect THIS tree
+  loadTree(tree)
+
+  const visibleIds = useMemo(() => {
+    loadTree(tree)
+    const s = new Set<string>()
+    if (ROOT_ID) collectVisible(ROOT_ID, expandedIds, s)
+    return [...s]
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedIds, tree])
+
+  const chartMaxDepth = useMemo(() => Math.max(...visibleIds.map(nodeDepth), 0), [visibleIds])
+  const isChartFullyExpanded = useMemo(
+    () => [...DEFAULT_EXPANDED].every(id => expandedIds.has(id)),
+    [expandedIds]
+  )
+  const [, startChartTransition] = useTransition()
+
+  const handleSelect = (id: string) => {
+    loadTree(tree)
+    setFocusedId(id)
+    const node = NODES[id]
+    if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && node?.children.length) return
+    startChartTransition(() => {
+      if (node?.children.length && expandedIds.has(id)) {
+        setExpandedIds(prev => {
+          const next = new Set(prev)
+          next.delete(id)
+          loadTree(tree); descendants(id).forEach(d => next.delete(d))
+          return next
+        })
+      } else {
+        setExpandedIds(prev => {
+          const next = new Set(prev)
+          loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
+          return next
+        })
+      }
+      setEdgeAnimKey(k => k + 1)
+    })
+  }
+
+  const handleToggle = (id: string) => {
+    loadTree(tree)
+    const node = NODES[id]; if (!node?.children.length) return
+    if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
+    startChartTransition(() => {
+      setExpandedIds(prev => {
+        const next = new Set(prev)
+        loadTree(tree)
+        if (next.has(id)) {
+          next.delete(id); descendants(id).forEach(d => next.delete(d))
+          if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
+        } else {
+          next.add(id)
+          const parent = PARENTS[id]
+          if (parent) NODES[parent].children.forEach(sib => {
+            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+          })
+        }
+        return next
+      })
+      setEdgeAnimKey(k => k + 1)
+    })
+  }
+
+  const handleMobileSelect = (id: string) => {
+    loadTree(tree)
+    setMobileFocId(id)
+    if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return
+    setMobileExpIds(prev => {
+      const next = new Set(prev)
+      loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
+      return next
+    })
+  }
+
+  const handleMobileToggle = (id: string) => {
+    loadTree(tree)
+    const node = NODES[id]; if (!node?.children.length) return
+    if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
+    setMobileExpIds(prev => {
+      const next = new Set(prev)
+      loadTree(tree)
+      if (next.has(id)) {
+        next.delete(id); descendants(id).forEach(d => next.delete(d))
+        if (pathTo(mobileFocId).includes(id)) setMobileFocId(id)
+      } else {
+        next.add(id)
+        const parent = PARENTS[id]
+        if (parent) NODES[parent].children.forEach(sib => {
+          if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+        })
+      }
+      return next
+    })
+  }
+
+  // Ensure globals are set for this tree before rendering chart components
+  loadTree(tree)
+
+  const revealDepth = maxTreeDepth
+  const treeFullyRevealed = true
+
+  return (
+    <div className="mt-12">
+      {/* Section divider with optional label */}
+      <Reveal>
+        <div className="mb-6 flex items-center gap-4">
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">
+            {label ?? 'Additional Framework'}
+          </span>
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+        </div>
+      </Reveal>
+
+      {/* Desktop layout */}
+      <div className="hidden lg:block">
+        <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
+          <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">
+            <aside className="hidden lg:block h-full">
+              <SyncedNotesSidebar notes={NOTES} />
+            </aside>
+            <div className="relative min-w-0">
+              <div className="absolute left-0 top-0 hidden h-full w-px lg:block">
+                <div className="sticky top-[128px] w-full" style={{ height: 'calc(100vh - 168px)', background: 'linear-gradient(180deg, transparent 0%, rgba(92,64,51,0.14) 12%, rgba(92,64,51,0.14) 88%, transparent 100%)' }} />
+              </div>
+              <div className={`relative flex flex-col pl-7 pr-5 pb-6 pt-6`} style={{ minHeight: '400px' }}>
+                {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
+                  <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
+                )}
+                {ROOT_ID && (
+                  <div
+                    ref={(el) => { chartRef.current = el; overlayHostRef.current = el }}
+                    className={chartMaxDepth === 0 ? 'flex items-center' : 'flex-1'}
+                    style={{
+                      ...(useVerticalLayout ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
+                      opacity: chartVisible ? 1 : 0,
+                      transform: `${useVerticalLayout ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
+                      filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
+                      transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
+                    }}
+                  >
+                    {useVerticalLayout ? (
+                      <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                    ) : (
+                      <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                    )}
+                  </div>
+                )}
+                <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" />
+                <div ref={drilldownBottomRef} className="h-px w-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile layout */}
+      <div className="lg:hidden">
+        <div className="mb-6 grid gap-3 sm:grid-cols-3">
+          {NOTES.map(n => <NoteCard key={n.title} title={n.title} items={n.items} />)}
+        </div>
+        <Reveal>
+          <div className="space-y-3">
+            <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds}
+              onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
+          </div>
+        </Reveal>
+        <MobileDrilldownOverlay />
+      </div>
+    </div>
+  )
+}
+
 export default function CasePreviewMaster({
   caseData, previewMode, transcriptDisplayLines, parsedFramework,
   promptLines, caseTypeLabel, industryLabel, difficultyLabel,
-  companyLabel, roundLabel, ForumSection, frameworkTree,
+  companyLabel, roundLabel, ForumSection, frameworkTree, additionalFrameworkTrees,
   visualisations, recommendationsTable, abbreviations,
 }: CasePreviewMasterProps) {
   // ─── Sync module-level tree data from props ──────────
@@ -3181,21 +3432,22 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [difficultyLabel])
 
   // ─── Chart node visibility ───────────────────
-  const visibleIds = useMemo(() => { const s = new Set<string>(); if (ROOT_ID) collectVisible(ROOT_ID, expandedIds, s); return [...s] }, [expandedIds])
-  const chartMaxDepth = useMemo(() => Math.max(...visibleIds.map(nodeDepth), 0), [visibleIds])
+  const visibleIds = useMemo(() => { loadTree(tree); const s = new Set<string>(); if (ROOT_ID) collectVisible(ROOT_ID, expandedIds, s); return [...s] }, [expandedIds, tree])
+  const chartMaxDepth = useMemo(() => { loadTree(tree); return Math.max(...visibleIds.map(nodeDepth), 0) }, [visibleIds, tree])
   // Overlay only when all default branches are still expanded (full state)
   const isChartFullyExpanded = useMemo(
-    () => [...DEFAULT_EXPANDED].every(id => expandedIds.has(id)),
-    [expandedIds]
+    () => { loadTree(tree); return [...DEFAULT_EXPANDED].every(id => expandedIds.has(id)) },
+    [expandedIds, tree]
   )
 
   // Computed once — tree structure is static, no need to recompute per render
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const useVerticalLayout = useMemo(() => shouldUseVerticalLayout('preview'), [])
+  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout('preview') }, [])
 
   const [, startChartTransition] = useTransition()
 
   const handleSelect = (id: string) => {
+  loadTree(tree)
   setFocusedId(id)
   const node = NODES[id]
   if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && node?.children.length) return // inactive → overlay only
@@ -3204,13 +3456,13 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
         setExpandedIds(prev => {
           const next = new Set(prev)
           next.delete(id)
-          descendants(id).forEach(d => next.delete(d))
+          loadTree(tree); descendants(id).forEach(d => next.delete(d))
           return next
         })
       } else {
         setExpandedIds(prev => {
           const next = new Set(prev)
-          pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
+          loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
           return next
         })
       }
@@ -3219,12 +3471,14 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   }
 
   const handleToggle = (id: string) => {
+  loadTree(tree)
   const node = NODES[id]; if (!node?.children.length) return
   // Inactive (off chosen-path) nodes never expand in-chart — they use the hover/tap overlay.
   if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
     startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
+        loadTree(tree)
         if (next.has(id)) {
           next.delete(id); descendants(id).forEach(d => next.delete(d))
           if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
@@ -3242,20 +3496,23 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   }
 
   const handleMobileSelect = (id: string) => {
+  loadTree(tree)
   setMobileFocId(id)
   if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return // inactive → tap overlay only
     setMobileExpIds(prev => {
       const next = new Set(prev)
-      pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
+      loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
       return next
     })
   }
 
   const handleMobileToggle = (id: string) => {
+  loadTree(tree)
   const node = NODES[id]; if (!node?.children.length) return
   if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return // inactive → tap overlay only
     setMobileExpIds(prev => {
       const next = new Set(prev)
+      loadTree(tree)
       if (next.has(id)) {
         next.delete(id); descendants(id).forEach(d => next.delete(d))
         if (pathTo(mobileFocId).includes(id)) setMobileFocId(id)
@@ -3853,6 +4110,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                           </div>
                         )}
   </div>
+
+            {/* ── Additional framework trees ── */}
+            {additionalFrameworkTrees && additionalFrameworkTrees.length > 0 && additionalFrameworkTrees.map((addTree, idx) => (
+              <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+            ))}
 </section>
           </>)}
           
@@ -3882,21 +4144,13 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
 export function CaseInterviewerMaster({
   caseData, transcriptDisplayLines, parsedFramework,
   promptLines, caseTypeLabel, industryLabel, difficultyLabel,
-  companyLabel, roundLabel, frameworkTree,
+  companyLabel, roundLabel, frameworkTree, additionalFrameworkTrees,
   visualisations, recommendationsTable, abbreviations,
   notes, setNotes, scores, setScores, onEndCase,
 }: CaseInterviewerMasterProps) {
   // ─── Sync tree data (same as preview) ────────────────
   const tree = frameworkTree ?? BANKING_ON_YOU_TREE
-  NODES = tree.nodes
-  PARENTS = {}
-  for (const [id, node] of Object.entries(tree.nodes)) {
-    for (const ch of node.children) PARENTS[ch] = id
-  }
-  ROOT_ID = Object.keys(NODES).find(id => !PARENTS[id]) ?? ''
-  DEFAULT_EXPANDED = new Set(tree.defaultExpanded)
-  DEFAULT_FOCUSED_ID = tree.defaultFocusedId
-  NOTES = tree.notes
+  loadTree(tree)
   const hasTree = ROOT_ID !== ''
   const maxTreeDepth = hasTree ? Math.max(...Object.keys(NODES).map(nodeDepth), 0) : 0
 
@@ -3966,11 +4220,11 @@ export function CaseInterviewerMaster({
   const [mobileFocId, setMobileFocId]   = useState(() => tree.defaultFocusedId || '')
 
   const HEADER_OFFSET = 144
-  const visibleIds = useMemo(() => { const s = new Set<string>(); if (ROOT_ID) collectVisible(ROOT_ID, expandedIds, s); return [...s] }, [expandedIds])
-  const chartMaxDepth = useMemo(() => Math.max(...visibleIds.map(nodeDepth), 0), [visibleIds])
-  const isChartFullyExpanded = useMemo(() => [...DEFAULT_EXPANDED].every(id => expandedIds.has(id)), [expandedIds])
+  const visibleIds = useMemo(() => { loadTree(tree); const s = new Set<string>(); if (ROOT_ID) collectVisible(ROOT_ID, expandedIds, s); return [...s] }, [expandedIds, tree])
+  const chartMaxDepth = useMemo(() => { loadTree(tree); return Math.max(...visibleIds.map(nodeDepth), 0) }, [visibleIds, tree])
+  const isChartFullyExpanded = useMemo(() => { loadTree(tree); return [...DEFAULT_EXPANDED].every(id => expandedIds.has(id)) }, [expandedIds, tree])
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const useVerticalLayout = useMemo(() => shouldUseVerticalLayout('interviewer'), [])
+  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout('interviewer') }, [])
   const recommendations = parsedFramework.recommendations
   const promptDisplayLines = useMemo<TranscriptDisplayLine[]>(
     () => promptLines.map(text => ({ text, speaker: 'interviewer' as const })),
@@ -4033,6 +4287,7 @@ export function CaseInterviewerMaster({
 
   // Node select — collapse if already expanded, expand path otherwise
   const handleSelect = (id: string) => {
+  loadTree(tree)
   setFocusedId(id)
   const node = NODES[id]
   // Inactive nodes only focus; their drill-down is shown via the overlay, not in-chart.
@@ -4041,13 +4296,13 @@ export function CaseInterviewerMaster({
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
           const next = new Set(prev)
-          next.delete(id); descendants(id).forEach(d => next.delete(d))
+          loadTree(tree); next.delete(id); descendants(id).forEach(d => next.delete(d))
           return next
         })
       } else {
         setExpandedIds(prev => {
           const next = new Set(prev)
-          pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
+          loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
           return next
         })
       }
@@ -4055,10 +4310,12 @@ export function CaseInterviewerMaster({
     })
   }
   const handleToggle = (id: string) => {
+  loadTree(tree)
   if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return // inactive → overlay only
   startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
+        loadTree(tree)
         if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)) }
         else { next.add(id); const parent = PARENTS[id]; if (parent) NODES[parent].children.forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
         return next
@@ -4066,11 +4323,13 @@ export function CaseInterviewerMaster({
       setEdgeAnimKey(k => k + 1)
     })
   }
-  const handleMobileSelect = (id: string) => { setMobileFocId(id); if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return; setMobileExpIds(prev => { const next = new Set(prev); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
+  const handleMobileSelect = (id: string) => { loadTree(tree); setMobileFocId(id); if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return; setMobileExpIds(prev => { const next = new Set(prev); loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
   const handleMobileToggle = (id: string) => {
+  loadTree(tree)
   if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return // inactive → tap overlay only
   setMobileExpIds(prev => {
       const next = new Set(prev)
+      loadTree(tree)
       if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)); if (pathTo(mobileFocId).includes(id)) setMobileFocId(id) }
       else { next.add(id); const parent = PARENTS[id]; if (parent) NODES[parent].children.forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
       return next
@@ -4474,6 +4733,11 @@ export function CaseInterviewerMaster({
                         )}
 
               </div>
+
+            {/* ── Additional framework trees (interviewer) ── */}
+            {additionalFrameworkTrees && additionalFrameworkTrees.length > 0 && additionalFrameworkTrees.map((addTree, idx) => (
+              <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+            ))}
             </section>
           </main>
 
