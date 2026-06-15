@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "components/ViewPortFit"  ],
   "exclude": ["node_modules", "_vertex-api-backup", "functions"]
 }

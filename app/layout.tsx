@@ -3,6 +3,7 @@ import GlobalStyles from '@/components/GlobalStyles'
 import Analytics from '@/components/Analytics';
 import OfflineSetup from '@/components/OfflineSetup'
 import OfflineBanner from '@/components/OfflineBanner'
+// @ts-ignore - CSS side-effect import is supported by Next.js
 import './globals.css'
 
 export const metadata: Metadata = {
