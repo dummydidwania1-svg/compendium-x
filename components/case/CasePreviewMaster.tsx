@@ -169,6 +169,8 @@ function collectVisible(id: string, expanded: Set<string>, out: Set<string>) {
 
 function nodeDepth(id: string) { return pathTo(id).length - 1 }
 
+
+
 /* ═══════════════════════════════════════════════════════════
    Walkthrough Block Parser
    ═══════════════════════════════════════════════════════════ */
@@ -2416,6 +2418,8 @@ function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
    ═══════════════════════════════════════════════════════════ */
 function VisTableInline({ vis }: { vis: VisTable }) {
   const rows: string[][] = typeof vis.rows === 'string' ? JSON.parse(vis.rows) : vis.rows
+  const colStyle = (w: string): React.CSSProperties => ({ width: w })
+
   const headerStyle: React.CSSProperties = {
     fontFamily: "'Work Sans', sans-serif",
     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
@@ -2426,12 +2430,18 @@ function VisTableInline({ vis }: { vis: VisTable }) {
   return (
     <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
       <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
-        <colgroup>
-          <col style={{ width: '30%' }} />
-          {Array.from({ length: dataColCount }).map((_, i) => (
-            <col key={i} style={{ width: `${70 / dataColCount}%` }} />
-          ))}
-        </colgroup>
+<colgroup>
+  {vis.columnWidths
+    ? vis.columnWidths.map((w, i) => <col key={i} style={colStyle(w)} />)
+    : (
+      <>
+        <col />
+        {Array.from({ length: dataColCount }).map((_, i) => (
+          <col key={i} style={colStyle(`${100 / dataColCount}%`)} />
+        ))}
+      </>
+    )}
+</colgroup>
         <thead>
           <tr>
             {vis.columns.map((col, i) => (
@@ -2873,17 +2883,18 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
 <thead>
   <tr>
     {cols.map((col, ci) => {
-      const thStyle: React.CSSProperties = {
-        padding: '11px 16px',
-        textAlign: ci === 0 ? 'left' : 'center',
-        fontFamily: "'Work Sans', sans-serif",
-        fontSize: '10px',
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.18em',
-        color: '#5C4033',
-        opacity: 0.55,
-      }
+     const thStyle: React.CSSProperties = {
+  padding: '11px 16px',
+  textAlign: 'left',
+  fontFamily: "'Work Sans', sans-serif",
+  fontSize: '10px',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.2em',
+  color: '#f0f5ee',
+  background: '#3D5A35',
+  borderLeft: ci > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined,
+}
       return (
         <th key={ci} style={thStyle}>
           {col}
@@ -3604,7 +3615,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
   />
 </div>
 
-                    <div className={`relative flex flex-col pl-7 pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : ' pt-6'}${recommendations.length === 0 ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
+                    <div className={`relative flex flex-col pl-7 pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : hasTree ? ' pt-6' : ' pt-2'}${recommendations.length === 0 && hasTree ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
                       {/* Glass blur overlay — only when framework is fully expanded AND bottom border is not yet visible */}
                       {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                         <div className="pointer-events-none z-20"
@@ -3636,13 +3647,14 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       </>)}
 
                       {/* Desktop chart */}
+                      {hasTree && (
                       <div
                         ref={(el) => { chartRef.current = el; overlayHostRef.current = el }}
                         className={(() => {
                           const hasViz = !!(recommendationsTable || visualisations?.some(v => v.type === 'table' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
                           if (!hasContent) return 'flex items-center'
-                          if (chartMaxDepth === 0) return 'flex-1 flex items-center'
+                          if (chartMaxDepth === 0) return hasTree ? 'flex-1 flex items-center' : ''
                           return hasViz ? '' : 'flex-1'
                         })()}
                         style={{
@@ -3661,6 +3673,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                             focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                         )}
                       </div>
+                      )}
 <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" />
 
                       {/* Drilldown table visualizations */}
@@ -4209,7 +4222,7 @@ export function CaseInterviewerMaster({
                       <div className="absolute left-0 top-0 hidden h-full w-px lg:block">
                         <div className="sticky top-[128px] w-full" style={{ height: 'calc(100vh - 168px)', background: 'linear-gradient(180deg, transparent 0%, rgba(92,64,51,0.14) 12%, rgba(92,64,51,0.14) 88%, transparent 100%)' }} />
                       </div>
-                      <div className={`relative flex flex-col pl-7 pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : ' pt-6'}${recommendations.length === 0 ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
+                      <div className={`relative flex flex-col pl-7 pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : hasTree ? ' pt-6' : ' pt-1'}${recommendations.length === 0 && hasTree ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
                         {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
@@ -4230,7 +4243,7 @@ export function CaseInterviewerMaster({
                           const hasViz = !!(recommendationsTable || visualisations?.some(v => v.type === 'table' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
                           if (!hasContent) return 'flex items-center'
-                          if (chartMaxDepth === 0) return 'flex-1 flex items-center'
+                          if (chartMaxDepth === 0) return hasTree ? 'flex-1 flex items-center' : ''
                           return hasViz ? '' : 'flex-1'
                         })()} style={{
                           ...(useVerticalLayout ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),

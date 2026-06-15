@@ -6131,7 +6131,7 @@
     "difficulty": "Medium",
     "case_type": "Market Entry",
     "company": "McKinsey & Co.",
-    "round": "Engagement Manager",
+    "round": "Eng. Manager",
     "prompt": "Hey. Your client is an Australian Telecom Company planning to enter India. Prepare a comprehensive market entry strategy for it.",
     "frameworkTree": {
       "nodes": {
@@ -6246,13 +6246,13 @@
         },
         "mobile-phone-access": {
           "id": "mobile-phone-access",
-          "label": "Mobile Phone Access",
+          "label": "Phone Access",
           "tone": "leaf",
           "children": []
         },
         "avg-subscription-value": {
           "id": "avg-subscription-value",
-          "label": "Avg. Subscription Value",
+          "label": "Avg. Subscription",
           "tone": "leaf",
           "children": []
         },
@@ -6667,38 +6667,16 @@
       "defaultExpanded": [
         "market-entry-strategy",
         "financial-feasibility",
-        "operational-feasibility",
-        "risks",
         "market-size",
-        "telecom-penetration",
-        "market-share",
-        "market-structure",
-        "customer-stickiness",
-        "competitive-positioning",
-        "profit-per-unit",
-        "fixed-costs",
-        "overhead-costs",
-        "physical-capital",
-        "human-capital",
-        "method",
-        "regulatory-and-certifications",
-        "infrastructure-setup",
-        "operational-setup",
-        "distribution",
-        "manner",
-        "entry-risks",
-        "market-access",
-        "operational-risks",
-        "exit-risks"
+        "telecom-penetration"
       ],
-      "defaultFocusedId": "new-entrants-op",
+      "defaultFocusedId": "telecom-penetration",
       "notes": [
         {
           "title": "Questions",
           "items": [
             "End-to-end value chain?",
-            "Objective of entering the market?",
-            "Time frame?",
+            "Objective & time frame?",
             "Prior foreign market experience?",
             "Current Australia business performance?"
           ]
@@ -6706,8 +6684,7 @@
         {
           "title": "Keep In Mind",
           "items": [
-            "Clarify if it is go-to-market or entry evaluation",
-            "Client objective sets the financial threshold",
+            "Clarify if it is GTM or entry evaluation",
             "India is more price-sensitive than Australia"
           ]
         },
@@ -6715,14 +6692,14 @@
           "title": "Brownie Points",
           "items": [
             "Importance of cultural fit",
-            "Contrasting the Indian market with that in Australia to identify potential risks"
+            "Contrasting Indian market with Australia to identify risks"
           ]
         }
       ]
     },
-    "framework": "Candidate: Interesting. I'd like to clarify if the telecom company has already decided to enter India and we are to develop a \"Go-to-Market\" strategy or are we to first evaluate whether the company should enter India or not?\nInterviewer: Why don't you come up with key metrics the company should look at while determining whether it should enter the country or not?\nCandidate: Great. I'd like to first know what the primary objective of the client is? Is it increased profits, larger market share or a social endeavor?\nInterviewer: The client would like to maximize profits.\nCandidate: Okay. Does the client have any prior experience when it comes to entering a foreign market?\nInterviewer: No, India would be the first.\nCandidate: Sure. I'd like to understand the client a little better. Can you tell me more about our client's business and value chain? Also, when would they like to enter the market?\nInterviewer: Our client handles all parts of the telecom value chain. They are looking at a time frame of 2-3 years for entering the country.\nCandidate: How is our client fairing in Australia?\nInterviewer: Our client is one of the leading telecom operators with a large market share in Australia.\nCandidate: Great. I'd like to now come up with my approach keeping in mind the present Indian Telecom Industry dominated by 2-3 large players.\nI'd like to look at Financial feasibility, operational feasibility and risks. Under financial feasibility I want to look at the total profits we can make which would be equal to (Market size*Market share*Profit/unit) - (Fixed costs). This number shall then be evaluated to see if it is lucrative enough.\nUnder Operational feasibility, I'd like to evaluate the various steps of the value chain and analyse it through a two-step approach: Method and Manner. In the method we shall evaluate whether we want to set up the operation on our own or merge, acquire or opt for a joint venture with someone. Under mode, we shall determine how to achieve the method as obtained in step 1.\nLastly, under risks I'd evaluate the various risks associated with such a venture.\nInterviewer: Comprehensive! Why don't you tell me the various parameters you would consider for arriving at the market size and market share under financial feasibility.\nCandidate: Sure. I'd like to look at the following metrics to arrive at market size - the population of India, telecom penetration rate in urban and rural India as determined by income levels and age distribution, access to mobile phones, average subscription amount amongst other factors. To arrive at market share, I look at how fragmented the market is, switching costs in the industry, product quality compared to competitors. Per unit can be calculated by understanding the price we will charge and the variable costs associated with it. Lastly, we will estimate our fixed costs and reduce this from our expected profits.\nInterviewer: Great, let's look at operational feasibility now.\nCandidate: Sure, we need to first determine if we want to be an end-to-end service provider or operate only in certain steps of the value chain. Considering we are end-to-end in Australia, I think we might follow the same model here. We can evaluate the following options: On our own, Merger, Acquisition, Joint Venture and Outsourcing. These options can be selected based on the following factors: Degree of control desired, Competence of other parties, Financial benefits, Feasibility, Legal requirements, Cultural fit, etc.\nOnce we select the mode, we need to develop the following steps of the value chain.\nLegal certifications and requirements - Setting up offices and Telecom Towers - Hiring requisite staff - Setting up a distribution network - Marketing and advertising - After sales-services.\nInterviewer: Great. Why don't you quickly sum up the risk factors involved too.\nCandidate: Sure, there would be:\n1) General risks - Adjusting to Indian landscape and business environment (India is not as technologically-advanced as Australia)\n2) Legal Risks - Getting permissions in an industry that has huge lobbying influence\n3) Labour-related - Getting the right people with required competence\n4) Barriers - Presence of big players who would not want to concede market share\n5) New entrant risks - Entrance of Jio shook the market and led to massive price reduction. The company should be prepared for such threats.\nInterviewer: Perfect. That should be all.\n\nHotline Bling Framework & Recommendations\nMARKET ENTRY STRATEGY FOR AN AUSTRALIAN TELECOM COMPANY\nClarifying Questions: End-to-end value chain? Objective of entering the market? Time frame?\nBrownie Points: Importance of cultural fit Contrasting the Indian market with that in Australia to identify potential risks\nKeep In Mind: Ask the interviewer if your structure is okay before proceeding\n[FLAG] RECOMMENDATIONS section not visible in provided screenshots."
+    "framework": "Candidate: Interesting. I'd like to clarify if the telecom company has already decided to enter India and we are to develop a \"Go-to-Market\" strategy or are we to first evaluate whether the company should enter India or not?\nInterviewer: Why don't you come up with key metrics the company should look at while determining whether it should enter the country or not?\nCandidate: Great. I'd like to first know what the primary objective of the client is? Is it increased profits, larger market share or a social endeavor?\nInterviewer: The client would like to maximize profits.\nCandidate: Okay. Does the client have any prior experience when it comes to entering a foreign market?\nInterviewer: No, India would be the first.\nCandidate: Sure. I'd like to understand the client a little better. Can you tell me more about our client's business and value chain? Also, when would they like to enter the market?\nInterviewer: Our client handles all parts of the telecom value chain. They are looking at a time frame of 2-3 years for entering the country.\nCandidate: How is our client fairing in Australia?\nInterviewer: Our client is one of the leading telecom operators with a large market share in Australia.\nCandidate: Great. I'd like to now come up with my approach keeping in mind the present Indian Telecom Industry dominated by 2-3 large players.\nI'd like to look at Financial feasibility, operational feasibility and risks. Under financial feasibility I want to look at the total profits we can make which would be equal to (Market size*Market share*Profit/unit) - (Fixed costs). This number shall then be evaluated to see if it is lucrative enough.\nUnder Operational feasibility, I'd like to evaluate the various steps of the value chain and analyse it through a two-step approach: Method and Manner. In the method we shall evaluate whether we want to set up the operation on our own or merge, acquire or opt for a joint venture with someone. Under mode, we shall determine how to achieve the method as obtained in step 1.\nLastly, under risks I'd evaluate the various risks associated with such a venture.\nInterviewer: Comprehensive! Why don't you tell me the various parameters you would consider for arriving at the market size and market share under financial feasibility.\nCandidate: Sure. I'd like to look at the following metrics to arrive at market size - the population of India, telecom penetration rate in urban and rural India as determined by income levels and age distribution, access to mobile phones, average subscription amount amongst other factors. To arrive at market share, I look at how fragmented the market is, switching costs in the industry, product quality compared to competitors. Per unit can be calculated by understanding the price we will charge and the variable costs associated with it. Lastly, we will estimate our fixed costs and reduce this from our expected profits.\nInterviewer: Great, let's look at operational feasibility now.\nCandidate: Sure, we need to first determine if we want to be an end-to-end service provider or operate only in certain steps of the value chain. Considering we are end-to-end in Australia, I think we might follow the same model here. We can evaluate the following options: On our own, Merger, Acquisition, Joint Venture and Outsourcing. These options can be selected based on the following factors: Degree of control desired, Competence of other parties, Financial benefits, Feasibility, Legal requirements, Cultural fit, etc.\nOnce we select the mode, we need to develop the following steps of the value chain.\n^ Legal certifications and requirements - Setting up offices and Telecom Towers - Hiring requisite staff - Setting up a distribution network - Marketing and advertising - After sales-services.\nInterviewer: Great. Why don't you quickly sum up the risk factors involved too.\nCandidate: Sure, there would be:\n1) General risks - Adjusting to Indian landscape and business environment (India is not as technologically-advanced as Australia)\n2) Legal Risks - Getting permissions in an industry that has huge lobbying influence\n3) Labour-related - Getting the right people with required competence\n4) Barriers - Presence of big players who would not want to concede market share\n5) New entrant risks - Entrance of Jio shook the market and led to massive price reduction. The company should be prepared for such threats.\nInterviewer: Perfect. That should be all.\n\nHotline Bling Framework & Recommendations\nMARKET ENTRY STRATEGY FOR AN AUSTRALIAN TELECOM COMPANY\nClarifying Questions: End-to-end value chain? Objective of entering the market? Time frame?\nBrownie Points: Importance of cultural fit Contrasting the Indian market with that in Australia to identify potential risks\nKeep In Mind: Ask the interviewer if your structure is okay before proceeding\n[FLAG] RECOMMENDATIONS section not visible in provided screenshots."
   },
-  {
+{
     "id": 26,
     "docId": "case-26",
     "title": "Wat-uh Product",
@@ -6762,107 +6739,17 @@
           "id": "market-size",
           "label": "Market Size",
           "tone": "branch",
-          "children": ["india-pop"]
+          "children": []
         },
         "market-share": {
           "id": "market-share",
           "label": "Market Share",
           "tone": "support",
-          "children": ["capture-25"]
+          "children": []
         },
         "profit-per-unit": {
           "id": "profit-per-unit",
           "label": "Profit / Unit",
-          "tone": "support",
-          "children": ["profit-rs-2"]
-        },
-        "india-pop": {
-          "id": "india-pop",
-          "label": "India Pop. (140 CR)",
-          "tone": "branch",
-          "children": ["urban", "rural"]
-        },
-        "urban": {
-          "id": "urban",
-          "label": "Urban (30% = 40 CR)",
-          "tone": "support",
-          "children": []
-        },
-        "rural": {
-          "id": "rural",
-          "label": "Rural (70% = 100 CR)",
-          "tone": "branch",
-          "children": ["families"]
-        },
-        "families": {
-          "id": "families",
-          "label": "Families (20 CR)",
-          "tone": "branch",
-          "children": ["municipal-supply", "no-connection"]
-        },
-        "municipal-supply": {
-          "id": "municipal-supply",
-          "label": "Municipal Supply (60% = 12 CR)",
-          "tone": "branch",
-          "children": ["full-time-supply", "part-time-supply"]
-        },
-        "no-connection": {
-          "id": "no-connection",
-          "label": "No Connection (40% = 8 CR)",
-          "tone": "support",
-          "children": ["addressable"]
-        },
-        "full-time-supply": {
-          "id": "full-time-supply",
-          "label": "Full-Time Supply (30% ≈ 5 CR)",
-          "tone": "support",
-          "children": []
-        },
-        "part-time-supply": {
-          "id": "part-time-supply",
-          "label": "Part-Time Supply (70% ≈ 7 CR)",
-          "tone": "branch",
-          "children": ["addressable"]
-        },
-        "addressable": {
-          "id": "addressable",
-          "label": "Addressable (15 CR)",
-          "tone": "branch",
-          "children": ["upper-class", "middle-class", "bpl"]
-        },
-        "upper-class": {
-          "id": "upper-class",
-          "label": "Upper Class (10% = 1.5 CR)",
-          "tone": "branch",
-          "children": ["target-market"]
-        },
-        "middle-class": {
-          "id": "middle-class",
-          "label": "Middle Class (40% = 6 CR)",
-          "tone": "support",
-          "children": ["target-market"]
-        },
-        "bpl": {
-          "id": "bpl",
-          "label": "BPL (50% = 7.5 CR)",
-          "tone": "support",
-          "children": []
-        },
-        "target-market": {
-          "id": "target-market",
-          "label": "Target Market 7.5 CR families = 685 CR boxes/yr",
-          "tone": "leaf",
-          "children": []
-        },
-        "capture-25": {
-          "id": "capture-25",
-          "label": "25% Capture ≈ 170 CR boxes",
-          "tone": "support",
-          "children": []
-        },
-        "profit-rs-2": {
-          "id": "profit-rs-2",
-          "label": "Rs. 2 / box → Rs. 340 CR profit",
           "tone": "support",
           "children": []
         },
@@ -7043,25 +6930,16 @@
       },
       "defaultExpanded": [
         "should-we-enter",
-        "financial-feasibility",
-        "market-size",
-        "india-pop",
-        "rural",
-        "families",
-        "municipal-supply",
-        "part-time-supply",
-        "addressable",
-        "upper-class"
+        "operational-feasibility"
       ],
-      "defaultFocusedId": "target-market",
+      "defaultFocusedId": "operational-feasibility",
       "notes": [
         {
           "title": "Questions",
           "items": [
             "Product specification and price",
             "Existence of competitors",
-            "Primary objective",
-            "Timeline for market entry"
+            "Primary objective & timeline"
           ]
         },
         {
@@ -7073,14 +6951,72 @@
         {
           "title": "Brownie Points",
           "items": [
-            "Considering connection to municipal water supply while estimating market size",
+            "Considering connection to municipal water supply",
             "Keeping in mind the type of salesmen required for this product",
             "Partnering with the Government or an NGO"
           ]
         }
       ]
     },
-    "framework": "Candidate: I'd like to understand the problem a little better. What does our client do? Can you tell me a little more about the product?\nInterviewer: Your client is in the chemicals business and is based in Germany. He came up with this product recently. One sachet of the powder, when added to 10 litres of water, cleans the water in 30 minutes and makes it fit for drinking.\nCandidate: Great. Is India the only market we are considering? What is our primary objective? Is it profits?\nInterviewer: Yes, the client is focused only on India. The objective is to maximise profits.\nCandidate: What is the price of the product? Also, are there any similar products already in the market?\nInterviewer: Sure. We sell 12 sachets in a box at Rs. 10 per box. There are no other products exactly like ours in the market. However, there are certain powders that claim to have similar results. These are mainly fake.\nCandidate: Okay. When do we want to enter?\nInterviewer: Your client would like to enter in the next 1 year. You can begin now.\nCandidate: Sure. I'd like to divide my approach into 3. First, I shall analyse the financial feasibility of launching the product in India. Second, I shall analyse the manner of setting up operations in India. Third, I shall analyse the risks associated with a project of this nature.\nInterviewer: Sounds good. You can begin now.\nCandidate: Sure.\n1) Financial Feasibility:\nIn this step, I would like to estimate the profits we will make and analyse if this is a good enough figure.\nProfits = (Market size*Market share*Profit per unit) - Fixed Investment.\nI'd also like to keep in mind the market growth rate and ease of entry as pertinent considerations.\nEstimating Market size and Market share (Refer to the framework page for complete calculations):\nWe begin by dividing the country into urban and rural areas. For the purpose of this case, I would like to ignore those living in urban areas since most urban areas have access to clean drinking water and the availability of cheap bottled water. It is highly unlikely that such a product will succeed in urban areas given the plethora of alternatives. Our product is one that would be consumed by families as a whole and not one that is individually purchased by every member of the household (eg. Phones). So, we divide the rural population by the average family size.\nNext, we estimate the percentage of rural families that have connection to municipal water supplies and whether this access is throughout the day or during parts of the day. We arrive at the total number of families that would require a product like this. We shall now divide the remaining families into different income groups. The reason for doing this is that on an average, every family would require around 30 litres of water every day, for drinking and cooking. This would mean the purchase of 3 sachets every day. Thus, they use up a box in 4 days. This comes up to approximately Rs. 70 per family in a month. Some families will not be able to afford such an expenditure on cleaning water every month and hence we need to rule them out.\nOut of the remaining families, we can assume an average of 3 sachets every day, multiplied into 365, divided by the box size of 12 sachets, to give us the annual market size of approximately 685 crore boxes.\nKeeping in mind the availability of certain substitutes and the fact that we might not be able to capture the entire market on arrival, we can estimate around 25% (170 crore) to be captured by us in the first year. We are taking only 25% since it would take time to gain the trust of the people. Next, I would like to know the profit/unit and the fixed investments required.\nInterviewer: Sure, the variable cost of the product is Rs 8 per box. You can ignore fixed costs for now.\nCandidate: Okay. That gives us a profit/unit of Rs. 2 per box. Thus, our total profits, without considering the fixed element, will be 170 crores x Rs. 2 = Rs. 340 crores.\nIs this figure good enough?\nInterviewer: How would you decide if it is?\nCandidate: I would compare this to our existing profits and see if it causes a sizable increase. I would also compare it to the fixed investments required.\nInterviewer: Great. Based on these metrics, you can assume that the profits are lucrative!\nCandidate: Great. Next, I'd like to analyse how we will set up the value chain. The following factors have to be looked at -\nObtaining necessary certification and licenses - Setting up manufacturing units in India - Developing distribution outlets - Hiring the required staff - Marketing the product - After-sales service.\nFirst, we need to obtain the requisite permissions since this is a product that can cause great harm to society if it has side effects or does not perform as promised.\nUnder manufacturing, we need to decide whether we want to import from Germany or manufacture it within the country. Manufacturing within the country not only reduces transportation and import costs but also develops trust since it is made in India.\nUnder distribution outlets, we need to ensure that our product is available in most kirana shops and small-scale markets as this is the primary point of access to rural families.\nUnder staff, we need competent people to make the product. More importantly, we would require ground-level salesmen to sell the product in the poorest parts of India.\nGaining their trust would be a huge barrier to overcome and hence this segment of manpower must be carefully selected.\nWe can market the product through a variety of ways - Radio, Melas, Village panchayats and billboards. We need to keep in mind that usual methods of marketing such as TV would not be applicable in this case.\nLastly, we need to ensure we have a proper system in case customers have any grievances or queries regarding the product.\nInterviewer: Brilliant. Anything else you would like to look at?\nCandidate: We can consider partnering with the Government or certain NGO's. This increases our credibility, provides us with subsidies and helps us in setting up operations. They benefit too, from the social initiative.\nApart from this, I'd like to look at risks that we may face.\nPrimarily, the biggest risk would be getting rural families to accept the product. There will also be risks of new competitors entering the market. Ensuring that our product performs as promised would be very important as there would be a lot of legal barriers to develop such a product.\nInterviewer: Great. We can end the case here!\n\nWat-uh Product Framework & Recommendations\nLAUNCHING A POWDER THAT CAN KILL GERMS WHEN ADDED TO WATER\nClarifying Questions: Product specification and price Existence of competitors Primary objective\nBrownie Points: Considering connection to municipal water supply while estimating market size Keeping in mind the type of salesmen required for this product Partnering with the Government or an NGO\nKeep In Mind: When determining market share, you might be tempted to give higher percentages. Try to be realistic and come up with a more conservative number.\nRECOMMENDATIONS: Macro Recommendation: Enter the Indian market — profits of Rs. 340 CR are lucrative and operationally feasible.\nMicro Recommendation: Partner with Government / NGOs for subsidies and support in establishing ground operations"
+    "visualisations": [
+  {
+    "id": "market-sizing",
+    "type": "table",
+    "title": "Market Sizing: Funnel to Target Market",
+    "header": "Market Sizing",
+    "rows": [
+      ["1. India population (A)", "", "140 crores "],
+      ["2. Rural population (ignore urban)", "70% of A", "100 crores"],
+      ["3. Rural families (B)", "100 crores / 5 per family", "20 crores"],
+      ["  3a. With municipal supply (C)", "60% of B", "12 crores"],
+      ["    3aa. Less: Full-time supply (product not needed)", "~40% of C", "(5 crores)"],
+      ["    3ab. Part-time supply (D)", "~60% of C", "7 crores"],
+      ["  3b. No municipal connection (E)", "40% of B", "8 crores"],
+      ["4. Addressable families (F)", "D + E", "15 crores"],
+      ["5. Less: BPL (cannot afford)", "50% of F", "(7.5 crores)"],
+      ["6. Target families (G)", "Upper class (10% = 1.5 crores) + Middle class (40% = 6 crores)", "7.5 crores"],
+      ["7. Annual demand", "( G x 3 sachets/day x 365 days ) / 12 per box ", "685 crore boxes"]
+    ],
+    "noTitle": true,
+    "columns": ["Particulars", "Calculation", "Value"],
+    "summaryRows": [7, 9, 10],
+    "columnWidths": ["34%", "33%", "33%"]
+  },
+  {
+    "id": "market-share",
+    "type": "table",
+    "title": "Market Share: Year 1 Capture",
+    "header": "Market Share",
+    "rows": [
+      ["Annual market size", "From market sizing", "685 crores boxes"],
+      ["Year 1 market share", "Conservative, trust building", "25%"],
+      ["Boxes captured", "685 crores x 25%", "170 crore boxes"]
+    ],
+    "noTitle": true,
+    "columns": ["Particulars", "Calculation", "Value"],
+    "summaryRows": [2],
+    "columnWidths": ["34%", "33%", "33%"]
+  },
+  {
+    "id": "profit",
+    "type": "table",
+    "title": "Profit: Annual Contribution",
+    "header": "Profit",
+    "insight": "Based on the above discussion, we should enter the Indian market.",
+    "rows": [
+      ["Price per box", "Given", "Rs. 10"],
+      ["Variable cost per box", "Given", "Rs. 8"],
+      ["Profit per box", "Rs. 10 - Rs. 8", "Rs. 2"],
+      ["Boxes captured", "From market share", "170 crores boxes"],
+      ["Annual profit", "170 crores x Rs. 2", "Rs. 340 crores"]
+    ],
+    "noTitle": true,
+    "columns": ["Particulars", "Calculation", "Value"],
+    "summaryRows": [2, 4],
+    "columnWidths": ["34%", "33%", "33%"]
+  }
+],
+    "framework": "Candidate: I'd like to understand the problem a little better. What does our client do? Can you tell me a little more about the product?\nInterviewer: Your client is in the chemicals business and is based in Germany. He came up with this product recently. One sachet of the powder, when added to 10 litres of water, cleans the water in 30 minutes and makes it fit for drinking.\nCandidate: Great. Is India the only market we are considering? What is our primary objective? Is it profits?\nInterviewer: Yes, the client is focused only on India. The objective is to maximise profits.\nCandidate: What is the price of the product? Also, are there any similar products already in the market?\nInterviewer: Sure. We sell 12 sachets in a box at Rs. 10 per box. There are no other products exactly like ours in the market. However, there are certain powders that claim to have similar results. These are mainly fake.\nCandidate: Okay. When do we want to enter?\nInterviewer: Your client would like to enter in the next 1 year. You can begin now.\nCandidate: Sure. I'd like to divide my approach into 3. First, I shall analyse the financial feasibility of launching the product in India. Second, I shall analyse the manner of setting up operations in India. Third, I shall analyse the risks associated with a project of this nature.\nInterviewer: Sounds good. You can begin now.\nCandidate: Sure. The first step is Financial Feasibility:\nIn this step, I would like to estimate the profits we will make and analyse if this is a good enough figure.\nProfits = (Market size*Market share*Profit per unit) – Fixed Investment.\nI'd also like to keep in mind the market growth rate and ease of entry as pertinent considerations.\nEstimating Market size and Market share _(Refer to the drill down section for complete calculations)_:\nWe begin by dividing the country into urban and rural areas. For the purpose of this case, I would like to ignore those living in urban areas since most urban areas have access to clean drinking water and the availability of cheap bottled water. It is highly unlikely that such a product will succeed in urban areas given the plethora of alternatives. Our product is one that would be consumed by families as a whole and not one that is individually purchased by every member of the household (eg. Phones). So, we divide the rural population by the average family size.\nNext, we estimate the percentage of rural families that have connection to municipal water supplies and whether this access is throughout the day or during parts of the day. We arrive at the total number of families that would require a product like this. We shall now divide the remaining families into different income groups. The reason for doing this is that on an average, every family would require around 30 litres of water every day, for drinking and cooking. This would mean the purchase of 3 sachets every day. Thus, they use up a box in 4 days. This comes up to approximately Rs. 70 per family in a month. Some families will not be able to afford such an expenditure on cleaning water every month and hence we need to rule them out.\nOut of the remaining families, we can assume an average of 3 sachets every day, multiplied into 365, divided by the box size of 12 sachets, to give us the annual market size of approximately 685 crore boxes.\nKeeping in mind the availability of certain substitutes and the fact that we might not be able to capture the entire market on arrival, we can estimate around 25% (170 crore) to be captured by us in the first year. We are taking only 25% since it would take time to gain the trust of the people. Next, I would like to know the profit/unit and the fixed investments required.\nInterviewer: Sure, the variable cost of the product is Rs 8 per box. You can ignore fixed costs for now.\nCandidate: ~ Okay. That gives us a profit/unit of Rs. 2 per box. Thus, our total profits, without considering the fixed element, will be 170 crores x Rs. 2 = Rs. 340 crores.\nIs this figure good enough?\nInterviewer: How would you decide if it is?\nCandidate: I would compare this to our existing profits and see if it causes a sizable increase. I would also compare it to the fixed investments required.\nInterviewer: Great. Based on these metrics, you can assume that the profits are lucrative!\nCandidate: Great. Next, I'd like to analyse how we will set up the value chain. The following factors have to be looked at: \n^ Obtaining necessary certification and licenses – Setting up manufacturing units in India – Developing distribution outlets – Hiring the required staff – Marketing the product – After-sales service.\nFirst, we need to obtain the requisite permissions since this is a product that can cause great harm to society if it has side effects or does not perform as promised.\nUnder manufacturing, we need to decide whether we want to import from Germany or manufacture it within the country. Manufacturing within the country not only reduces transportation and import costs but also develops trust since it is made in India.\nUnder distribution outlets, we need to ensure that our product is available in most kirana shops and small-scale markets as this is the primary point of access to rural families.\nUnder staff, we need competent people to make the product. More importantly, we would require ground-level salesmen to sell the product in the poorest parts of India.\nGaining their trust would be a huge barrier to overcome and hence this segment of manpower must be carefully selected.\nWe can market the product through a variety of ways: Radio, Melas, Village panchayats and billboards. We need to keep in mind that usual methods of marketing such as TV would not be applicable in this case.\nLastly, we need to ensure we have a proper system in case customers have any grievances or queries regarding the product.\nInterviewer: Brilliant. Anything else you would like to look at?\nCandidate: We can consider partnering with the Government or certain NGO's. This increases our credibility, provides us with subsidies and helps us in setting up operations. They benefit too, from the social initiative.\nApart from this, I'd like to look at risks that we may face.\nPrimarily, the biggest risk would be getting rural families to accept the product. There will also be risks of new competitors entering the market. Ensuring that our product performs as promised would be very important as there would be a lot of legal barriers to develop such a product.\nInterviewer: Great. We can end the case here!\n\nWat-uh Product Framework & Recommendations\nLAUNCHING A POWDER THAT CAN KILL GERMS WHEN ADDED TO WATER\nClarifying Questions: Product specification and price Existence of competitors Primary objective\nBrownie Points: Considering connection to municipal water supply while estimating market size Keeping in mind the type of salesmen required for this product Partnering with the Government or an NGO\nKeep In Mind: When determining market share, you might be tempted to give higher percentages. Try to be realistic and come up with a more conservative number."
   },
   {
     "id": 27,
@@ -7092,182 +7028,10 @@
     "company": "Kepler Cannon",
     "round": "Partner",
     "prompt": "Your client operates various ferries across India and is now deciding whether he should launch a cruise from Chennai to Port Blair and wants your opinion on the same.",
-    "frameworkTree": {
-      "nodes": {
-        "revenue": {
-          "id": "revenue",
-          "label": "Revenue",
-          "tone": "root",
-          "children": [
-            "step-1-indians-that-travel",
-            "step-2-go-to-port-blair",
-            "step-3-travel-by-ferry",
-            "step-4-choose-our-service",
-            "revenue-per-family"
-          ]
-        },
-        "step-1-indians-that-travel": {
-          "id": "step-1-indians-that-travel",
-          "label": "No. Of Indians That Travel",
-          "tone": "branch",
-          "children": [
-            "urban",
-            "rural"
-          ]
-        },
-        "step-2-go-to-port-blair": {
-          "id": "step-2-go-to-port-blair",
-          "label": "% Go To Port Blair",
-          "tone": "branch",
-          "children": [
-            "total-trips"
-          ]
-        },
-        "step-3-travel-by-ferry": {
-          "id": "step-3-travel-by-ferry",
-          "label": "% Travel By Ferry",
-          "tone": "branch",
-          "children": [
-            "flights",
-            "ferry"
-          ]
-        },
-        "step-4-choose-our-service": {
-          "id": "step-4-choose-our-service",
-          "label": "% Choose Our Service",
-          "tone": "branch",
-          "children": [
-            "competitor-benchmarking",
-            "brand-and-service-quality"
-          ]
-        },
-        "revenue-per-family": {
-          "id": "revenue-per-family",
-          "label": "Revenue/Family = Rs. 32,000",
-          "tone": "support",
-          "children": [
-            "family-size",
-            "ticket-price"
-          ]
-        },
-        "urban": {
-          "id": "urban",
-          "label": "Urban (30% = 420M)",
-          "tone": "branch",
-          "children": [
-            "bpl",
-            "lmc",
-            "umc",
-            "uc"
-          ]
-        },
-        "rural": {
-          "id": "rural",
-          "label": "Rural (70% = 1B)",
-          "tone": "support",
-          "children": []
-        },
-        "bpl": {
-          "id": "bpl",
-          "label": "BPL (0% travel)",
-          "tone": "support",
-          "children": []
-        },
-        "lmc": {
-          "id": "lmc",
-          "label": "LMC (9M families)",
-          "tone": "support",
-          "children": []
-        },
-        "umc": {
-          "id": "umc",
-          "label": "UMC (18M families)",
-          "tone": "support",
-          "children": []
-        },
-        "uc": {
-          "id": "uc",
-          "label": "UC (8M families)",
-          "tone": "support",
-          "children": []
-        },
-        "total-trips": {
-          "id": "total-trips",
-          "label": "Total Trips = 35M",
-          "tone": "branch",
-          "children": [
-            "domestic",
-            "international"
-          ]
-        },
-        "domestic": {
-          "id": "domestic",
-          "label": "Domestic (90% = 31.5M)",
-          "tone": "branch",
-          "children": [
-            "twenty-destinations"
-          ]
-        },
-        "international": {
-          "id": "international",
-          "label": "International (10% = 3.5M)",
-          "tone": "support",
-          "children": []
-        },
-        "twenty-destinations": {
-          "id": "twenty-destinations",
-          "label": "20 Locations \u2192 1.6M",
-          "tone": "support",
-          "children": []
-        },
-        "flights": {
-          "id": "flights",
-          "label": "Flights (70% = 1.1M)",
-          "tone": "support",
-          "children": []
-        },
-        "ferry": {
-          "id": "ferry",
-          "label": "Ferry (30% = 0.5M)",
-          "tone": "support",
-          "children": []
-        },
-        "competitor-benchmarking": {
-          "id": "competitor-benchmarking",
-          "label": "Competitor Benchmarking",
-          "tone": "support",
-          "children": []
-        },
-        "brand-and-service-quality": {
-          "id": "brand-and-service-quality",
-          "label": "Brand & Service Quality \u2192 40% = 200,000 Families",
-          "tone": "leaf",
-          "children": []
-        },
-        "family-size": {
-          "id": "family-size",
-          "label": "Family Size = 4",
-          "tone": "support",
-          "children": []
-        },
-        "ticket-price": {
-          "id": "ticket-price",
-          "label": "Ticket Price = Rs. 8,000",
-          "tone": "support",
-          "children": []
-        }
-      },
-      "defaultExpanded": [
-        "revenue",
-        "step-1-indians-that-travel",
-        "urban",
-        "step-2-go-to-port-blair",
-        "total-trips",
-        "domestic",
-        "step-3-travel-by-ferry",
-        "step-4-choose-our-service"
-      ],
-      "defaultFocusedId": "brand-and-service-quality",
+"frameworkTree": {
+  "nodes": {},
+  "defaultExpanded": [],
+  "defaultFocusedId": "",
       "notes": [
         {
           "title": "Questions",
@@ -7280,9 +7044,8 @@
         {
           "title": "Keep In Mind",
           "items": [
-            "Lay out all four steps upfront before calculating",
-            "Convert travellers to families by dividing by four",
-            "Acknowledge international travel then exclude from estimate"
+            "Lay out all four steps top-down before calculating",
+            "Convert travellers to families by dividing by four"
           ]
         },
         {
@@ -7293,6 +7056,91 @@
         }
       ]
     },
-    "framework": "Candidate: Sure. I want to begin by understanding our client better. Where are we currently operating and what is our objective out of this new venture?\nInterviewer: Our client currently has Panjim-Vasco Ferry, Port Blair-Havelock Ferry and Jorhat-Majuli Ferry. We would like you to assess the financial attractiveness of the Chennai-Port Blair Ferry in terms of expected revenue from Indian tourists. Assume that all ferry services to Port Blair depart from Chennai.\nCandidate: Interesting. So, our client has experience in this business. I would like to now understand the proposed ferry and the market better. What kind of ferry do we have in mind: Luxury/Economy? How long is the journey? Do we have competitors on this route?\nInterviewer: Our cruise will be luxurious. The journey is about 60 hours long and we have a few players in the market.\nCandidate: Understood. To analyse the revenue, I would like to calculate the market size and market share with the following steps:\nSTEP 1: Estimate the number of people who travel\nSTEP 2: Estimate the number of people who would go to Port Blair\nSTEP 3: Estimate the number of people who would travel by ferry\nSTEP 4: Estimate the share of the above that would choose our service\nSTEP 1: Estimate the number of people who travel for recreational purposes at least once in two years\nA good place to start is India's population. We can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. Next, we can slice the urban population according to different income levels:\nCategory | Income | Percentage | Population | % that travel | Number of families = Total/4\nBelow Poverty Line | < Rs 10,000/month | 30% | 120 million | 0% | 0\nLower Middle Class | Rs 10,000 - Rs 20,000/month | 30% | 120 million | 30% | 9 million (36 million/4)\nUpper Middle Class | Rs 20,000 - Rs 80,000/month | 30% | 120 million | 60% | 18 million (72 million/4)\nUpper Class | > Rs 80,000/month | 10% | 40 million | 80% | 8 million (32 million/4)\nCan we move forward with the above estimation on the basis of income segmentation?\nInterviewer: Sure.\nCandidate: Total number of families that go on a trip every year = 35 million\nAssumption: Average number of trips per year per family = 1\nTotal number of trips in a year = 35 million\nWe can say about 10% of these would be international\nTotal number of domestic trips = 31.5 million ≈ 32 million (approx.)\nSTEP 2: Estimate the number of families that would go to Port Blair:\nWe can assume that there are about 20 popular tourist destinations in India with an equal probability of being chosen\nHence, number of family trips made to Port Blair = 32 million/20 = 1.6 million\nSTEP 3: Estimate the number of families that would travel by ferry:\nHere, I would like to know the price of ferry tickets and the price of an airline ticket.\nInterviewer: Sure, ferry prices are Rs. 8000 per ticket. We as well as our competitors are charging the same price. An airline ticket costs around Rs. 4000.\nCandidate: Thank you. We can further analyse this by segmenting families based on the mode of transportation. Since flights are cheaper and faster, most people, especially those belonging to the middle class will opt for this. About 30% would prefer a ferry given the luxurious and leisurely experience.\nMode | Percentage | Total\nFlights | 70% | 1.1 million (approx.)\nFerry | 30% | 0.5 million (approx.)\nSTEP 4: Estimate the share of the above that would choose our service\nI would now like to benchmark our cruise with those of our competitors.\nInterviewer: We have a well established brand name unlike our competitors and in addition to that the service that we provide is superior to that of our competitors. Assume we will be able to capture 40% of the market.\nCandidate: Number of families that travel by our cruise = 500,000 * 40% = 200,000 families. Expected revenue = 2,00,000*4* 8,000 = 6,400,000,000 = Rs. 6.4 billion. Keeping the cost in mind, our client can make decisions based on this revenue figure.\nInterviewer: Yes, indeed, thank you for your time."
+    "visualisations": [
+  {
+    "type": "table",
+    "title": "Urban Population by Income Level",
+    "inlineOnly": true,
+    "columns": ["Category", "Income", "Percentage", "Population", "% that Travel", "Number of Families (Total / 4)"],
+    "rows": [
+      ["Below Poverty Line (BPL)", "< Rs 10,000/month", "30%", "120 million", "0%", "0"],
+      ["Lower Middle Class (LMC)", "Rs 10,000 - Rs 20,000/month", "30%", "120 million", "30%", "9 million (36 million / 4)"],
+      ["Upper Middle Class (UMC)", "Rs 20,000 - Rs 80,000/month", "30%", "120 million", "60%", "18 million (72 million / 4)"],
+      ["Upper Class (UC)", "> Rs 80,000/month", "10%", "40 million", "80%", "8 million (32 million / 4)"]
+    ],
+        "columnWidths": ["18%", "23%", "11%", "11%", "12%", "25%"]
+  },
+    {
+    "type": "table",
+    "title": "Mode of Travel",
+    "inlineOnly": true,
+    "columns": ["Mode", "Percentage", "Total"],
+    "rows": [
+      ["Flights", "70%", "1.1 million (approx.)"],
+      ["Ferry", "30%", "0.5 million (approx.)"]
+    ],
+        "columnWidths": ["33%", "33%", "34%"]
+  },
+  {
+    "id": "market-sizing",
+    "type": "table",
+    "title": "Market Sizing",
+    "header": "Market Sizing",
+    "noTitle": true,
+    "columns": ["Particulars", "Calculation", "Value"],
+    "columnWidths": ["34%", "33%", "33%"],
+    "summaryRows": [7, 8, 12],
+    "rows": [
+      ["1. Total population (A)", "", "1.4 billion"],
+      ["  1a. Rural (excluded)", "70% of A", "1 billion"],
+      ["  1b. Urban", "30% of A", "400 million"],
+      ["    1ba. BPL travelers", "120 Mn x 0% (given above)", "0"],
+      ["    1bb. LMC travelers", "120 Mn x 30% (given above)", "36 million"],
+      ["    1bc. UMC travelers", "120 Mn x 60% (given above)", "72 million"],
+      ["    1bd. UC travelers", "40 Mn x 80% (given above)", "32 million"],
+      ["2. Traveling individuals (C)", "0 + 36 + 72 + 32", "140 million"],
+      ["3. Traveling families (D)", "C / 4 per family", "35 million"],
+      ["4. Total annual trips (E)", "D x 1 trip/year", "35 million"],
+      ["  4a. International trips (excluded)", "10% of E", "3.5 million"],
+      ["  4b. Domestic trips", "90% of E", "32 million"],
+      ["5. Port Blair families (F)", "32 million / 20 destinations", "1.6 million"]
+    ],
+    "insight": "Rural population is excluded; average family size assumed at 4. Port Blair is 1 of 20 domestic destinations."
+  },
+  {
+    "id": "market-share",
+    "type": "table",
+    "title": "Market Share",
+    "header": "Market Share",
+    "noTitle": true,
+    "columns": ["Particulars", "Calculation", "Value"],
+    "columnWidths": ["34%", "33%", "33%"],
+    "summaryRows": [2, 3],
+    "rows": [
+      ["1. Port Blair families (F)", "From market sizing", "1.6 million"],
+      ["  1a. By flight (excluded)", "70% of F", "1.1 million"],
+      ["  1b. ferry (G)", "30% of F", "0.5 million"],
+      ["2. Our service share (H)", "40% of G (given)", "200,000 families"]
+    ]
+  },
+  {
+    "id": "revenue",
+    "type": "table",
+    "title": "Expected Revenue",
+    "header": "Expected Revenue",
+    "noTitle": true,
+    "columns": ["Particulars", "Calculation", "Value"],
+    "columnWidths": ["34%", "33%", "33%"],
+    "summaryRows": [3, 4],
+    "rows": [
+      ["Families using our service (H)", "From market share", "200,000"],
+      ["Family size", "", "4"],
+      ["Ticket price per person", "given", "Rs. 8,000"],
+      ["Revenue per family", "4 x Rs. 8,000", "Rs. 32,000"],
+      ["Expected revenue", "200,000 x Rs. 32,000", "Rs. 6.4 billion"]
+    ]
+  }
+],
+    "framework": "Candidate: Sure. I want to begin by understanding our client better. Where are we currently operating and what is our objective out of this new venture?\nInterviewer: Our client currently has Panjim-Vasco Ferry, Port Blair-Havelock Ferry and Jorhat-Majuli Ferry. We would like you to assess the financial attractiveness of the Chennai-Port Blair Ferry in terms of expected revenue from Indian tourists. Assume that all ferry services to Port Blair depart from Chennai.\nCandidate: Interesting. So, our client has experience in this business. I would like to now understand the proposed ferry and the market better. What kind of ferry do we have in mind: Luxury/Economy? How long is the journey? Do we have competitors on this route?\nInterviewer: Our cruise will be luxurious. The journey is about 60 hours long and we have a few players in the market.\nCandidate: Understood. To analyse the revenue, I would like to calculate the market size and market share with the following steps:\n1) Estimate the number of people who travel\n2) Estimate the number of people who would go to Port Blair\n3) Estimate the number of people who would travel by ferry\n4) Estimate the share of the above that would choose our service\n_(Step 1: Estimate the number of people who travel for recreational purposes at least once in two years)_\nA good place to start is India's population. We can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. Next, we can slice the urban population according to different income levels:\n[VIS:0]\nCan we move forward with the above estimation on the basis of income segmentation?\nInterviewer: Sure.\nCandidate: Total number of families that go on a trip every year = 35 million\nAssumption: Average number of trips per year per family = 1\nTotal number of trips in a year = 35 million\nWe can say about 10% of these would be international\n~ Total number of domestic trips = 31.5 million ≈ 32 million (approx.)\n_(Step 2: Estimate the number of families that would go to Port Blair)_\nWe can assume that there are about 20 popular tourist destinations in India with an equal probability of being chosen. Hence, number of family trips made to Port Blair = 32 million/20 = 1.6 million\n_(Step 3: Estimate the number of families that would travel by ferry)_\nHere, I would like to know the price of ferry tickets and the price of an airline ticket.\nInterviewer: Sure, ferry prices are Rs. 8000 per ticket. We as well as our competitors are charging the same price. An airline ticket costs around Rs. 4000.\nCandidate: Thank you. We can further analyse this by segmenting families based on the mode of transportation. Since flights are cheaper and faster, most people, especially those belonging to the middle class will opt for this. About 30% would prefer a ferry given the luxurious and leisurely experience.\n[VIS:1]\n_(Step 4: Estimate the share of the above that would choose our service)_\nI would now like to benchmark our cruise with those of our competitors.\nInterviewer: We have a well established brand name unlike our competitors and in addition to that the service that we provide is superior to that of our competitors. Assume we will be able to capture 40% of the market.\nCandidate: ~ Number of families that travel by our cruise = 500,000 * 40% = 200,000 families. Expected revenue = 2,00,000*4* 8,000 = 6,400,000,000 = Rs. 6.4 billion. Keeping the cost in mind, our client can make decisions based on this revenue figure.\nInterviewer: Yes, indeed, thank you for your time."
   }
 ]
