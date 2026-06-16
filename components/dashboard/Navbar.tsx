@@ -6,6 +6,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { usePathname, useRouter } from 'next/navigation';
 import MarketingAuthPanel from '@/components/auth/MarketingAuthPanel';
 import { auth } from '@/lib/firebase/config';
+import { useIsPreview } from './DashboardContext';
 
 interface NavbarProps {
   currentPage: 'home' | 'dashboard' | 'about' | 'about-ccx' | 'repository' | 'practice' | 'privacy';
@@ -17,6 +18,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
   const [showAuthModal, setShowAuthModal]   = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const isPreview = useIsPreview();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -41,6 +43,35 @@ const Navbar = ({ currentPage }: NavbarProps) => {
 
   return (
     <>
+      {isPreview && (
+        <style>{`
+          @keyframes _nav_signin_glow {
+            0%   { box-shadow: 0 0 0 0 rgba(61,90,53,0); }
+            25%  { box-shadow: 0 0 0 4px rgba(61,90,53,0.22); }
+            60%  { box-shadow: 0 0 0 7px rgba(61,90,53,0.10); }
+            100% { box-shadow: 0 0 0 0 rgba(61,90,53,0); }
+          }
+          @keyframes _nav_signin_ping {
+            0%   { transform: scale(1); opacity: 0.5; }
+            70%  { transform: scale(1.9); opacity: 0; }
+            100% { transform: scale(1.9); opacity: 0; }
+          }
+          ._nav_signin_btn {
+            animation: _nav_signin_glow 2.4s cubic-bezier(0.4,0,0.6,1) 0.6s 3 forwards;
+            position: relative;
+          }
+          ._nav_signin_btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            animation: _nav_signin_ping 1.2s ease-out 0.6s 5 forwards;
+            border: 1px solid rgba(61,90,53,0.45);
+            pointer-events: none;
+          }
+        `}</style>
+      )}
+
       {/* ── Navbar ── */}
       <nav
         style={{
@@ -146,7 +177,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
               <button
                 onClick={() => setShowAuthModal(true)}
                 style={{ fontFamily: "'Work Sans', sans-serif" }}
-                className="border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap"
+                className={`border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap${isPreview ? ' _nav_signin_btn' : ''}`}
               >
                 SIGN IN
               </button>

@@ -164,7 +164,7 @@ interface CaseScoreCardProps {
 }
 
 const CaseScoreCard = ({ filters }: CaseScoreCardProps) => {
-  const { entries } = useDashboard();
+  const { entries, isPreview } = useDashboard();
   const [showDrilldown, setShowDrilldown] = useState(false);
   const [showWeights, setShowWeights] = useState(false);
   const weightBtnRef = useRef<HTMLButtonElement>(null);
@@ -246,7 +246,9 @@ return (
 
         {noData ? (
           <div className="flex-1 flex items-center justify-center py-4">
-            <p className="text-xs text-[#5C4033]/50 text-center">No cases match your current filters.</p>
+            <p className="text-[11px] text-[#5C4033]/45 tracking-[0.01em] text-center">
+              {isPreview ? 'Sign in to see your score.' : entries.length === 0 ? 'Complete a case to see your score.' : 'No cases match your filters.'}
+            </p>
           </div>
         ) : (
           <>

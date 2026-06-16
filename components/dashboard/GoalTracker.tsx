@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Settings2, Lock, Target, Sparkles } from 'lucide-react';
+import { ChevronLeft, Settings2, Target, Sparkles, LockKeyhole } from 'lucide-react';
 import CalendarPicker from '@/components/ui/CalendarPicker';
 import { useDashboard } from './DashboardContext';
 
@@ -218,6 +218,7 @@ const GTF_VERBS = ['Calibrating', 'Mapping gaps', 'Analysing pace', 'Reading zon
 // ─────────────────────────────────────────────────────────────────────────────
 const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
   const { entries } = useDashboard();
+  const [lockHovered, setLockHovered] = useState(false);
   const [phase, setPhase]         = useState<Phase>('welcome');
   const [history, setHistory]     = useState<Phase[]>([]);
   const [dir, setDir]             = useState<'fwd' | 'bwd'>('fwd');
@@ -785,13 +786,16 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
   };
 
   return (
-    <div className="glass-card p-5 relative flex flex-col">
+    <div className="glass-card p-5 relative flex flex-col group/tracker">
       <style>{`
         @keyframes _gt_fwd  { from { opacity: 0; transform: translateX(12px);  } to { opacity: 1; transform: translateX(0); } }
         @keyframes _gt_bwd  { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes _gt_glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.9; } }
         @keyframes _wv { from { transform: scaleY(0.35); opacity: 0.25; } to { transform: scaleY(1); opacity: 0.65; } }
         @keyframes _ci { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes _gt_lock_float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+        @keyframes _gt_lock_pulse { 0%,100%{opacity:0.55} 50%{opacity:1} }
+        @keyframes _gt_ring { 0%{transform:scale(1);opacity:0.3} 70%{transform:scale(1.9);opacity:0} 100%{transform:scale(1.9);opacity:0} }
         .gt-fwd { animation: _gt_fwd 0.22s ease forwards; }
         .gt-bwd { animation: _gt_bwd 0.22s ease forwards; }
         .gt-input {
@@ -890,14 +894,34 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
         </div>
       )}
 
-      {/* Lock overlay — only on done state */}
-      {isLocked && phase === 'done' && (
-        <div className="absolute inset-0 z-10 bg-[#fff8f0]/60 backdrop-blur-[4px] rounded-2xl flex flex-col items-center justify-center text-center p-6 border border-[#5C4033]/10">
-          <div className="w-10 h-10 bg-[#fff8f0] rounded-full flex items-center justify-center mb-3 shadow-sm border border-[#5C4033]/10">
-            <Lock className="w-4 h-4 text-[#5C4033]/60" />
+      {/* Lock overlay — always shown while tracker is locked */}
+      {isLocked && (
+        <div
+          className="absolute inset-0 z-10 rounded-[inherit] flex flex-col items-center justify-center text-center px-6 gap-2.5 transition-all duration-500"
+          style={{
+            backdropFilter: lockHovered ? 'blur(22px) saturate(1.9)' : 'blur(14px) saturate(1.5)',
+            WebkitBackdropFilter: lockHovered ? 'blur(22px) saturate(1.9)' : 'blur(14px) saturate(1.5)',
+            background: lockHovered ? 'rgba(255,248,240,0.82)' : 'rgba(255,248,240,0.62)',
+          }}
+          onMouseEnter={() => setLockHovered(true)}
+          onMouseLeave={() => setLockHovered(false)}
+        >
+          <div className="relative flex items-center justify-center">
+            <span
+              className="absolute rounded-full border border-[#3D5A35]/25"
+              style={{ width: '32px', height: '32px', animation: '_gt_ring 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite' }}
+            />
+            <LockKeyhole
+              className="w-4 h-4 text-[#3D5A35]/65 relative z-10"
+              style={{ animation: '_gt_lock_float 3s ease-in-out infinite, _gt_lock_pulse 3s ease-in-out infinite' }}
+            />
           </div>
-          <p className="text-xs text-[#5C4033] font-medium max-w-[200px] leading-relaxed">
-            Apply a Type filter to unlock Goal Tracker insights.
+          <p className="text-[10.5px] font-semibold tracking-[0.1em] uppercase text-[#3D5A35]/70">
+            Coming Soon
+          </p>
+          <div className="h-px w-8 bg-[#3D5A35]/18" />
+          <p className="text-[9.5px] text-[#5C4033]/40 leading-relaxed">
+            We&apos;re building something here.
           </p>
         </div>
       )}

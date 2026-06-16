@@ -3,7 +3,6 @@
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import { useState } from 'react'
 import PlatformLoader from '@/components/PlatformLoader'
-import Link from 'next/link'
 import CaseHistoryTable from './CaseHistoryTable'
 import CaseScoreCard from './CaseScoreCard'
 import CoachInsight from './CoachInsight'
@@ -40,7 +39,7 @@ function DashboardContent() {
   const [filters, setFilters] = useState<DashboardFilters>(DEFAULT_FILTERS)
 
   const hasActiveFilters = filters.types.length > 0 || filters.levels.length > 0 || filters.time !== 'all'
-  const isGoalTrackerLocked = filters.types.length === 0 && filters.levels.length > 0
+  const isGoalTrackerLocked = true
 
   const clearAllFilters = () => {
     setFilters(DEFAULT_FILTERS)
@@ -70,22 +69,7 @@ function DashboardContent() {
             </div>
           ) : null}
 
-          {isPreview ? (
-            <div className="mx-auto mt-4 flex max-w-5xl items-center justify-between gap-4 rounded-[22px] border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.72)] px-5 py-4 backdrop-blur-xl">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.24em] text-[#3D5A35]">Dashboard Preview</p>
-                <p className="mt-1 text-[13px] leading-relaxed text-[#5C4033]/72">
-                  You are viewing the sample dashboard journey. Sign in to load your own cases, transcripts, charts, and AI analysis.
-                </p>
-              </div>
-              <Link
-                href="/login?redirect=/dashboard"
-                className="shrink-0 rounded-full border border-[#3D5A35] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3D5A35] transition-colors hover:bg-[#3D5A35] hover:text-[#fff8f0]"
-              >
-                Sign In
-              </Link>
-            </div>
-          ) : null}
+          {null /* preview hint lives on the navbar sign-in button */}
 
       
           <IntroBar
@@ -130,20 +114,7 @@ function DashboardContent() {
             </div>
           </div>
 
-          {entries.length === 0 && user ? (
-            <div className="mx-auto mt-8 max-w-3xl rounded-[24px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.72)] px-8 py-10 text-center">
-              <p className="text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">Dashboard</p>
-              <h2
-                style={{ fontFamily: "'Newsreader', serif" }}
-                className="mt-3 text-3xl font-light tracking-tight text-[#453a2a]"
-              >
-                No completed cases yet
-              </h2>
-              <p className="mx-auto mt-3 max-w-[520px] text-[13px] leading-relaxed text-[#5c4033]/62">
-                Finish a case and submit interviewer feedback to start populating your charts, history, and analysis.
-              </p>
-            </div>
-          ) : null}
+          {null /* zero-case prompt lives inside CoachInsight */}
         </main>
 
         <ScrollReveal delay={300}>

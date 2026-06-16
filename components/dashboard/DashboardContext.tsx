@@ -174,13 +174,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         (Boolean(user) && !(profileReady && evaluationsReady && casesReady && sessionsReady)),
       error,
       user,
-      fullName: user ? profileName : previewData.fullName,
-      firstName: user
-        ? firstNameOf(profileName, user?.email ?? null)
-        : firstNameOf(previewData.fullName),
-      goalTargetCases: user ? goalTargetCases : previewData.goalTargetCases,
-      records: user ? records : previewData.records,
-      entries: user ? entries : previewData.entries,
+      fullName: user ? profileName : null,
+      firstName: user ? firstNameOf(profileName, user?.email ?? null) : 'there',
+      goalTargetCases: user ? goalTargetCases : 20,
+      records: user ? records : [],
+      entries: user ? entries : [],
     }),
     [
       authResolved,
@@ -207,4 +205,10 @@ export function useDashboard() {
     throw new Error('useDashboard must be used within DashboardProvider')
   }
   return context
+}
+
+/** Safe variant — returns false when used outside DashboardProvider (e.g. Navbar on non-dashboard pages). */
+export function useIsPreview(): boolean {
+  const context = useContext(DashboardContext)
+  return context ? context.isPreview : false
 }

@@ -462,9 +462,8 @@ const sortedCases = useMemo(() => {
           <style>{`div::-webkit-scrollbar { display: none; }`}</style>
 
           {sortedCases.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-[#5C4033]/40">
-              <Eye className="w-8 h-8 mb-2 opacity-20" />
-              <p className="text-sm font-medium">No entries yet</p>
+            <div className="flex items-center justify-center" style={{ height: `${maxHeight}px` }}>
+              <p className="text-[11px] text-[#5C4033]/45 tracking-[0.01em]">No entries yet</p>
             </div>
           ) : (
             <table className="w-full text-left border-collapse table-fixed">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, ChevronRight, ArrowRight, Sparkles, BarChart2, Layers, TrendingUp } from 'lucide-react';
+import { X, ChevronRight, Sparkles, BarChart2, Layers, TrendingUp, Lock } from 'lucide-react';
 import TieLogo from '@/components/ui/TieLogo';
 import { computeFAMetrics } from '@/lib/feedbackPrecompute';
 import { callGeminiFeedback, ANALYSIS_MODES, type ChatMessage, type FAResponse, type FABlock, type FAViz } from '@/lib/geminiFeedback';
@@ -402,63 +402,64 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
         }
       `}</style>
 
-      {/* ── FAB + hover prompt cards ──────────────────────────────────────── */}
+      {/* ── FAB + hover "Coming Soon" card ───────────────────────────────── */}
       <div
         className="fixed bottom-6 right-6 z-50 flex flex-col items-end"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         {isHovering && !isOpen && (
-          <div className="mb-3 flex flex-col items-end gap-2 pointer-events-auto">
-            {metrics.dynamicQuestions.map((q, i) => (
-              <button
-                key={i}
-                onClick={() => { setIsOpen(true); handleSend(q); }}
-                className="fa-rise group flex items-center gap-2.5 pl-4 pr-3 py-2.5 rounded-xl transition-all duration-200 hover:border-[#3D5A35]/30"
-                style={{
-                  animationDelay: `${i * 55}ms`,
-                  background: 'rgba(255,248,240,0.88)',
-                  backdropFilter: 'blur(28px) saturate(1.5)',
-                  WebkitBackdropFilter: 'blur(28px) saturate(1.5)',
-                  border: '1px solid rgba(61,90,53,0.14)',
-                  boxShadow: '0 2px 14px rgba(61,90,53,0.09)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <span className="text-[11px] text-[#3B2F2F]/70 font-medium group-hover:text-[#3B2F2F]/90 transition-colors font-sans">
-                  {q}
-                </span>
-                <ArrowRight className="w-3 h-3 text-[#3D5A35]/40 group-hover:text-[#3D5A35] group-hover:translate-x-0.5 transition-all shrink-0" />
-              </button>
-            ))}
+          <div
+            className="fa-rise mb-3 flex flex-col items-center gap-2.5 px-5 py-4 rounded-2xl pointer-events-none"
+            style={{
+              background: 'rgba(255,248,240,0.86)',
+              backdropFilter: 'blur(28px) saturate(2.0)',
+              WebkitBackdropFilter: 'blur(28px) saturate(2.0)',
+              border: '1px solid rgba(61,90,53,0.14)',
+              boxShadow: '0 4px 20px rgba(61,90,53,0.10)',
+            }}
+          >
+            <style>{`
+              @keyframes _fa_lock_float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+              @keyframes _fa_lock_pulse { 0%,100%{opacity:0.55} 50%{opacity:1} }
+              @keyframes _fa_ring { 0%{transform:scale(1);opacity:0.3} 70%{transform:scale(1.9);opacity:0} 100%{transform:scale(1.9);opacity:0} }
+            `}</style>
+            <div className="relative flex items-center justify-center">
+              <span
+                className="absolute rounded-full border border-[#3D5A35]/25"
+                style={{ width: '28px', height: '28px', animation: '_fa_ring 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite' }}
+              />
+              <Lock
+                className="w-3.5 h-3.5 text-[#3D5A35]/65 relative z-10"
+                style={{ animation: '_fa_lock_float 3s ease-in-out infinite, _fa_lock_pulse 3s ease-in-out infinite' }}
+              />
+            </div>
+            <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#3D5A35]/70 whitespace-nowrap">
+              Coming Soon
+            </p>
+            <div className="h-px w-8 bg-[#3D5A35]/18" />
+            <p className="text-[9.5px] text-[#5C4033]/40 whitespace-nowrap">
+              We&apos;re building this.
+            </p>
           </div>
         )}
 
         {/* FAB */}
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 backdrop-blur-2xl"
+          className="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-2xl cursor-default"
           style={{
             background: 'rgba(255,248,240,0.65)',
             border: '1px solid rgba(61,90,53,0.22)',
             boxShadow: '0 4px 20px rgba(61,90,53,0.12), 0 1px 0 rgba(255,255,255,0.7) inset',
           }}
         >
-          {!isOpen && (
-            <span className="fa-ping absolute inset-0 rounded-full border border-[#3D5A35]/25 pointer-events-none" />
-          )}
-          {isOpen ? (
-            <X className="w-5 h-5 text-[#3D5A35]" />
-          ) : (
-            <>
-              <TieLogo className="w-[18px] h-[18px] text-[#3D5A35] relative z-10" />
-              <Sparkles className="fa-sparkle absolute -top-0.5 -right-0.5 w-3 h-3 text-[#3D5A35]" />
-            </>
-          )}
+          <span className="fa-ping absolute inset-0 rounded-full border border-[#3D5A35]/25 pointer-events-none" />
+          <TieLogo className="w-[18px] h-[18px] text-[#3D5A35] relative z-10" />
+          <Sparkles className="fa-sparkle absolute -top-0.5 -right-0.5 w-3 h-3 text-[#3D5A35]" />
         </button>
       </div>
 
-      {/* ── Full overlay ──────────────────────────────────────────────────── */}
+      {/* ── Full overlay (disabled — FAB no longer opens it) ─────────────── */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center p-6 animate-scale-in"

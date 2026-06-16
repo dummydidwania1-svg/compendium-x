@@ -117,7 +117,7 @@ interface ParameterBarChartProps {
 }
 
 const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
-  const { entries } = useDashboard();
+  const { entries, isPreview } = useDashboard();
   const [drillDown, setDrillDown] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -227,7 +227,9 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
         <div className="flex-1 flex flex-col justify-center gap-4 animate-scale-in">
           {noData ? (
             <div className="flex-1 flex items-center justify-center py-4">
-              <p className="text-xs text-[#5C4033]/50 text-center">No cases match your current filters.</p>
+              <p className="text-[11px] text-[#5C4033]/45 tracking-[0.01em] text-center">
+                {isPreview ? 'Sign in to see your skill profile.' : entries.length === 0 ? 'Complete a case to see your skill profile.' : 'No cases match your filters.'}
+              </p>
             </div>
           ) : (
             <>

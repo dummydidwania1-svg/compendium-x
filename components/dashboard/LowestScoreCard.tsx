@@ -223,9 +223,8 @@ const ScoreOverlay = ({
               <style>{`div::-webkit-scrollbar { display: none; }`}</style>
 
               {cases.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-[#5C4033]/40">
-                  <Eye className="w-8 h-8 mb-2 opacity-20" />
-                  <p className="text-sm font-medium">No entries</p>
+                <div className="flex items-center justify-center py-12">
+                  <p className="text-[11px] text-[#5C4033]/45 tracking-[0.01em]">No entries yet</p>
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse table-fixed">
@@ -319,7 +318,7 @@ interface LowestScoreCardProps {
 }
 
 const LowestScoreCard = ({ filters }: LowestScoreCardProps) => {
-  const { entries } = useDashboard();
+  const { entries, isPreview } = useDashboard();
   const [showOverlay, setShowOverlay] = useState(false);
 
   const filteredCases = useMemo(() => {
@@ -363,7 +362,9 @@ const LowestScoreCard = ({ filters }: LowestScoreCardProps) => {
         </h3>
 
         {noData ? (
-          <p className="text-xs text-[#5C4033]/50 text-center mt-2">No data</p>
+          <p className="text-[11px] text-[#5C4033]/45 tracking-[0.01em] text-center mt-2">
+            {isPreview ? 'Sign in first.' : entries.length === 0 ? 'No cases yet' : 'No data'}
+          </p>
         ) : (
           <>
             <div className="relative mt-1">

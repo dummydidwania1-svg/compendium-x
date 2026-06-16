@@ -1,110 +1,41 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Sparkles } from 'lucide-react';
-import { precompute, type CoachFilters } from '@/lib/coachPrecompute';
-import { buildSystemPrompt, buildUserMessage, callGemini, type SessionOutput } from '@/lib/geminiCoach';
-import { useDashboard } from './DashboardContext';
-
-const VERBS = ['Noodling', 'Casing', 'Analyzing', 'Connecting dots', 'Sizing up', 'Almost there'];
+import { useState } from 'react';
+import { Sparkles, Lock } from 'lucide-react';
+import type { CoachFilters } from '@/lib/coachPrecompute';
 
 interface CoachInsightProps {
   filters: CoachFilters;
 }
 
-const CoachInsight = ({ filters }: CoachInsightProps) => {
-  const { entries } = useDashboard();
-  const apiKeyMissing = !process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  const [loading, setLoading]         = useState(true);
-  const [headline, setHeadline]       = useState('');
-  const [insight, setInsight]         = useState('');
-  const [action, setAction]           = useState('');
-  const [error, setError]             = useState<string | null>(null);
-  const [verbIdx, setVerbIdx]         = useState(0);
-  const [verbVisible, setVerbVisible] = useState(true);
-
-  const reqIdRef         = useRef(0);
-  const sessionHistoryRef = useRef<SessionOutput[]>([]);
-  const hasMountedRef    = useRef(false);
-
-  // ── Verb animation — only while loading ──
-  useEffect(() => {
-    if (!loading) return;
-    const t = setInterval(() => {
-      setVerbVisible(false);
-      setTimeout(() => {
-        setVerbIdx(i => (i + 1) % VERBS.length);
-        setVerbVisible(true);
-      }, 180);
-    }, 800);
-    return () => clearInterval(t);
-  }, [loading]);
-
-  // ── Fetch insight: immediate on mount, debounced on filter change ──
-  useEffect(() => {
-    if (entries.length === 0) {
-      setLoading(false);
-      setError(null);
-      setHeadline('Your coach unlocks after your first case.');
-      setInsight('Complete a case and submit interviewer feedback to generate real trend-based coaching here.');
-      setAction('Then return to review your first live insight.');
-      return;
-    }
-
-    if (apiKeyMissing) {
-      setLoading(false);
-      setHeadline('');
-      setInsight('');
-      setAction('');
-      setError('AI coach is unavailable until NEXT_PUBLIC_GEMINI_API_KEY is configured.');
-      return;
-    }
-
-    const delay = hasMountedRef.current ? 400 : 0;
-    hasMountedRef.current = true;
-
-    const timer = setTimeout(async () => {
-      const reqId = ++reqIdRef.current;
-      setLoading(true);
-      setError(null);
-
-      try {
-        const metrics = precompute(entries, filters);
-        const result  = await callGemini(
-          buildSystemPrompt(),
-          buildUserMessage(metrics, sessionHistoryRef.current)
-        );
-
-        if (reqId !== reqIdRef.current) return; // discard stale response
-
-        setHeadline(result.headline);
-        setInsight(result.insight);
-        setAction(result.action);
-
-        // Keep last 3 outputs for diversity rules (Steps 1j/1k/1l)
-        sessionHistoryRef.current = [...sessionHistoryRef.current.slice(-2), result];
-      } catch (err) {
-        if (reqId !== reqIdRef.current) return;
-        setError(err instanceof Error ? err.message : 'Failed to load insight.');
-      } finally {
-        if (reqId === reqIdRef.current) setLoading(false);
-      }
-    }, delay);
-
-    return () => clearTimeout(timer);
-  // Depend on individual filter primitives to avoid object-reference churn
-  }, [apiKeyMissing, entries, filters.types.join(','), filters.levels.join(','), filters.time, filters.customStart, filters.customEnd]);
+const CoachInsight = ({ filters: _filters }: CoachInsightProps) => {
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <div className="glass-card p-6 flex flex-col relative overflow-hidden group">
+    <div
+      className="glass-card p-6 flex flex-col relative overflow-hidden group"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <style>{`
-        @keyframes _wv { from { transform: scaleY(0.35); opacity: 0.25; } to { transform: scaleY(1); opacity: 0.65; } }
-        @keyframes _ci { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes _ci_lock_float {
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-3px); }
+        }
+        @keyframes _ci_lock_pulse {
+          0%, 100% { opacity: 0.55; }
+          50%       { opacity: 1; }
+        }
+        @keyframes _ci_ring {
+          0%   { transform: scale(1);   opacity: 0.3; }
+          70%  { transform: scale(1.9); opacity: 0;   }
+          100% { transform: scale(1.9); opacity: 0;   }
+        }
       `}</style>
 
       {/* ── Ambient glow ── */}
-      <div className="absolute -top-10 -right-10 w-52 h-52 rounded-full bg-[#3D5A35]/4 blur-3xl pointer-events-none transition-all duration-1000 group-hover:bg-[#3D5A35]/6" />
-      <div className="absolute -bottom-12 -left-8 w-40 h-40 rounded-full bg-[#D9D0C4]/6 blur-3xl pointer-events-none transition-all duration-1000 group-hover:bg-[#D9D0C4]/10" />
+      <div className="absolute -top-10 -right-10 w-52 h-52 rounded-full bg-[#3D5A35]/4 blur-3xl pointer-events-none transition-all duration-1000 group-hover:bg-[#3D5A35]/8" />
+      <div className="absolute -bottom-12 -left-8 w-40 h-40 rounded-full bg-[#D9D0C4]/6 blur-3xl pointer-events-none transition-all duration-1000 group-hover:bg-[#D9D0C4]/12" />
 
       {/* ── Header row ── */}
       <div className="flex items-center justify-between mb-2">
@@ -112,75 +43,57 @@ const CoachInsight = ({ filters }: CoachInsightProps) => {
           <Sparkles className="w-3 h-3 mr-2 text-[#3D5A35]" />
           THE COACH
         </div>
-        {error && apiKeyMissing ? (
-          <div className="flex items-center gap-1.5 px-2.5 py-[3px] rounded-md border border-[#C4A882]/40 bg-[#C4A882]/12">
-            <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#C4A882]" />
-            <span className="text-[8px] uppercase tracking-[0.1em] font-semibold text-[#C4A882]/80">
-              Unavailable
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 px-2.5 py-[3px] rounded-md border border-[#5C4033]/10 bg-[#D9D0C4]/18">
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 animate-pulse ${loading ? 'bg-[#C4A882]' : 'bg-[#3D5A35]'}`} />
-            <span className="text-[8px] uppercase tracking-[0.1em] font-semibold text-[#5C4033]/55">
-              {loading ? 'Thinking' : 'Live'}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 px-2.5 py-[3px] rounded-md border border-[#5C4033]/10 bg-[#D9D0C4]/18">
+          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#5C4033]/25" />
+          <span className="text-[8px] uppercase tracking-[0.1em] font-semibold text-[#5C4033]/55">Soon</span>
+        </div>
       </div>
 
-      {/* ── Loading state ── */}
-      {loading && (
-        <div className="flex flex-col gap-3 py-2">
-          <div className="flex items-end gap-[3px] h-5">
-            {[0.5, 0.75, 1, 0.85, 0.65, 0.8, 0.55].map((h, i) => (
-              <div
-                key={i}
-                className="w-[2px] rounded-full bg-[#3D5A35]"
-                style={{
-                  height: `${h * 18}px`,
-                  animation: `_wv 1.1s ease-in-out ${i * 90}ms infinite alternate`,
-                }}
-              />
-            ))}
-          </div>
-          <p
-            className="text-[11px] font-medium text-[#5C4033]/40 tracking-wide"
-            style={{ opacity: verbVisible ? 1 : 0, transition: 'opacity 180ms ease' }}
-          >
-            {VERBS[verbIdx]}…
-          </p>
+      {/* ── Skeleton content (sits behind overlay, gives it depth) ── */}
+      <div className="flex flex-col gap-2.5 py-2 opacity-25 select-none pointer-events-none">
+        <div className="h-3 w-3/4 rounded-full bg-[#5C4033]/20" />
+        <div className="h-px bg-gradient-to-r from-[#5C4033]/12 via-[#5C4033]/6 to-transparent" />
+        <div className="h-2.5 w-full rounded-full bg-[#5C4033]/12" />
+        <div className="h-2.5 w-5/6 rounded-full bg-[#5C4033]/10" />
+        <div className="h-2.5 w-4/6 rounded-full bg-[#5C4033]/8" />
+        <div className="h-2.5 w-2/4 rounded-full bg-[#5C4033]/6" />
+      </div>
+
+      {/* ── Glass lock overlay ── */}
+      <div
+        className="absolute inset-0 rounded-[inherit] flex flex-col items-center justify-center text-center px-6 gap-2.5 transition-all duration-500"
+        style={{
+          backdropFilter: hovered ? 'blur(22px) saturate(1.9)' : 'blur(14px) saturate(1.5)',
+          WebkitBackdropFilter: hovered ? 'blur(22px) saturate(1.9)' : 'blur(14px) saturate(1.5)',
+          background: hovered ? 'rgba(255,248,240,0.82)' : 'rgba(255,248,240,0.62)',
+        }}
+      >
+        {/* Lock icon with float + ring animation */}
+        <div className="relative flex items-center justify-center">
+          <span
+            className="absolute rounded-full border border-[#3D5A35]/25"
+            style={{
+              width: '32px', height: '32px',
+              animation: '_ci_ring 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite',
+            }}
+          />
+          <Lock
+            className="w-4 h-4 text-[#3D5A35]/65 relative z-10"
+            style={{ animation: '_ci_lock_float 3s ease-in-out infinite, _ci_lock_pulse 3s ease-in-out infinite' }}
+          />
         </div>
-      )}
-
-      {/* ── Error state ── */}
-      {!loading && error && (
-        <div style={{ animation: '_ci 0.4s ease forwards' }}>
-          <p className="text-xs text-[#5C4033]/50 leading-relaxed mt-2 italic">{error}</p>
-        </div>
-      )}
-
-      {/* ── Loaded content ── */}
-      {!loading && !error && (
-        <div style={{ animation: '_ci 0.4s ease forwards' }}>
-
-          {/* Headline — maps to Line 1 of AI output */}
-          <h3 className="leading-snug mb-2">{headline}</h3>
-
-          {/* Fading gradient divider */}
-          <div className="h-px mb-2.5 bg-gradient-to-r from-[#5C4033]/18 via-[#5C4033]/8 to-transparent" />
-
-          {/* Insight body — maps to Line 2 of AI output */}
-          <p className="text-xs text-[#5C4033]/70 leading-relaxed">{insight}</p>
-
-          {/* Action box — maps to Line 3 of AI output */}
-          <div className="mt-3 border-t border-[#3D5A35]/8 pt-2.5 px-0">
-            <p className="text-[11px] text-[#5C4033]/60 leading-relaxed italic">{action}</p>
-          </div>
-
-        </div>
-      )}
-
+        <p className="text-[10.5px] font-semibold tracking-[0.1em] uppercase text-[#3D5A35]/70 transition-all duration-300">
+          Coming Soon
+        </p>
+        <div
+          className="h-px bg-[#3D5A35]/18 transition-all duration-500"
+          style={{ width: hovered ? '44px' : '32px' }}
+        />
+        <p className="text-[9.5px] text-[#5C4033]/40 leading-relaxed transition-all duration-300"
+           style={{ opacity: hovered ? 1 : 0.7 }}>
+          We&apos;re building something here.
+        </p>
+      </div>
     </div>
   );
 };

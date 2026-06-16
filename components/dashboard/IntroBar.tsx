@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import Link from 'next/link';
 import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
 import TimeFilterDropdown from '@/components/ui/TimeFilterDropdown';
 import { FILTER_TYPES, FILTER_LEVELS } from '@/lib/constants';
 import { useDashboard } from './DashboardContext';
 
 const IntroBar = ({ filters, setFilters, hasActiveFilters, clearAllFilters, suppressFloating }: any) => {
-  const { firstName } = useDashboard();
+  const { firstName, entries, isPreview } = useDashboard();
   const [floatingVisible, setFloatingVisible] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const canUseDOM = typeof document !== 'undefined';
@@ -51,20 +52,47 @@ const IntroBar = ({ filters, setFilters, hasActiveFilters, clearAllFilters, supp
       `}</style>
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 pt-4 border-b border-[#5C4033]/10">
         {/* Heading — "Hi" fades in soft, name springs in with blur-to-clear */}
-        <h1 className="text-[34px] tracking-[-0.03em] leading-none text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>
-          <span
-            className="inline-block"
-            style={{ fontWeight: 300, animation: '_hi 0.45s ease forwards', opacity: 0 }}
-          >Hi</span>
-          {' '}
-          <span
-            className="inline-block text-[#3D5A35]"
-            style={{ fontWeight: 400, animation: '_name 0.7s cubic-bezier(0.16,1,0.3,1) 0.08s forwards', opacity: 0 }}
-          >{firstName},</span>
-        </h1>
+        <div>
+          <h1 className="text-[34px] tracking-[-0.03em] leading-none text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>
+            <span
+              className="inline-block"
+              style={{ fontWeight: 300, animation: '_hi 0.45s ease forwards', opacity: 0 }}
+            >Hi</span>
+            {' '}
+            <span
+              className="inline-block text-[#3D5A35]"
+              style={{ fontWeight: 400, animation: '_name 0.7s cubic-bezier(0.16,1,0.3,1) 0.08s forwards', opacity: 0 }}
+            >{firstName},</span>
+          </h1>
+          {null}
+        </div>
 
-        {/* Inline filters — right-aligned dropdowns */}
-        {filterControls('right')}
+        {/* Right side: repo nudge (zero-state only) + filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          {(isPreview || entries.length === 0) && (
+            <>
+              <style>{`
+                @keyframes _ib_drift { 0%,100%{transform:translateX(0)} 55%{transform:translateX(2px)} }
+                ._ib_drift { animation:_ib_drift 2.6s ease-in-out 0.8s infinite; }
+              `}</style>
+              <Link
+                href="/repository"
+                className="group inline-flex items-center gap-2 text-[#3D5A35]/70 hover:text-[#3D5A35] transition-colors duration-200"
+              >
+                <span className="text-[10px] font-medium tracking-[0.04em]">
+                  {isPreview ? 'Explore cases' : 'Start with a case'}
+                </span>
+                <span className="_ib_drift text-[#3D5A35]/40 group-hover:text-[#3D5A35] transition-colors duration-200">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2.5 6h7M7 3.5l2.5 2.5L7 8.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+              </Link>
+              <div className="h-3 w-px bg-[#5C4033]/12" />
+            </>
+          )}
+          {filterControls('right')}
+        </div>
       </div>
 
       {/* Sentinel — disappears from view when user scrolls past the intro section */}

@@ -192,7 +192,7 @@ const DynamicTooltip = ({ active, payload }: any) => {
 // MAIN COMPONENT
 // ══════════════════════════════════════════════
 const TimeLineChart = ({ filters }: { filters: Filters }) => {
-  const { entries } = useDashboard();
+  const { entries, isPreview } = useDashboard();
   const [workflow, setWorkflow] = useState<WorkflowState>({ metrics: ['overall'], splitBy: 'none', forFilter: { types: [], levels: [] }, segments: [] });
   const [openChip, setOpenChip] = useState<'metric' | 'split' | 'for' | 'vs' | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -483,10 +483,14 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
       {/* Chart */}
       {n === 0 ? (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-xs text-[#5C4033]/40 tracking-wide">
+          <p className="text-[11px] text-[#5C4033]/45 tracking-[0.01em] text-center">
             {isSegmentMode && !workflow.segments.length
-              ? 'Pick segments in the workflow bar below to compare.'
-              : 'No cases match the current filters.'}
+              ? 'Pick segments in the workflow bar to compare.'
+              : isPreview
+                ? 'Sign in to see your performance trend.'
+                : entries.length === 0
+                  ? 'Complete a case to see your performance trend.'
+                  : 'No cases match your filters.'}
           </p>
         </div>
       ) : (
@@ -721,11 +725,14 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
         {/* Right side: Versus Mode toggle + Reset */}
         <div className="flex items-center gap-2.5 ml-auto">
           <button
-            onClick={toggleVsMode}
+            onClick={isPreview || entries.length === 0 ? undefined : toggleVsMode}
+            disabled={isPreview || entries.length === 0}
             className={`group relative flex items-center gap-2.5 px-3 py-1.5 rounded-full border overflow-hidden transition-all duration-300 ${
-              isSegmentMode
-                ? 'bg-[#3B2F2F]/6 border-[#3B2F2F]/15 shadow-sm'
-                : 'border-[#5C4033]/12 hover:border-[#5C4033]/25 hover:bg-[#D9D0C4]/15'
+              isPreview || entries.length === 0
+                ? 'border-[#5C4033]/8 opacity-35 cursor-not-allowed'
+                : isSegmentMode
+                  ? 'bg-[#3B2F2F]/6 border-[#3B2F2F]/15 shadow-sm'
+                  : 'border-[#5C4033]/12 hover:border-[#5C4033]/25 hover:bg-[#D9D0C4]/15'
             }`}
           >
             {/* Hover shimmer */}
@@ -735,7 +742,7 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
             }`}>Versus Mode</span>
             <div className="relative flex-shrink-0">
               {/* Attention ping ring when off and user hasn't interacted yet */}
-              {!isSegmentMode && !hasInteracted && (
+              {!isSegmentMode && !hasInteracted && entries.length > 0 && !isPreview && (
                 <span className="absolute inset-[-3px] rounded-full border border-[#5C4033]/30 animate-ping [animation-duration:2s]" />
               )}
               <div className={`relative w-8 h-4 rounded-full transition-all duration-300 ${
