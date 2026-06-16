@@ -18,7 +18,7 @@ const FOUNDERS = [
   {
     name: 'Pratik Agarwal',
     badge: 'Goldman Sachs',
-    description: 'Previously interned at Windrose Capital, a Series-A VC fund. Secured a BCG PPI as Campus Winner at their Ideathon & served as Corporate Communications Head at the Placement Cell, SRCC.',
+    description: 'Previously interned at Windrose Capital, a Series-A VC fund. Served as Corporate Communications Head at the Placement Cell, SRCC.',
     school: 'SRCC • Class of 2026',
     linkedin: 'https://in.linkedin.com/in/agpratik/',
     photoSrc: '/team/pratik-agarwal.jpg',

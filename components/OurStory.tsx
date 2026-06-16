@@ -86,7 +86,7 @@ const EDITIONS: Edition[] = [
         bio: 'Received a PPO from McKinsey & Co. Previously interned at Nomura Research Institute & Samsung. Conferred the L.N. Birla Gold Medal, she served as Strategy Head at the Placement Cell, SRCC.' },
       { name: 'Pratik Agarwal', role: 'Goldman Sachs', school: 'SRCC • Class of 2026', x: 99, y: 34,
         linkedin: 'https://in.linkedin.com/in/agpratik/', photoSrc: '/team/pratik-agarwal.jpg', objectPosition: 'center 42%',
-        bio: 'Previously interned at Windrose Capital, a Series-A VC fund. Secured a BCG PPI as Campus Winner at their Ideathon & served as Corporate Communications Head at the Placement Cell, SRCC.' },
+        bio: 'Previously interned at Windrose Capital, a Series-A VC fund. Served as Corporate Communications Head at the Placement Cell, SRCC.' },
       { name: 'Saksham Didwania', role: 'Kearney', school: 'SRCC • Class of 2026', x: 78, y: 56,
         linkedin: 'https://in.linkedin.com/in/sakshamd26', photoSrc: '/team/saksham-didwania.png',
         bio: 'Received a PPO from Accenture Strategy & interned at Samara Capital, a PE fund. With accolades in National Abacus & Chess, he served as Secretary General at the Placement Cell, SRCC.' },

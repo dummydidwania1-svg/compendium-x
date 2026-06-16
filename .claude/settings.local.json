@@ -50,7 +50,8 @@
       "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===4\\); console.log\\('recommendationsTable:', JSON.stringify\\(c.recommendationsTable,null,2\\).slice\\(0,200\\)\\); console.log\\('framework snippet:', c.framework.slice\\(c.framework.indexOf\\('RECOMMENDATIONS'\\),c.framework.indexOf\\('RECOMMENDATIONS'\\)+300\\)\\)\")",
       "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===11\\); console.log\\('recommendationsTable:', JSON.stringify\\(c.recommendationsTable,null,2\\).slice\\(0,200\\)\\); console.log\\('framework snippet:', c.framework.slice\\(c.framework.indexOf\\('RECOMMENDATIONS'\\),c.framework.indexOf\\('RECOMMENDATIONS'\\)+300\\)\\)\")",
       "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===20\\); console.log\\(JSON.stringify\\(c.visualisations[0].title\\)\\)\")",
-      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===21\\); console.log\\(JSON.stringify\\(c.visualisations.map\\(v=>\\({type:v.type,title:v.title}\\)\\)\\)\\)\")"
+      "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===21\\); console.log\\(JSON.stringify\\(c.visualisations.map\\(v=>\\({type:v.type,title:v.title}\\)\\)\\)\\)\")",
+      "Bash(git show *)"
     ],
     "additionalDirectories": [
       "/tmp"
