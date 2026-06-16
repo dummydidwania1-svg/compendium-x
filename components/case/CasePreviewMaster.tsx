@@ -3113,77 +3113,53 @@ function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?
   loadTree(tree)
 
   const revealDepth = maxTreeDepth
-  const treeFullyRevealed = true
 
+  // Renders just the chart — no outer card, no notes sidebar.
+  // Callers embed this directly inside the existing right-side column (desktop)
+  // or below the primary mobile tree.
   return (
-    <div className="mt-12">
-      {/* Section divider with optional label */}
-      <Reveal>
-        <div className="mb-6 flex items-center gap-4">
-          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">
-            {label ?? 'Additional Framework'}
-          </span>
-          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-        </div>
-      </Reveal>
-
-      {/* Desktop layout */}
-      <div className="hidden lg:block">
-        <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
-          <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">
-            <aside className="hidden lg:block h-full">
-              <SyncedNotesSidebar notes={NOTES} />
-            </aside>
-            <div className="relative min-w-0">
-              <div className="absolute left-0 top-0 hidden h-full w-px lg:block">
-                <div className="sticky top-[128px] w-full" style={{ height: 'calc(100vh - 168px)', background: 'linear-gradient(180deg, transparent 0%, rgba(92,64,51,0.14) 12%, rgba(92,64,51,0.14) 88%, transparent 100%)' }} />
-              </div>
-              <div className={`relative flex flex-col pl-7 pr-5 pb-6 pt-6`} style={{ minHeight: '400px' }}>
-                {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
-                  <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
-                )}
-                {ROOT_ID && (
-                  <div
-                    ref={(el) => { chartRef.current = el; overlayHostRef.current = el }}
-                    className={chartMaxDepth === 0 ? 'flex items-center' : 'flex-1'}
-                    style={{
-                      ...(useVerticalLayout ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
-                      opacity: chartVisible ? 1 : 0,
-                      transform: `${useVerticalLayout ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
-                      filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
-                      transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
-                    }}
-                  >
-                    {useVerticalLayout ? (
-                      <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
-                    ) : (
-                      <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
-                    )}
-                  </div>
-                )}
-                <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" />
-                <div ref={drilldownBottomRef} className="h-px w-full" />
-              </div>
-            </div>
-          </div>
-        </div>
+    <>
+      {/* Thin divider with label */}
+      <div className="mt-10 mb-6 flex items-center gap-4">
+        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">
+          {label ?? 'Additional Framework'}
+        </span>
+        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
       </div>
 
-      {/* Mobile layout */}
+      {/* Chart — desktop */}
+      <div className="hidden lg:block">
+        {ROOT_ID && (
+          <div
+            ref={(el) => { chartRef.current = el; overlayHostRef.current = el }}
+            style={{
+              opacity: chartVisible ? 1 : 0,
+              transform: `${useVerticalLayout ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
+              filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
+              transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
+            }}
+          >
+            {useVerticalLayout ? (
+              <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+            ) : (
+              <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+            )}
+          </div>
+        )}
+        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" />
+      </div>
+
+      {/* Chart — mobile */}
       <div className="lg:hidden">
-        <div className="mb-6 grid gap-3 sm:grid-cols-3">
-          {NOTES.map(n => <NoteCard key={n.title} title={n.title} items={n.items} />)}
-        </div>
         <Reveal>
           <div className="space-y-3">
             <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds}
               onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
           </div>
         </Reveal>
-        <MobileDrilldownOverlay />
       </div>
-    </div>
+    </>
   )
 }
 
@@ -3933,6 +3909,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       )}
 <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" />
 
+                      {/* ── Additional framework trees (desktop — inside same column) ── */}
+                      {additionalFrameworkTrees?.map((addTree, idx) => (
+                        <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+                      ))}
+
                       {/* Drilldown table visualizations */}
                       {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                         <Reveal key={`vis-tbl-d-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
@@ -4040,6 +4021,10 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                     onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                 </div>
               </Reveal>
+              {/* ── Additional framework trees (mobile) ── */}
+              {additionalFrameworkTrees?.map((addTree, idx) => (
+                <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+              ))}
               {/* Mobile drilldown table */}
               {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                 <Reveal key={`vis-tbl-m-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
@@ -4110,11 +4095,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                           </div>
                         )}
   </div>
-
-            {/* ── Additional framework trees ── */}
-            {additionalFrameworkTrees && additionalFrameworkTrees.length > 0 && additionalFrameworkTrees.map((addTree, idx) => (
-              <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
-            ))}
 </section>
           </>)}
           
@@ -4518,6 +4498,10 @@ export function CaseInterviewerMaster({
                           )}
                         </div>
                         <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="interviewer" />
+                        {/* ── Additional framework trees (interviewer desktop — inside same column) ── */}
+                        {additionalFrameworkTrees?.map((addTree, idx) => (
+                          <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+                        ))}
                         {/* Drilldown table */}
                         {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                           <Reveal key={`vis-tbl-id-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
@@ -4664,6 +4648,10 @@ export function CaseInterviewerMaster({
                     <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds} onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                   </div>
                 </Reveal>
+                {/* ── Additional framework trees (interviewer mobile) ── */}
+                {additionalFrameworkTrees?.map((addTree, idx) => (
+                  <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+                ))}
                 {/* Mobile interviewer: table before formula before recs */}
                 {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
                   <Reveal key={`vis-tbl-im-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
@@ -4733,11 +4721,6 @@ export function CaseInterviewerMaster({
                         )}
 
               </div>
-
-            {/* ── Additional framework trees (interviewer) ── */}
-            {additionalFrameworkTrees && additionalFrameworkTrees.length > 0 && additionalFrameworkTrees.map((addTree, idx) => (
-              <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
-            ))}
             </section>
           </main>
 

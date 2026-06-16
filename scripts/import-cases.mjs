@@ -91,6 +91,11 @@ if (rawCase.abbreviations === null) {
 } else if (Array.isArray(rawCase.abbreviations)) {
   payload.abbreviations = rawCase.abbreviations
 }
+if (rawCase.additionalFrameworkTrees === null) {
+  payload.additionalFrameworkTrees = admin.firestore.FieldValue.delete()
+} else if (Array.isArray(rawCase.additionalFrameworkTrees)) {
+  payload.additionalFrameworkTrees = rawCase.additionalFrameworkTrees
+}
 return payload
 }
 
