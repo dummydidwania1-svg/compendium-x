@@ -103,3 +103,13 @@ export const submitEvaluationInput = z.object({
   notes: z.string().max(10000),
 })
 export type SubmitEvaluationInput = z.infer<typeof submitEvaluationInput>
+
+/* -------------------------------------------------------------------------- */
+/* POST /api/evaluations/[evaluationId]/workspace-image                       */
+/* -------------------------------------------------------------------------- */
+
+export const attachWorkspaceImageInput = z.object({
+  storagePath: z.string().min(1).max(512),
+  workspaceImageUrl: z.string().url().max(2048),
+})
+export type AttachWorkspaceImageInput = z.infer<typeof attachWorkspaceImageInput>

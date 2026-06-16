@@ -7,7 +7,7 @@ import OfflineBanner from '@/components/OfflineBanner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Case Compendium X | Executive Intelligence',
+  title: 'Case Compendium X',
   description:
     'Run realistic case interviews, capture transcript-backed feedback, and build a long-term improvement record with Compendium X.',
   icons: {

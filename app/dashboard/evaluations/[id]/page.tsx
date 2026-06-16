@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react'
 import PlatformLoader from '@/components/PlatformLoader'
 import { useParams, useRouter } from 'next/navigation'
-import { arrayUnion, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
 import { db, storage, waitForAuthUser } from '@/lib/firebase/config'
 import { mapEvaluationDoc } from '@/lib/dashboard/mappers'
 import type { EvaluationRecord } from '@/lib/dashboard/types'
+import { apiPost } from '@/lib/api/client'
 
 function scoreLabel(value: number | null) {
   return typeof value === 'number' ? `${value} / 5` : 'N/A'
@@ -177,9 +178,9 @@ export default function EvaluationDetailPage() {
       await uploadBytes(fileRef, file, { contentType: file.type })
       const downloadUrl = await getDownloadURL(fileRef)
 
-      await updateDoc(doc(db, 'evaluations', record.id), {
-        workspaceImageUrls: arrayUnion(downloadUrl),
-        updatedAt: serverTimestamp(),
+      await apiPost(`/api/evaluations/${encodeURIComponent(record.id)}/workspace-image`, {
+        storagePath: filePath,
+        workspaceImageUrl: downloadUrl,
       })
 
       setRecord((current) => {
