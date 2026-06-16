@@ -793,9 +793,10 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
         @keyframes _gt_glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.9; } }
         @keyframes _wv { from { transform: scaleY(0.35); opacity: 0.25; } to { transform: scaleY(1); opacity: 0.65; } }
         @keyframes _ci { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes _gt_lock_float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-        @keyframes _gt_lock_pulse { 0%,100%{opacity:0.55} 50%{opacity:1} }
-        @keyframes _gt_ring { 0%{transform:scale(1);opacity:0.3} 70%{transform:scale(1.9);opacity:0} 100%{transform:scale(1.9);opacity:0} }
+        @keyframes _gt_lock_float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+        @keyframes _gt_lock_pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+        @keyframes _gt_ring  { 0%{transform:scale(1);opacity:0.35} 70%{transform:scale(2.2);opacity:0} 100%{transform:scale(2.2);opacity:0} }
+        @keyframes _gt_ring2 { 0%{transform:scale(1);opacity:0.2}  70%{transform:scale(2.6);opacity:0} 100%{transform:scale(2.6);opacity:0} }
         .gt-fwd { animation: _gt_fwd 0.22s ease forwards; }
         .gt-bwd { animation: _gt_bwd 0.22s ease forwards; }
         .gt-input {
@@ -819,13 +820,13 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
         .gt-cta:disabled { opacity: 0.22; cursor: not-allowed; }
       `}</style>
 
-      {/* Persistent header row — matches CoachInsight format */}
-      <div className="flex items-center justify-between mb-3">
+      {/* Persistent header row — z-10 keeps it above the lock overlay */}
+      <div className="relative z-10 flex items-center justify-between mb-3">
         <div className="eyebrow !mb-0 flex items-center">
           <Target className="w-3 h-3 mr-2 text-[#3D5A35]" />
           THE TRACKER
         </div>
-        {gtfZone ? (
+        {gtfZone && (
           <div className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded-full border"
                style={{ borderColor: `${ZONE_META[gtfZone].color}40`, backgroundColor: `${ZONE_META[gtfZone].color}12` }}>
             <span className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse"
@@ -833,13 +834,6 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
             <span className="text-[8px] uppercase tracking-[0.1em] font-semibold"
                   style={{ color: ZONE_META[gtfZone].color }}>
               {ZONE_META[gtfZone].label}
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 px-2.5 py-[3px] rounded-md border border-[#5C4033]/10 bg-[#D9D0C4]/18">
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 animate-pulse ${phase === 'done' ? 'bg-[#3D5A35]' : 'bg-[#C4A882]'}`} />
-            <span className="text-[8px] uppercase tracking-[0.1em] font-semibold text-[#5C4033]/60">
-              {phase === 'done' ? 'Active' : 'Set up'}
             </span>
           </div>
         )}
@@ -894,35 +888,60 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
         </div>
       )}
 
-      {/* Lock overlay — always shown while tracker is locked */}
+      {/* Lock overlay — starts below the header row so "THE TRACKER" stays visible */}
       {isLocked && (
         <div
-          className="absolute inset-0 z-10 rounded-[inherit] flex flex-col items-center justify-center text-center px-6 gap-2.5 transition-all duration-500"
+          className="absolute left-0 right-0 bottom-0 z-[5] flex flex-col items-center justify-center text-center px-6 gap-3 transition-all duration-400"
           style={{
-            backdropFilter: lockHovered ? 'blur(22px) saturate(1.9)' : 'blur(14px) saturate(1.5)',
-            WebkitBackdropFilter: lockHovered ? 'blur(22px) saturate(1.9)' : 'blur(14px) saturate(1.5)',
-            background: lockHovered ? 'rgba(255,248,240,0.82)' : 'rgba(255,248,240,0.62)',
+            top: '44px',
+            backdropFilter: lockHovered ? 'blur(52px) saturate(2.4)' : 'blur(36px) saturate(2.0)',
+            WebkitBackdropFilter: lockHovered ? 'blur(52px) saturate(2.4)' : 'blur(36px) saturate(2.0)',
+            background: lockHovered ? 'rgba(255,248,240,0.92)' : 'rgba(255,248,240,0.82)',
+            borderRadius: '0 0 inherit inherit',
           }}
           onMouseEnter={() => setLockHovered(true)}
           onMouseLeave={() => setLockHovered(false)}
         >
-          <div className="relative flex items-center justify-center">
-            <span
-              className="absolute rounded-full border border-[#3D5A35]/25"
-              style={{ width: '32px', height: '32px', animation: '_gt_ring 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite' }}
-            />
+          <div className="relative flex items-center justify-center" style={{ width: '40px', height: '40px' }}>
+            <span className="absolute inset-0 rounded-full border border-[#3D5A35]/20"
+              style={{ animation: '_gt_ring2 3.4s cubic-bezier(0.215,0.61,0.355,1) 0.6s infinite' }} />
+            <span className="absolute inset-0 rounded-full border border-[#3D5A35]/30"
+              style={{ animation: '_gt_ring 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
             <LockKeyhole
-              className="w-4 h-4 text-[#3D5A35]/65 relative z-10"
-              style={{ animation: '_gt_lock_float 3s ease-in-out infinite, _gt_lock_pulse 3s ease-in-out infinite' }}
+              className="relative z-10 transition-all duration-400"
+              style={{
+                width: lockHovered ? '18px' : '15px',
+                height: lockHovered ? '18px' : '15px',
+                color: lockHovered ? 'rgba(61,90,53,0.85)' : 'rgba(61,90,53,0.55)',
+                animation: '_gt_lock_float 3s ease-in-out infinite, _gt_lock_pulse 3s ease-in-out infinite',
+              }}
             />
           </div>
-          <p className="text-[10.5px] font-semibold tracking-[0.1em] uppercase text-[#3D5A35]/70">
-            Coming Soon
-          </p>
-          <div className="h-px w-8 bg-[#3D5A35]/18" />
-          <p className="text-[9.5px] text-[#5C4033]/40 leading-relaxed">
-            We&apos;re building something here.
-          </p>
+          <div className="flex flex-col items-center gap-1.5">
+            <p
+              className="font-semibold tracking-[0.1em] uppercase transition-all duration-400"
+              style={{
+                fontSize: lockHovered ? '11px' : '10px',
+                color: lockHovered ? 'rgba(61,90,53,0.9)' : 'rgba(61,90,53,0.65)',
+              }}
+            >
+              Coming Soon
+            </p>
+            <div
+              className="h-px bg-[#3D5A35]/20 transition-all duration-500"
+              style={{ width: lockHovered ? '52px' : '28px' }}
+            />
+            <p
+              className="text-[9.5px] leading-relaxed transition-all duration-400"
+              style={{
+                color: 'rgba(92,64,51,0.5)',
+                opacity: lockHovered ? 1 : 0.6,
+                transform: lockHovered ? 'translateY(0)' : 'translateY(2px)',
+              }}
+            >
+              We&apos;re building something here.
+            </p>
+          </div>
         </div>
       )}
     </div>

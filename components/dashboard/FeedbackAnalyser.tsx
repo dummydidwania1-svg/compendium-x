@@ -306,18 +306,9 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
   ]);
   const [input, setInput]             = useState('');
   const endRef                        = useRef<HTMLDivElement>(null);
-  const hoverTimerRef                 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleMouseEnter = () => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    setIsHovering(true);
-  };
-  const handleMouseLeave = () => {
-    hoverTimerRef.current = setTimeout(() => setIsHovering(false), 320);
-  };
-  useEffect(() => () => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-  }, []);
+  const handleMouseEnter = () => setIsHovering(true);
+  const handleMouseLeave = () => setIsHovering(false);
 
   useEffect(() => {
     const introText = apiKeyMissing ? unavailableMessage : metrics.initialGreeting;
@@ -410,37 +401,46 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
       >
         {isHovering && !isOpen && (
           <div
-            className="fa-rise mb-3 flex flex-col items-center gap-2.5 px-5 py-4 rounded-2xl pointer-events-none"
+            className="fa-rise mb-3 flex flex-col items-center gap-3 px-8 py-5 rounded-2xl pointer-events-none"
             style={{
-              background: 'rgba(255,248,240,0.86)',
-              backdropFilter: 'blur(28px) saturate(2.0)',
-              WebkitBackdropFilter: 'blur(28px) saturate(2.0)',
-              border: '1px solid rgba(61,90,53,0.14)',
-              boxShadow: '0 4px 20px rgba(61,90,53,0.10)',
+              minWidth: '200px',
+              background: 'rgba(255,248,240,0.94)',
+              backdropFilter: 'blur(52px) saturate(2.4)',
+              WebkitBackdropFilter: 'blur(52px) saturate(2.4)',
+              border: '1px solid rgba(61,90,53,0.16)',
+              boxShadow: '0 8px 32px rgba(61,90,53,0.16)',
             }}
           >
             <style>{`
-              @keyframes _fa_lock_float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-              @keyframes _fa_lock_pulse { 0%,100%{opacity:0.55} 50%{opacity:1} }
-              @keyframes _fa_ring { 0%{transform:scale(1);opacity:0.3} 70%{transform:scale(1.9);opacity:0} 100%{transform:scale(1.9);opacity:0} }
+              @keyframes _fa_lock_float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+              @keyframes _fa_lock_pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+              @keyframes _fa_ring  { 0%{transform:scale(1);opacity:0.35} 70%{transform:scale(2.2);opacity:0} 100%{transform:scale(2.2);opacity:0} }
+              @keyframes _fa_ring2 { 0%{transform:scale(1);opacity:0.2}  70%{transform:scale(2.6);opacity:0} 100%{transform:scale(2.6);opacity:0} }
             `}</style>
-            <div className="relative flex items-center justify-center">
-              <span
-                className="absolute rounded-full border border-[#3D5A35]/25"
-                style={{ width: '28px', height: '28px', animation: '_fa_ring 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite' }}
-              />
+            {/* Eyebrow — same class/format as the card headers */}
+            <div className="eyebrow !mb-0 flex items-center self-start">
+              <TieLogo className="w-3 h-3 mr-2 text-[#3D5A35]" />
+              THE ANALYSER
+            </div>
+            <div className="relative flex items-center justify-center" style={{ width: '40px', height: '40px' }}>
+              <span className="absolute inset-0 rounded-full border border-[#3D5A35]/20"
+                style={{ animation: '_fa_ring2 3.4s cubic-bezier(0.215,0.61,0.355,1) 0.6s infinite' }} />
+              <span className="absolute inset-0 rounded-full border border-[#3D5A35]/30"
+                style={{ animation: '_fa_ring 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
               <Lock
-                className="w-3.5 h-3.5 text-[#3D5A35]/65 relative z-10"
+                className="w-4 h-4 text-[#3D5A35]/70 relative z-10"
                 style={{ animation: '_fa_lock_float 3s ease-in-out infinite, _fa_lock_pulse 3s ease-in-out infinite' }}
               />
             </div>
-            <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#3D5A35]/70 whitespace-nowrap">
-              Coming Soon
-            </p>
-            <div className="h-px w-8 bg-[#3D5A35]/18" />
-            <p className="text-[9.5px] text-[#5C4033]/40 whitespace-nowrap">
-              We&apos;re building this.
-            </p>
+            <div className="flex flex-col items-center gap-1.5">
+              <p className="text-[10.5px] font-semibold tracking-[0.1em] uppercase text-[#3D5A35]/80 whitespace-nowrap">
+                Coming Soon
+              </p>
+              <div className="h-px w-10 bg-[#3D5A35]/20" />
+              <p className="text-[9.5px] text-[#5C4033]/45 whitespace-nowrap">
+                We&apos;re building this.
+              </p>
+            </div>
           </div>
         )}
 
