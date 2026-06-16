@@ -6,6 +6,7 @@ import { COLORS } from '@/lib/constants';
 import { createPortal } from 'react-dom';
 import { filterDashboardEntries } from '@/lib/dashboard/live';
 import { useDashboard } from './DashboardContext';
+import SnapshotOverlay from './SnapshotOverlay';
 
 // ── Score colour using dashboard palette ──
 const scoreColor = (score: number): string => {
@@ -135,55 +136,6 @@ const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void
             <p className="text-xs text-[#5C4033]/40">No audio recorded.</p>
           )}
         </div>
-      </div>
-    </div>
-  </div>
-);
-
-// ── Snapshot Overlay (SAME as CaseHistoryTable) ──
-const SnapshotOverlay = ({ entry, onClose }: { entry: any; onClose: () => void }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-    <div className="absolute inset-0 bg-[#3B2F2F]/30 backdrop-blur-sm" />
-    <div
-      className="relative bg-[#fff8f0]/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#5C4033]/12 w-full max-w-md animate-scale-in overflow-hidden"
-      onClick={(e) => e.stopPropagation()}
-    >
- <div className="flex items-center justify-between px-4 py-3 border-b border-[#5C4033]/10">
-  <div className="flex items-center gap-2 min-w-0">
-    <span className="text-[10px] uppercase tracking-[0.12em] font-semibold text-[#5C4033]/55 shrink-0">
-      {entry.hasSnapshot ? 'SNAPSHOT' : 'UPLOAD'}
-    </span>
-    <span className="text-[10px] text-[#5C4033]/30 shrink-0">·</span>
-    <span className="text-xs font-semibold text-[#3B2F2F] truncate">
-      {entry.name}
-    </span>
-  </div>
-  <div className="flex items-center gap-2.5 shrink-0 ml-2">
-    <button
-      onClick={onClose}
-      className="w-5 h-5 flex items-center justify-center rounded-full bg-[#D9D0C4]/50 text-[#5C4033] hover:bg-[#3B2F2F] hover:text-[#F0EBE3] transition-colors"
-    >
-      <X className="w-2.5 h-2.5" />
-    </button>
-  </div>
-</div>
-      <div className="p-4">
-        {entry.hasSnapshot ? (
-          <div className="bg-[#D9D0C4]/20 rounded-lg p-6 flex flex-col items-center justify-center min-h-[200px]">
-            <Image className="w-8 h-8 text-[#5C4033]/30 mb-2" />
-            <p className="text-xs text-[#5C4033]/70 text-center">Your handwritten notes snapshot</p>
-            <p className="text-[10px] text-[#5C4033]/40 mt-1">Uploaded on {formatDate(entry.date)}</p>
-          </div>
-        ) : (
-          <label className="cursor-pointer block">
-            <div className="border-2 border-dashed border-[#D9D0C4] rounded-xl p-8 flex flex-col items-center justify-center min-h-[200px] hover:border-[#3D5A35] hover:bg-[#3D5A35]/5 transition-all duration-300">
-              <ImageUp className="w-8 h-8 text-[#5C4033]/25 mb-3" />
-              <p className="text-xs font-medium text-[#3B2F2F]/70">Drop your snapshot here</p>
-              <p className="text-[10px] text-[#5C4033]/40 mt-1">or click to browse files</p>
-            </div>
-            <input type="file" accept="image/*" className="hidden" />
-          </label>
-        )}
       </div>
     </div>
   </div>
