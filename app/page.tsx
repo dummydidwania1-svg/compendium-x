@@ -197,7 +197,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   width: 48%;
   height: calc(100% + 70px);
   background-color: var(--toasty);
-  background-image: url('/srcc.jpg');
+  background-image: url('/srcc2.jpg');
   background-size: cover;
   background-position: center 35%;
   background-repeat: no-repeat;
