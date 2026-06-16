@@ -103,13 +103,19 @@ const Navbar = ({ currentPage }: NavbarProps) => {
 
           {/* Nav Links */}
           <div className="hidden md:flex items-center space-x-10">
-            <Link
+            <a
               href="/"
               style={{ fontFamily: "'Work Sans', sans-serif" }}
               className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'home' ? 'active' : ''}`}
+              onClick={(e) => {
+                if (currentPage !== 'home') {
+                  e.preventDefault()
+                  window.location.href = '/'
+                }
+              }}
             >
               HOME
-            </Link>
+            </a>
             <Link
               href="/dashboard"
               style={{ fontFamily: "'Work Sans', sans-serif" }}

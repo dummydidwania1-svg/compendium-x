@@ -54,7 +54,9 @@ export const storage = getStorage(app)
 export const db = (() => {
   try {
     return initializeFirestore(app, {
-      experimentalAutoDetectLongPolling: true,
+      // Skip WebChannel streaming probe — go straight to long polling.
+      // AutoDetect can silently hang for 1-2 min on some networks before falling back.
+      experimentalForceLongPolling: true,
     })
   } catch {
     return getFirestore(app)

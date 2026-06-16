@@ -2190,7 +2190,7 @@ function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[]
             }`}
             style={{ background: 'rgba(255,248,240,0.80)', animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
           >
-            <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center pt-3 pb-2 px-3 shrink-0">{n.title}</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center pt-4 pb-2 px-3 shrink-0">{n.title}</p>
             <ul className="w-full px-3 pb-3">
               {n.items.map(item => (
                 <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">

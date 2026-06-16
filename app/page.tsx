@@ -20,14 +20,6 @@ const PAGE_CSS = `
   --muted:        #695C4D;
 }
 
-/* Glass navbar — scoped to the landing page only */
-.ccx-page nav {
-  background: rgba(255, 248, 240, 0.55) !important;
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border-bottom: 1px solid rgba(61, 90, 53, 0.06);
-  transition: background 0.4s ease, backdrop-filter 0.4s ease;
-}
 
 html, body { background: var(--cream) !important; color: var(--text-primary); }
 body { font-family: 'Work Sans', sans-serif; }
@@ -51,15 +43,13 @@ header.ccx-hero {
   position: relative;
   min-height: calc(100vh - 70px);
   display: flex; align-items: center;
-  overflow: hidden;
+  /* overflow intentionally NOT hidden so the image panel bleeds up behind the glass navbar */
 }
 header.ccx-hero .hero-inner {
   position: relative;
   z-index: 10;
-  max-width: 1280px;
   width: 100%;
-  margin: 0 auto;
-  padding: 0 48px 0 calc(48px + 42%);
+  padding: 0 48px 0 calc(48px + 50%);
 }
 header.ccx-hero h1 {
   font-family: 'Newsreader', serif;
@@ -72,6 +62,8 @@ header.ccx-hero .ctas {
 header.ccx-hero .ctas a {
   display: inline-block;
   padding: 16px 32px;
+  width: 210px;
+  text-align: center;
   font-family: 'Work Sans', sans-serif;
   font-size: 11px;
   font-weight: 500;
@@ -135,9 +127,9 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
 #ccx-edition::before {
   content: '';
   display: inline-block;
-  width: 24px;        /* short — not em-dash length */
-  height: 1px;        /* thin */
-  background: #6B4A1E; /* warm brown */
+  width: 24px;
+  height: 1px;
+  background: #6B4A1E;
   flex-shrink: 0;
 }
 #ccx-main-title {
@@ -154,6 +146,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
 #ccx-main-title .title-x {
   color: var(--accent);
   display: inline-block;
+  margin-left: 3px;
   transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), color 0.8s ease;
   transform-origin: center center;
 }
@@ -165,23 +158,26 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   #ccx-edition { font-size: 22px; }
 }
 #ccx-where-line {
-  display: block !important;
+  display: inline !important;
   color: var(--text-heading) !important;
   font-weight: 300 !important;
   font-style: normal !important;
   font-family: 'Newsreader', serif !important;
   font-size: 36px !important;
   letter-spacing: -0.6px !important;
-  margin-top: 8px;
+}
+#ccx-where-line::after {
+  content: ' ';
 }
 #ccx-animated-line {
-  display: block !important;
+  display: inline-block !important;
   color: var(--accent) !important;
   font-weight: 400 !important;
   font-style: italic !important;
   font-family: 'Newsreader', serif !important;
   font-size: 36px !important;
   width: auto !important;
+  vertical-align: top;
 }
 #ccx-animated-line .word-item {
   color: var(--accent) !important;
@@ -198,57 +194,98 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
 #ccx-split-left {
   position: absolute;
   top: -70px; left: 0;
-  width: 42%;
+  width: 48%;
   height: calc(100% + 70px);
   background-color: var(--toasty);
-  background-image:
-    url('/srcc.jpg'),
-    linear-gradient(135deg, rgba(107,74,30,0.18), rgba(69,58,42,0.4)),
-    radial-gradient(ellipse at 30% 40%, rgba(200,169,110,0.6), transparent 65%),
-    radial-gradient(ellipse at 70% 80%, rgba(107,74,30,0.5), transparent 60%);
-  background-size: cover, auto, auto, auto;
-  background-position: center center;
+  background-image: url('/srcc.jpg');
+  background-size: cover;
+  background-position: center 35%;
   background-repeat: no-repeat;
-  filter: grayscale(0.15) sepia(0.08) brightness(0.94);
+  filter: saturate(0.92) brightness(1.06) sepia(0.12) hue-rotate(-14deg) contrast(1.05);
   z-index: 1;
   pointer-events: none;
-  /* Two-axis mask feathers BOTH the right and bottom edges into true
-     transparency so the panel dissolves into the page rather than
-     presenting a hard-clipped border. */
+  /* Fade starts just before the text column (~80% of panel), reaching ~55%
+     opacity right at the text start (~84%), then quickly dissolving to zero.
+     Text and fade begin simultaneously for a seamless editorial look. */
   -webkit-mask-image:
     linear-gradient(to right,
       rgba(0,0,0,1)    0%,
-      rgba(0,0,0,1)    20%,
-      rgba(0,0,0,0.88) 38%,
-      rgba(0,0,0,0.62) 55%,
-      rgba(0,0,0,0.30) 72%,
-      rgba(0,0,0,0.08) 88%,
+      rgba(0,0,0,1)    87%,
+      rgba(0,0,0,0.82) 89%,
+      rgba(0,0,0,0.55) 91%,
+      rgba(0,0,0,0.28) 94%,
+      rgba(0,0,0,0.10) 97%,
+      rgba(0,0,0,0.02) 99%,
       rgba(0,0,0,0)    100%),
     linear-gradient(to bottom,
       rgba(0,0,0,1)    0%,
-      rgba(0,0,0,1)    45%,
-      rgba(0,0,0,0.82) 60%,
-      rgba(0,0,0,0.45) 75%,
-      rgba(0,0,0,0.15) 88%,
+      rgba(0,0,0,1)    62%,
+      rgba(0,0,0,0.88) 74%,
+      rgba(0,0,0,0.58) 84%,
+      rgba(0,0,0,0.24) 93%,
       rgba(0,0,0,0)    100%);
   -webkit-mask-composite: source-in;
   mask-image:
     linear-gradient(to right,
       rgba(0,0,0,1)    0%,
-      rgba(0,0,0,1)    20%,
-      rgba(0,0,0,0.88) 38%,
-      rgba(0,0,0,0.62) 55%,
-      rgba(0,0,0,0.30) 72%,
-      rgba(0,0,0,0.08) 88%,
+      rgba(0,0,0,1)    87%,
+      rgba(0,0,0,0.82) 89%,
+      rgba(0,0,0,0.55) 91%,
+      rgba(0,0,0,0.28) 94%,
+      rgba(0,0,0,0.10) 97%,
+      rgba(0,0,0,0.02) 99%,
       rgba(0,0,0,0)    100%),
     linear-gradient(to bottom,
       rgba(0,0,0,1)    0%,
-      rgba(0,0,0,1)    45%,
-      rgba(0,0,0,0.82) 60%,
-      rgba(0,0,0,0.45) 75%,
-      rgba(0,0,0,0.15) 88%,
+      rgba(0,0,0,1)    62%,
+      rgba(0,0,0,0.88) 74%,
+      rgba(0,0,0,0.58) 84%,
+      rgba(0,0,0,0.24) 93%,
       rgba(0,0,0,0)    100%);
   mask-composite: intersect;
+}
+
+/* ═══════════════════════════════════════════════════
+   HERO GRANTS — top-right corner of hero
+   ═══════════════════════════════════════════════════ */
+#ccx-hero-grants {
+  position: absolute;
+  top: 28px;
+  right: 48px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 9px;
+}
+#ccx-hero-grants__label {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  color: #b8ad9f;
+}
+#ccx-hero-grants__credits {
+  margin: 0;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #c0b4a8;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+#ccx-hero-grants__credits a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+#ccx-hero-grants__credits a:hover {
+  color: #8a7a6a;
+}
+.ccx-grants-dot {
+  margin: 0 7px;
+  color: #d0c4b8;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -278,9 +315,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   flex-direction: column;
   gap: 28px;
   pointer-events: all;
-  /* Slow, smooth lift on exit — overlay slides upward while fading,
-     revealing the landing page beneath. */
-transition: opacity 0.7s cubic-bezier(0.65, 0, 0.35, 1),
+  transition: opacity 0.7s cubic-bezier(0.65, 0, 0.35, 1),
             transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
   will-change: opacity, transform;
 }
@@ -294,8 +329,6 @@ transition: opacity 0.7s cubic-bezier(0.65, 0, 0.35, 1),
   height: auto;
   max-height: 200px;
   object-fit: contain;
-  /* Knocks out the PNG's white background so the logo sits on cream
-     without a visible square. White × cream = cream. */
   mix-blend-mode: multiply;
   opacity: 0;
   transform: scale(0.94);
@@ -381,80 +414,6 @@ animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
 }
 
 /* ═══════════════════════════════════════════════════
-   SUPPORTED BY
-   ═══════════════════════════════════════════════════ */
-.ccx-supported {
-  padding: 48px 32px 112px;
-  background: transparent;
-}
-.ccx-supported__inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-.ccx-supported__label {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.35em;
-  color: #b0a898;
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1),
-            transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
-}
-.ccx-supported__label.visible { opacity: 1; transform: translateY(0); }
-.ccx-supported__logos {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 40px;
-  flex-wrap: wrap;
-}
-.ccx-supported__divider {
-  width: 1px;
-  height: 24px;
-  background: rgba(69, 58, 42, 0.12);
-  flex-shrink: 0;
-}
-.ccx-grant-link {
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  transition: transform 0.35s ease;
-}
-.ccx-grant-link:hover { transform: translateY(-2px); }
-.ccx-grant-slide-left {
-  opacity: 0;
-  transform: translateX(-32px);
-  transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1),
-              transform 0.8s cubic-bezier(0.22,1,0.36,1);
-}
-.ccx-grant-slide-left.visible { opacity: 1; transform: translateX(0); }
-.ccx-grant-slide-right {
-  opacity: 0;
-  transform: translateX(32px);
-  transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1),
-              transform 0.8s cubic-bezier(0.22,1,0.36,1);
-}
-.ccx-grant-slide-right.visible { opacity: 1; transform: translateX(0); }
-@keyframes ccx-grant-breathe {
-  0%, 100% { opacity: 0.45; }
-  50%       { opacity: 1; }
-}
-.ccx-grant-link.visible.ccx-grant-pulse-1 {
-  animation: ccx-grant-breathe 3s ease-in-out infinite;
-}
-.ccx-grant-link.visible.ccx-grant-pulse-2 {
-  animation: ccx-grant-breathe 3s ease-in-out 1.5s infinite;
-}
-.ccx-grant-link img { display: block; height: auto; }
-
-/* ═══════════════════════════════════════════════════
    MOBILE / RESPONSIVE  (phones + small tablets)
    ═══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
@@ -473,7 +432,7 @@ animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
     width: 100% !important;
     height: 100% !important;
     background-position: center center;
-    filter: grayscale(0.18) sepia(0.08) brightness(0.9);
+    filter: saturate(1.15) brightness(0.92);
     -webkit-mask-image: linear-gradient(to bottom,
       rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%,
       rgba(0,0,0,0.6) 82%, rgba(0,0,0,0) 100%);
@@ -483,8 +442,6 @@ animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
     -webkit-mask-composite: source-over;
     mask-composite: add;
   }
-  /* STRONGER cream scrim — image stays as soft texture, text reads clearly.
-     Want MORE photo? lower these alphas. Want MORE text contrast? raise them. */
   #ccx-split-left::after {
     content: '';
     position: absolute;
@@ -523,9 +480,13 @@ animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
   #ccx-main-title .title-nowrap { white-space: normal; }
 
   header.ccx-hero h1 { font-size: 22px !important; margin-top: 10px !important; }
-  #ccx-where-line { font-size: clamp(22px, 6.4vw, 30px) !important; }
+  #ccx-where-line {
+    display: block !important;
+    font-size: clamp(22px, 6.4vw, 30px) !important;
+  }
   #ccx-animated-line,
   #ccx-animated-line .word-item { font-size: clamp(22px, 6.4vw, 30px) !important; }
+  #ccx-animated-line { display: block !important; }
   .word-carousel { min-width: 200px; height: 1.2em; }
 
   /* CTAs stack full-width */
@@ -535,34 +496,16 @@ animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
     flex-direction: column;
     align-items: stretch;
   }
-  header.ccx-hero .ctas a { text-align: center; padding: 16px 24px; font-size: 12px; }
+  header.ccx-hero .ctas a { text-align: center; padding: 16px 24px; font-size: 12px; min-width: 0; }
 
-  /* ─── SUPPORTED BY — symmetrical stacked layout ─── */
-  .ccx-supported { padding: 36px 24px 72px; }
-  .ccx-supported__inner { gap: 26px; }
-  .ccx-supported__label {
-    font-size: 10px;
-    letter-spacing: 0.3em;
-    text-align: center;
-  }
-  .ccx-supported__logos {
-    flex-direction: column;   /* stack instead of cramped wrap */
-    gap: 26px;
-    width: 100%;
-  }
-  .ccx-supported__divider { display: none; }      /* vertical hairline is wrong when stacked */
-  .ccx-grant-link { justify-content: center; }
-.ccx-grant-link img {
-  height: 22px !important;
-  width: auto !important;
-}
+  /* Hide hero grants on mobile — no space */
+  #ccx-hero-grants { display: none; }
 }
 
 /* Extra squeeze for very small phones (SE / mini, older Androids) */
 @media (max-width: 380px) {
   #ccx-main-title { font-size: clamp(32px, 11vw, 44px) !important; }
   header.ccx-hero .hero-inner { padding: 0 18px !important; }
-  .ccx-grant-link img { height: 18px !important; }
 }
 `
 
@@ -598,17 +541,8 @@ export default function LandingPage() {
       `
       document.body.appendChild(overlay)
 
-      // Timeline:
-      //   0.4s – 1.8s : logo fades in (scale 0.94 → 1, opacity 0 → 1)
-      //   1.2s – 2.6s : edition rises in
-      //   2.6s – 3.2s : hold so user can register the brand
-      //   3.2s        : fade-out class triggers 2s upward lift + opacity fade
-      //   5.2s        : overlay fully invisible
-      //   5.5s        : overlay element removed from DOM
 const tFade = setTimeout(() => {
   document.getElementById('ccx-entrance-overlay')?.classList.add('fade-out')
-  // Crossfade: as the overlay lifts away, the landing page fades in
-  // over the same 0.7s window so the reveal feels seamless, not abrupt.
   pageEl?.classList.add('ccx-revealed')
 }, 1265)
 const tRemove = setTimeout(() => {
@@ -674,7 +608,6 @@ const tRemove = setTimeout(() => {
       panel.id = 'ccx-split-left'
       panel.innerHTML = ''
       header.insertBefore(panel, header.firstChild)
-      header.style.overflow = 'hidden'
       const heroInner = header.querySelector<HTMLElement>('.hero-inner')
       if (heroInner) {
         heroInner.style.position = 'relative'
@@ -685,8 +618,8 @@ const tRemove = setTimeout(() => {
     /* 4. SCROLL: fade image + expand hero content — raf-lerped for smoothness */
     const heroInner = document.querySelector<HTMLElement>('.hero-inner')
     const splitPanel = document.getElementById('ccx-split-left')
-    const FADE_END = 1150 // px of scroll over which the image fully fades — generous so wrap-snap is surrounded by long, gentle motion
-    const SMOOTH = 0.028 // closer to 0 = slower / smoother chase
+    const FADE_END = 1150
+    const SMOOTH = 0.028
     let currentT = 0
     let targetT = 0
     let rafId: number | null = null
@@ -697,7 +630,7 @@ const tRemove = setTimeout(() => {
       const eased = easeInOutCubic(Math.max(0, Math.min(1, currentT)))
       if (splitPanel) splitPanel.style.opacity = String(1 - eased)
       if (heroInner) {
-        const pct = 42 * (1 - eased)
+        const pct = 50 * (1 - eased)
         heroInner.style.paddingLeft = `calc(48px + ${pct}%)`
       }
       if (Math.abs(targetT - currentT) > 0.0005) {
@@ -751,16 +684,12 @@ const tRemove = setTimeout(() => {
         { threshold: 0.15 },
       )
       document
-        .querySelectorAll(
-          '[data-ccx-reveal], .ccx-grant-slide-left, .ccx-grant-slide-right, .ccx-supported__label',
-        )
+        .querySelectorAll('[data-ccx-reveal]')
         .forEach((el) => observer.observe(el))
       cleanups.push(() => observer.disconnect())
     } else {
       document
-        .querySelectorAll(
-          '[data-ccx-reveal], .ccx-grant-slide-left, .ccx-grant-slide-right, .ccx-supported__label',
-        )
+        .querySelectorAll('[data-ccx-reveal]')
         .forEach((el) => el.classList.add('visible'))
     }
 
@@ -781,8 +710,18 @@ const tRemove = setTimeout(() => {
 
       <Navbar currentPage="home" />
 
-      <main className="pt-[70px]">
+<main className="pt-[70px]">
         <header className="ccx-hero">
+          {/* Sponsor logos — top-right of hero, above 3rd edition text */}
+          <div id="ccx-hero-grants">
+            <span id="ccx-hero-grants__label">Supported by</span>
+            <p id="ccx-hero-grants__credits">
+              <a href="https://cloud.google.com/startup" target="_blank" rel="noopener noreferrer">Google for Startups</a>
+              <span className="ccx-grants-dot">·</span>
+              <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer">ElevenLabs</a>
+            </p>
+          </div>
+
           <div className="hero-inner">
             <h1>
               Where case prep gets
@@ -794,55 +733,15 @@ const tRemove = setTimeout(() => {
               </span>
             </h1>
             <div className="ctas">
-  <a className="primary" href="/repository">
-    BROWSE LIBRARY
-  </a>
-  <a className="secondary" href="/practice">
-    DO A CASE
-  </a>
-</div>
-          </div>
-        </header>
-
-        <section className="ccx-supported">
-          <div className="ccx-supported__inner">
-            <p className="ccx-supported__label" data-ccx-reveal>
-              Supported by
-            </p>
-            <div className="ccx-supported__logos">
-              <a
-                className="ccx-grant-link ccx-grant-slide-left ccx-grant-pulse-1"
-                href="https://elevenlabs.io/startup-grants"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-ccx-reveal
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://www.casecompendiumx.in/grants/elevenlabs-grants.webp"
-                  alt="ElevenLabs Grants"
-                  style={{ width: '200px', height: 'auto' }}
-                />
+              <a className="primary" href="/repository">
+                BROWSE LIBRARY
               </a>
-              <div className="ccx-supported__divider" />
-              <a
-                className="ccx-grant-link ccx-grant-slide-right ccx-grant-pulse-2"
-                href="https://cloud.google.com/startup"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ marginTop: '4px' }}
-                data-ccx-reveal
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://www.casecompendiumx.in/grants/google-for-startups-new.png"
-                  alt="Google for Startups"
-                  style={{ width: '175px', height: 'auto' }}
-                />
+              <a className="secondary" href="/practice">
+                DO A CASE
               </a>
             </div>
           </div>
-        </section>
+        </header>
       </main>
 
       <Footer />
