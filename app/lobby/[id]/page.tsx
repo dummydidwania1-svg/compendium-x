@@ -233,6 +233,10 @@ function CandidateLobby({
     // Only trigger when browsing transitions true → false (tab was closed)
     // and we haven't launched yet (launching means they selected a case fine)
     if (!wasTrue || interviewerBrowsing || sessionPhase === 'launching') return
+    // Interviewer navigated back within the popup (e.g. repo → interviewer panel)
+    // — popup is still open, repo just unmounted. Don't show the overlay.
+    const popupHost = window as PopupWindowHost
+    if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) return
     startTitlePulse('📋 Reopen Library')
     dismissedRef.current.delete('repo-closed')
     showOverlay({
@@ -1254,7 +1258,9 @@ export default function LobbyPage() {
   const [launchCaseName, setLaunchCaseName] = useState('')
   // Tracks whether mic is ready (granted or not applicable). Used to gate
   // opening the interviewer popup in local/split-screen mode.
-  const [isMicReady, setIsMicReady] = useState(false)
+  // Starts true (optimistic) — MicPermissionCard fires onMicStateChange(false)
+  // quickly if mic is actually denied, avoiding a false block on first click.
+  const [isMicReady, setIsMicReady] = useState(true)
 
   // Interviewers arrive via shared invite links. Silently provision an
   // anonymous Firebase user so they can call /api routes (which all require

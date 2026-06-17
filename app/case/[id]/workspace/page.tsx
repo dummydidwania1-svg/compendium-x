@@ -1093,10 +1093,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         clearTimeout(windowClosedReshowTimerRef.current)
         windowClosedReshowTimerRef.current = null
       }
-      stopTitlePulse()
+      // Don't kill a pulse that mic-blocked started — only stop if mic is fine.
+      if (microphonePermissionState !== 'denied') stopTitlePulse()
       setWindowClosedOverlayVisible(false)
     }
-  }, [feedbackSubmitted, interviewerWindowClosed, preferredRecordingMode, startTitlePulse, stopTitlePulse])
+  }, [feedbackSubmitted, interviewerWindowClosed, microphonePermissionState, preferredRecordingMode, startTitlePulse, stopTitlePulse])
 
   // Drive transcript-retry overlay from transcriptRetryInfo.
   useEffect(() => {

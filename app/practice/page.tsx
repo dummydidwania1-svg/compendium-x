@@ -14,6 +14,9 @@ export default function PracticeModeSelection() {
   // interviewer popup. We hold the user on this page (no navigation) so
   // they can unblock popups and retry without losing context.
   const [popupBlocked, setPopupBlocked] = useState(false)
+  // Set when mic is denied at session start — blocks the popup from opening
+  // until the user grants mic access and retries.
+  const [micBlocked, setMicBlocked] = useState(false)
   // Set while we're awaiting the browser's mic permission prompt before
   // opening the interviewer popup. Shows a transient "Setting up..." state
   // on the local card so the user knows their click registered.
@@ -42,25 +45,26 @@ export default function PracticeModeSelection() {
     if (localPreparing) return
     setLocalPreparing(true)
     setPopupBlocked(false)
+    setMicBlocked(false)
 
     const lobbyId = Math.random().toString(36).substring(7)
     const popupHost = window as Window & {
       __compendiumInterviewerWindow?: Window | null
     }
 
-    // CRITICAL: ask for mic permission BEFORE opening the interviewer popup
-    // and navigating. In local mode the device may be handed to the
-    // interviewer the moment the popup pops; the candidate must answer the
-    // browser prompt while they're still in front of the screen. We don't
-    // hard-block on denial — the workspace's soft-warning handles that —
-    // but we put the choice in front of them at the right moment.
+    // Mic permission is required before opening the interviewer popup.
+    // The candidate must grant access now — we can't record without it
+    // and handing off to the interviewer with a broken mic leads to a
+    // dead session.
     if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         stream.getTracks().forEach((track) => track.stop())
       } catch {
-        // User denied or no mic. Continue anyway — the workspace banner will
-        // surface the consequence and let them recover via address-bar lock.
+        // Mic denied — don't open the popup. Show a message and let them retry.
+        setMicBlocked(true)
+        setLocalPreparing(false)
+        return
       }
     }
 
@@ -372,7 +376,9 @@ export default function PracticeModeSelection() {
                       ? 'Setting Up Microphone…'
                       : popupBlocked
                         ? 'Retry — Allow Popups & Try Again'
-                        : 'Launch Split Screen'}
+                        : micBlocked
+                          ? 'Retry — Fix Mic First'
+                          : 'Launch Split Screen'}
                   </button>
                 </div>
                 {localPreparing ? (
@@ -388,6 +394,16 @@ export default function PracticeModeSelection() {
                     <p className="mt-1 text-[11px] leading-relaxed text-[#5c4033]">
                       Your browser blocked the interviewer popup. Click the popup-blocked icon in your
                       address bar to allow popups for this site, then click <strong className="font-semibold">Retry</strong> above.
+                    </p>
+                  </div>
+                ) : null}
+                {micBlocked ? (
+                  <div className="mt-3 rounded-lg border border-[#b48a57]/30 bg-[rgba(255,245,233,0.92)] px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
+                      Mic blocked
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-[#5c4033]">
+                      We need mic access to record your session. Click the lock icon in your address bar, set Microphone to Allow, then tap <strong className="font-semibold">Retry</strong> above.
                     </p>
                   </div>
                 ) : null}
