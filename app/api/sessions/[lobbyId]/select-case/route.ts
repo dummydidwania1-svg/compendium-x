@@ -44,7 +44,7 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
       throw new TransitionError(
         404,
         'session_not_found',
-        'Session does not exist. Candidate must open the lobby first.',
+        "Candidate hasn't opened their lobby yet. Ask them to load the workspace, then try again.",
       )
     }
 
@@ -54,16 +54,18 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         throw new TransitionError(
           404,
           'session_not_found',
-          'Session does not exist. Candidate must open the lobby first.',
+          "Candidate hasn't opened their lobby yet. Ask them to load the workspace, then try again.",
         )
       }
       const data = snap.data() ?? {}
       if (data.status !== 'waiting') {
-        throw new TransitionError(
-          409,
-          'invalid_transition',
-          `Cannot select case when session is "${data.status}".`,
-        )
+        const friendlyMessage =
+          data.status === 'completed'
+            ? 'This session has already ended. You can close this window.'
+            : data.status === 'in_progress'
+              ? 'A case is already running in this session. Starting a new one will replace it.'
+              : `This session can't accept a new case right now (status: ${data.status}).`
+        throw new TransitionError(409, 'invalid_transition', friendlyMessage)
       }
 
       tx.set(

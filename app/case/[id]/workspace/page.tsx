@@ -204,6 +204,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [retryingTranscript, setRetryingTranscript] = useState(false)
 
+  // ── Session-issue overlay (session doc missing / connection error) ─────────
+  const [sessionIssueOverlayVisible, setSessionIssueOverlayVisible] = useState(false)
+  const sessionIssueReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // ── Interviewer-window-closed overlay (same-device sessions) ─────────────
   const [windowClosedOverlayVisible, setWindowClosedOverlayVisible] = useState(false)
   const windowClosedReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -230,6 +234,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   useEffect(() => () => {
     stopTitlePulse()
     if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
+    if (sessionIssueReshowTimerRef.current) clearTimeout(sessionIssueReshowTimerRef.current)
   }, [stopTitlePulse])
 
   // Reactive microphone permission tracking. The hook subscribes to
@@ -888,13 +893,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             try {
               const snapshot = await getDoc(sessionRef)
               if (!snapshot.exists()) {
-                setSessionIssue('Session not found. Ask interviewer to restart this session.')
+                setSessionIssue("We can't find this session right now. Ask the interviewer to pick a case, or try refreshing.")
                 return
               }
               setSessionIssue('')
               routeIfCompleted(snapshot.data() as SessionState)
             } catch {
-              setSessionIssue('Connection unstable. Reconnecting...')
+              setSessionIssue('Connection unstable. Hang tight, reconnecting...')
             }
           }, 4000)
         }
@@ -903,7 +908,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           sessionRef,
           (snapshot) => {
             if (!snapshot.exists()) {
-              setSessionIssue('Session not found. Ask interviewer to restart this session.')
+              setSessionIssue("We can't find this session right now. Ask the interviewer to pick a case, or try refreshing.")
               startPolling()
               return
             }
@@ -1047,6 +1052,21 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setWindowClosedOverlayVisible(false)
     }
   }, [interviewerWindowClosed, preferredRecordingMode, startTitlePulse, stopTitlePulse])
+
+  // Drive the session-issue overlay from sessionIssue. Shows immediately on
+  // error, auto-clears when the session doc reappears. Uses the same
+  // dismiss+reshow pattern as the interviewer-window-closed overlay.
+  useEffect(() => {
+    if (sessionIssue) {
+      setSessionIssueOverlayVisible((prev) => (prev ? prev : true))
+    } else {
+      if (sessionIssueReshowTimerRef.current) {
+        clearTimeout(sessionIssueReshowTimerRef.current)
+        sessionIssueReshowTimerRef.current = null
+      }
+      setSessionIssueOverlayVisible(false)
+    }
+  }, [sessionIssue])
 
   useEffect(() => {
     return () => {
@@ -1510,6 +1530,34 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
+      {sessionIssueOverlayVisible ? (
+        <LobbyOverlay
+          key="session-issue"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 6s4-2 11-2 11 2 11 2" />
+              <path d="M1 10s4-2 11-2 11 2 11 2" />
+              <line x1="1" y1="14" x2="23" y2="14" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          }
+          title="Session not found"
+          body={sessionIssue}
+          onDismiss={() => {
+            setSessionIssueOverlayVisible(false)
+            if (sessionIssueReshowTimerRef.current) clearTimeout(sessionIssueReshowTimerRef.current)
+            sessionIssueReshowTimerRef.current = setTimeout(() => {
+              sessionIssueReshowTimerRef.current = null
+              setSessionIssue((issue) => {
+                if (issue) setSessionIssueOverlayVisible(true)
+                return issue
+              })
+            }, 1500)
+          }}
+        />
+      ) : null}
+
       <main className="relative flex min-h-[calc(100vh-70px)] flex-1 flex-col justify-center px-4 pb-20 pt-[90px] md:px-8 md:pb-24">
         <MicSoftWarningBanner state={microphonePermissionState} onAllow={handleBannerAllow} />
         <div className="mx-auto max-w-4xl w-full">
@@ -1690,16 +1738,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 </div>
               ) : null}
 
-              {sessionIssue ? (
-                <div className="workspace-inline-note warn mt-5 rounded-[20px] px-4 py-4">
-                  <span className="material-symbols-outlined mt-0.5 text-[#a5794f]/70" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>
-                    wifi_off
-                  </span>
-                  <p className="text-[13px] leading-relaxed text-[#7a5b3d]">
-                    {sessionIssue}
-                  </p>
-                </div>
-              ) : null}
 
               {completionPending ? (
                 <div className="workspace-inline-note warn mt-5 rounded-[24px] p-5">
