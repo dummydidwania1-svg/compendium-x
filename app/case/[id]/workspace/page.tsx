@@ -206,7 +206,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
   // ── Interviewer-window-closed overlay (same-device sessions) ─────────────
   const [windowClosedOverlayVisible, setWindowClosedOverlayVisible] = useState(false)
-  const windowClosedOverlayLeavingRef = useRef(false)
+  const windowClosedReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const titlePulseRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const originalTitleRef = useRef(
     typeof document !== 'undefined' ? document.title : 'Case CompendiumX'
@@ -227,7 +227,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     titlePulseRef.current = null
     document.title = originalTitleRef.current
   }, [])
-  useEffect(() => () => stopTitlePulse(), [stopTitlePulse])
+  useEffect(() => () => {
+    stopTitlePulse()
+    if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
+  }, [stopTitlePulse])
 
   // Reactive microphone permission tracking. The hook subscribes to
   // PermissionStatus.onchange under the hood, so this state updates the
@@ -1026,17 +1029,22 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     return () => clearInterval(interval)
   }, [preferredRecordingMode])
 
-  // Drive the overlay and title pulse from interviewerWindowClosed
+  // Drive the overlay and title pulse from interviewerWindowClosed.
+  // When the window reopens, clear immediately. When it closes, show the
+  // overlay — but only if it isn't already visible (so a dismissed+reshow
+  // cycle isn't interrupted by the 2s poll re-setting state unnecessarily).
   useEffect(() => {
     if (preferredRecordingMode !== 'local') return
     if (interviewerWindowClosed) {
-      windowClosedOverlayLeavingRef.current = false
-      setWindowClosedOverlayVisible(true)
       startTitlePulse()
+      setWindowClosedOverlayVisible((prev) => prev ? prev : true)
     } else {
+      if (windowClosedReshowTimerRef.current) {
+        clearTimeout(windowClosedReshowTimerRef.current)
+        windowClosedReshowTimerRef.current = null
+      }
       stopTitlePulse()
       setWindowClosedOverlayVisible(false)
-      windowClosedOverlayLeavingRef.current = false
     }
   }, [interviewerWindowClosed, preferredRecordingMode, startTitlePulse, stopTitlePulse])
 
@@ -1487,6 +1495,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           }}
           onDismiss={() => {
             setWindowClosedOverlayVisible(false)
+            // If the window is still closed, re-show after 1.5s so the
+            // candidate can't permanently dismiss a blocking issue.
+            if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
+            windowClosedReshowTimerRef.current = setTimeout(() => {
+              windowClosedReshowTimerRef.current = null
+              // Only reshow if the window is still actually closed
+              setInterviewerWindowClosed((closed) => {
+                if (closed) setWindowClosedOverlayVisible(true)
+                return closed
+              })
+            }, 1500)
           }}
         />
       ) : null}
