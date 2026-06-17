@@ -272,7 +272,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const stopInProgressRef = useRef(false)
   const caseIdRef = useRef('')
   const autoStartAttemptedRef = useRef(false)
+  // Only true when we've previously started recording (auto-start ran) AND
+  // the page was then reloaded. Set AFTER autoStartAttemptedRef so a fresh
+  // case load that sees in_progress on its first snapshot doesn't trigger it.
   const sessionWasInProgressRef = useRef(false)
+  const [warnBeforeReloadVisible, setWarnBeforeReloadVisible] = useState(false)
   const toastTimeoutRef = useRef<number | null>(null)
   const remotePrepTimersRef = useRef<number[]>([])
   const localPrepTimersRef = useRef<number[]>([])
@@ -836,7 +840,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (!raw) return
       if (raw.caseName) setCaseName(raw.caseName)
       setPreferredRecordingMode(resolveSessionMode(raw.sessionMode))
-      if (raw.status === 'in_progress') {
+      if (raw.status === 'in_progress' && autoStartAttemptedRef.current) {
+        // Only mark as "was in progress" once we've already started recording.
+        // On a fresh case load the first snapshot delivers in_progress before
+        // auto-start fires, so we'd incorrectly show the refresh overlay.
         sessionWasInProgressRef.current = true
       }
       if (raw.status === 'completed') {
@@ -987,6 +994,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [recordingState])
+
+  // Warn the candidate before they reload mid-recording. F5 / Ctrl+R / Cmd+R
+  // all trigger a page reload — we catch those keystrokes and show our overlay
+  // first so they understand what they're about to lose. The browser's own
+  // beforeunload dialog still fires if they proceed past our overlay.
+  useEffect(() => {
+    if (recordingState !== 'recording') return
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isReload =
+        e.key === 'F5' ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r')
+      if (!isReload) return
+      e.preventDefault()
+      setWarnBeforeReloadVisible(true)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [recordingState])
 
   // Poll every 2s to detect if the interviewer popup was closed.
@@ -1562,6 +1587,25 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               if (completionPending && recordingState === 'failed') setUploadFailOverlayVisible(true)
             }, 1500)
           }}
+        />
+      ) : null}
+
+      {warnBeforeReloadVisible ? (
+        <LobbyOverlay
+          key="warn-before-reload"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          }
+          title="Heads up, your recording will be lost"
+          body="Reloading stops the mic and wipes the current recording. The session stays open, but you would need to start the audio all over again."
+          actionLabel="Stay on page"
+          onAction={() => setWarnBeforeReloadVisible(false)}
+          onDismiss={() => setWarnBeforeReloadVisible(false)}
         />
       ) : null}
 

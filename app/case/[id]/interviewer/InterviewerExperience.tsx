@@ -581,6 +581,39 @@ export function InterviewerPageInner({
 	})
 	const [notes, setNotes] = useState('')
 	const [submitting, setSubmitting] = useState(false)
+
+	// Restore draft scores/notes/view from localStorage so a refresh doesn't
+	// wipe the interviewer's in-progress ratings. Keyed by lobbyId so different
+	// sessions never bleed into each other.
+	const draftKey = lobbyId ? `compendium-interviewer-draft-${lobbyId}` : null
+	useEffect(() => {
+		if (!draftKey) return
+		try {
+			const raw = localStorage.getItem(draftKey)
+			if (!raw) return
+			const draft = JSON.parse(raw) as {
+				scores?: ScoreState
+				notes?: string
+				currentView?: 'case' | 'feedback' | 'success'
+			}
+			if (draft.scores) setScores(draft.scores)
+			if (typeof draft.notes === 'string') setNotes(draft.notes)
+			if (draft.currentView && draft.currentView !== 'success') setCurrentView(draft.currentView)
+		} catch {
+			// Malformed draft — ignore and start fresh.
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [draftKey])
+
+	// Persist draft whenever scores, notes, or view change.
+	useEffect(() => {
+		if (!draftKey) return
+		try {
+			localStorage.setItem(draftKey, JSON.stringify({ scores, notes, currentView }))
+		} catch {
+			// Storage quota exceeded — non-fatal.
+		}
+	}, [draftKey, scores, notes, currentView])
 	const [submitError, setSubmitError] = useState('')
 	// Locked-by-default review screen: the interviewer fills scores/notes
 	// during the case (sidebar in CaseInterviewerMaster), then this view
@@ -774,6 +807,7 @@ useEffect(() => {
 			'compendium-session-ended',
 			JSON.stringify({ caseId: resolvedCaseId, lobbyId, endedAt: Date.now() }),
 		)
+		if (draftKey) localStorage.removeItem(draftKey)
 
 		if (lobbyId) {
 			setCurrentView('success')
