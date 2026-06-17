@@ -1040,6 +1040,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // cycle isn't interrupted by the 2s poll re-setting state unnecessarily).
   useEffect(() => {
     if (preferredRecordingMode !== 'local') return
+    // Interviewer closing after submitting feedback is expected — don't show the overlay.
+    if (feedbackSubmitted) {
+      stopTitlePulse()
+      setWindowClosedOverlayVisible(false)
+      return
+    }
     if (interviewerWindowClosed) {
       startTitlePulse()
       setWindowClosedOverlayVisible((prev) => prev ? prev : true)
@@ -1051,7 +1057,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       stopTitlePulse()
       setWindowClosedOverlayVisible(false)
     }
-  }, [interviewerWindowClosed, preferredRecordingMode, startTitlePulse, stopTitlePulse])
+  }, [feedbackSubmitted, interviewerWindowClosed, preferredRecordingMode, startTitlePulse, stopTitlePulse])
 
   // Drive the session-issue overlay from sessionIssue. Shows immediately on
   // error, auto-clears when the session doc reappears. Uses the same
