@@ -144,6 +144,7 @@ function CandidateLobby({
   launchCaseName,
   onCancelSession,
   onPrimaryAction,
+  onReopenRepo,
 }: {
   requestedSessionMode: 'remote' | 'local'
   interviewerLink: string
@@ -155,6 +156,7 @@ function CandidateLobby({
   launchCaseName: string
   onCancelSession: () => void
   onPrimaryAction: () => void
+  onReopenRepo: () => void
 }) {
   const isLocalSession = requestedSessionMode === 'local'
 
@@ -186,17 +188,65 @@ function CandidateLobby({
     return () => clearInterval(interval)
   }, [isLocalSession])
 
-  // Title pulse when popup closes — stop when it's reopened
+  // Overlay + title pulse when interviewer popup closes — re-shows until reopened
   useEffect(() => {
     if (!isLocalSession) return
     if (popupWindowClosed) {
       startTitlePulse('🖥 Reopen Controls')
+      // Clear dismissed state so re-close always re-shows the overlay
+      dismissedRef.current.delete('popup-closed')
+      showOverlay({
+        id: 'popup-closed',
+        type: 'warning',
+        icon: (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <path d="M8 21h8M12 17v4" />
+            <line x1="2" y1="2" x2="22" y2="22" />
+          </svg>
+        ),
+        title: 'Interviewer window closed',
+        body: 'Reopen it so the interviewer can pick a case.',
+        actionLabel: 'Reopen window',
+        onAction: onPrimaryAction,
+      })
     } else {
-      // Only stop if we were pulsing for this reason (not for mic/waiting)
       if (activePulseMessageRef.current === '🖥 Reopen Controls') stopTitlePulse()
+      // Immediately clear the overlay when reopened
+      setActiveOverlay(prev => prev?.id === 'popup-closed' ? null : prev)
+      if (reshowTimerRef.current) { clearTimeout(reshowTimerRef.current); reshowTimerRef.current = null }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [popupWindowClosed, isLocalSession])
+
+  // Overlay + title pulse when interviewer closes the repository tab mid-browse
+  const prevBrowsingRef = useRef(false)
+  useEffect(() => {
+    if (!isLocalSession) return
+    const wasTrue = prevBrowsingRef.current
+    prevBrowsingRef.current = interviewerBrowsing
+    // Only trigger when browsing transitions true → false (tab was closed)
+    // and we haven't launched yet (launching means they selected a case fine)
+    if (!wasTrue || interviewerBrowsing || sessionPhase === 'launching') return
+    startTitlePulse('📋 Reopen Library')
+    dismissedRef.current.delete('repo-closed')
+    showOverlay({
+      id: 'repo-closed',
+      type: 'warning',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          <line x1="2" y1="2" x2="22" y2="22" />
+        </svg>
+      ),
+      title: 'Case library was closed',
+      body: 'The interviewer closed the case library. Reopen it to pick a case.',
+      actionLabel: 'Reopen library',
+      onAction: onReopenRepo,
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interviewerBrowsing, isLocalSession, sessionPhase])
 
   const interviewerLinkDisplay = isLocalSession ? '' : interviewerLink.replace(/^https?:\/\//, '')
   const interviewerLinkPreview = isLocalSession
@@ -424,6 +474,15 @@ function CandidateLobby({
       return
     }
   }, [showOverlay, startTitlePulse, stopTitlePulse])
+
+  // Clear repo-closed overlay when interviewer reopens the library or case launches
+  useEffect(() => {
+    if (interviewerBrowsing || sessionPhase === 'launching') {
+      setActiveOverlay(prev => prev?.id === 'repo-closed' ? null : prev)
+      if (activePulseMessageRef.current === '📋 Reopen Library') stopTitlePulse()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interviewerBrowsing, sessionPhase])
 
   // ── Waiting nudge overlay ──────────────────────────────────────────────────
   useEffect(() => {
@@ -1477,6 +1536,33 @@ export default function LobbyPage() {
     }
   }, [isInterviewer, lobbyId, requestedSessionMode, router])
 
+  const openRepoInPopup = () => {
+    const popupWidth = 800
+    const popupHeight = 800
+    const popupHost = window as PopupWindowHost
+    const left = Math.max(0, window.screenX + Math.round((window.outerWidth - popupWidth) / 2))
+    const top = Math.max(0, window.screenY + Math.round((window.outerHeight - popupHeight) / 2))
+    const repoUrl = `/repository?mode=select&lobby=${lobbyId}&sessionMode=${requestedSessionMode}`
+    // If the existing popup is still open, navigate it to the repo page
+    if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
+      popupHost.__compendiumInterviewerWindow.location.href = repoUrl
+      popupHost.__compendiumInterviewerWindow.focus()
+      return
+    }
+    // Otherwise open a new popup
+    const win = window.open(
+      repoUrl,
+      'InterviewerControl',
+      `popup=yes,resizable=yes,width=${popupWidth},height=${popupHeight},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+    )
+    if (win) {
+      popupHost.__compendiumInterviewerWindow = win
+      win.focus()
+    } else {
+      flashCandidateActionStatus('Allow popups to continue')
+    }
+  }
+
   const handleCandidatePrimaryAction = async () => {
     if (isLocalSession) {
       focusOrOpenLocalInterviewerWindow()
@@ -1516,9 +1602,8 @@ export default function LobbyPage() {
       isLaunching={isLaunching}
       launchCaseName={launchCaseName}
       onCancelSession={() => router.push('/practice')}
-      onPrimaryAction={() => {
-        void handleCandidatePrimaryAction()
-      }}
+      onPrimaryAction={() => { void handleCandidatePrimaryAction() }}
+      onReopenRepo={openRepoInPopup}
     />
   )
 }
