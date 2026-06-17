@@ -3,10 +3,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getDoc, onSnapshot } from 'firebase/firestore'
-import { MicPermissionCard } from '@/components/permissions/MicPermissionCard'
+import { MicPermissionCard, type MicOverlayPayload } from '@/components/permissions/MicPermissionCard'
 import { MeetingTabShareCard } from '@/components/permissions/MeetingTabShareCard'
+import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
+import type { LobbyOverlayProps } from '@/components/lobby/LobbyOverlay'
+import PlatformLoader from '@/components/PlatformLoader'
 import { signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
@@ -14,8 +17,10 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 
 type SessionState = {
   caseId?: string
+  caseName?: string
   status?: 'waiting' | 'in_progress' | 'completed'
   sessionMode?: 'remote' | 'local'
+  expiresAt?: { toDate: () => Date } | Date
 }
 
 type PopupWindowHost = Window & {
@@ -134,6 +139,9 @@ function CandidateLobby({
   sessionIssue,
   candidateActionStatus,
   waitingNudgeVisible,
+  interviewerBrowsing,
+  isLaunching,
+  launchCaseName,
   onCancelSession,
   onPrimaryAction,
 }: {
@@ -142,10 +150,54 @@ function CandidateLobby({
   sessionIssue: string
   candidateActionStatus: string
   waitingNudgeVisible: boolean
+  interviewerBrowsing: boolean
+  isLaunching: boolean
+  launchCaseName: string
   onCancelSession: () => void
   onPrimaryAction: () => void
 }) {
   const isLocalSession = requestedSessionMode === 'local'
+
+  // ── Session phase ──────────────────────────────────────────────────────────
+  // Derives a single phase string from the combination of prop flags so the
+  // rest of the render only needs one switch/conditional.
+  const sessionPhase: 'waiting' | 'browsing' | 'launching' = isLaunching
+    ? 'launching'
+    : interviewerBrowsing
+      ? 'browsing'
+      : 'waiting'
+
+  // ── Popup closed detection ────────────────────────────────────────────────
+  // Poll every 2s to detect if the interviewer window was closed by the user.
+  // Drives dynamic H1, subtitle, status row, and title pulse so the candidate
+  // knows they need to reopen it.
+  const [popupWindowClosed, setPopupWindowClosed] = useState(false)
+  useEffect(() => {
+    if (!isLocalSession) return
+    const interval = setInterval(() => {
+      const host = window as PopupWindowHost
+      const win = host.__compendiumInterviewerWindow
+      if (win && win.closed) {
+        setPopupWindowClosed(true)
+      } else if (!win || !win.closed) {
+        setPopupWindowClosed(false)
+      }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isLocalSession])
+
+  // Title pulse when popup closes — stop when it's reopened
+  useEffect(() => {
+    if (!isLocalSession) return
+    if (popupWindowClosed) {
+      startTitlePulse('🖥 Reopen Controls')
+    } else {
+      // Only stop if we were pulsing for this reason (not for mic/waiting)
+      if (activePulseMessageRef.current === '🖥 Reopen Controls') stopTitlePulse()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [popupWindowClosed, isLocalSession])
+
   const interviewerLinkDisplay = isLocalSession ? '' : interviewerLink.replace(/^https?:\/\//, '')
   const interviewerLinkPreview = isLocalSession
     ? ''
@@ -157,38 +209,273 @@ function CandidateLobby({
   const localWindowReady = candidateActionStatus === 'Interviewer window ready'
   const localPopupBlocked = candidateActionStatus === 'Allow popups to continue'
   const remoteActionButtonLabel =
-    remoteCopySucceeded
-      ? 'Copied'
-      : remoteCopyFailed
-        ? 'Retry'
-        : 'Copy link'
+    remoteCopySucceeded ? 'Copied' : remoteCopyFailed ? 'Retry' : 'Copy link'
   const localActionButtonLabel =
-    localWindowReady
-      ? 'Ready'
-      : localPopupBlocked
-        ? 'Allow popups'
-        : 'Show controls'
-  const waitingSteps = isLocalSession
-    ? [
-        { num: '01', text: 'Controls ready', active: true },
-        { num: '02', text: 'Interviewer picks case' },
-        { num: '03', text: 'Allow recording' },
-        { num: '04', text: 'Review dashboard' },
-      ]
-    : [
-        { num: '01', text: 'Send invite', active: true },
-        { num: '02', text: 'Interviewer picks case' },
-        { num: '03', text: 'Allow recording' },
-        { num: '04', text: 'Review dashboard' },
-      ]
-  const statusTitle = isLocalSession ? 'Interviewer controls are ready' : 'Invite ready to share'
-  const statusHelper = isLocalSession
-    ? 'If the interviewer window slips behind, bring it back from here.'
-    : 'Copy the invite below to open the interviewer setup.'
-  const pageSubtitle = "Stay here. Your workspace opens automatically once the interviewer starts the case."
+    localWindowReady ? 'Ready' : localPopupBlocked ? 'Allow popups' : 'Show controls'
+  // ── Dynamic text — all driven by sessionPhase + popupWindowClosed ─────────
+  const step01Text = isLocalSession ? 'Controls ready' : 'Send invite'
+  const step02Text =
+    sessionPhase === 'browsing' ? 'Picking a case now' :
+    sessionPhase === 'launching' ? 'Case selected' :
+    'Interviewer picks case'
+  const step02Active = sessionPhase === 'browsing' || sessionPhase === 'launching'
+
+  const waitingSteps = [
+    { num: '01', text: step01Text, active: sessionPhase === 'waiting' && !popupWindowClosed },
+    { num: '02', text: step02Text, active: step02Active },
+    { num: '03', text: 'Allow recording' },
+    { num: '04', text: 'Review dashboard' },
+  ]
+
+  const pageH1Secondary =
+    sessionPhase === 'launching'
+      ? (launchCaseName || 'your workspace')
+      : sessionPhase === 'browsing'
+        ? 'Picking a Case'
+        : popupWindowClosed
+          ? 'Window Closed'
+          : 'for Interviewer'
+
+  const pageH1Primary =
+    sessionPhase === 'launching'
+      ? 'Opening'
+      : sessionPhase === 'browsing'
+        ? 'Interviewer is'
+        : popupWindowClosed
+          ? 'Interviewer'
+          : 'Waiting'
+
+  const pageSubtitle =
+    sessionPhase === 'launching'
+      ? 'Session capture is live. Your workspace is opening now.'
+      : sessionPhase === 'browsing'
+        ? 'Sit tight, a case is on its way.'
+        : popupWindowClosed
+          ? 'The interviewer window closed. Reopen it to continue.'
+          : 'Your workspace opens on its own once the interviewer picks a case.'
+
+  const statusTitle =
+    sessionPhase === 'launching'
+      ? 'Session capture is live'
+      : sessionPhase === 'browsing'
+        ? 'Interviewer is choosing a case'
+        : popupWindowClosed
+          ? 'Interviewer window was closed'
+          : isLocalSession ? 'Interviewer controls are ready' : 'Invite ready to share'
+
+  const statusHelper =
+    sessionPhase === 'launching'
+      ? 'Opening your workspace in a moment.'
+      : sessionPhase === 'browsing'
+        ? 'Your workspace will open the second they confirm.'
+        : popupWindowClosed
+          ? 'Reopen it below so the interviewer can pick a case.'
+          : isLocalSession
+            ? 'Lost it? Bring the window back anytime.'
+            : 'Copy the link below and send it to your interviewer.'
+
   const localActionDescription = localPopupBlocked
-    ? 'Allow popups, then try again.'
-    : 'Need it again? Bring the interviewer window back.'
+    ? 'Allow popups first, then try again.'
+    : 'Need it back? Open the interviewer window here.'
+
+  // ── Overlay state ──────────────────────────────────────────────────────────
+  type ActiveOverlay = Omit<LobbyOverlayProps, 'onDismiss'> & { id: string }
+  const [activeOverlay, setActiveOverlay] = useState<ActiveOverlay | null>(null)
+  const dismissedRef = useRef<Set<string>>(new Set())
+  const titlePulseRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const originalTitleRef = useRef(
+    typeof document !== 'undefined' ? document.title : 'Compendium X'
+  )
+
+  const showOverlay = useCallback((o: ActiveOverlay) => {
+    if (dismissedRef.current.has(o.id)) return
+    // Don't re-set if the same overlay id is already showing
+    setActiveOverlay(prev => (prev?.id === o.id ? prev : o))
+  }, [])
+
+  const reshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const dismissOverlay = useCallback(() => {
+    setActiveOverlay(prev => {
+      if (!prev) return null
+      // Permanently dismiss info toasts only — they're confirmations, not problems.
+      if (prev.type === 'info') {
+        dismissedRef.current.add(prev.id)
+        return null
+      }
+      // For mandatory overlays: clear any existing reshow timer, then schedule
+      // a reshow in 1.5s. The reshow calls showOverlay which checks the live
+      // activeOverlay state — if the issue is already resolved by then it won't fire.
+      if (reshowTimerRef.current) clearTimeout(reshowTimerRef.current)
+      const snapshot = prev
+      reshowTimerRef.current = setTimeout(() => {
+        setActiveOverlay(current => {
+          // Only re-show if no overlay is already visible and the id isn't permanently dismissed
+          if (current !== null) return current
+          if (dismissedRef.current.has(snapshot.id)) return current
+          return snapshot
+        })
+      }, 1500)
+      return null
+    })
+  }, [])
+
+  // Clean up reshow timer on unmount
+  useEffect(() => () => {
+    if (reshowTimerRef.current) clearTimeout(reshowTimerRef.current)
+  }, [])
+
+  // Title pulse for cross-tab awareness on mandatory overlays.
+  // Pulses faster (900ms) so it's noticeable in the tab bar while the user
+  // is on another tab. Resets title immediately when the user returns to this tab.
+  const activePulseMessageRef = useRef<string | null>(null)
+
+  const startTitlePulse = useCallback((message: string) => {
+    activePulseMessageRef.current = message
+    if (titlePulseRef.current) return
+    let flip = false
+    titlePulseRef.current = setInterval(() => {
+      const msg = activePulseMessageRef.current
+      document.title = flip ? originalTitleRef.current : (msg ? `${msg} · Case CompendiumX` : originalTitleRef.current)
+      flip = !flip
+    }, 900)
+  }, [])
+
+  const stopTitlePulse = useCallback(() => {
+    activePulseMessageRef.current = null
+    if (!titlePulseRef.current) return
+    clearInterval(titlePulseRef.current)
+    titlePulseRef.current = null
+    document.title = originalTitleRef.current
+  }, [])
+
+  useEffect(() => () => stopTitlePulse(), [stopTitlePulse])
+
+  // When user switches back to this tab while a mandatory state is active,
+  // immediately show the alert title so they know something needs attention.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && activePulseMessageRef.current) {
+        document.title = `${activePulseMessageRef.current} · Case CompendiumX`
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
+  // ── Mic overlay bridge ─────────────────────────────────────────────────────
+  const handleMicOverlay = useCallback((payload: MicOverlayPayload) => {
+    if (payload.kind === 'hidden') {
+      dismissedRef.current.delete('mic-denied')
+      dismissedRef.current.delete('mic-prompt')
+      stopTitlePulse()
+      return
+    }
+    if (payload.kind === 'granted') {
+      // Cancel any pending reshow of the blocked/prompt overlay
+      if (reshowTimerRef.current) { clearTimeout(reshowTimerRef.current); reshowTimerRef.current = null }
+      dismissedRef.current.delete('mic-denied')
+      dismissedRef.current.delete('mic-prompt')
+      // Always clear granted from dismissed so re-grants always show the toast
+      dismissedRef.current.delete('mic-granted')
+      stopTitlePulse()
+      showOverlay({
+        id: 'mic-granted',
+        type: 'info',
+        icon: <MicIcon size={14} />,
+        title: 'Microphone is all set',
+        autoDismissMs: 3500,
+      })
+      return
+    }
+    if (payload.kind === 'denied') {
+      stopTitlePulse()
+      startTitlePulse('🎙 Mic Blocked')
+      // Clear dismissed state so this overlay always re-shows while denied
+      dismissedRef.current.delete('mic-denied')
+      // Clear granted dismissed so the next successful grant shows the toast fresh
+      dismissedRef.current.delete('mic-granted')
+      showOverlay({
+        id: 'mic-denied',
+        type: 'warning',
+        icon: <MicOffIcon size={14} />,
+        title: 'Mic is blocked',
+        body: payload.stillBlocked
+          ? "Still blocked. Click the info icon (ⓘ) in your address bar, set Microphone to Allow, then try again."
+          : "Click the info icon (ⓘ) in your address bar, set Microphone to Allow, then tap the button below.",
+        actionLabel: 'Check now',
+        onAction: payload.onRetry,
+      })
+      return
+    }
+    if (payload.kind === 'prompt') {
+      startTitlePulse('🎙 Allow Mic')
+      showOverlay({
+        id: 'mic-prompt',
+        type: 'action',
+        icon: <MicIcon size={14} />,
+        title: 'Allow your microphone',
+        body: payload.requesting
+          ? 'Waiting for your browser...'
+          : 'We need mic access to record your case audio.',
+        actionLabel: payload.requesting ? undefined : 'Allow mic',
+        onAction: payload.requesting ? undefined : payload.onAllow,
+      })
+      return
+    }
+  }, [showOverlay, startTitlePulse, stopTitlePulse])
+
+  // ── Waiting nudge overlay ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!waitingNudgeVisible) return
+    startTitlePulse('⏳ Still Waiting')
+    showOverlay({
+      id: 'waiting-nudge',
+      type: 'warning',
+      icon: <ClockIcon size={14} />,
+      title: 'Still waiting',
+      body: isLocalSession
+        ? "The interviewer window hasn't picked a case. Stuck? Start fresh."
+        : "Your interviewer hasn't joined yet. Resend the link or start fresh.",
+      actionLabel: 'Cancel session',
+      onAction: onCancelSession,
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waitingNudgeVisible])
+
+  // ── Session issue overlay ──────────────────────────────────────────────────
+  const prevSessionIssueRef = useRef('')
+  useEffect(() => {
+    // When issue clears (network restored / poll succeeded), dismiss any
+    // active connection overlay and stop any title pulse for it.
+    if (!sessionIssue) {
+      prevSessionIssueRef.current = ''
+      setActiveOverlay(prev =>
+        prev?.id.startsWith('session-issue-') ? null : prev
+      )
+      stopTitlePulse()
+      return
+    }
+    if (sessionIssue === prevSessionIssueRef.current) return
+    prevSessionIssueRef.current = sessionIssue
+
+    const isFatal =
+      sessionIssue.includes('not found') || sessionIssue.includes('initialize') || sessionIssue.includes('expired')
+    if (isFatal) startTitlePulse('⚠️ Action Needed')
+    showOverlay({
+      id: `session-issue-${sessionIssue}`,
+      // Fatal errors are mandatory (re-show). Transient hiccups are info-like:
+      // auto-dismiss and never re-show — network is self-healing.
+      type: isFatal ? 'error' : 'info',
+      icon: <WifiIcon size={14} />,
+      title: isFatal ? 'Something went wrong' : 'Connection hiccup',
+      body: isFatal
+        ? 'Refresh the page or grab a new practice link.'
+        : 'Reconnecting in the background.',
+      autoDismissMs: isFatal ? undefined : 6000,
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionIssue])
 
   return (
     <div
@@ -283,12 +570,6 @@ function CandidateLobby({
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.76), 0 6px 14px rgba(61,90,53,0.06);
           transform: translateY(-1px);
         }
-        .candidate-panel {
-          border: 1px solid rgba(61,90,53,0.08);
-          background:
-            linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(244,237,227,0.74) 100%);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
-        }
         .candidate-link-shell {
           position: relative;
           isolation: isolate;
@@ -314,17 +595,6 @@ function CandidateLobby({
           border-color: rgba(61,90,53,0.16);
           transform: translateY(-1px);
           box-shadow: 0 16px 30px rgba(61,90,53,0.05), 0 0 0 1px rgba(61,90,53,0.05);
-        }
-        .candidate-inline-btn {
-          background: #3D5A35;
-          border: 1px solid #3D5A35;
-          color: white;
-          box-shadow: 0 10px 22px rgba(61,90,53,0.14);
-          transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
-        }
-        .candidate-inline-btn:hover {
-          background: rgba(255,248,240,0.92);
-          color: #3D5A35;
         }
         .candidate-link-icon {
           position: relative;
@@ -386,6 +656,18 @@ function CandidateLobby({
         }
       `}</style>
 
+      {/* Headless mic permission controller — emits overlay signals */}
+      <MicPermissionCard onOverlay={handleMicOverlay} />
+
+      {/* Overlay toast */}
+      {activeOverlay ? (
+        <LobbyOverlay
+          key={activeOverlay.id}
+          {...activeOverlay}
+          onDismiss={dismissOverlay}
+        />
+      ) : null}
+
       <SelectionShellHeader />
 
       <main className="relative flex min-h-[calc(100vh-70px)] flex-1 flex-col justify-center overflow-hidden px-4 pb-20 pt-[90px] md:px-8 md:pb-24">
@@ -425,7 +707,7 @@ function CandidateLobby({
               className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
               style={{ fontFamily: "'Newsreader', serif" }}
             >
-              Waiting for <span className="text-[#3D5A35]">Interviewer</span>
+              {pageH1Primary} <span className="text-[#3D5A35]">{pageH1Secondary}</span>
             </h1>
             <p className="mt-4 max-w-[620px] pl-[2px] text-[13px] leading-relaxed text-[#5c4033]/62">
               {pageSubtitle}
@@ -466,7 +748,7 @@ function CandidateLobby({
             </div>
 
             <div className="px-6 py-6">
-              <div className={`grid gap-5 ${waitingSteps.length === 4 ? 'md:grid-cols-4' : 'md:grid-cols-5'}`}>
+              <div className="grid gap-5 md:grid-cols-4">
                 {waitingSteps.map((step, index) => (
                   <div
                     key={step.num}
@@ -508,17 +790,7 @@ function CandidateLobby({
                     </span>
                     <span className={`candidate-chip-btn ${localWindowReady ? 'success' : ''} ${localPopupBlocked ? 'error' : ''}`}>
                       {localWindowReady ? (
-                        <svg
-                          className="candidate-chip-icon"
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
+                        <svg className="candidate-chip-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20 6 9 17l-5-5" />
                         </svg>
                       ) : null}
@@ -550,17 +822,7 @@ function CandidateLobby({
                     </span>
                     <span className={`candidate-chip-btn ${remoteCopySucceeded ? 'success' : ''} ${remoteCopyFailed ? 'error' : ''}`}>
                       {remoteCopySucceeded ? (
-                        <svg
-                          className="candidate-chip-icon"
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
+                        <svg className="candidate-chip-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20 6 9 17l-5-5" />
                         </svg>
                       ) : null}
@@ -569,42 +831,6 @@ function CandidateLobby({
                   </button>
                 </div>
               )}
-
-              <MicPermissionCard />
-
-              {/* Remote mode also needs screen-share (tab audio) — capture
-                  it here while the candidate is idle, so the workspace
-                  starts recording immediately without a mid-case prompt. */}
-              {!isLocalSession ? <MeetingTabShareCard /> : null}
-
-              {waitingNudgeVisible ? (
-                <div className="mt-5 rounded-[22px] border border-[#b48a57]/22 bg-[rgba(255,245,233,0.92)] px-4 py-4 text-left">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-[#5c4033]">
-                    Still waiting
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-[#5c4033]">
-                    {isLocalSession
-                      ? "Your interviewer window hasn't picked a case yet. If it's stuck, you can cancel and start again."
-                      : "Your interviewer hasn't joined yet. Make sure you've shared the invite link — or cancel and come back later."}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={onCancelSession}
-                    className="mt-3 inline-flex items-center justify-center rounded-full border border-[#5c4033]/25 bg-white/60 px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#5c4033] transition hover:border-[#5c4033]/50 hover:bg-white/90"
-                  >
-                    Cancel session
-                  </button>
-                </div>
-              ) : null}
-
-              {sessionIssue ? (
-                <div className="mt-5 rounded-[22px] border border-[#b48a57]/18 bg-[rgba(255,245,233,0.85)] px-4 py-4 text-left">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
-                    Connection Notice
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-[#92400e]">{sessionIssue}</p>
-                </div>
-              ) : null}
             </div>
           </div>
         </div>
@@ -612,6 +838,50 @@ function CandidateLobby({
 
       <CompactPlatformFooter />
     </div>
+  )
+}
+
+// ── Inline SVG icon helpers (no external dep, tiny) ───────────────────────────
+function MicIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  )
+}
+function MicOffIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="2" y1="2" x2="22" y2="22" />
+      <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2" />
+      <path d="M5 10v2a7 7 0 0 0 12 5" />
+      <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33" />
+      <path d="M9 9v3a3 3 0 0 0 5.12 2.12" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  )
+}
+function ClockIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+function WifiIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="1" y1="1" x2="23" y2="23" />
+      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+      <path d="M10.71 5.05A16 16 0 0 1 22.56 9" />
+      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
+    </svg>
   )
 }
 
@@ -908,6 +1178,12 @@ export default function LobbyPage() {
   // still be on their way and a surprise redirect would be worse than a stale
   // tab.
   const [waitingNudgeVisible, setWaitingNudgeVisible] = useState(false)
+  // Interviewer browsing signal — set when the interviewer tab writes
+  // 'compendium-interviewer-browsing' to localStorage.
+  const [interviewerBrowsing, setInterviewerBrowsing] = useState(false)
+  // Brief launching state shown while router.replace fires after case selection.
+  const [isLaunching, setIsLaunching] = useState(false)
+  const [launchCaseName, setLaunchCaseName] = useState('')
 
   // Interviewers arrive via shared invite links. Silently provision an
   // anonymous Firebase user so they can call /api routes (which all require
@@ -932,6 +1208,33 @@ export default function LobbyPage() {
     setCandidateActionStatus(message)
     window.setTimeout(() => setCandidateActionStatus(''), 2200)
   }
+
+  // ── Real network drop detection ───────────────────────────────────────────
+  // navigator.onLine / online+offline events catch hard network loss.
+  // The OfflineBanner covers total offline with a full-screen overlay (z-9999).
+  // Here we layer a softer "Connection hiccup" toast for the lobby specifically
+  // so the candidate knows what's happening even before OfflineBanner kicks in,
+  // and we actively try to reconnect by re-querying the session doc.
+  useEffect(() => {
+    if (isInterviewer) return
+
+    const onOffline = () => {
+      setSessionIssue('Connection lost. Trying to reconnect...')
+    }
+
+    const onOnline = () => {
+      // Network restored — clear immediately. The session issue overlay
+      // effect detects the empty string and dismisses the toast itself.
+      setSessionIssue('')
+    }
+
+    window.addEventListener('offline', onOffline)
+    window.addEventListener('online', onOnline)
+    return () => {
+      window.removeEventListener('offline', onOffline)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [isInterviewer])
 
   const focusOrOpenLocalInterviewerWindow = () => {
     const popupWidth = 800
@@ -1003,7 +1306,10 @@ export default function LobbyPage() {
       if (!data) return
       if (data.status === 'in_progress' && data.caseId) {
         disarmWaitingNudge()
-        router.replace(workspaceRoute(data.caseId, data.sessionMode))
+        setInterviewerBrowsing(false)
+        setIsLaunching(true)
+        setLaunchCaseName(data.caseName ?? '')
+        setTimeout(() => router.replace(workspaceRoute(data.caseId!, data.sessionMode)), 600)
         return
       }
       if (data.status === 'completed') {
@@ -1051,11 +1357,27 @@ export default function LobbyPage() {
     }
 
     const handleStorageEvent = (event: StorageEvent) => {
+      if (event.key === 'compendium-interviewer-browsing') {
+        try {
+          const data = event.newValue ? JSON.parse(event.newValue) : null
+          if (data?.lobbyId === lobbyId) {
+            setInterviewerBrowsing(true)
+          } else if (!event.newValue) {
+            // Key removed — interviewer left the case library
+            setInterviewerBrowsing(false)
+          }
+        } catch {
+          // Ignore malformed payloads.
+        }
+      }
       if (event.key === 'compendium-session-start' && event.newValue) {
         try {
           const data = JSON.parse(event.newValue)
           if (data.lobbyId === lobbyId) {
-            router.replace(workspaceRoute(data.caseId, data.mode))
+            setInterviewerBrowsing(false)
+            setIsLaunching(true)
+            setLaunchCaseName(data.caseName ?? '')
+            setTimeout(() => router.replace(workspaceRoute(data.caseId, data.mode)), 600)
           }
         } catch {
           // Ignore malformed localStorage payloads.
@@ -1084,6 +1406,18 @@ export default function LobbyPage() {
           if (existingData.status === 'completed') {
             router.replace('/dashboard')
             return
+          }
+          // Check 24h expiry on waiting sessions — if expired, block and
+          // show a fatal error rather than letting the lobby hang forever.
+          if (existingData.status === 'waiting' && existingData.expiresAt) {
+            const expiry = existingData.expiresAt instanceof Date
+              ? existingData.expiresAt
+              : existingData.expiresAt.toDate()
+            if (expiry < new Date()) {
+              setCheckingCandidate(false)
+              setSessionIssue('This session expired. Generate a new practice link.')
+              return
+            }
           }
         }
 
@@ -1158,11 +1492,7 @@ export default function LobbyPage() {
   }
 
   if (!isInterviewer && checkingCandidate) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fff8f0] text-[#5c4033]">
-        Preparing your session...
-      </div>
-    )
+    return <PlatformLoader message="Getting your space ready" />
   }
 
   if (isInterviewer) {
@@ -1182,6 +1512,9 @@ export default function LobbyPage() {
       sessionIssue={sessionIssue}
       candidateActionStatus={candidateActionStatus}
       waitingNudgeVisible={waitingNudgeVisible}
+      interviewerBrowsing={interviewerBrowsing}
+      isLaunching={isLaunching}
+      launchCaseName={launchCaseName}
       onCancelSession={() => router.push('/practice')}
       onPrimaryAction={() => {
         void handleCandidatePrimaryAction()

@@ -278,6 +278,43 @@ display: inline-block;
   50%      { opacity: 0.75; }
 }
 
+/* ===== LobbyOverlay toast animations ===== */
+@keyframes lo-slide-in {
+  from { opacity: 0; transform: translateY(-14px) scale(0.97); filter: blur(3px); }
+  to   { opacity: 1; transform: translateY(0)     scale(1);    filter: blur(0); }
+}
+@keyframes lo-slide-out {
+  from { opacity: 1; transform: translateY(0)      scale(1);    filter: blur(0); }
+  to   { opacity: 0; transform: translateY(-10px)  scale(0.96); filter: blur(2px); }
+}
+@keyframes lo-progress {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+@keyframes lo-scrim-in {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to   { opacity: 1; backdrop-filter: blur(3px); }
+}
+@keyframes lo-scrim-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes lo-icon-breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.08); }
+}
+@keyframes lo-icon-shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-3px); }
+  40%      { transform: translateX(3px); }
+  60%      { transform: translateX(-2px); }
+  80%      { transform: translateX(2px); }
+}
+@keyframes lo-dot-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50%       { opacity: 1;    transform: scale(1.2); }
+}
+
 
 
 

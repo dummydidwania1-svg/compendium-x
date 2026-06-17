@@ -38,6 +38,7 @@ export type CreateSessionInput = z.infer<typeof createSessionInput>
 export const selectCaseInput = z.object({
   caseId,
   sessionMode,
+  caseName: z.string().max(256).optional(),
 })
 export type SelectCaseInput = z.infer<typeof selectCaseInput>
 

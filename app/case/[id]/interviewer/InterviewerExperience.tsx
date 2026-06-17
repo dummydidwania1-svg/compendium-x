@@ -703,6 +703,31 @@ export function InterviewerPageInner({
 		fetchData()
 	}, [lobbyId, params, previewMode, reloadTick, router])
 
+	// Signal to the candidate workspace that the interviewer case window is open
+	// (or closed). The workspace tab picks these up via 'storage' events.
+	// Only relevant for local (same-device) sessions where both tabs share localStorage.
+	useEffect(() => {
+		if (!lobbyId || previewMode) return
+		const markActive = () =>
+			localStorage.setItem('compendium-interviewer-window', JSON.stringify({ lobbyId, active: true, ts: Date.now() }))
+		const markClosed = () => {
+			// Only signal closed if the session hasn't been deliberately ended —
+			// handleSubmitFeedback writes compendium-session-ended before close.
+			const ended = localStorage.getItem('compendium-session-ended')
+			if (ended) return
+			localStorage.setItem('compendium-interviewer-window', JSON.stringify({ lobbyId, active: false, ts: Date.now() }))
+		}
+		markActive()
+		// pagehide fires more reliably than beforeunload for popup close on Chrome/Safari.
+		// Both are registered so whichever fires first wins.
+		window.addEventListener('pagehide', markClosed)
+		window.addEventListener('beforeunload', markClosed)
+		return () => {
+			window.removeEventListener('pagehide', markClosed)
+			window.removeEventListener('beforeunload', markClosed)
+		}
+	}, [lobbyId, previewMode])
+
 	// Legacy /case/[id]/interviewer?preview=1 links → bounce to the clean /case/[slug] URL.
 useEffect(() => {
   if (forcePreview || !previewMode || !caseData) return

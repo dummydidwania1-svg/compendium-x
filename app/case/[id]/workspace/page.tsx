@@ -20,6 +20,7 @@ import {
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed'
   caseId?: string
+  caseName?: string
   completedBy?: string
   sessionMode?: RecordingMode
   recording?: {
@@ -197,6 +198,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [localPrepVisible, setLocalPrepVisible] = useState(false)
   const [localPrepStep, setLocalPrepStep] = useState(0)
   const [transcriptRetryInfo, setTranscriptRetryInfo] = useState<TranscriptRetryInfo | null>(null)
+  const [interviewerWindowClosed, setInterviewerWindowClosed] = useState(false)
+  const [caseName, setCaseName] = useState('')
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [retryingTranscript, setRetryingTranscript] = useState(false)
 
   // Reactive microphone permission tracking. The hook subscribes to
@@ -794,10 +798,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       try {
         const data = JSON.parse(rawValue)
         if (lobbyId && data?.lobbyId === lobbyId) {
+          setFeedbackSubmitted(true)
           void handleSessionCompleted('feedback_submitted')
           return
         }
         if (!lobbyId && String(data.caseId) === caseIdRef.current) {
+          setFeedbackSubmitted(true)
           void handleSessionCompleted('feedback_submitted')
         }
       } catch {
@@ -807,6 +813,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
     const routeIfCompleted = (raw: SessionState | null) => {
       if (!raw) return
+      if (raw.caseName) setCaseName(raw.caseName)
       setPreferredRecordingMode(resolveSessionMode(raw.sessionMode))
       const rec = raw.recording
       if (
@@ -825,6 +832,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       }
       if (raw.status === 'completed') {
         const stopReason = raw.completedBy === 'candidate' ? 'candidate_ended' : 'feedback_submitted'
+        if (stopReason === 'feedback_submitted') setFeedbackSubmitted(true)
         void handleSessionCompleted(stopReason)
       }
     }
@@ -885,8 +893,19 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     void init()
 
     const onStorage = (event: StorageEvent) => {
-      if (event.key !== 'compendium-session-ended') return
-      parseAndHandleEnded(event.newValue)
+      if (event.key === 'compendium-session-ended') {
+        parseAndHandleEnded(event.newValue)
+      }
+      if (event.key === 'compendium-interviewer-window' && event.newValue) {
+        try {
+          const data = JSON.parse(event.newValue)
+          if (data?.lobbyId === lobbyId) {
+            setInterviewerWindowClosed(!data.active)
+          }
+        } catch {
+          // Ignore malformed payloads.
+        }
+      }
     }
 
     window.addEventListener('storage', onStorage)
@@ -949,6 +968,41 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [recordingState])
 
+  // Poll every 2s to detect if the interviewer popup was closed.
+  // The lobby stores the popup reference on window.__compendiumInterviewerWindow
+  // before router.replace fires. Since Next.js client-side navigation does NOT
+  // replace the window object, that reference survives the route change and is
+  // readable here. This is the only reliable method — beforeunload/pagehide
+  // writes from a popup are dropped by Chrome before flushing to localStorage.
+  useEffect(() => {
+    if (preferredRecordingMode !== 'local') return
+    type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
+    const interval = setInterval(() => {
+      const host = window as PopupHost
+      const win = host.__compendiumInterviewerWindow
+      console.debug('[workspace] popup ref:', win, 'closed:', win?.closed)
+      if (!win) {
+        // Reference missing — could be a hard refresh. Try to reclaim via named window.
+        // window.open('', name) with an empty URL returns the existing named popup
+        // without navigating it, or null if it doesn't exist.
+        const named = window.open('', 'InterviewerControl')
+        if (named && !named.closed) {
+          host.__compendiumInterviewerWindow = named
+          named.blur()
+          window.focus()
+          setInterviewerWindowClosed(false)
+        }
+        return
+      }
+      if (win.closed) {
+        setInterviewerWindowClosed(true)
+      } else {
+        setInterviewerWindowClosed(false)
+      }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [preferredRecordingMode])
+
   useEffect(() => {
     return () => {
       clearLocalPrep()
@@ -958,6 +1012,22 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [clearLocalPrep, clearRemotePrep, teardownMedia])
 
   const isLocalSession = preferredRecordingMode === 'local'
+
+  // ── Dynamic header text ───────────────────────────────────────────────────
+  const wsH1Primary = feedbackSubmitted ? 'Wrapping up' : 'Interview Session'
+  const wsH1Secondary = feedbackSubmitted
+    ? 'your session'
+    : interviewerWindowClosed
+      ? 'Paused'
+      : 'in Progress'
+  const wsSubtitle = feedbackSubmitted
+    ? 'Feedback is in. Finishing your session and saving everything now.'
+    : interviewerWindowClosed
+      ? 'The interviewer window was closed. Reopen it to keep going.'
+      : caseName
+        ? `Running: ${caseName}`
+        : 'Stay here while this session moves through recording and review.'
+
   const prepVisible = isLocalSession ? localPrepVisible : remotePrepVisible
   const prepStep = isLocalSession ? localPrepStep : remotePrepStep
   const prepSteps = isLocalSession
@@ -1037,18 +1107,20 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       )
     : ''
   const persistentRecordingError = isRecoverableCaptureError ? '' : recordingError
-  const workflowCurrentStep = recordingState === 'uploaded' && !completionPending ? 4 : 3
+  const workflowCurrentStep = feedbackSubmitted
+    ? 4
+    : recordingState === 'uploaded' && !completionPending ? 4 : 3
   const workflowSteps = isLocalSession
     ? [
         { num: '01', text: 'Controls ready' },
-        { num: '02', text: 'Interviewer picks case' },
-        { num: '03', text: 'Allow recording' },
+        { num: '02', text: 'Case in session' },
+        { num: '03', text: feedbackSubmitted ? 'Feedback submitted' : 'Allow recording' },
         { num: '04', text: 'Review dashboard' },
       ]
     : [
         { num: '01', text: 'Send invite' },
-        { num: '02', text: 'Interviewer picks case' },
-        { num: '03', text: 'Allow recording' },
+        { num: '02', text: 'Case in session' },
+        { num: '03', text: feedbackSubmitted ? 'Feedback submitted' : 'Allow recording' },
         { num: '04', text: 'Review dashboard' },
       ]
   // Idle and failed-but-recoverable both mean the same thing from the user's
@@ -1397,10 +1469,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
               style={{ fontFamily: "'Newsreader', serif" }}
             >
-              Interview Session <span className="text-[#3D5A35]">in Progress</span>
+              {wsH1Primary} <span className="text-[#3D5A35]">{wsH1Secondary}</span>
             </h1>
             <p className="mt-4 max-w-[620px] pl-[2px] text-[13px] leading-relaxed text-[#5c4033]/62">
-              Stay here while this session moves through recording and review.
+              {wsSubtitle}
             </p>
           </div>
 
@@ -1536,6 +1608,34 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                   <p className="text-[13px] leading-relaxed text-[#7a5b3d]">
                     {persistentRecordingError}
                   </p>
+                </div>
+              ) : null}
+
+              {interviewerWindowClosed && lobbyId && resolvedCaseId ? (
+                <div className="workspace-inline-note warn mt-5 rounded-[20px] px-4 py-4">
+                  <span className="material-symbols-outlined mt-0.5 text-[#a5794f]/70" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>
+                    desktop_access_disabled
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] leading-relaxed text-[#7a5b3d]">
+                      The interviewer window was closed. Your recording is still running.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = `/case/${resolvedCaseId}/interviewer?lobby=${encodeURIComponent(lobbyId)}&role=interviewer&sessionMode=local`
+                        type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
+                        const win = window.open(url, 'InterviewerControl', 'popup=yes,resizable=yes,width=800,height=800')
+                        if (win) {
+                          ;(window as PopupHost).__compendiumInterviewerWindow = win
+                          win.focus()
+                        }
+                      }}
+                      className="mt-3 rounded-full border border-[#a5794f]/25 bg-[#a5794f]/08 px-3 py-1 text-[10.5px] font-semibold text-[#7a5b3d] transition-opacity hover:opacity-75"
+                    >
+                      Reopen interviewer window
+                    </button>
+                  </div>
                 </div>
               ) : null}
 

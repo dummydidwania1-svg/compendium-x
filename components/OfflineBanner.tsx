@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 export default function OfflineBanner() {
   const [offline, setOffline] = useState(false)
-  const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
@@ -73,20 +72,12 @@ export default function OfflineBanner() {
             No connection right now
           </h2>
           <p className="mt-1 max-w-[260px] text-[13px] leading-relaxed text-[#5C4033]/55">
-            Your case library is saved. Head there and start browsing.
+            Check your wifi or mobile data and we&apos;ll pick up right where you left off.
           </p>
         </div>
 
-        {/* CTA */}
-        <button
-          onClick={() => router.push('/repository')}
-          className="mt-1 rounded-full border border-[#3D5A35]/25 bg-[#3D5A35] px-7 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-[#fff8f0] transition-all hover:bg-[#4a6e40]"
-        >
-          Open the library
-        </button>
-
         <p className="text-[11px] text-[#5C4033]/28">
-          Practice, forum &amp; dashboard need a connection
+          We&apos;ll reconnect automatically once you&apos;re back online
         </p>
       </div>
     </div>

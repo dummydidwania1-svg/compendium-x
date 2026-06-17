@@ -39,6 +39,7 @@ export const POST = authenticatedRoute('/api/sessions', async (request, caller) 
       { merge: true },
     )
   } else {
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
     await ref.set({
       lobbyId,
       candidateId: caller.uid,
@@ -47,6 +48,7 @@ export const POST = authenticatedRoute('/api/sessions', async (request, caller) 
       status: 'waiting',
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
+      expiresAt,
     })
   }
 

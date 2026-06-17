@@ -212,6 +212,12 @@ const clearAllFilters = () => {
     void signInAnonymouslyIfNeeded().catch(() => {
       // Surface error via actionError if it actually blocks a click.
     })
+    // Signal to the candidate lobby that the interviewer has opened the case
+    // library. The candidate tab picks this up via a 'storage' event.
+    localStorage.setItem('compendium-interviewer-browsing', JSON.stringify({ lobbyId, ts: Date.now() }))
+    return () => {
+      localStorage.removeItem('compendium-interviewer-browsing')
+    }
   }, [selectionMode, lobbyId])
 
   useEffect(() => {
@@ -436,19 +442,20 @@ const prefetchCase = (caseItem: CaseListItem) => {
   router.prefetch(destination)
 }
 
-  const handleSelectCase = async (caseId: string) => {
+  const handleSelectCase = async (caseId: string, caseTitle?: string) => {
     if (pendingCaseId) return // ignore double-clicks while one is in flight
     setActionError('')
     setPendingCaseId(caseId)
 
     if (selectionMode && lobbyId) {
-      const eventData = { lobbyId, caseId, mode: sessionMode }
+      const eventData = { lobbyId, caseId, caseName: caseTitle ?? '', mode: sessionMode }
       localStorage.setItem('compendium-session-start', JSON.stringify(eventData))
 
       try {
         await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/select-case`, {
           caseId,
           sessionMode,
+          ...(caseTitle ? { caseName: caseTitle } : {}),
         })
 
         router.push(
@@ -521,7 +528,7 @@ const CaseRow = ({ caseItem, index }: { caseItem: CaseListItem; index: number })
     <div className="px-2 py-4">
   {selectionMode ? (
     <button
-      onClick={() => handleSelectCase(caseItem.id)}
+      onClick={() => handleSelectCase(caseItem.id, caseItem.title)}
       disabled={pendingCaseId !== null}
       className="repo-preview-button w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
     >
@@ -563,7 +570,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
     </div>
 {selectionMode ? (
   <button
-    onClick={() => handleSelectCase(caseItem.id)}
+    onClick={() => handleSelectCase(caseItem.id, caseItem.title)}
     disabled={pendingCaseId !== null}
     className="repo-preview-button w-full rounded-full px-5 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
   >
