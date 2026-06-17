@@ -1546,7 +1546,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           borderBottom: '1px solid rgba(92,64,51,0.06)',
         }}
       >
-        <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 md:px-12">
+        <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 sm:px-6 md:px-10 lg:px-12">
           <Link href="/" className="flex items-center gap-1 text-left transition-opacity hover:opacity-85">
             <Image
               src="/logo.png"
@@ -1921,7 +1921,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                     <span className="text-[11px] leading-relaxed text-[#5C4033]/72">{workspaceToast.message}</span>
                   </div>
                 ) : null}
-                <div className="relative grid gap-5 md:grid-cols-4">
+                <div className="relative grid gap-5 grid-cols-2 md:grid-cols-4">
                   {workflowSteps.map((step, index) => {
                     const isCurrent = workflowCurrentStep === index + 1
                     const isPast = workflowCurrentStep > index + 1
@@ -1961,7 +1961,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                     className="pointer-events-none absolute inset-0"
                     style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(61,90,53,0.04) 0%, rgba(61,90,53,0.02) 34%, transparent 72%)' }}
                   />
-                  <div className="relative grid gap-2 md:grid-cols-3">
+                  <div className="relative grid gap-2 grid-cols-1 sm:grid-cols-3">
                     {prepSteps.map((step, index) => {
                       const isActive = prepStep === index
                       const isDone = prepStep > index

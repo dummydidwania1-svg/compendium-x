@@ -391,7 +391,7 @@ const sortedCases = useMemo(() => {
 
     {/* ── Sort dropdown — glass popover ── */}
     {showSortMenu && (
-      <div className="absolute right-0 top-full mt-1.5 z-30 w-[160px] rounded-xl border border-[#D9D0C4]/40 bg-[#fff8f0]/95 backdrop-blur-xl shadow-lg overflow-hidden animate-scale-in">
+      <div className="absolute right-0 top-full mt-1.5 z-30 w-[160px] max-w-[calc(100vw-32px)] rounded-xl border border-[#D9D0C4]/40 bg-[#fff8f0]/95 backdrop-blur-xl shadow-lg overflow-hidden animate-scale-in">
         <div className="px-2.5 pt-2.5 pb-1">
           <span className="text-[8px] uppercase tracking-widest font-semibold text-[#5C4033]/35">
             Sort by

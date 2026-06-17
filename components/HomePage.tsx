@@ -1922,7 +1922,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
         </div>
       </header>
 
-      <section className="pt-6 pb-24 px-8 overflow-hidden">
+      <section className="pt-6 pb-24 px-4 md:px-8 overflow-hidden">
         <div className="max-w-7xl mx-auto text-center mb-12">
           <h2 className="font-headline text-5xl md:text-6xl font-light text-[#453a2a] tracking-tight">Contributors</h2>
         </div>
@@ -1937,7 +1937,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
         </div>
       </section>
 
-      <section className="pt-12 pb-28 px-8" style={{ position: 'relative' }}>
+      <section className="pt-12 pb-28 px-4 md:px-8" style={{ position: 'relative' }}>
         <div className="max-w-7xl mx-auto flex flex-col items-center gap-5">
           <p className="grant-label-reveal font-label text-[9px] uppercase tracking-[0.35em] font-semibold" style={{ color: '#b0a898' }}>Supported by</p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
@@ -2268,7 +2268,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
         </div>
       </section>
 
-      <section id="differentiator-section" className="pt-8 pb-24 px-8">
+      <section id="differentiator-section" className="pt-8 pb-24 px-4 md:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="font-headline text-5xl md:text-7xl font-light text-[#453a2a] tracking-tight mb-4">What Makes Us Different</h2>

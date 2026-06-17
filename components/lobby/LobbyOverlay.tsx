@@ -125,8 +125,8 @@ export function LobbyOverlay({
         className="fixed z-[200] flex flex-col overflow-hidden"
         style={{
           top: `${topOffset}px`,
-          right: '24px',
-          width: '256px',
+          right: 'clamp(12px, 3vw, 24px)',
+          width: 'min(256px, calc(100vw - clamp(24px, 6vw, 48px)))',
           borderRadius: '16px',
           border: `1px solid ${accentBorder}`,
           background: 'rgba(255,248,240,0.62)',

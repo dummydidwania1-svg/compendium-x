@@ -53,7 +53,7 @@ const IntroBar = ({ filters, setFilters, hasActiveFilters, clearAllFilters, supp
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 pt-4 border-b border-[#5C4033]/10">
         {/* Heading — "Hi" fades in soft, name springs in with blur-to-clear */}
         <div>
-          <h1 className="text-[34px] tracking-[-0.03em] leading-none text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>
+          <h1 className="text-[26px] md:text-[34px] xl:text-[38px] tracking-[-0.03em] leading-none text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>
             <span
               className="inline-block"
               style={{ fontWeight: 300, animation: '_hi 0.45s ease forwards', opacity: 0 }}
@@ -108,7 +108,7 @@ const IntroBar = ({ filters, setFilters, hasActiveFilters, clearAllFilters, supp
               style={{ top: '70px' }}
             >
               <div className="border-b border-[#3D5A35]/8" style={{ background: 'rgba(255,248,240,0.75)', backdropFilter: 'blur(28px) saturate(1.5)', WebkitBackdropFilter: 'blur(28px) saturate(1.5)' }}>
-                <div className="px-4 lg:px-6 max-w-[1440px] mx-auto py-2.5 flex items-center gap-4">
+                <div className="px-4 md:px-6 lg:px-8 max-w-[1440px] mx-auto py-2.5 flex items-center gap-4 flex-wrap">
                   <span className="text-[9px] uppercase tracking-[0.15em] font-semibold text-[#3D5A35]/50 shrink-0">Filters</span>
                   {/* Left-aligned dropdowns so they don't clip near the left edge */}
                   {filterControls('left')}

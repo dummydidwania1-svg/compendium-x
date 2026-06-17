@@ -535,7 +535,7 @@ const prefetchCase = (caseItem: CaseListItem) => {
     : `${filteredCases.length} ${filteredCases.length === 1 ? 'case' : 'cases'} available`
 
 const ROW_GRID =
-  'grid grid-cols-[40px_minmax(0,1.3fr)_minmax(0,1.05fr)_minmax(0,0.6fr)_minmax(0,1fr)_112px] items-center gap-x-4'
+  'grid grid-cols-[40px_minmax(0,1.5fr)_minmax(0,1.05fr)_minmax(0,0.6fr)_minmax(0,1fr)_112px] items-center gap-x-4'
 
 
   const OPEN_ENDED = (t: string | null) => ['guesstimate', 'unconventional'].includes((t ?? '').toLowerCase())

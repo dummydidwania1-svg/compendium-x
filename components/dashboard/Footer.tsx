@@ -5,7 +5,7 @@ interface FooterProps {
 }
 
 const Footer = (_props: FooterProps) => (
-  <footer style={{ background: '#453a2a' }} className="w-full py-16 px-12">
+  <footer style={{ background: '#453a2a' }} className="w-full py-10 px-4 sm:px-8 md:px-12 lg:py-16">
     <div className="max-w-screen-2xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-12 mb-10">
         <div>

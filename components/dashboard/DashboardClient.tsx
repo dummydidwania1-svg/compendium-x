@@ -62,7 +62,7 @@ function DashboardContent() {
       <Navbar currentPage="dashboard" />
 
       <div className="relative min-h-screen overflow-x-hidden bg-[#fff8f0] font-sans selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]">
-        <main className="mx-auto max-w-[1440px] px-4 pb-12 pt-[70px] lg:px-6">
+        <main className="mx-auto max-w-[1440px] px-4 pb-12 pt-[70px] md:px-6 lg:px-8">
           {error ? (
             <div className="mx-auto mt-4 max-w-3xl rounded-xl border border-[#b4543e]/15 bg-[rgba(255,244,239,0.9)] px-5 py-3.5 text-[13px] text-[#92400e]">
               {error}
@@ -71,7 +71,7 @@ function DashboardContent() {
 
           {null /* preview hint lives on the navbar sign-in button */}
 
-      
+
           <IntroBar
             filters={filters}
             setFilters={setFilters}
@@ -80,14 +80,14 @@ function DashboardContent() {
             suppressFloating={feedbackOpen}
           />
 
-          <div className="mt-8 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
-            <div className="flex flex-col gap-6 lg:col-span-8">
+          <div className="mt-8 grid grid-cols-1 items-stretch gap-6 md:grid-cols-3 lg:grid-cols-12">
+            <div className="flex flex-col gap-6 md:col-span-2 lg:col-span-7 xl:col-span-8">
               <ScrollReveal delay={0}>
                 <CoachInsight filters={filters} />
               </ScrollReveal>
 
               <ScrollReveal delay={100}>
-                <div className="relative grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="relative grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div className="flex h-full flex-col gap-4">
                     <CaseScoreCard filters={filters} />
                     <div className="mt-auto grid grid-cols-2 gap-4">
@@ -104,7 +104,7 @@ function DashboardContent() {
               </ScrollReveal>
             </div>
 
-            <div className="flex flex-col gap-6 lg:col-span-4">
+            <div className="flex flex-col gap-6 md:col-span-1 lg:col-span-5 xl:col-span-4">
               <ScrollReveal delay={50} className="shrink-0">
                 <GoalTracker isLocked={isGoalTrackerLocked} />
               </ScrollReveal>

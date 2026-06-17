@@ -153,9 +153,27 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
 #ccx-main-title:hover .title-x {
   transform: scale(1.08);
 }
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
+  header.ccx-hero .hero-inner { padding: 0 32px 0 calc(32px + 50%); }
+  #ccx-main-title { font-size: 80px; line-height: 86px; letter-spacing: -2px; }
+  #ccx-edition { font-size: 24px; }
+  #ccx-where-line { font-size: 30px !important; }
+  #ccx-animated-line, #ccx-animated-line .word-item { font-size: 30px !important; }
+}
+@media (max-width: 1200px) {
+  header.ccx-hero .hero-inner { padding: 0 28px 0 calc(28px + 50%); }
   #ccx-main-title { font-size: 72px; line-height: 78px; letter-spacing: -1.8px; }
   #ccx-edition { font-size: 22px; }
+  #ccx-where-line { font-size: 28px !important; }
+  #ccx-animated-line, #ccx-animated-line .word-item { font-size: 28px !important; }
+}
+@media (max-width: 1100px) {
+  header.ccx-hero .hero-inner { padding: 0 24px 0 calc(24px + 50%); }
+  #ccx-main-title { font-size: 64px; line-height: 70px; letter-spacing: -1.6px; }
+  #ccx-edition { font-size: 20px; }
+  #ccx-where-line { font-size: 26px !important; }
+  #ccx-animated-line, #ccx-animated-line .word-item { font-size: 26px !important; }
+  header.ccx-hero .ctas a { width: auto; min-width: 160px; padding: 14px 24px; }
 }
 #ccx-where-line {
   display: inline !important;

@@ -16,6 +16,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
   const [scrolled, setScrolled]             = useState(false);
   const [isSignedIn, setIsSignedIn]         = useState(false);
   const [showAuthModal, setShowAuthModal]   = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const isPreview = useIsPreview();
@@ -30,9 +31,13 @@ const Navbar = ({ currentPage }: NavbarProps) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsSignedIn(Boolean(user));
     });
-
     return () => unsubscribe();
   }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const redirectTarget = pathname && pathname.startsWith('/') ? pathname : '/dashboard';
 
@@ -43,6 +48,13 @@ const Navbar = ({ currentPage }: NavbarProps) => {
 
   return (
     <>
+      <style>{`
+        @keyframes _nav_mobile_in {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       {isPreview && (
         <style>{`
           @keyframes _nav_signin_glow {
@@ -75,7 +87,6 @@ const Navbar = ({ currentPage }: NavbarProps) => {
       {/* ── Navbar ── */}
       <nav
         style={{
-          height: '70px',
           background: scrolled ? 'rgba(255,248,240,0.6)' : 'rgba(255,248,240,0.9)',
           backdropFilter: scrolled ? 'blur(28px) saturate(1.5)' : 'blur(12px)',
           WebkitBackdropFilter: scrolled ? 'blur(28px) saturate(1.5)' : 'blur(12px)',
@@ -84,24 +95,28 @@ const Navbar = ({ currentPage }: NavbarProps) => {
         }}
         className="fixed top-0 w-full z-[100] border-b border-[#3D5A35]/10"
       >
-        <div className="flex justify-between items-center w-full px-4 sm:px-6 lg:px-12 h-full max-w-screen-2xl mx-auto gap-3">
+        {/* Main bar — always 70px tall */}
+        <div
+          style={{ height: '70px' }}
+          className="flex justify-between items-center w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 max-w-[1440px] mx-auto gap-3"
+        >
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-1 transition-opacity hover:opacity-85" aria-label="Go to home page">
+          <Link href="/" className="flex items-center gap-1 transition-opacity hover:opacity-85 shrink-0" aria-label="Go to home page">
             <img
               src="/logo.png"
               alt="Case Compendium X"
               width={56}
               height={56}
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-contain shrink-0"
+              className="w-10 h-10 md:w-12 md:h-12 object-contain shrink-0"
             />
-            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-base sm:text-lg md:text-xl font-semibold tracking-tight whitespace-nowrap">
+            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-base md:text-lg font-semibold tracking-tight whitespace-nowrap">
               <span className="text-[#453a2a]">Case Compendium</span>
               <span className="text-[#3D5A35]">X</span>
             </div>
           </Link>
 
-          {/* Nav Links */}
+          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center space-x-10">
             <a
               href="/"
@@ -123,74 +138,111 @@ const Navbar = ({ currentPage }: NavbarProps) => {
             >
               DASHBOARD
             </Link>
-<div className="nav-dropdown">
-  <span
-    style= {{fontFamily: "'Work Sans', sans-serif" }}
-    className={`nav-link nav-dropdown-trigger text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${
-      currentPage === 'about' || currentPage === 'about-ccx' ? 'active' : ''
-    }`}
-    tabIndex={0}
-  >
-    ABOUT US
-    <span className="material-symbols-outlined chevron">expand_more</span>
-  </span>
-
-  <div className="nav-dropdown-menu" role="menu">
-    <Link
-      href="/about-ccx"
-      style= {{fontFamily: "'Work Sans', sans-serif" }}
-      className="nav-dropdown-item"
-      role="menuitem"
-    >
-      <span
-        style= {{fontFamily: "'Work Sans', sans-serif" }}
-        className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300"
-      >
-        The Platform
-      </span>
-    </Link>
-    <Link
-      href="/our-story"
-      style= {{fontFamily: "'Work Sans', sans-serif" }}
-      className="nav-dropdown-item"
-      role="menuitem"
-    >
-      <span
-        style= {{fontFamily: "'Work Sans', sans-serif" }}
-        className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300"
-      >
-        The Team
-      </span>
-    </Link>
-  </div>
-</div>
+            <div className="nav-dropdown">
+              <span
+                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                className={`nav-link nav-dropdown-trigger text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${
+                  currentPage === 'about' || currentPage === 'about-ccx' ? 'active' : ''
+                }`}
+                tabIndex={0}
+              >
+                ABOUT US
+                <span className="material-symbols-outlined chevron">expand_more</span>
+              </span>
+              <div className="nav-dropdown-menu" role="menu">
+                <Link href="/about-ccx" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
+                  <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
+                    The Platform
+                  </span>
+                </Link>
+                <Link href="/our-story" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
+                  <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
+                    The Team
+                  </span>
+                </Link>
+              </div>
+            </div>
           </div>
 
-          {/* Auth Area */}
-          <div className="flex items-center gap-2 sm:gap-4 md:gap-6 shrink-0">
+          {/* Right side: auth + mobile hamburger */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Auth buttons */}
             {isSignedIn ? (
               <>
                 <button
                   onClick={handleLogout}
                   style={{ fontFamily: "'Work Sans', sans-serif" }}
-                  className="border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap"
+                  className="border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap"
                 >
                   LOG OUT
                 </button>
-                <span className="material-symbols-outlined text-[#3D5A35] hidden sm:inline-block sm:text-[32px] md:text-[36px]">account_circle</span>
+                <span className="material-symbols-outlined text-[#3D5A35] hidden sm:inline-block text-[32px]">account_circle</span>
               </>
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
                 style={{ fontFamily: "'Work Sans', sans-serif" }}
-                className={`border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap${isPreview ? ' _nav_signin_btn' : ''}`}
+                className={`border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap${isPreview ? ' _nav_signin_btn' : ''}`}
               >
                 SIGN IN
               </button>
             )}
-          </div>
 
+            {/* Hamburger — visible only below md */}
+            <button
+              onClick={() => setMobileMenuOpen((o) => !o)}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              className="md:hidden flex flex-col justify-center items-center w-9 h-9 gap-[5px] shrink-0 rounded transition-colors hover:bg-[#3D5A35]/08"
+            >
+              <span
+                className="block w-5 h-[1.5px] bg-[#453a2a] transition-transform duration-200 origin-center"
+                style={{ transform: mobileMenuOpen ? 'translateY(6.5px) rotate(45deg)' : undefined }}
+              />
+              <span
+                className="block w-5 h-[1.5px] bg-[#453a2a] transition-opacity duration-200"
+                style={{ opacity: mobileMenuOpen ? 0 : 1 }}
+              />
+              <span
+                className="block w-5 h-[1.5px] bg-[#453a2a] transition-transform duration-200 origin-center"
+                style={{ transform: mobileMenuOpen ? 'translateY(-6.5px) rotate(-45deg)' : undefined }}
+              />
+            </button>
+          </div>
         </div>
+
+        {/* Mobile menu drawer */}
+        {mobileMenuOpen && (
+          <div
+            className="md:hidden border-t border-[#3D5A35]/10 px-4 py-4 flex flex-col gap-1"
+            style={{
+              background: 'rgba(255,248,240,0.97)',
+              backdropFilter: 'blur(28px)',
+              animation: '_nav_mobile_in 0.2s cubic-bezier(0.22,1,0.36,1) forwards',
+            }}
+          >
+            {[
+              { href: '/', label: 'HOME', page: 'home' },
+              { href: '/dashboard', label: 'DASHBOARD', page: 'dashboard' },
+              { href: '/about-ccx', label: 'THE PLATFORM', page: 'about-ccx' },
+              { href: '/our-story', label: 'THE TEAM', page: 'about' },
+            ].map(({ href, label, page }) => (
+              <Link
+                key={href}
+                href={href}
+                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                className={`block px-3 py-3 text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 ${
+                  currentPage === page
+                    ? 'text-[#3D5A35] font-medium border-l-2 border-[#3D5A35] pl-3'
+                    : 'text-[#57534e] hover:text-[#3D5A35] border-l-2 border-transparent pl-3'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        )}
       </nav>
 
       {showAuthModal ? (

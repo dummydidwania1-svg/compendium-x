@@ -404,15 +404,26 @@ function BankingOnYouMetaRail({
 	difficultyLabel: string
 }) {
 	return (
-		<aside className="hidden w-[12rem] flex-shrink-0 lg:block lg:sticky lg:top-28">
-			<div className="space-y-6">
+		<>
+			{/* Desktop sidebar — sticky column */}
+			<aside className="hidden w-[12rem] flex-shrink-0 lg:block lg:sticky lg:top-28">
+				<div className="space-y-6">
+					<BankingOnYouMetaField label="Case Type" value={caseTypeLabel} tone="dark" />
+					<BankingOnYouMetaField label="Company" value={companyLabel} tone="light" />
+					<BankingOnYouMetaField label="Round" value={roundLabel} tone="light" />
+					<BankingOnYouMetaField label="Industry" value={industryLabel} tone="mid" />
+					<BankingOnYouDifficulty level={difficultyLevel} label={difficultyLabel} />
+				</div>
+			</aside>
+			{/* Mobile/tablet inline row — shown below lg */}
+			<div className="lg:hidden mb-5 flex flex-wrap gap-x-6 gap-y-3 border-b border-[#d8cec1]/60 pb-5">
 				<BankingOnYouMetaField label="Case Type" value={caseTypeLabel} tone="dark" />
 				<BankingOnYouMetaField label="Company" value={companyLabel} tone="light" />
 				<BankingOnYouMetaField label="Round" value={roundLabel} tone="light" />
 				<BankingOnYouMetaField label="Industry" value={industryLabel} tone="mid" />
 				<BankingOnYouDifficulty level={difficultyLevel} label={difficultyLabel} />
 			</div>
-		</aside>
+		</>
 	)
 }
 
@@ -464,7 +475,7 @@ function BankingOnYouFramework({ recommendations }: { recommendations: string[] 
 					</div>
 
 					<div className="overflow-x-auto xl:pl-1">
-						<figure className="m-0 mx-auto mt-1 w-full min-w-[500px] max-w-[760px] overflow-hidden bg-[#f2ebe2]">
+						<figure className="m-0 mx-auto mt-1 w-full min-w-[280px] max-w-[760px] overflow-hidden bg-[#f2ebe2]">
 							<Image
 								src="/banking-on-you-framework-beige.svg"
 								alt="Banking on You revenue framework"

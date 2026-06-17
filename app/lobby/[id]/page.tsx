@@ -820,7 +820,7 @@ function CandidateLobby({
             </div>
 
             <div className="px-6 py-6">
-              <div className="grid gap-5 md:grid-cols-4">
+              <div className="grid gap-5 grid-cols-2 md:grid-cols-4">
                 {waitingSteps.map((step, index) => (
                   <div
                     key={step.num}
@@ -1183,7 +1183,7 @@ function InterviewerLobby({
                 Steps 4 (AI evaluation) and 5 (Insights delivered) belong to the
                 candidate's post-session flow and aren't visible to the interviewer. */}
             <div className="px-6 py-6">
-              <div className="grid grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 {[
                   { num: '01', text: 'Pick a case', active: true },
                   { num: '02', text: 'Run the session' },

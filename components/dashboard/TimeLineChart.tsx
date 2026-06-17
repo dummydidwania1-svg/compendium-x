@@ -93,7 +93,7 @@ const SPLIT_OPTIONS: { id: SplitBy; label: string }[] = [
 
 // ── Shared dropdown primitives ──
 const DropdownPanel = ({ children, wide, xwide }: { children: React.ReactNode; wide?: boolean; xwide?: boolean }) => (
-  <div className={`bg-[#fff8f0] rounded-2xl p-2 shadow-xl border border-[#5C4033]/12 ${xwide ? 'w-[280px]' : wide ? 'min-w-[180px]' : 'min-w-[160px]'}`}>
+  <div className={`bg-[#fff8f0] rounded-2xl p-2 shadow-xl border border-[#5C4033]/12 max-w-[calc(100vw-32px)] ${xwide ? 'w-[280px]' : wide ? 'min-w-[180px]' : 'min-w-[160px]'}`}>
     {children}
   </div>
 );
@@ -450,7 +450,7 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
             onMouseLeave={helpLeave}
           >
             <style>{`@keyframes _fu{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}`}</style>
-            <div className="bg-[#fff8f0] rounded-xl shadow-lg border border-[#5C4033]/10 overflow-hidden" style={{ width: '352px' }}>
+            <div className="bg-[#fff8f0] rounded-xl shadow-lg border border-[#5C4033]/10 overflow-hidden" style={{ width: 'min(352px, calc(100vw - 32px))' }}>
               <div className="flex">
                 {[
                   { n: '01', title: 'Show Metric',  body: 'Track any score dimension.' },
