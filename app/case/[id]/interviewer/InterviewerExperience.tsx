@@ -12,6 +12,7 @@ import CasePreviewView from '@/components/case/CasePreviewView'
 import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
 import PlatformLoader from '@/components/PlatformLoader'
 import { slugifyCase } from '@/lib/slug'
+import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 
 
 /* ── Error boundary — catches client-side crashes, auto-reloads ── */
@@ -819,9 +820,12 @@ useEffect(() => {
 	}
 
 	if (!caseData) {
-		return (
-			<div className="min-h-screen bg-[#FDFDFD] flex items-center justify-center text-red-500">Case not found.</div>
-		)
+		// Redirect to repo with a flag so it can show a friendly overlay.
+		const repoUrl = lobbyId
+			? `/repository?mode=select&lobby=${lobbyId}&sessionMode=${searchParams.get('sessionMode') ?? 'local'}&caseError=not_found`
+			: `/repository?caseError=not_found`
+		if (typeof window !== 'undefined') router.replace(repoUrl)
+		return <PlatformLoader message="Heading back to the library" />
 	}
 
 	if (currentView === 'case') {
@@ -1353,12 +1357,22 @@ if (previewMode && !forcePreview) {
 				) : null}
 
 				{submitError ? (
-					<div className="mt-5 rounded-xl border border-[#92400e]/22 bg-[rgba(255,245,233,0.92)] px-4 py-3">
-						<p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
-							Could not submit
-						</p>
-						<p className="mt-1 text-[12px] leading-relaxed text-[#5c4033]">{submitError}</p>
-					</div>
+					<LobbyOverlay
+						key={submitError}
+						type="error"
+						icon={
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+								<circle cx="12" cy="12" r="10" />
+								<line x1="12" y1="8" x2="12" y2="12" />
+								<line x1="12" y1="16" x2="12.01" y2="16" />
+							</svg>
+						}
+						title="Couldn't submit feedback"
+						body={submitError}
+						actionLabel="Try again"
+						onAction={() => void handleSubmitFeedback()}
+						onDismiss={() => setSubmitError('')}
+					/>
 				) : null}
 
 				<button

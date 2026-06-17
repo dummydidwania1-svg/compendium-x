@@ -202,6 +202,23 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [caseName, setCaseName] = useState('')
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [retryingTranscript, setRetryingTranscript] = useState(false)
+  // ── Session-complete overlay (timed, auto-dismisses then routes to dashboard) ──
+  const [sessionCompleteOverlayVisible, setSessionCompleteOverlayVisible] = useState(false)
+  const sessionCompleteRouteRef = useRef(false)
+  // ── Refresh-interrupted overlay (shown when page reloaded mid-session) ────────
+  const [refreshInterruptedVisible, setRefreshInterruptedVisible] = useState(false)
+  // ── Upload-fail overlay (replaces completion-pending inline block) ───────────
+  const [uploadFailOverlayVisible, setUploadFailOverlayVisible] = useState(false)
+  const uploadFailReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // ── Leave-confirm overlay (shown when candidate tries to leave with failed upload) ──
+  const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false)
+  // ── Transcript-retry overlay ────────────────────────────────────────────────
+  const [transcriptRetryOverlayVisible, setTranscriptRetryOverlayVisible] = useState(false)
+  // ── Recoverable capture error overlay ──────────────────────────────────────
+  const [captureErrorOverlayVisible, setCaptureErrorOverlayVisible] = useState(false)
+  const captureErrorReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // ── Persistent (fatal) recording error overlay ─────────────────────────────
+  const [persistentErrorOverlayVisible, setPersistentErrorOverlayVisible] = useState(false)
 
   // ── Session-issue overlay (session doc missing / connection error) ─────────
   const [sessionIssueOverlayVisible, setSessionIssueOverlayVisible] = useState(false)
@@ -239,6 +256,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
     if (sessionIssueReshowTimerRef.current) clearTimeout(sessionIssueReshowTimerRef.current)
     if (micBlockedReshowTimerRef.current) clearTimeout(micBlockedReshowTimerRef.current)
+    if (uploadFailReshowTimerRef.current) clearTimeout(uploadFailReshowTimerRef.current)
+    if (captureErrorReshowTimerRef.current) clearTimeout(captureErrorReshowTimerRef.current)
   }, [stopTitlePulse])
 
   // Reactive microphone permission tracking. The hook subscribes to
@@ -263,6 +282,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const stopInProgressRef = useRef(false)
   const caseIdRef = useRef('')
   const autoStartAttemptedRef = useRef(false)
+  const sessionWasInProgressRef = useRef(false)
   const toastTimeoutRef = useRef<number | null>(null)
   const remotePrepTimersRef = useRef<number[]>([])
   const localPrepTimersRef = useRef<number[]>([])
@@ -372,7 +392,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         setRecordingState('uploaded')
 
         if (routeAfterUpload) {
-          router.replace('/dashboard')
+          setSessionCompleteOverlayVisible(true)
         }
       } catch (uploadError) {
         setRecordingState('failed')
@@ -404,7 +424,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (!recorder || recorder.state === 'inactive') {
         teardownMedia()
         if (routeAfterStop) {
-          router.replace('/dashboard')
+          setSessionCompleteOverlayVisible(true)
         }
         stopInProgressRef.current = false
         return
@@ -868,6 +888,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       } else if (rec?.transcriptStatus === 'completed' || rec?.transcriptStatus === 'processing') {
         setTranscriptRetryInfo(null)
       }
+      if (raw.status === 'in_progress') {
+        sessionWasInProgressRef.current = true
+      }
       if (raw.status === 'completed') {
         const stopReason = raw.completedBy === 'candidate' ? 'candidate_ended' : 'feedback_submitted'
         if (stopReason === 'feedback_submitted') setFeedbackSubmitted(true)
@@ -995,6 +1018,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     if (microphonePermissionState === 'denied') return
 
     autoStartAttemptedRef.current = true
+    // If the session was already in progress when we mounted, this is a
+    // page refresh mid-interview — the previous recording is gone.
+    if (sessionWasInProgressRef.current) {
+      setRefreshInterruptedVisible(true)
+    }
     setRecordingNote(
       preferredRecordingMode === 'remote'
         ? 'Preparing remote capture setup...'
@@ -1069,6 +1097,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setWindowClosedOverlayVisible(false)
     }
   }, [feedbackSubmitted, interviewerWindowClosed, preferredRecordingMode, startTitlePulse, stopTitlePulse])
+
+  // Drive transcript-retry overlay from transcriptRetryInfo.
+  useEffect(() => {
+    setTranscriptRetryOverlayVisible(!!transcriptRetryInfo)
+  }, [transcriptRetryInfo])
+
+  // Drive the upload-fail overlay from completionPending + failed state.
+  useEffect(() => {
+    if (completionPending && recordingState === 'failed') {
+      setUploadFailOverlayVisible((prev) => (prev ? prev : true))
+    } else {
+      if (uploadFailReshowTimerRef.current) {
+        clearTimeout(uploadFailReshowTimerRef.current)
+        uploadFailReshowTimerRef.current = null
+      }
+      setUploadFailOverlayVisible(false)
+    }
+  }, [completionPending, recordingState])
 
   // Drive the mic-blocked overlay from microphonePermissionState (local mode only).
   // Title pulse starts immediately; overlay reshows after 1.5s if still blocked.
@@ -1202,6 +1248,29 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       )
     : ''
   const persistentRecordingError = isRecoverableCaptureError ? '' : recordingError
+
+  // Drive recoverable capture-error overlay — must be after isRecoverableCaptureError is declared.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (isRecoverableCaptureError) {
+      setCaptureErrorOverlayVisible((prev) => (prev ? prev : true))
+    } else {
+      if (captureErrorReshowTimerRef.current) {
+        clearTimeout(captureErrorReshowTimerRef.current)
+        captureErrorReshowTimerRef.current = null
+      }
+      setCaptureErrorOverlayVisible(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRecoverableCaptureError])
+
+  // Drive persistent recording-error overlay — must be after persistentRecordingError is declared.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    setPersistentErrorOverlayVisible(!!persistentRecordingError)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persistentRecordingError])
+
   const workflowCurrentStep = feedbackSubmitted
     ? 4
     : recordingState === 'uploaded' && !completionPending ? 4 : 3
@@ -1526,6 +1595,89 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         </div>
       </header>
 
+      {uploadFailOverlayVisible ? (
+        <LobbyOverlay
+          key="upload-fail"
+          type="error"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 16 12 12 8 16" />
+              <line x1="12" y1="12" x2="12" y2="21" />
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+            </svg>
+          }
+          title="Upload didn't go through"
+          body="Your recording is still here. Tap Retry to try again, or leave now and lose the audio permanently."
+          actionLabel="Retry upload"
+          onAction={() => void handleRetryUpload()}
+          onDismiss={() => {
+            setUploadFailOverlayVisible(false)
+            if (uploadFailReshowTimerRef.current) clearTimeout(uploadFailReshowTimerRef.current)
+            uploadFailReshowTimerRef.current = setTimeout(() => {
+              uploadFailReshowTimerRef.current = null
+              if (completionPending && recordingState === 'failed') setUploadFailOverlayVisible(true)
+            }, 1500)
+          }}
+        />
+      ) : null}
+
+      {leaveConfirmVisible ? (
+        <LobbyOverlay
+          key="leave-confirm"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          }
+          title="Leave without uploading?"
+          body="Your recording hasn't saved yet. If you leave now, the audio is gone for good and there won't be any AI feedback."
+          actionLabel="Leave anyway"
+          onAction={() => router.replace('/dashboard')}
+          onDismiss={() => setLeaveConfirmVisible(false)}
+        />
+      ) : null}
+
+      {refreshInterruptedVisible ? (
+        <LobbyOverlay
+          key="refresh-interrupted"
+          type="info"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 .49-3.87" />
+            </svg>
+          }
+          title="Recording restarted"
+          body="Looks like you refreshed mid-session. The previous audio is gone, but recording has started fresh from now."
+          autoDismissMs={6000}
+          onDismiss={() => setRefreshInterruptedVisible(false)}
+        />
+      ) : null}
+
+      {sessionCompleteOverlayVisible ? (
+        <LobbyOverlay
+          key="session-complete"
+          type="info"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          }
+          title="All done!"
+          body="Your interviewer has submitted feedback. Taking you to your results now..."
+          autoDismissMs={3000}
+          onDismiss={() => {
+            if (sessionCompleteRouteRef.current) return
+            sessionCompleteRouteRef.current = true
+            router.replace('/dashboard')
+          }}
+        />
+      ) : null}
+
       {micBlockedOverlayVisible && isLocalSession ? (
         <LobbyOverlay
           key="mic-blocked"
@@ -1619,6 +1771,69 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               })
             }, 1500)
           }}
+        />
+      ) : null}
+
+      {captureErrorOverlayVisible ? (
+        <LobbyOverlay
+          key="capture-error"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          }
+          title="Recording hiccup"
+          body={recoverableCaptureMessage || "Something interrupted the recording. Tap Allow Recording below to start again."}
+          actionLabel="Allow recording"
+          onAction={handleEnableCapture}
+          onDismiss={() => {
+            setCaptureErrorOverlayVisible(false)
+            if (captureErrorReshowTimerRef.current) clearTimeout(captureErrorReshowTimerRef.current)
+            captureErrorReshowTimerRef.current = setTimeout(() => {
+              captureErrorReshowTimerRef.current = null
+              if (isRecoverableCaptureError) setCaptureErrorOverlayVisible(true)
+            }, 1500)
+          }}
+        />
+      ) : null}
+
+      {persistentErrorOverlayVisible ? (
+        <LobbyOverlay
+          key="persistent-error"
+          type="error"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+          }
+          title="Recording couldn't start"
+          body="We weren't able to access your microphone. Check that your browser has mic permission, then try again."
+          actionLabel="Try again"
+          onAction={handleEnableCapture}
+          onDismiss={() => setPersistentErrorOverlayVisible(false)}
+        />
+      ) : null}
+
+      {transcriptRetryOverlayVisible ? (
+        <LobbyOverlay
+          key="transcript-retry"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 .49-3.87" />
+            </svg>
+          }
+          title="Transcript generation failed"
+          body="Your audio uploaded fine, but the AI transcript hit an error. Tap Retry and it'll try again with the same recording."
+          actionLabel={retryingTranscript ? 'Retrying...' : 'Retry transcript'}
+          onAction={() => void handleRetryTranscript()}
+          onDismiss={() => setTranscriptRetryOverlayVisible(false)}
         />
       ) : null}
 
@@ -1779,58 +1994,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 </div>
               ) : null}
 
-              {isRecoverableCaptureError ? (
-                <div className="workspace-inline-note warn mt-5 rounded-[20px] px-4 py-4">
-                  <span className="material-symbols-outlined mt-0.5 text-[#a5794f]/70" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>
-                    warning
-                  </span>
-                  <p className="text-[13px] leading-relaxed text-[#7a5b3d]">
-                    {recoverableCaptureMessage}
-                  </p>
-                </div>
-              ) : null}
-
-              {persistentRecordingError ? (
-                <div className="workspace-inline-note alert mt-5 rounded-[20px] px-4 py-4">
-                  <span className="material-symbols-outlined mt-0.5 text-[#a5794f]/70" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>
-                    error
-                  </span>
-                  <p className="text-[13px] leading-relaxed text-[#7a5b3d]">
-                    {persistentRecordingError}
-                  </p>
-                </div>
-              ) : null}
 
 
-              {completionPending ? (
-                <div className="workspace-inline-note warn mt-5 rounded-[24px] p-5">
-                  <span className="material-symbols-outlined mt-0.5 text-[#a5794f]/70" style={{ fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>
-                    cloud_upload
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] uppercase tracking-[0.18em] text-[#7a5b3d]/70">Upload still running</div>
-                    <p className="mt-2 text-[13px] leading-relaxed text-[#7a5b3d]">
-                      The session is over, but we still need to upload the recording before you leave this page.
-                    </p>
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => void handleRetryUpload()}
-                      className="workspace-btn workspace-btn-primary rounded-full px-5 py-3 text-[10px] uppercase tracking-[0.22em]"
-                    >
-                      Retry Upload
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => router.replace('/dashboard')}
-                      className="workspace-btn rounded-full px-5 py-3 text-[10px] uppercase tracking-[0.22em]"
-                    >
-                      Go to Dashboard
-                    </button>
-                  </div>
-                  </div>
-                </div>
-              ) : null}
 
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 {(recordingState === 'idle' || recordingState === 'failed' || prepVisible) ? (
@@ -1860,23 +2025,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               </div>
             </div>
 
-            {transcriptRetryInfo && (
-              <div className="mt-4 rounded-md border border-cyan-700/40 bg-cyan-950/30 p-3">
-                <p className="text-xs text-cyan-200">
-                  Audio uploaded but transcript generation failed. Retry now to try again with the same recording.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleRetryTranscript()}
-                    disabled={retryingTranscript}
-                    className="rounded-md border border-cyan-400/50 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-100 transition hover:border-cyan-300/80 hover:bg-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {retryingTranscript ? 'Retrying...' : 'Retry Transcript'}
-                  </button>
-                </div>
-              </div>
-            )}
           </section>
         </div>
       </main>
@@ -1887,5 +2035,5 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 }
 
 function activeBeforeUnloadState(value: RecordingState): boolean {
-  return value === 'recording' || value === 'stopping' || value === 'uploading'
+  return value === 'recording' || value === 'stopping' || value === 'uploading' || value === 'failed'
 }

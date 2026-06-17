@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { X } from 'lucide-react'
 import Footer from '@/components/dashboard/Footer'
 import Navbar from '@/components/dashboard/Navbar'
@@ -175,6 +175,13 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
 const [roundFilter, setRoundFilter] = useState<string[]>([])
   const [actionError, setActionError] = useState('')
   const [failedCase, setFailedCase] = useState<{ id: string; title: string } | null>(null)
+  // When selection fails because a case is already in_progress, store the
+  // running case id so we can offer "Go to session" CTA.
+  const [activeSessionCaseId, setActiveSessionCaseId] = useState<string | null>(null)
+  // When interviewer navigates back to repo from a live session, show an overlay.
+  const [liveSessionOverlayInfo, setLiveSessionOverlayInfo] = useState<{ caseId: string; caseName: string; lobbyId: string; sessionMode: string } | null>(null)
+  // When the interviewer panel couldn't load a case and redirected back here.
+  const [caseLoadErrorVisible, setCaseLoadErrorVisible] = useState(false)
   const [offlineBanner, setOfflineBanner] = useState(false)
   const [firestoreFailed, setFirestoreFailed] = useState(false)
   // ID of the case the user just clicked, while the API call + navigation
@@ -192,6 +199,7 @@ const [roundFilter, setRoundFilter] = useState<string[]>([])
   const selectionMode = searchParams.get('mode') === 'select'
   const lobbyId = searchParams.get('lobby')
   const sessionMode = searchParams.get('sessionMode') === 'local' ? 'local' : 'remote'
+  const caseError = searchParams.get('caseError')
 
 
   const showSectionBands = typeFilter.length !== 1;
@@ -204,6 +212,33 @@ const hasQuery = filter.trim().length > 0
 const clearAllFilters = () => {
   setTypeFilter([]); setLevelFilter([]); setIndustryFilter([]); setCompanyFilter([]); setRoundFilter([])
 }
+
+  // Show case-load-error overlay when redirected back from a failed interviewer panel.
+  useEffect(() => {
+    if (caseError) setCaseLoadErrorVisible(true)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // On load in selection mode, check if a session for this lobby is already
+  // in_progress (interviewer pressed back from the interviewer panel).
+  useEffect(() => {
+    if (!selectionMode || !lobbyId) return
+    try {
+      const raw = localStorage.getItem('compendium-session-start')
+      if (!raw) return
+      const data = JSON.parse(raw) as { lobbyId?: string; caseId?: string; caseName?: string; mode?: string }
+      if (data.lobbyId === lobbyId && data.caseId) {
+        setLiveSessionOverlayInfo({
+          caseId: data.caseId,
+          caseName: data.caseName ?? 'the current case',
+          lobbyId,
+          sessionMode: data.mode ?? sessionMode,
+        })
+      }
+    } catch { /* ignore */ }
+  // Only run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Interviewers arriving in select-mode (via shared invite link) may not be
   // signed in. Silently provision an anonymous Firebase user so the /api
@@ -469,10 +504,22 @@ const prefetchCase = (caseItem: CaseListItem) => {
         // Clearing now would let the button flicker back to "Select" right
         // before the route changes.
       } catch (error) {
-        setActionError(
-          error instanceof Error ? error.message : 'Unable to start this session right now.'
-        )
-        setFailedCase({ id: caseId, title: caseTitle ?? '' })
+        const message = error instanceof Error ? error.message : 'Unable to start this session right now.'
+        setActionError(message)
+        // If a case is already running, fetch the session to get the active caseId
+        // so we can offer a "Go to session" CTA instead of "Try again".
+        if (lobbyId && message.includes('already running')) {
+          try {
+            const snap = await getDoc(doc(db, 'sessions', lobbyId))
+            const data = snap.data()
+            setActiveSessionCaseId(data?.caseId ?? null)
+          } catch {
+            setActiveSessionCaseId(null)
+          }
+        } else {
+          setActiveSessionCaseId(null)
+          setFailedCase({ id: caseId, title: caseTitle ?? '' })
+        }
         setPendingCaseId(null)
       }
 
@@ -597,10 +644,47 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
       style={{ fontFamily: "'Work Sans', sans-serif" }}
       className="relative flex min-h-screen flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
+      {caseLoadErrorVisible ? (
+        <LobbyOverlay
+          key="case-load-error"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          }
+          title="That case couldn't load"
+          body="Something went wrong opening the case. Pick a different one to try again."
+          onDismiss={() => setCaseLoadErrorVisible(false)}
+        />
+      ) : null}
+
+      {liveSessionOverlayInfo ? (
+        <LobbyOverlay
+          key="live-session"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          }
+          title="Session still going"
+          body={`A case is already live with the candidate. Go back to it or pick a new one to replace it.`}
+          actionLabel="Go to session"
+          onAction={() => router.push(
+            `/case/${liveSessionOverlayInfo.caseId}/interviewer?lobby=${liveSessionOverlayInfo.lobbyId}&role=interviewer&sessionMode=${liveSessionOverlayInfo.sessionMode}`
+          )}
+          onDismiss={() => setLiveSessionOverlayInfo(null)}
+        />
+      ) : null}
+
       {selectionMode && actionError ? (
         <LobbyOverlay
           key={actionError}
-          type="error"
+          type={activeSessionCaseId ? 'warning' : 'error'}
           icon={
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -608,15 +692,20 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           }
-          title="Couldn't start session"
+          title={activeSessionCaseId ? 'Session already running' : 'Couldn\'t start session'}
           body={actionError}
-          actionLabel={failedCase ? 'Try again' : undefined}
-          onAction={failedCase ? () => {
-            void handleSelectCase(failedCase.id, failedCase.title)
-          } : undefined}
+          actionLabel={activeSessionCaseId ? 'Go to session' : failedCase ? 'Try again' : undefined}
+          onAction={
+            activeSessionCaseId
+              ? () => router.push(`/case/${activeSessionCaseId}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`)
+              : failedCase
+                ? () => { void handleSelectCase(failedCase.id, failedCase.title) }
+                : undefined
+          }
           onDismiss={() => {
             setActionError('')
             setFailedCase(null)
+            setActiveSessionCaseId(null)
           }}
         />
       ) : null}

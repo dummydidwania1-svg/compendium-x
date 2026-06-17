@@ -77,7 +77,19 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
     candidateEmail = caller.email
   }
 
-  // 3) Create evaluation + (optionally) complete session in one batch.
+  // 3) Guard against duplicate submissions (e.g. interviewer opens two tabs).
+  if (input.lobbyId) {
+    const existing = await adminDb
+      .collection('evaluations')
+      .where('lobbyId', '==', input.lobbyId)
+      .limit(1)
+      .get()
+    if (!existing.empty) {
+      return jsonOk({ ok: true, evaluationId: existing.docs[0].id })
+    }
+  }
+
+  // 4) Create evaluation + (optionally) complete session in one batch.
   const evaluationRef = adminDb.collection('evaluations').doc()
   const batch = adminDb.batch()
 
