@@ -188,13 +188,15 @@ function CandidateLobby({
     return () => clearInterval(interval)
   }, [isLocalSession])
 
-  // Overlay + title pulse when interviewer popup closes — re-shows until reopened
+  // Overlay + title pulse when interviewer popup closes — re-shows until reopened.
+  // If the interviewer was in the repository when they closed the popup, send
+  // them back to the repo rather than the lobby controls page.
   useEffect(() => {
     if (!isLocalSession) return
     if (popupWindowClosed) {
       startTitlePulse('🖥 Reopen Controls')
-      // Clear dismissed state so re-close always re-shows the overlay
       dismissedRef.current.delete('popup-closed')
+      const wasOnRepo = interviewerBrowsing || prevBrowsingRef.current
       showOverlay({
         id: 'popup-closed',
         type: 'warning',
@@ -206,13 +208,14 @@ function CandidateLobby({
           </svg>
         ),
         title: 'Interviewer window closed',
-        body: 'Reopen it so the interviewer can pick a case.',
-        actionLabel: 'Reopen window',
-        onAction: onPrimaryAction,
+        body: wasOnRepo
+          ? 'The case library was open. Reopen it to continue picking a case.'
+          : 'Reopen it so the interviewer can pick a case.',
+        actionLabel: wasOnRepo ? 'Reopen library' : 'Reopen window',
+        onAction: wasOnRepo ? onReopenRepo : onPrimaryAction,
       })
     } else {
       if (activePulseMessageRef.current === '🖥 Reopen Controls') stopTitlePulse()
-      // Immediately clear the overlay when reopened
       setActiveOverlay(prev => prev?.id === 'popup-closed' ? null : prev)
       if (reshowTimerRef.current) { clearTimeout(reshowTimerRef.current); reshowTimerRef.current = null }
     }
