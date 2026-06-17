@@ -1953,7 +1953,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
       </section>
 
       <section ref={sectionRef} id="features-section" style={{ height: '220vh' }}>
-        <div id="features-pinned">
+        <div id="features-pinned" style={{ position: 'sticky', top: '70px', height: 'calc(100vh - 70px)', overflow: 'hidden', background: '#fff8f0', zIndex: 10 }}>
           <div id="features-header-inner">
             <h2 className="font-headline text-5xl md:text-7xl font-light text-[#453a2a] tracking-tight mb-3">Our Features</h2>
             <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#5C4033]/40 font-semibold mb-6">Early Preview · Feature demos with sample data</p>
