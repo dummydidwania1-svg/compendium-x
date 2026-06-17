@@ -12,6 +12,7 @@ import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { MicSoftWarningBanner } from '@/components/permissions/MicSoftWarningBanner'
+import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import {
   getActiveDisplayStream,
   releaseDisplayMedia,
@@ -202,6 +203,31 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [caseName, setCaseName] = useState('')
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [retryingTranscript, setRetryingTranscript] = useState(false)
+
+  // ── Interviewer-window-closed overlay (same-device sessions) ─────────────
+  const [windowClosedOverlayVisible, setWindowClosedOverlayVisible] = useState(false)
+  const windowClosedOverlayLeavingRef = useRef(false)
+  const titlePulseRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const originalTitleRef = useRef(
+    typeof document !== 'undefined' ? document.title : 'Case CompendiumX'
+  )
+  const startTitlePulse = useCallback(() => {
+    if (titlePulseRef.current) return
+    let flip = false
+    titlePulseRef.current = setInterval(() => {
+      document.title = flip
+        ? originalTitleRef.current
+        : '🖥 Reopen Controls · Case CompendiumX'
+      flip = !flip
+    }, 900)
+  }, [])
+  const stopTitlePulse = useCallback(() => {
+    if (!titlePulseRef.current) return
+    clearInterval(titlePulseRef.current)
+    titlePulseRef.current = null
+    document.title = originalTitleRef.current
+  }, [])
+  useEffect(() => () => stopTitlePulse(), [stopTitlePulse])
 
   // Reactive microphone permission tracking. The hook subscribes to
   // PermissionStatus.onchange under the hood, so this state updates the
@@ -980,11 +1006,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     const interval = setInterval(() => {
       const host = window as PopupHost
       const win = host.__compendiumInterviewerWindow
-      console.debug('[workspace] popup ref:', win, 'closed:', win?.closed)
       if (!win) {
         // Reference missing — could be a hard refresh. Try to reclaim via named window.
-        // window.open('', name) with an empty URL returns the existing named popup
-        // without navigating it, or null if it doesn't exist.
         const named = window.open('', 'InterviewerControl')
         if (named && !named.closed) {
           host.__compendiumInterviewerWindow = named
@@ -1003,6 +1026,20 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     return () => clearInterval(interval)
   }, [preferredRecordingMode])
 
+  // Drive the overlay and title pulse from interviewerWindowClosed
+  useEffect(() => {
+    if (preferredRecordingMode !== 'local') return
+    if (interviewerWindowClosed) {
+      windowClosedOverlayLeavingRef.current = false
+      setWindowClosedOverlayVisible(true)
+      startTitlePulse()
+    } else {
+      stopTitlePulse()
+      setWindowClosedOverlayVisible(false)
+      windowClosedOverlayLeavingRef.current = false
+    }
+  }, [interviewerWindowClosed, preferredRecordingMode, startTitlePulse, stopTitlePulse])
+
   useEffect(() => {
     return () => {
       clearLocalPrep()
@@ -1015,18 +1052,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
   // ── Dynamic header text ───────────────────────────────────────────────────
   const wsH1Primary = feedbackSubmitted ? 'Wrapping up' : 'Interview Session'
-  const wsH1Secondary = feedbackSubmitted
-    ? 'your session'
-    : interviewerWindowClosed
-      ? 'Paused'
-      : 'in Progress'
+  const wsH1Secondary = feedbackSubmitted ? 'your session' : 'in Progress'
   const wsSubtitle = feedbackSubmitted
     ? 'Feedback is in. Finishing your session and saving everything now.'
-    : interviewerWindowClosed
-      ? 'The interviewer window was closed. Reopen it to keep going.'
-      : caseName
-        ? `Running: ${caseName}`
-        : 'Stay here while this session moves through recording and review.'
+    : caseName
+      ? `Running: ${caseName}`
+      : 'Stay here while this session moves through recording and review.'
 
   const prepVisible = isLocalSession ? localPrepVisible : remotePrepVisible
   const prepStep = isLocalSession ? localPrepStep : remotePrepStep
@@ -1431,6 +1462,35 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         </div>
       </header>
 
+      {windowClosedOverlayVisible && lobbyId && resolvedCaseId ? (
+        <LobbyOverlay
+          key="interviewer-window-closed"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" />
+              <path d="M8 21h8M12 17v4" />
+              <line x1="2" y1="2" x2="22" y2="22" />
+            </svg>
+          }
+          title="Interviewer window closed"
+          body="Your recording is still running. Reopen the interviewer window to continue."
+          actionLabel="Reopen window"
+          onAction={() => {
+            const url = `/case/${resolvedCaseId}/interviewer?lobby=${encodeURIComponent(lobbyId)}&role=interviewer&sessionMode=local`
+            type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
+            const win = window.open(url, 'InterviewerControl', 'popup=yes,resizable=yes,width=800,height=800')
+            if (win) {
+              ;(window as PopupHost).__compendiumInterviewerWindow = win
+              win.focus()
+            }
+          }}
+          onDismiss={() => {
+            setWindowClosedOverlayVisible(false)
+          }}
+        />
+      ) : null}
+
       <main className="relative flex min-h-[calc(100vh-70px)] flex-1 flex-col justify-center px-4 pb-20 pt-[90px] md:px-8 md:pb-24">
         <MicSoftWarningBanner state={microphonePermissionState} onAllow={handleBannerAllow} />
         <div className="mx-auto max-w-4xl w-full">
@@ -1608,34 +1668,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                   <p className="text-[13px] leading-relaxed text-[#7a5b3d]">
                     {persistentRecordingError}
                   </p>
-                </div>
-              ) : null}
-
-              {interviewerWindowClosed && lobbyId && resolvedCaseId ? (
-                <div className="workspace-inline-note warn mt-5 rounded-[20px] px-4 py-4">
-                  <span className="material-symbols-outlined mt-0.5 text-[#a5794f]/70" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>
-                    desktop_access_disabled
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] leading-relaxed text-[#7a5b3d]">
-                      The interviewer window was closed. Your recording is still running.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = `/case/${resolvedCaseId}/interviewer?lobby=${encodeURIComponent(lobbyId)}&role=interviewer&sessionMode=local`
-                        type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
-                        const win = window.open(url, 'InterviewerControl', 'popup=yes,resizable=yes,width=800,height=800')
-                        if (win) {
-                          ;(window as PopupHost).__compendiumInterviewerWindow = win
-                          win.focus()
-                        }
-                      }}
-                      className="mt-3 rounded-full border border-[#a5794f]/25 bg-[#a5794f]/08 px-3 py-1 text-[10.5px] font-semibold text-[#7a5b3d] transition-opacity hover:opacity-75"
-                    >
-                      Reopen interviewer window
-                    </button>
-                  </div>
                 </div>
               ) : null}
 

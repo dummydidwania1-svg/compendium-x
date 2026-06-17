@@ -6,6 +6,7 @@
  * Records the interviewer's uid so downstream rules can scope reads.
  */
 import { FieldValue } from 'firebase-admin/firestore'
+import type * as FirebaseFirestore from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase/admin'
 import { TransitionError, jsonOk, parseBody } from '@/lib/api/responses'
 import { authenticatedRoute } from '@/lib/api/route'
@@ -13,12 +14,39 @@ import { selectCaseInput } from '@/lib/firebase/inputs'
 
 export const runtime = 'nodejs'
 
+const POLL_INTERVAL_MS = 500
+const POLL_TIMEOUT_MS = 8000
+
+async function waitForWaitingSession(
+  ref: FirebaseFirestore.DocumentReference,
+): Promise<FirebaseFirestore.DocumentData | null> {
+  const deadline = Date.now() + POLL_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    const snap = await ref.get()
+    if (snap.exists) return snap.data() ?? {}
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
+  }
+  return null
+}
+
 export const POST = authenticatedRoute<{ lobbyId: string }>(
   '/api/sessions/[lobbyId]/select-case',
   async (request, caller, { lobbyId }) => {
     const { caseId, sessionMode, caseName } = await parseBody(request, selectCaseInput)
 
     const ref = adminDb.collection('sessions').doc(lobbyId)
+
+    // Wait up to 8 s for the candidate workspace to create the session doc.
+    // This covers the race where the interviewer selects a case before the
+    // candidate's POST /api/sessions has finished writing to Firestore.
+    const existingData = await waitForWaitingSession(ref)
+    if (!existingData) {
+      throw new TransitionError(
+        404,
+        'session_not_found',
+        'Session does not exist. Candidate must open the lobby first.',
+      )
+    }
 
     await adminDb.runTransaction(async (tx) => {
       const snap = await tx.get(ref)

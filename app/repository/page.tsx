@@ -15,6 +15,7 @@ import { apiPost } from '@/lib/api/client'
 import { slugifyCase } from '@/lib/slug'
 import PlatformLoader from '@/components/PlatformLoader'
 import CursorGlow from '@/components/CursorGlow'
+import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 
 
 const CASES_CACHE_KEY = 'compendium_cases_v2'
@@ -173,6 +174,7 @@ function RepositoryContent() {
 const [companyFilter, setCompanyFilter] = useState<string[]>([])
 const [roundFilter, setRoundFilter] = useState<string[]>([])
   const [actionError, setActionError] = useState('')
+  const [failedCase, setFailedCase] = useState<{ id: string; title: string } | null>(null)
   const [offlineBanner, setOfflineBanner] = useState(false)
   const [firestoreFailed, setFirestoreFailed] = useState(false)
   // ID of the case the user just clicked, while the API call + navigation
@@ -445,6 +447,7 @@ const prefetchCase = (caseItem: CaseListItem) => {
   const handleSelectCase = async (caseId: string, caseTitle?: string) => {
     if (pendingCaseId) return // ignore double-clicks while one is in flight
     setActionError('')
+    setFailedCase(null)
     setPendingCaseId(caseId)
 
     if (selectionMode && lobbyId) {
@@ -469,6 +472,7 @@ const prefetchCase = (caseItem: CaseListItem) => {
         setActionError(
           error instanceof Error ? error.message : 'Unable to start this session right now.'
         )
+        setFailedCase({ id: caseId, title: caseTitle ?? '' })
         setPendingCaseId(null)
       }
 
@@ -593,6 +597,29 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
       style={{ fontFamily: "'Work Sans', sans-serif" }}
       className="relative flex min-h-screen flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
+      {selectionMode && actionError ? (
+        <LobbyOverlay
+          key={actionError}
+          type="error"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          }
+          title="Couldn't start session"
+          body={actionError}
+          actionLabel={failedCase ? 'Try again' : undefined}
+          onAction={failedCase ? () => {
+            void handleSelectCase(failedCase.id, failedCase.title)
+          } : undefined}
+          onDismiss={() => {
+            setActionError('')
+            setFailedCase(null)
+          }}
+        />
+      ) : null}
       <style>{`
 .repo-table-surface {
   background: rgba(255, 248, 240, 0.55);
@@ -795,11 +822,6 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
             </div>
           )}
 
-          {actionError ? (
-            <div className="mb-5 rounded-xl border border-[#b4543e]/15 bg-[rgba(255,244,239,0.9)] px-5 py-3.5 text-[13px] text-[#92400e]">
-              {actionError}
-            </div>
-          ) : null}
 
           {/* Case Table */}
           <div className="repo-table-surface relative z-10 rounded-[30px]">
