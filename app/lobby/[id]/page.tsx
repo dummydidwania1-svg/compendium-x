@@ -145,6 +145,7 @@ function CandidateLobby({
   onCancelSession,
   onPrimaryAction,
   onReopenRepo,
+  onMicStateChange,
 }: {
   requestedSessionMode: 'remote' | 'local'
   interviewerLink: string
@@ -157,6 +158,7 @@ function CandidateLobby({
   onCancelSession: () => void
   onPrimaryAction: () => void
   onReopenRepo: () => void
+  onMicStateChange: (granted: boolean) => void
 }) {
   const isLocalSession = requestedSessionMode === 'local'
 
@@ -422,6 +424,7 @@ function CandidateLobby({
       dismissedRef.current.delete('mic-denied')
       dismissedRef.current.delete('mic-prompt')
       stopTitlePulse()
+      onMicStateChange(true)
       return
     }
     if (payload.kind === 'granted') {
@@ -432,6 +435,7 @@ function CandidateLobby({
       // Always clear granted from dismissed so re-grants always show the toast
       dismissedRef.current.delete('mic-granted')
       stopTitlePulse()
+      onMicStateChange(true)
       showOverlay({
         id: 'mic-granted',
         type: 'info',
@@ -444,6 +448,7 @@ function CandidateLobby({
     if (payload.kind === 'denied') {
       stopTitlePulse()
       startTitlePulse('🎙 Mic Blocked')
+      onMicStateChange(false)
       // Clear dismissed state so this overlay always re-shows while denied
       dismissedRef.current.delete('mic-denied')
       // Clear granted dismissed so the next successful grant shows the toast fresh
@@ -462,6 +467,7 @@ function CandidateLobby({
       return
     }
     if (payload.kind === 'prompt') {
+      onMicStateChange(false)
       startTitlePulse('🎙 Allow Mic')
       showOverlay({
         id: 'mic-prompt',
@@ -476,7 +482,7 @@ function CandidateLobby({
       })
       return
     }
-  }, [showOverlay, startTitlePulse, stopTitlePulse])
+  }, [onMicStateChange, showOverlay, startTitlePulse, stopTitlePulse])
 
   // Clear repo-closed overlay when interviewer reopens the library or case launches
   useEffect(() => {
@@ -1246,6 +1252,9 @@ export default function LobbyPage() {
   // Brief launching state shown while router.replace fires after case selection.
   const [isLaunching, setIsLaunching] = useState(false)
   const [launchCaseName, setLaunchCaseName] = useState('')
+  // Tracks whether mic is ready (granted or not applicable). Used to gate
+  // opening the interviewer popup in local/split-screen mode.
+  const [isMicReady, setIsMicReady] = useState(false)
 
   // Interviewers arrive via shared invite links. Silently provision an
   // anonymous Firebase user so they can call /api routes (which all require
@@ -1299,6 +1308,13 @@ export default function LobbyPage() {
   }, [isInterviewer])
 
   const focusOrOpenLocalInterviewerWindow = () => {
+    if (!isMicReady) {
+      // Mic isn't set up yet — the overlay in CandidateLobby is already
+      // showing the blocked/prompt state. Don't open the popup until it's fixed.
+      flashCandidateActionStatus('Fix the mic first')
+      return
+    }
+
     const popupWidth = 800
     const popupHeight = 800
     const popupHost = window as PopupWindowHost
@@ -1607,6 +1623,7 @@ export default function LobbyPage() {
       onCancelSession={() => router.push('/practice')}
       onPrimaryAction={() => { void handleCandidatePrimaryAction() }}
       onReopenRepo={openRepoInPopup}
+      onMicStateChange={setIsMicReady}
     />
   )
 }

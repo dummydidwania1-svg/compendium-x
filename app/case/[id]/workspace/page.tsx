@@ -11,7 +11,6 @@ import { storage, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
-import { MicSoftWarningBanner } from '@/components/permissions/MicSoftWarningBanner'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import {
   getActiveDisplayStream,
@@ -208,6 +207,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [sessionIssueOverlayVisible, setSessionIssueOverlayVisible] = useState(false)
   const sessionIssueReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // ── Mic-blocked overlay (replaces MicSoftWarningBanner with reshow logic) ──
+  const [micBlockedOverlayVisible, setMicBlockedOverlayVisible] = useState(false)
+  const micBlockedReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // ── Interviewer-window-closed overlay (same-device sessions) ─────────────
   const [windowClosedOverlayVisible, setWindowClosedOverlayVisible] = useState(false)
   const windowClosedReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -235,6 +238,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     stopTitlePulse()
     if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
     if (sessionIssueReshowTimerRef.current) clearTimeout(sessionIssueReshowTimerRef.current)
+    if (micBlockedReshowTimerRef.current) clearTimeout(micBlockedReshowTimerRef.current)
   }, [stopTitlePulse])
 
   // Reactive microphone permission tracking. The hook subscribes to
@@ -934,6 +938,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         try {
           const data = JSON.parse(event.newValue)
           if (data?.lobbyId === lobbyId) {
+            // If active:false fired because the interviewer navigated within
+            // the popup (e.g. pressed back), the popup window itself is still
+            // open. Trust the 2s poll over this storage signal in that case.
+            type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
+            const popup = (window as PopupHost).__compendiumInterviewerWindow
+            const popupStillOpen = popup && !popup.closed
+            if (!data.active && popupStillOpen) return
             setInterviewerWindowClosed(!data.active)
           }
         } catch {
@@ -1058,6 +1069,25 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setWindowClosedOverlayVisible(false)
     }
   }, [feedbackSubmitted, interviewerWindowClosed, preferredRecordingMode, startTitlePulse, stopTitlePulse])
+
+  // Drive the mic-blocked overlay from microphonePermissionState (local mode only).
+  // Title pulse starts immediately; overlay reshows after 1.5s if still blocked.
+  useEffect(() => {
+    if (!isLocalSession) return
+    if (microphonePermissionState === 'denied') {
+      startTitlePulse()
+      setMicBlockedOverlayVisible((prev) => (prev ? prev : true))
+    } else {
+      if (micBlockedReshowTimerRef.current) {
+        clearTimeout(micBlockedReshowTimerRef.current)
+        micBlockedReshowTimerRef.current = null
+      }
+      stopTitlePulse()
+      setMicBlockedOverlayVisible(false)
+    }
+  // isLocalSession is derived from preferredRecordingMode which is stable after mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [microphonePermissionState])
 
   // Drive the session-issue overlay from sessionIssue. Shows immediately on
   // error, auto-clears when the session doc reappears. Uses the same
@@ -1496,6 +1526,34 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         </div>
       </header>
 
+      {micBlockedOverlayVisible && isLocalSession ? (
+        <LobbyOverlay
+          key="mic-blocked"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="1" y1="1" x2="23" y2="23" />
+              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+          }
+          title="Mic is blocked"
+          body="Without mic access we can't record your audio or generate AI feedback. Click the lock icon in your address bar, set Microphone to Allow, then tap the button below."
+          actionLabel="Allow mic"
+          onAction={() => void handleBannerAllow()}
+          onDismiss={() => {
+            setMicBlockedOverlayVisible(false)
+            if (micBlockedReshowTimerRef.current) clearTimeout(micBlockedReshowTimerRef.current)
+            micBlockedReshowTimerRef.current = setTimeout(() => {
+              micBlockedReshowTimerRef.current = null
+              if (microphonePermissionState === 'denied') setMicBlockedOverlayVisible(true)
+            }, 1500)
+          }}
+        />
+      ) : null}
+
       {windowClosedOverlayVisible && lobbyId && resolvedCaseId ? (
         <LobbyOverlay
           key="interviewer-window-closed"
@@ -1565,7 +1623,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       ) : null}
 
       <main className="relative flex min-h-[calc(100vh-70px)] flex-1 flex-col justify-center px-4 pb-20 pt-[90px] md:px-8 md:pb-24">
-        <MicSoftWarningBanner state={microphonePermissionState} onAllow={handleBannerAllow} />
         <div className="mx-auto max-w-4xl w-full">
           <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
             <div
