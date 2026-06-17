@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
 import { waitForAuthUser } from '@/lib/firebase/config'
 import PlatformLoader from '@/components/PlatformLoader'
+import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 
 export default function PracticeModeSelection() {
   const [loading, setLoading] = useState(true)
@@ -231,6 +232,33 @@ export default function PracticeModeSelection() {
 
       <Navbar currentPage="practice" />
 
+      {micBlocked ? (
+        <LobbyOverlay
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="1" y1="1" x2="23" y2="23" />
+              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+          }
+          title="Mic access needed"
+          body="We need mic access to record your session. Click Allow mic below, or open the lock icon in your address bar and set Microphone to Allow."
+          actionLabel="Allow mic"
+          onAction={async () => {
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+              stream.getTracks().forEach((t) => t.stop())
+              setMicBlocked(false)
+            } catch {
+              // still blocked — overlay reshows via the reshow pattern below
+            }
+          }}
+          onDismiss={() => setMicBlocked(false)}
+        />
+      ) : null}
       <main className="relative flex min-h-[calc(100vh-70px)] flex-1 flex-col justify-center px-4 pb-20 pt-[90px] md:px-8 md:pb-24">
         <div className="mx-auto max-w-5xl">
 
@@ -373,17 +401,17 @@ export default function PracticeModeSelection() {
                     className="practice-btn w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {localPreparing
-                      ? 'Setting Up Microphone…'
+                      ? 'Setting up microphone...'
                       : popupBlocked
-                        ? 'Retry — Allow Popups & Try Again'
+                        ? 'Retry: allow popups first'
                         : micBlocked
-                          ? 'Retry — Fix Mic First'
+                          ? 'Retry: allow mic first'
                           : 'Launch Split Screen'}
                   </button>
                 </div>
                 {localPreparing ? (
                   <p className="mt-3 text-[10px] leading-relaxed text-[#5c4033]/60">
-                    Allow microphone in the browser prompt — the interviewer window opens once you decide.
+                    Allow microphone in the browser prompt. The interviewer window opens right after.
                   </p>
                 ) : null}
                 {popupBlocked ? (
@@ -394,16 +422,6 @@ export default function PracticeModeSelection() {
                     <p className="mt-1 text-[11px] leading-relaxed text-[#5c4033]">
                       Your browser blocked the interviewer popup. Click the popup-blocked icon in your
                       address bar to allow popups for this site, then click <strong className="font-semibold">Retry</strong> above.
-                    </p>
-                  </div>
-                ) : null}
-                {micBlocked ? (
-                  <div className="mt-3 rounded-lg border border-[#b48a57]/30 bg-[rgba(255,245,233,0.92)] px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
-                      Mic blocked
-                    </p>
-                    <p className="mt-1 text-[11px] leading-relaxed text-[#5c4033]">
-                      We need mic access to record your session. Click the lock icon in your address bar, set Microphone to Allow, then tap <strong className="font-semibold">Retry</strong> above.
                     </p>
                   </div>
                 ) : null}
