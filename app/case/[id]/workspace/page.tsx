@@ -31,12 +31,6 @@ type SessionState = {
   }
 }
 
-type TranscriptRetryInfo = {
-  audioUrl: string
-  mimeType: string
-  storagePath: string
-}
-
 type RecordingMode = 'remote' | 'local'
 type RecordingState = 'idle' | 'starting' | 'recording' | 'stopping' | 'uploading' | 'uploaded' | 'failed'
 type WorkspaceToast = {
@@ -197,11 +191,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [remotePrepStep, setRemotePrepStep] = useState(0)
   const [localPrepVisible, setLocalPrepVisible] = useState(false)
   const [localPrepStep, setLocalPrepStep] = useState(0)
-  const [transcriptRetryInfo, setTranscriptRetryInfo] = useState<TranscriptRetryInfo | null>(null)
   const [interviewerWindowClosed, setInterviewerWindowClosed] = useState(false)
   const [caseName, setCaseName] = useState('')
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
-  const [retryingTranscript, setRetryingTranscript] = useState(false)
   // ── Session-complete overlay (timed, auto-dismisses then routes to dashboard) ──
   const [sessionCompleteOverlayVisible, setSessionCompleteOverlayVisible] = useState(false)
   const sessionCompleteRouteRef = useRef(false)
@@ -212,8 +204,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const uploadFailReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // ── Leave-confirm overlay (shown when candidate tries to leave with failed upload) ──
   const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false)
-  // ── Transcript-retry overlay ────────────────────────────────────────────────
-  const [transcriptRetryOverlayVisible, setTranscriptRetryOverlayVisible] = useState(false)
   // ── Recoverable capture error overlay ──────────────────────────────────────
   const [captureErrorOverlayVisible, setCaptureErrorOverlayVisible] = useState(false)
   const captureErrorReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -336,16 +326,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     setLocalPrepVisible(false)
     setLocalPrepStep(0)
   }, [])
-
-  // Transcription is now handled out-of-band by a Firestore-triggered Cloud
-  // Function (functions/src/index.ts). The client doesn't kick it off
-  // directly — the `transcriptStatus: 'pending'` field set by the
-  // /api/sessions/[id]/recording route IS the trigger. The retry button
-  // just flips that field back to 'pending' via the retry-transcript route.
-  const retryTranscriptOnServer = useCallback(async () => {
-    if (!lobbyId) throw new Error('Session ID missing for transcript retry.')
-    await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording/retry-transcript`, {})
-  }, [lobbyId])
 
   const uploadRecordingBlob = useCallback(
     async (blob: Blob, stopReason: string, routeAfterUpload: boolean) => {
@@ -760,23 +740,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     await uploadRecordingBlob(pendingBlobRef.current, stopReasonRef.current || 'retry_upload', completionPending)
   }, [completionPending, uploadRecordingBlob])
 
-  const handleRetryTranscript = useCallback(async () => {
-    if (!transcriptRetryInfo || retryingTranscript) return
-    setRetryingTranscript(true)
-    setRecordingError('')
-    setRecordingNote('Re-queuing transcript generation — this runs in the background.')
-    try {
-      await retryTranscriptOnServer()
-      setRecordingNote('Transcript queued. It will appear on your dashboard when ready.')
-      setTranscriptRetryInfo(null)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to retry transcript.'
-      setRecordingError(`Transcript retry failed: ${message}`)
-    } finally {
-      setRetryingTranscript(false)
-    }
-  }, [retryTranscriptOnServer, retryingTranscript, transcriptRetryInfo])
-
   // Single capture-start entry point invoked by the workspace's primary
   // button and by the soft-warning banner. If mic is still denied, we
   // ask the hook to try anyway — getUserMedia rejects silently, which
@@ -873,21 +836,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (!raw) return
       if (raw.caseName) setCaseName(raw.caseName)
       setPreferredRecordingMode(resolveSessionMode(raw.sessionMode))
-      const rec = raw.recording
-      if (
-        rec?.transcriptStatus === 'failed' &&
-        typeof rec.audioUrl === 'string' &&
-        typeof rec.mimeType === 'string' &&
-        typeof rec.storagePath === 'string'
-      ) {
-        setTranscriptRetryInfo({
-          audioUrl: rec.audioUrl,
-          mimeType: rec.mimeType,
-          storagePath: rec.storagePath,
-        })
-      } else if (rec?.transcriptStatus === 'completed' || rec?.transcriptStatus === 'processing') {
-        setTranscriptRetryInfo(null)
-      }
       if (raw.status === 'in_progress') {
         sessionWasInProgressRef.current = true
       }
@@ -1098,11 +1046,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setWindowClosedOverlayVisible(false)
     }
   }, [feedbackSubmitted, interviewerWindowClosed, microphonePermissionState, preferredRecordingMode, startTitlePulse, stopTitlePulse])
-
-  // Drive transcript-retry overlay from transcriptRetryInfo.
-  useEffect(() => {
-    setTranscriptRetryOverlayVisible(!!transcriptRetryInfo)
-  }, [transcriptRetryInfo])
 
   // Drive the upload-fail overlay from completionPending + failed state.
   useEffect(() => {
@@ -1817,24 +1760,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           actionLabel="Try again"
           onAction={handleEnableCapture}
           onDismiss={() => setPersistentErrorOverlayVisible(false)}
-        />
-      ) : null}
-
-      {transcriptRetryOverlayVisible ? (
-        <LobbyOverlay
-          key="transcript-retry"
-          type="warning"
-          icon={
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 4 1 10 7 10" />
-              <path d="M3.51 15a9 9 0 1 0 .49-3.87" />
-            </svg>
-          }
-          title="Transcript generation failed"
-          body="Your audio uploaded fine, but the AI transcript hit an error. Tap Retry and it'll try again with the same recording."
-          actionLabel={retryingTranscript ? 'Retrying...' : 'Retry transcript'}
-          onAction={() => void handleRetryTranscript()}
-          onDismiss={() => setTranscriptRetryOverlayVisible(false)}
         />
       ) : null}
 
