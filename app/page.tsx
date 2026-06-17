@@ -728,7 +728,7 @@ const tRemove = setTimeout(() => {
 
       <Navbar currentPage="home" />
 
-<main className="pt-[70px]">
+<main className="pt-[70px]" style={{ overflowX: 'clip' }}>
         <header className="ccx-hero">
           {/* Sponsor logos — top-right of hero, above 3rd edition text */}
           <div id="ccx-hero-grants">
