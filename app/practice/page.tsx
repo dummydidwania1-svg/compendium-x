@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
 import { waitForAuthUser } from '@/lib/firebase/config'
@@ -18,6 +18,7 @@ export default function PracticeModeSelection() {
   // Set when mic is denied at session start — blocks the popup from opening
   // until the user grants mic access and retries.
   const [micBlocked, setMicBlocked] = useState(false)
+  const micReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Set while we're awaiting the browser's mic permission prompt before
   // opening the interviewer popup. Shows a transient "Setting up..." state
   // on the local card so the user knows their click registered.
@@ -245,18 +246,23 @@ export default function PracticeModeSelection() {
             </svg>
           }
           title="Mic access needed"
-          body="We need mic access to record your session. Click Allow mic below, or open the lock icon in your address bar and set Microphone to Allow."
-          actionLabel="Allow mic"
-          onAction={async () => {
-            try {
-              const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-              stream.getTracks().forEach((t) => t.stop())
-              setMicBlocked(false)
-            } catch {
-              // still blocked — overlay reshows via the reshow pattern below
-            }
+          body="Click the site icon (ⓘ) in your address bar, set Microphone to Allow, then tap Try again."
+          actionLabel="Try again"
+          onAction={() => void startLocalSession()}
+          onDismiss={() => {
+            setMicBlocked(false)
+            if (micReshowTimerRef.current) clearTimeout(micReshowTimerRef.current)
+            micReshowTimerRef.current = setTimeout(async () => {
+              micReshowTimerRef.current = null
+              if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return
+              try {
+                const status = await navigator.permissions.query({ name: 'microphone' as PermissionName })
+                if (status.state === 'denied') setMicBlocked(true)
+              } catch {
+                // permissions API not available — leave dismissed
+              }
+            }, 1500)
           }}
-          onDismiss={() => setMicBlocked(false)}
         />
       ) : null}
       <main className="relative flex min-h-[calc(100vh-70px)] flex-1 flex-col justify-center px-4 pb-20 pt-[90px] md:px-8 md:pb-24">
