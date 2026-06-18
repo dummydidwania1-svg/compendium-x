@@ -529,8 +529,10 @@ function CandidateLobby({
 
     const onPopstate = () => {
       if (!leaveGuardActiveRef.current) return
-      // Re-push so the user stays here; they can still navigate away after dismissing.
+      // Re-push so the user stays on this page until they confirm leave.
       history.pushState(null, '', window.location.href)
+      // Mark as permanently dismissed so X-close doesn't trigger reshow.
+      dismissedRef.current.delete('lobby-leave-warning')
       showOverlay({
         id: 'lobby-leave-warning',
         type: 'warning',
@@ -544,7 +546,16 @@ function CandidateLobby({
         title: 'Heading out?',
         body: "Your recording hasn't started yet, so nothing will be lost. But the interviewer may still be picking a case on their window.",
         autoDismissMs: 8000,
+        actionLabel: 'Leave anyway',
+        onAction: () => {
+          leaveGuardActiveRef.current = false
+          dismissedRef.current.add('lobby-leave-warning')
+          history.back()
+        },
       })
+      // Permanently dismiss on X-close (no reshow) by pre-adding to dismissedRef
+      // after a short tick so showOverlay itself can run first.
+      setTimeout(() => dismissedRef.current.add('lobby-leave-warning'), 0)
     }
 
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
