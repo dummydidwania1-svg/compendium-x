@@ -1742,7 +1742,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
 
       <header className="relative min-h-screen flex flex-col items-center justify-start overflow-hidden pt-40 pb-6">
         <div className="relative z-10 max-w-5xl px-8 text-center flex flex-col items-center">
-          <h1 className="font-headline text-6xl md:text-8xl text-[#453a2a] leading-[1.05] tracking-tight mb-8">
+          <h1 className="font-headline text-[#453a2a] leading-[1.05] tracking-tight mb-8" style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)' }}>
             Where case prep gets
             <br />
             <span className="word-carousel text-[#3D5A35] italic font-light w-full md:w-[480px]">
@@ -1924,7 +1924,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
 
       <section className="pt-6 pb-24 px-4 md:px-8 overflow-hidden">
         <div className="max-w-7xl mx-auto text-center mb-12">
-          <h2 className="font-headline text-5xl md:text-6xl font-light text-[#453a2a] tracking-tight">Contributors</h2>
+          <h2 className="font-headline font-light text-[#453a2a] tracking-tight text-balance" style={{ fontSize: 'clamp(2rem, 5vw, 3.75rem)' }}>Contributors</h2>
         </div>
         <div className="carousel-mask w-full overflow-hidden">
           <div className="carousel-track">
@@ -1955,7 +1955,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
       <section ref={sectionRef} id="features-section" style={{ height: '220vh' }}>
         <div id="features-pinned" style={{ position: 'sticky', top: '70px', height: 'calc(100vh - 70px)', overflow: 'hidden', background: '#fff8f0', zIndex: 10 }}>
           <div id="features-header-inner">
-            <h2 className="font-headline text-5xl md:text-7xl font-light text-[#453a2a] tracking-tight mb-3">Our Features</h2>
+            <h2 className="font-headline font-light text-[#453a2a] tracking-tight mb-3 text-balance" style={{ fontSize: 'clamp(2rem, 6vw, 4.5rem)' }}>Our Features</h2>
             <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#5C4033]/40 font-semibold mb-6">Early Preview · Feature demos with sample data</p>
             <div className="flex justify-center gap-2" id="tab-buttons">
               {(['ai-models', 'dashboard', 'repository'] as TabId[]).map((tab) => (
@@ -2271,7 +2271,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
       <section id="differentiator-section" className="pt-8 pb-24 px-4 md:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="font-headline text-5xl md:text-7xl font-light text-[#453a2a] tracking-tight mb-4">What Makes Us Different</h2>
+            <h2 className="font-headline font-light text-[#453a2a] tracking-tight mb-4 text-balance" style={{ fontSize: 'clamp(2rem, 6vw, 4.5rem)' }}>What Makes Us Different</h2>
             <p className="font-body text-lg text-[#434840] max-w-2xl mx-auto leading-relaxed">
               Our AI doesn&apos;t replace the interview. It transforms what comes out of it.
               <br />
