@@ -515,6 +515,58 @@ function CandidateLobby({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [waitingNudgeVisible])
 
+  // ── Back-button / close guard ─────────────────────────────────────────────
+  // While the candidate is waiting (session not yet launching to workspace),
+  // intercept browser back button and close/reload so they get a soft heads-up.
+  // Audio hasn't started yet — leaving won't lose a recording — but the
+  // interviewer may still be picking a case on the other window.
+  const leaveGuardActiveRef = useRef(false)
+  useEffect(() => {
+    if (sessionPhase === 'launching') return
+    leaveGuardActiveRef.current = true
+    // Push a dummy history entry so popstate fires when back is pressed.
+    history.pushState(null, '', window.location.href)
+
+    const onPopstate = () => {
+      if (!leaveGuardActiveRef.current) return
+      // Re-push so the user stays here; they can still navigate away after dismissing.
+      history.pushState(null, '', window.location.href)
+      showOverlay({
+        id: 'lobby-leave-warning',
+        type: 'warning',
+        icon: (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        ),
+        title: 'Heading out?',
+        body: "Your recording hasn't started yet, so nothing will be lost. But the interviewer may still be picking a case on their window.",
+        autoDismissMs: 8000,
+      })
+    }
+
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!leaveGuardActiveRef.current) return
+      event.preventDefault()
+    }
+
+    window.addEventListener('popstate', onPopstate)
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => {
+      leaveGuardActiveRef.current = false
+      window.removeEventListener('popstate', onPopstate)
+      window.removeEventListener('beforeunload', onBeforeUnload)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionPhase])
+
+  // After the user dismisses or the overlay auto-dismisses, if they wanted to
+  // go back the guard will have re-pushed history — they can just press back again
+  // and the browser will navigate normally (guard is still active but re-push lets
+  // them proceed after a second attempt).
+
   // ── Session issue overlay ──────────────────────────────────────────────────
   const prevSessionIssueRef = useRef('')
   useEffect(() => {
@@ -968,8 +1020,6 @@ function InterviewerLobby({
 }) {
   const [elapsed, setElapsed] = useState(0)
   const startRef = useRef<number | null>(null)
-  const [candidateAbandonedVisible, setCandidateAbandonedVisible] = useState(false)
-
   useEffect(() => {
     startRef.current = Date.now()
     const interval = setInterval(() => {
@@ -979,28 +1029,6 @@ function InterviewerLobby({
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    const checkSignal = () => {
-      try {
-        const raw = localStorage.getItem('compendium-candidate-abandoned')
-        if (!raw) return false
-        const data = JSON.parse(raw) as { lobbyId?: string; ts?: number }
-        if (data?.lobbyId !== lobbyId) return false
-        if (data.ts && Date.now() - data.ts > 30_000) return false
-        return true
-      } catch { return false }
-    }
-    if (checkSignal()) setCandidateAbandonedVisible(true)
-    const onStorage = (event: StorageEvent) => {
-      if (event.key !== 'compendium-candidate-abandoned') return
-      try {
-        const data = event.newValue ? JSON.parse(event.newValue) as { lobbyId?: string } : null
-        if (data?.lobbyId === lobbyId) setCandidateAbandonedVisible(true)
-      } catch { }
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [lobbyId])
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60)
@@ -1248,23 +1276,6 @@ function InterviewerLobby({
         </div>
       </main>
 
-      {candidateAbandonedVisible ? (
-        <LobbyOverlay
-          key="candidate-abandoned"
-          type="info"
-          icon={
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <line x1="23" y1="11" x2="17" y2="11" />
-            </svg>
-          }
-          title="Candidate left the session"
-          body="The audio recording was stopped. You can still submit your notes and ratings."
-          autoDismissMs={8000}
-          onDismiss={() => setCandidateAbandonedVisible(false)}
-        />
-      ) : null}
     </div>
   )
 }

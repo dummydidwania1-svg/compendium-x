@@ -206,7 +206,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false)
   const [leavingInProgress, setLeavingInProgress] = useState(false)
   const [leaveSavedOverlayVisible, setLeaveSavedOverlayVisible] = useState(false)
-  const ACTIVE_SESSION_KEY = 'compendium-active-session'
   // ── Recoverable capture error overlay ──────────────────────────────────────
   const [captureErrorOverlayVisible, setCaptureErrorOverlayVisible] = useState(false)
   const captureErrorReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -1054,28 +1053,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       if (sessionStorage.getItem(RELOAD_PLATFORM_KEY) === '1') return
-
-      // Write the signal immediately — if user cancels the dialog, the signal
-      // is stale but the interviewer overlay auto-dismisses so that's fine.
+      // Write the abandoned signal immediately so the interviewer popup is
+      // notified. If user clicks Stay, the signal is stale (30s window) but
+      // the interviewer overlay auto-dismisses, so that's fine.
       writeAbandonedSignal()
-
-      if (isReloadIntentRef.current) {
-        // Reload path — show our reload-specific overlay after user clicks Stay.
-        const count = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
-        if (count >= 2) {
-          sessionStorage.setItem(RELOAD_FLAG_KEY, '1')
-          sessionStorage.setItem(RELOAD_WARN_KEY, '0')
-          return
-        }
-        setWarnBeforeReloadVisible(true)
-        sessionStorage.setItem(RELOAD_WARN_KEY, String(count + 1))
-        event.preventDefault()
-        isReloadIntentRef.current = false
-      } else {
-        // Tab-close / Cmd+W / address-bar — show close-specific overlay after Stay.
-        setWarnBeforeCloseVisible(true)
-        event.preventDefault()
-      }
+      // Keyboard reloads (F5/Ctrl+R/Cmd+R) are already fully intercepted by
+      // the keydown handler above before beforeunload ever fires — they never
+      // reach here. Everything that reaches this handler is a browser-button
+      // action (reload button or close button/Cmd+W), which are
+      // indistinguishable. Show the generic leave warning for both.
+      setWarnBeforeCloseVisible(true)
+      event.preventDefault()
     }
 
     // pagehide fires more reliably than beforeunload when the tab is actually
@@ -1112,24 +1100,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     return () => window.removeEventListener('popstate', onPopState)
   }, [recordingState])
 
-  // Track active session in localStorage so the practice page can surface a
-  // rejoin prompt if the candidate accidentally navigates back there.
-  // Written when recording starts, cleared when session is safely finished.
-  useEffect(() => {
-    if (!lobbyId || !resolvedCaseId) return
-    if (recordingState === 'recording') {
-      try {
-        localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify({
-          lobbyId,
-          caseId: resolvedCaseId,
-          caseName,
-          startedAtMs: recordingStartMsRef.current ?? Date.now(),
-        }))
-      } catch { }
-    } else if (recordingState === 'uploaded' || feedbackSubmitted) {
-      try { localStorage.removeItem(ACTIVE_SESSION_KEY) } catch { }
-    }
-  }, [recordingState, feedbackSubmitted, lobbyId, resolvedCaseId, caseName])
 
   // Poll every 2s to detect if the interviewer popup was closed.
   // The lobby stores the popup reference on window.__compendiumInterviewerWindow
@@ -1746,8 +1716,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           }
-          title="Closing will lose your recording"
-          body="You tried to close this tab. If you close it, the mic stops and the audio recorded so far is gone permanently."
+          title="Leaving will lose your recording"
+          body="You tried to close or reload this tab. If you go through with it, the mic stops and everything recorded so far is gone."
           autoDismissMs={8000}
           actionLabel="Stay on page"
           onAction={() => setWarnBeforeCloseVisible(false)}
@@ -1788,7 +1758,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 } catch { }
                 try { await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {}) } catch { }
               }
-              try { localStorage.removeItem(ACTIVE_SESSION_KEY) } catch { }
               setLeaveConfirmVisible(false)
               setLeaveSavedOverlayVisible(true)
             } catch {

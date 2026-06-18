@@ -631,8 +631,6 @@ export function InterviewerPageInner({
 	// confirms what they have before submission. Toggle to false to edit
 	// in place; submit finalizes from either mode.
 	const [editingFeedback, setEditingFeedback] = useState(false)
-	// Shown when the candidate abandons the session mid-recording.
-	const [candidateAbandonedVisible, setCandidateAbandonedVisible] = useState(false)
 
 	const normalizedTitle = useMemo(() => (caseData?.title ?? '').trim().toLowerCase(), [caseData?.title])
 	const caseTypeLabel = useMemo(() => (caseData?.caseType ?? caseData?.case_type ?? 'General').trim(), [
@@ -775,34 +773,6 @@ export function InterviewerPageInner({
 		}
 	}, [lobbyId, previewMode])
 
-	// Detect when the candidate abandons their workspace mid-session.
-	// Checks on mount (in case signal was already written before this screen loaded)
-	// and listens for live storage events from the candidate workspace.
-	useEffect(() => {
-		if (!lobbyId || previewMode) return
-		const checkSignal = () => {
-			try {
-				const raw = localStorage.getItem('compendium-candidate-abandoned')
-				if (!raw) return false
-				const data = JSON.parse(raw) as { lobbyId?: string; ts?: number }
-				if (data?.lobbyId !== lobbyId) return false
-				// Only act on signals written within the last 30s — stale signals are ignored.
-				if (data.ts && Date.now() - data.ts > 30_000) return false
-				return true
-			} catch { return false }
-		}
-		if (checkSignal()) setCandidateAbandonedVisible(true)
-		const onStorage = (event: StorageEvent) => {
-			if (event.key !== 'compendium-candidate-abandoned') return
-			try {
-				const data = event.newValue ? JSON.parse(event.newValue) as { lobbyId?: string } : null
-				if (data?.lobbyId !== lobbyId) return
-			} catch { return }
-			setCandidateAbandonedVisible(true)
-		}
-		window.addEventListener('storage', onStorage)
-		return () => window.removeEventListener('storage', onStorage)
-	}, [lobbyId, previewMode])
 
 	// Legacy /case/[id]/interviewer?preview=1 links → bounce to the clean /case/[slug] URL.
 useEffect(() => {
@@ -1430,24 +1400,6 @@ if (previewMode && !forcePreview) {
 							Rate all four criteria before submitting. Click the edit icon above to adjust scores.
 						</p>
 					</div>
-				) : null}
-
-				{candidateAbandonedVisible ? (
-					<LobbyOverlay
-						key="candidate-abandoned"
-						type="info"
-						icon={
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-								<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-								<circle cx="9" cy="7" r="4" />
-								<line x1="23" y1="11" x2="17" y2="11" />
-							</svg>
-						}
-						title="Candidate left the session"
-						body="The audio recording was stopped. You can still submit your notes and ratings below."
-						autoDismissMs={8000}
-						onDismiss={() => setCandidateAbandonedVisible(false)}
-					/>
 				) : null}
 
 				{submitError ? (
