@@ -532,7 +532,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
           position: relative;
           max-width: 64rem;
           margin: 0 auto;
-          padding: 12px 2rem 0;
+          padding: 12px 2rem 70px;
         }
         .feature-card {
           background-color: #f4ede3;
@@ -568,6 +568,18 @@ const handleMuteToggle = (e: React.MouseEvent) => {
           .card-title-bar { padding: 0 48px; }
           .card-body { padding: 12px 48px 18px; }
           #features-header-inner { padding: 40px 2rem 20px; }
+        }
+        @media (max-height: 800px) {
+          #features-header-inner { padding: 16px 2rem 10px; }
+          .card-title-bar { height: 42px; min-height: 42px; max-height: 42px; }
+          .card-body { padding: 8px 24px 12px; }
+        }
+        @media (max-height: 800px) and (min-width: 768px) {
+          .card-body { padding: 8px 48px 12px; }
+        }
+        @media (max-height: 700px) {
+          #features-header-inner { padding: 10px 2rem 8px; }
+          .card-body { font-size: 0.8rem; }
         }
 
         .dash-container {
