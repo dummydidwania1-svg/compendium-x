@@ -991,34 +991,64 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     void startCaptureFlow(preferredRecordingMode)
   }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, resolvedCaseId, startCaptureFlow])
 
-  // Reload guard — intercepts every reload trigger (button, F5, Ctrl+R, address bar).
+  // Reload guard — intercepts reload triggers while recording is active.
   // Two separate sessionStorage keys:
   //   RELOAD_WARN_KEY  — counts warnings shown this recording session (0/1/2, cycles back)
   //   RELOAD_FLAG_KEY  — set just before an actual reload so post-reload overlay fires
   const RELOAD_WARN_KEY = `compendium-reload-warnings-${lobbyId ?? ''}`
   const RELOAD_FLAG_KEY = `compendium-was-reloaded-${lobbyId ?? ''}`
+
+  // keydown fires BEFORE beforeunload — keyboard shortcuts (F5, Ctrl+R, Cmd+R) are
+  // intercepted here so our overlay appears with no browser dialog at all.
+  // When we programmatically call location.reload() after 2 warnings, we mark a
+  // "platform-initiated" flag so the beforeunload handler below lets it through.
+  const RELOAD_PLATFORM_KEY = `compendium-platform-reload-${lobbyId ?? ''}`
+  useEffect(() => {
+    if (recordingState !== 'recording') return
+    const onKeyDown = (event: KeyboardEvent) => {
+      const isReloadKey =
+        event.key === 'F5' ||
+        ((event.ctrlKey || event.metaKey) && event.key === 'r')
+      if (!isReloadKey) return
+      event.preventDefault()
+      const count = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
+      if (count >= 2) {
+        sessionStorage.setItem(RELOAD_FLAG_KEY, '1')
+        sessionStorage.setItem(RELOAD_WARN_KEY, '0')
+        sessionStorage.setItem(RELOAD_PLATFORM_KEY, '1')
+        window.location.reload()
+        return
+      }
+      setWarnBeforeReloadVisible(true)
+      sessionStorage.setItem(RELOAD_WARN_KEY, String(count + 1))
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordingState, RELOAD_WARN_KEY, RELOAD_FLAG_KEY, RELOAD_PLATFORM_KEY])
+
+  // beforeunload catches the browser reload button and address-bar reloads.
+  // event.preventDefault() suppresses Chrome's "Reload site?" dialog so our
+  // overlay (set via setWarnBeforeReloadVisible) is the only prompt shown.
+  // Skips interception when keydown already decided to allow the reload.
   useEffect(() => {
     if (recordingState !== 'recording') return
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (sessionStorage.getItem(RELOAD_PLATFORM_KEY) === '1') return
       const count = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
       if (count >= 2) {
-        // 3rd attempt — let it through. Set the flag so post-reload overlay fires,
-        // reset the counter so warnings restart for the new recording.
         sessionStorage.setItem(RELOAD_FLAG_KEY, '1')
         sessionStorage.setItem(RELOAD_WARN_KEY, '0')
         return
       }
-      // Show our overlay (React flushes sync before browser acts on beforeunload).
       setWarnBeforeReloadVisible(true)
       sessionStorage.setItem(RELOAD_WARN_KEY, String(count + 1))
-      // Prevent the reload — our overlay is the only prompt the user sees.
-      // Suppresses the browser "Reload site?" dialog entirely.
       event.preventDefault()
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordingState, RELOAD_WARN_KEY, RELOAD_FLAG_KEY])
+  }, [recordingState, RELOAD_WARN_KEY, RELOAD_FLAG_KEY, RELOAD_PLATFORM_KEY])
 
   // Poll every 2s to detect if the interviewer popup was closed.
   // The lobby stores the popup reference on window.__compendiumInterviewerWindow
@@ -1616,6 +1646,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 ? "You've tried to reload twice now. If you reload one more time, we'll let it happen and your recording will be gone. Just so you know."
                 : "Reloading stops the mic and wipes everything recorded so far. The session stays open, but the audio starts from scratch."
             }
+            autoDismissMs={isFinalWarning ? 8000 : 6000}
             actionLabel="Stay on page"
             onAction={() => setWarnBeforeReloadVisible(false)}
             onDismiss={() => setWarnBeforeReloadVisible(false)}

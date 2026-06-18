@@ -25,6 +25,7 @@ export interface LobbyOverlayProps {
   actionLabel?: string
   onAction?: () => void
   onDismiss: () => void
+  /** Auto-dismiss delay in ms. Defaults to 3500 for 'info'; other types don't auto-dismiss unless this is set. */
   autoDismissMs?: number
 }
 
@@ -36,8 +37,9 @@ export function LobbyOverlay({
   actionLabel,
   onAction,
   onDismiss,
-  autoDismissMs = 3500,
+  autoDismissMs: autoDismissMsProp,
 }: LobbyOverlayProps) {
+  const autoDismissMs = autoDismissMsProp ?? (type === 'info' ? 3500 : undefined)
   const [visible, setVisible] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [topOffset, setTopOffset] = useState(82)
@@ -76,12 +78,12 @@ export function LobbyOverlay({
     return () => clearTimeout(t)
   }, [])
 
-  // Auto-dismiss for info type
+  // Auto-dismiss — fires for any type when autoDismissMs is set
   useEffect(() => {
-    if (type !== 'info') return
+    if (!autoDismissMs) return
     timerRef.current = setTimeout(dismiss, autoDismissMs)
     return () => { timerRef.current && clearTimeout(timerRef.current) }
-  }, [type, autoDismissMs, dismiss])
+  }, [autoDismissMs, dismiss])
 
   const needsScrim = type === 'action' || type === 'warning' || type === 'error'
 
@@ -98,7 +100,9 @@ export function LobbyOverlay({
                          'rgba(127,29,29,0.22)'
 
   const progressColor =
-    type === 'info' ? 'rgba(61,90,53,0.35)' : 'transparent'
+    type === 'warning' ? 'rgba(146,64,14,0.35)' :
+    type === 'error'   ? 'rgba(127,29,29,0.35)' :
+                         'rgba(61,90,53,0.35)'
 
   return (
     <>
@@ -253,8 +257,8 @@ export function LobbyOverlay({
           ) : null}
         </div>
 
-        {/* Auto-dismiss progress bar (info only) */}
-        {type === 'info' && (
+        {/* Auto-dismiss progress bar */}
+        {!!autoDismissMs && (
           <div
             style={{
               height: '2px',
