@@ -973,9 +973,14 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     if (microphonePermissionState === 'denied') return
 
     autoStartAttemptedRef.current = true
-    // If the session was already in progress when we mounted, this is a
-    // page refresh mid-interview — the previous recording is gone.
-    if (sessionWasInProgressRef.current) {
+    // Show the "recording restarted" overlay if either:
+    // - onSnapshot already told us the session was in_progress before we started
+    //   (sessionWasInProgressRef, set only after auto-start ran once), or
+    // - the dedicated reload flag was set in beforeunload before the page reloaded.
+    const RELOAD_FLAG = `compendium-was-reloaded-${lobbyId ?? ''}`
+    const wasReloaded = sessionStorage.getItem(RELOAD_FLAG) === '1'
+    if (sessionWasInProgressRef.current || wasReloaded) {
+      sessionStorage.removeItem(RELOAD_FLAG)
       setRefreshInterruptedVisible(true)
     }
     setRecordingNote(
@@ -986,32 +991,34 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     void startCaptureFlow(preferredRecordingMode)
   }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, resolvedCaseId, startCaptureFlow])
 
-  // Unified reload guard for all reload triggers (button, F5, Ctrl+R, address bar).
-  // beforeunload fires for every method, so we use it as the single intercept.
-  // We show our overlay immediately (React flushes sync before the browser dialog)
-  // then let the browser dialog take over. After 2 warnings the guard lifts so
-  // the user can reload freely on the 3rd attempt.
+  // Reload guard — intercepts every reload trigger (button, F5, Ctrl+R, address bar).
+  // Two separate sessionStorage keys:
+  //   RELOAD_WARN_KEY  — counts warnings shown this recording session (0/1/2, cycles back)
+  //   RELOAD_FLAG_KEY  — set just before an actual reload so post-reload overlay fires
   const RELOAD_WARN_KEY = `compendium-reload-warnings-${lobbyId ?? ''}`
+  const RELOAD_FLAG_KEY = `compendium-was-reloaded-${lobbyId ?? ''}`
   useEffect(() => {
-    if (!activeBeforeUnloadState(recordingState)) return
+    if (recordingState !== 'recording') return
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       const count = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
       if (count >= 2) {
-        // Third+ attempt: let it through without blocking.
-        sessionStorage.removeItem(RELOAD_WARN_KEY)
+        // 3rd attempt — let it through. Set the flag so post-reload overlay fires,
+        // reset the counter so warnings restart for the new recording.
+        sessionStorage.setItem(RELOAD_FLAG_KEY, '1')
+        sessionStorage.setItem(RELOAD_WARN_KEY, '0')
         return
       }
-      sessionStorage.setItem(RELOAD_WARN_KEY, String(count + 1))
-      // Show our overlay — React flushes this synchronously before the browser
-      // dialog appears, so the user sees our warning first.
+      // Show our overlay (React flushes sync before browser acts on beforeunload).
       setWarnBeforeReloadVisible(true)
+      sessionStorage.setItem(RELOAD_WARN_KEY, String(count + 1))
+      // Prevent the reload — our overlay is the only prompt the user sees.
+      // Suppresses the browser "Reload site?" dialog entirely.
       event.preventDefault()
-      event.returnValue = ''
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordingState, RELOAD_WARN_KEY])
+  }, [recordingState, RELOAD_WARN_KEY, RELOAD_FLAG_KEY])
 
   // Poll every 2s to detect if the interviewer popup was closed.
   // The lobby stores the popup reference on window.__compendiumInterviewerWindow
@@ -1635,32 +1642,22 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {refreshInterruptedVisible ? (() => {
-        const pastCount = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
-        // Clear the counter now that we've used it — next session starts clean.
-        sessionStorage.removeItem(RELOAD_WARN_KEY)
-        const wasRepeated = pastCount >= 2
-        return (
-          <LobbyOverlay
-            key="refresh-interrupted"
-            type="info"
-            icon={
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="1 4 1 10 7 10" />
-                <path d="M3.51 15a9 9 0 1 0 .49-3.87" />
-              </svg>
-            }
-            title="Recording restarted"
-            body={
-              wasRepeated
-                ? "Alright, you did it. The previous audio is gone, but we've started a fresh recording right now."
-                : "Looks like you refreshed mid-session. The previous audio is gone, but recording has started fresh from now."
-            }
-            autoDismissMs={6000}
-            onDismiss={() => setRefreshInterruptedVisible(false)}
-          />
-        )
-      })() : null}
+      {refreshInterruptedVisible ? (
+        <LobbyOverlay
+          key="refresh-interrupted"
+          type="info"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 .49-3.87" />
+            </svg>
+          }
+          title="Fresh recording started"
+          body="The page reloaded mid-session, so the previous audio is gone. A new recording has started from right now."
+          autoDismissMs={6000}
+          onDismiss={() => setRefreshInterruptedVisible(false)}
+        />
+      ) : null}
 
       {sessionCompleteOverlayVisible ? (
         <LobbyOverlay

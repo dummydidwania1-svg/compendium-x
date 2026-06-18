@@ -1227,8 +1227,6 @@ function InterviewerLobby({
 
         </div>
       </main>
-
-      <CompactPlatformFooter />
     </div>
   )
 }

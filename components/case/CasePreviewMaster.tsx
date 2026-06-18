@@ -4342,9 +4342,7 @@ export function CaseInterviewerMaster({
 
       <MobileDrilldownOverlay />
 
-      <Navbar currentPage="repository" />
-
-      <div className="pt-[70px]">
+      <div className="pt-4">
         {/* Outer flex: main content + right notes panel */}
         <div className="relative mx-auto flex max-w-[1760px] items-start px-4 lg:px-6">
 
@@ -4788,7 +4786,6 @@ export function CaseInterviewerMaster({
           </aside>
 
         </div>
-        <CompactFooter />
       </div>
     </div>
   )
