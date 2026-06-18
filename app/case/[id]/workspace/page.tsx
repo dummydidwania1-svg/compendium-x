@@ -18,7 +18,7 @@ import {
 } from '@/lib/permissions/displayMedia'
 
 type SessionState = {
-  status?: 'waiting' | 'in_progress' | 'completed'
+  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned'
   caseId?: string
   caseName?: string
   completedBy?: string
@@ -202,8 +202,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // ── Upload-fail overlay (replaces completion-pending inline block) ───────────
   const [uploadFailOverlayVisible, setUploadFailOverlayVisible] = useState(false)
   const uploadFailReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // ── Leave-confirm overlay (shown when candidate tries to leave with failed upload) ──
+  // ── Leave-confirm overlay (shown on back-button / nav-away while recording or uploading) ──
   const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false)
+  const [leavingInProgress, setLeavingInProgress] = useState(false)
+  const ACTIVE_SESSION_KEY = 'compendium-active-session'
   // ── Recoverable capture error overlay ──────────────────────────────────────
   const [captureErrorOverlayVisible, setCaptureErrorOverlayVisible] = useState(false)
   const captureErrorReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -1050,6 +1052,45 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordingState, RELOAD_WARN_KEY, RELOAD_FLAG_KEY, RELOAD_PLATFORM_KEY])
 
+  // Back-button / forward-button guard.
+  // Pushes a dummy history entry when recording is active so that pressing
+  // the browser back button fires `popstate` instead of navigating away.
+  // On popstate we re-push the dummy entry (keeping the user on this page)
+  // and show the leave-confirm overlay. When the user chooses "Leave anyway"
+  // we pop the dummy entry ourselves, then navigate to the dashboard.
+  const leaveConfirmFromPopstateRef = useRef(false)
+  useEffect(() => {
+    const isActive = recordingState === 'recording' || recordingState === 'uploading'
+    if (!isActive) return
+    history.pushState(null, '', window.location.href)
+    const onPopState = () => {
+      history.pushState(null, '', window.location.href)
+      leaveConfirmFromPopstateRef.current = true
+      setLeaveConfirmVisible(true)
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [recordingState])
+
+  // Track active session in localStorage so the practice page can surface a
+  // rejoin prompt if the candidate accidentally navigates back there.
+  // Written when recording starts, cleared when session is safely finished.
+  useEffect(() => {
+    if (!lobbyId || !resolvedCaseId) return
+    if (recordingState === 'recording') {
+      try {
+        localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify({
+          lobbyId,
+          caseId: resolvedCaseId,
+          caseName,
+          startedAtMs: recordingStartMsRef.current ?? Date.now(),
+        }))
+      } catch { }
+    } else if (recordingState === 'uploaded' || feedbackSubmitted) {
+      try { localStorage.removeItem(ACTIVE_SESSION_KEY) } catch { }
+    }
+  }, [recordingState, feedbackSubmitted, lobbyId, resolvedCaseId, caseName])
+
   // Poll every 2s to detect if the interviewer popup was closed.
   // The lobby stores the popup reference on window.__compendiumInterviewerWindow
   // before router.replace fires. Since Next.js client-side navigation does NOT
@@ -1665,11 +1706,40 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           }
-          title="Leave without uploading?"
-          body="Your recording hasn't saved yet. If you leave now, the audio is gone for good and there won't be any AI feedback."
-          actionLabel="Leave anyway"
-          onAction={() => router.replace('/dashboard')}
-          onDismiss={() => setLeaveConfirmVisible(false)}
+          title={recordingState === 'uploading' ? "Almost done saving..." : "Leave now? Recording will be lost."}
+          body={
+            recordingState === 'uploading'
+              ? "Your recording is uploading right now. Leaving may cut it off. Wait a few seconds and it will save automatically."
+              : "If you leave, the mic stops and everything recorded so far is gone. The interviewer can still submit their notes without the audio."
+          }
+          autoDismissMs={12000}
+          actionLabel={leavingInProgress ? "Leaving..." : "Leave anyway"}
+          onAction={async () => {
+            if (leavingInProgress) return
+            setLeavingInProgress(true)
+            const wasRecording = recordingState === 'recording' || recordingState === 'stopping'
+            try {
+              if (recordingState === 'recording') {
+                await stopRecordingAndFinalize('user_navigated_away', false)
+              }
+              if (lobbyId && (wasRecording || recordingState === 'uploading')) {
+                // Signal the interviewer window that the candidate left.
+                try {
+                  localStorage.setItem('compendium-candidate-abandoned', JSON.stringify({ lobbyId, ts: Date.now() }))
+                } catch { }
+                try { await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {}) } catch { }
+              }
+              try { localStorage.removeItem(ACTIVE_SESSION_KEY) } catch { }
+            } finally {
+              leaveConfirmFromPopstateRef.current = false
+              router.replace('/dashboard')
+            }
+          }}
+          onDismiss={() => {
+            setLeaveConfirmVisible(false)
+            setLeavingInProgress(false)
+            leaveConfirmFromPopstateRef.current = false
+          }}
         />
       ) : null}
 

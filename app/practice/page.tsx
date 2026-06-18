@@ -23,6 +23,12 @@ export default function PracticeModeSelection() {
   // opening the interviewer popup. Shows a transient "Setting up..." state
   // on the local card so the user knows their click registered.
   const [localPreparing, setLocalPreparing] = useState(false)
+  // Detected when user navigated back from an active session in workspace.
+  const [activeSession, setActiveSession] = useState<{
+    lobbyId: string
+    caseId: string
+    caseName?: string
+  } | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -37,6 +43,22 @@ export default function PracticeModeSelection() {
     }
     checkUser()
   }, [router])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('compendium-active-session')
+      if (!raw) return
+      const session = JSON.parse(raw) as { lobbyId?: string; caseId?: string; caseName?: string; startedAtMs?: number }
+      if (!session.lobbyId || !session.caseId) return
+      const ageMs = Date.now() - (session.startedAtMs ?? 0)
+      if (ageMs > 2 * 60 * 60 * 1000) {
+        // Session is older than 2 hours — stale, clean up
+        localStorage.removeItem('compendium-active-session')
+        return
+      }
+      setActiveSession({ lobbyId: session.lobbyId, caseId: session.caseId, caseName: session.caseName })
+    } catch { }
+  }, [])
 
   const startRemoteSession = () => {
     const lobbyId = Math.random().toString(36).substring(7)
@@ -232,6 +254,31 @@ export default function PracticeModeSelection() {
       `}</style>
 
       <Navbar currentPage="practice" />
+
+      {activeSession ? (
+        <LobbyOverlay
+          type="action"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 .49-3.87" />
+            </svg>
+          }
+          title="You have a session in progress"
+          body={activeSession.caseName
+            ? `Recording is active for "${activeSession.caseName}". Rejoin to continue.`
+            : "A recording session is still active. Rejoin to continue."}
+          actionLabel="Rejoin session"
+          onAction={() => {
+            setActiveSession(null)
+            router.push(`/case/${activeSession.caseId}/workspace?lobby=${encodeURIComponent(activeSession.lobbyId)}`)
+          }}
+          onDismiss={() => {
+            try { localStorage.removeItem('compendium-active-session') } catch { }
+            setActiveSession(null)
+          }}
+        />
+      ) : null}
 
       {micBlocked ? (
         <LobbyOverlay
