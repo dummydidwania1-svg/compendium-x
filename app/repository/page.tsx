@@ -843,7 +843,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
           }}
         >
           <div className="mx-auto flex h-[74px] max-w-screen-2xl items-center justify-between px-4 md:px-12">
-            <Link href="/" className="flex items-center gap-1 text-left transition-opacity hover:opacity-85">
+            <div className="flex items-center gap-1">
               <Image
                 src="/logo.png"
                 alt="Case Compendium X"
@@ -855,7 +855,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
                 <span className="text-[#453a2a]">Case Compendium</span>
                 <span className="text-[#3D5A35]">X</span>
               </div>
-            </Link>
+            </div>
           </div>
         </div>
       ) : (
@@ -1067,78 +1067,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
         <div className="relative z-10">
           <Footer currentPage="repository" />
         </div>
-      ) : (
-        <footer style={{ background: '#453a2a' }} className="mt-auto w-full px-6 py-6 md:px-10 md:py-7">
-          <div className="mx-auto max-w-screen-2xl">
-            <div className="mb-5 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center md:gap-10">
-              <div>
-                <Link href="/" style={{ fontFamily: "'Newsreader', serif" }} className="mb-2 inline-block text-2xl font-semibold tracking-tight transition-opacity hover:opacity-85">
-                  <span style={{ color: '#d5c4b1' }}>Case Compendium</span>
-                  <span style={{ color: '#aed0a1' }}>X</span>
-                </Link>
-                <p
-                  style={{
-                    fontFamily: "'Work Sans', sans-serif",
-                    color: 'rgba(213,196,177,0.5)',
-                    maxWidth: '280px',
-                    lineHeight: 1.6,
-                  }}
-                  className="text-xs"
-                >
-                  AI-powered case practice and performance analytics for consulting interviews.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-x-10 gap-y-3 md:gap-x-12">
-                <Link
-                  href="/"
-                  style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }}
-                  className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all"
-                >
-                  Home
-                </Link>
-                <Link
-                  href="/about"
-                  style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }}
-                  className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all"
-                >
-                  About Us
-                </Link>
-                <Link
-                  href="/privacy-policy"
-                  style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }}
-                  className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all"
-                >
-                  Privacy Policy
-                </Link>
-                <a
-                  href="mailto:contact@casecompendiumx.in?subject=Compendium%20X%20Privacy%20Request"
-                  style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }}
-                  className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all"
-                >
-                  Contact Us
-                </a>
-              </div>
-            </div>
-            <div style={{ borderTop: '1px solid rgba(213,196,177,0.12)', paddingTop: '12px' }} className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
-              <div className="flex items-center gap-5">
-                <a href="https://www.linkedin.com/company/casecompendiumx" target="_blank" rel="noreferrer" style={{ color: 'rgba(213,196,177,0.7)' }} className="hover:text-white transition-all" title="LinkedIn">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
-                  </svg>
-                </a>
-                <a href="mailto:contact@casecompendiumx.in" style={{ color: 'rgba(213,196,177,0.7)' }} className="hover:text-white transition-all" title="Email Us">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                  </svg>
-                </a>
-              </div>
-              <p style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.35)', lineHeight: 1.8 }} className="text-[10px] tracking-[0.2em] uppercase">
-                &copy; 2026 Case CompendiumX. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </footer>
-      )}
+      ) : null}
     </div>
   )
 }

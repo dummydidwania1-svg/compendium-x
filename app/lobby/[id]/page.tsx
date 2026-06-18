@@ -1082,11 +1082,7 @@ function InterviewerLobby({
         }}
       >
         <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 md:px-12">
-          <button
-            type="button"
-            onClick={() => router.push('/')}
-            className="flex items-center gap-1 bg-transparent p-0 text-left"
-          >
+          <div className="flex items-center gap-1">
             <Image
               src="/logo.png"
               alt="Case Compendium X"
@@ -1098,7 +1094,7 @@ function InterviewerLobby({
               <span className="text-[#453a2a]">Case Compendium</span>
               <span className="text-[#3D5A35]">X</span>
             </div>
-          </button>
+          </div>
         </div>
       </header>
 

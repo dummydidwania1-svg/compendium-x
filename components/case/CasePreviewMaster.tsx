@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, ReactNode, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
@@ -4342,7 +4343,28 @@ export function CaseInterviewerMaster({
 
       <MobileDrilldownOverlay />
 
-      <div className="pt-4">
+      <header
+        className="fixed top-0 z-[100] w-full"
+        style={{
+          height: '70px',
+          background: 'rgba(255,248,240,0.9)',
+          backdropFilter: 'blur(28px) saturate(1.5)',
+          WebkitBackdropFilter: 'blur(28px) saturate(1.5)',
+          borderBottom: '1px solid rgba(92,64,51,0.06)',
+        }}
+      >
+        <div className="mx-auto flex h-full max-w-screen-2xl items-center px-4 md:px-12">
+          <div className="flex items-center gap-1">
+            <Image src="/logo.png" alt="Case Compendium X" width={56} height={56} className="h-14 w-14 object-contain" />
+            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
+              <span className="text-[#453a2a]">Case Compendium</span>
+              <span className="text-[#3D5A35]">X</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="pt-[74px]">
         {/* Outer flex: main content + right notes panel */}
         <div className="relative mx-auto flex max-w-[1760px] items-start px-4 lg:px-6">
 
