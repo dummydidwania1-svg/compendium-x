@@ -260,6 +260,17 @@ const clearAllFilters = () => {
 
   useEffect(() => {
     if (!selectionMode || !lobbyId) return
+    const checkSignal = () => {
+      try {
+        const raw = localStorage.getItem('compendium-candidate-abandoned')
+        if (!raw) return false
+        const data = JSON.parse(raw) as { lobbyId?: string; ts?: number }
+        if (data?.lobbyId !== lobbyId) return false
+        if (data.ts && Date.now() - data.ts > 30_000) return false
+        return true
+      } catch { return false }
+    }
+    if (checkSignal()) setCandidateAbandonedVisible(true)
     const onStorage = (event: StorageEvent) => {
       if (event.key !== 'compendium-candidate-abandoned') return
       try {

@@ -776,10 +776,22 @@ export function InterviewerPageInner({
 	}, [lobbyId, previewMode])
 
 	// Detect when the candidate abandons their workspace mid-session.
-	// The candidate workspace writes compendium-candidate-abandoned to localStorage
-	// when the user confirms "Leave anyway" while recording is active.
+	// Checks on mount (in case signal was already written before this screen loaded)
+	// and listens for live storage events from the candidate workspace.
 	useEffect(() => {
 		if (!lobbyId || previewMode) return
+		const checkSignal = () => {
+			try {
+				const raw = localStorage.getItem('compendium-candidate-abandoned')
+				if (!raw) return false
+				const data = JSON.parse(raw) as { lobbyId?: string; ts?: number }
+				if (data?.lobbyId !== lobbyId) return false
+				// Only act on signals written within the last 30s — stale signals are ignored.
+				if (data.ts && Date.now() - data.ts > 30_000) return false
+				return true
+			} catch { return false }
+		}
+		if (checkSignal()) setCandidateAbandonedVisible(true)
 		const onStorage = (event: StorageEvent) => {
 			if (event.key !== 'compendium-candidate-abandoned') return
 			try {

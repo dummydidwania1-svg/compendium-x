@@ -280,6 +280,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // case load that sees in_progress on its first snapshot doesn't trigger it.
   const sessionWasInProgressRef = useRef(false)
   const [warnBeforeReloadVisible, setWarnBeforeReloadVisible] = useState(false)
+  const [warnBeforeCloseVisible, setWarnBeforeCloseVisible] = useState(false)
   // Set to true by keydown/reload-button handlers so beforeunload can tell the
   // difference between a reload and a tab-close. Only reloads show the reload overlay.
   const isReloadIntentRef = useRef(false)
@@ -1037,25 +1038,29 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [recordingState, RELOAD_WARN_KEY, RELOAD_FLAG_KEY, RELOAD_PLATFORM_KEY])
 
   // beforeunload fires for reload button AND tab-close AND address-bar navigation.
-  // We distinguish reload from close via isReloadIntentRef (set by keydown above)
-  // and a mousedown listener on the reload button area.
-  // For tab-close: we write the candidate-abandoned signal so the interviewer
-  // popup gets notified immediately, even without our overlay.
+  // We distinguish reload from close via isReloadIntentRef (set by keydown above).
+  // Both paths call event.preventDefault() so the browser shows "Leave site?" —
+  // if the user clicks Stay, our overlay renders on the next tick.
+  // pagehide is registered separately as a reliable final signal for the interviewer.
   useEffect(() => {
     if (recordingState !== 'recording') return
 
-    // Mousedown on the browser toolbar area (reload button) sets the reload flag.
-    // This fires before beforeunload so we can distinguish reload from close.
-    const onMouseDown = () => { isReloadIntentRef.current = true; setTimeout(() => { isReloadIntentRef.current = false }, 2000) }
-    // We can't target the reload button specifically — instead we set the flag on
-    // any mousedown outside the page content, which is a close approximation.
-    // The flag resets after 2s so stale clicks don't affect future unloads.
+    const writeAbandonedSignal = () => {
+      if (!lobbyId) return
+      try {
+        localStorage.setItem('compendium-candidate-abandoned', JSON.stringify({ lobbyId, ts: Date.now() }))
+      } catch { }
+    }
 
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       if (sessionStorage.getItem(RELOAD_PLATFORM_KEY) === '1') return
 
+      // Write the signal immediately — if user cancels the dialog, the signal
+      // is stale but the interviewer overlay auto-dismisses so that's fine.
+      writeAbandonedSignal()
+
       if (isReloadIntentRef.current) {
-        // Reload path
+        // Reload path — show our reload-specific overlay after user clicks Stay.
         const count = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
         if (count >= 2) {
           sessionStorage.setItem(RELOAD_FLAG_KEY, '1')
@@ -1067,20 +1072,22 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         event.preventDefault()
         isReloadIntentRef.current = false
       } else {
-        // Tab-close / address-bar navigation — write the abandoned signal immediately
-        // so the interviewer popup detects it before the page tears down.
-        if (lobbyId) {
-          try {
-            localStorage.setItem('compendium-candidate-abandoned', JSON.stringify({ lobbyId, ts: Date.now() }))
-          } catch { }
-        }
-        // Allow the close — we can't prevent tab close without showing our overlay first
-        // (browser dialog fires before React can paint). Let the browser handle it.
+        // Tab-close / Cmd+W / address-bar — show close-specific overlay after Stay.
+        setWarnBeforeCloseVisible(true)
+        event.preventDefault()
       }
     }
+
+    // pagehide fires more reliably than beforeunload when the tab is actually
+    // closing (Chrome may defer/drop beforeunload writes on real close).
+    // We use it as a belt-and-suspenders signal for the interviewer popup.
+    const onPageHide = () => { writeAbandonedSignal() }
+
     window.addEventListener('beforeunload', onBeforeUnload)
+    window.addEventListener('pagehide', onPageHide)
     return () => {
       window.removeEventListener('beforeunload', onBeforeUnload)
+      window.removeEventListener('pagehide', onPageHide)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordingState, lobbyId, RELOAD_WARN_KEY, RELOAD_FLAG_KEY, RELOAD_PLATFORM_KEY])
@@ -1389,7 +1396,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     recordingState === 'starting'
       ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
       : recordingState === 'recording'
-        ? 'Keep this tab open. Using the back button saves your audio so far. Closing this tab loses it.'
+        ? 'Closing or reloading this tab will lose your recording. Keep it open until the session ends.'
         : recordingState === 'stopping'
           ? 'Saving your recording before you leave this page.'
           : recordingState === 'uploading'
@@ -1727,6 +1734,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           />
         )
       })() : null}
+
+      {warnBeforeCloseVisible ? (
+        <LobbyOverlay
+          key="warn-before-close"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          }
+          title="Closing will lose your recording"
+          body="You tried to close this tab. If you close it, the mic stops and the audio recorded so far is gone permanently."
+          autoDismissMs={8000}
+          actionLabel="Stay on page"
+          onAction={() => setWarnBeforeCloseVisible(false)}
+          onDismiss={() => setWarnBeforeCloseVisible(false)}
+        />
+      ) : null}
 
       {leaveConfirmVisible ? (
         <LobbyOverlay
