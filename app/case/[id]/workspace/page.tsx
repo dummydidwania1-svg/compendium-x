@@ -1315,7 +1315,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     recordingState === 'starting'
       ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
       : recordingState === 'recording'
-        ? 'Keep this tab open while the session runs.'
+        ? 'Keep this tab open while the session runs. Reloading this page will lose the recording.'
         : recordingState === 'stopping'
           ? 'Saving your recording before you leave this page.'
           : recordingState === 'uploading'
@@ -1640,11 +1640,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             }
-            title={isFinalWarning ? "Last chance before we let you go" : "Your recording will be lost"}
+            title={isFinalWarning ? "One more reload and we let you go" : "Heads up: reloading will lose your recording"}
             body={
               isFinalWarning
-                ? "You've tried to reload twice now. If you reload one more time, we'll let it happen and your recording will be gone. Just so you know."
-                : "Reloading stops the mic and wipes everything recorded so far. The session stays open, but the audio starts from scratch."
+                ? "You have tried to reload twice now. The next reload will go through and your recording will be gone. Stay on the page to keep it."
+                : "Reloading stops the mic and wipes everything captured so far. A new recording will start fresh. Stay on the page to keep what you have."
             }
             autoDismissMs={isFinalWarning ? 8000 : 6000}
             actionLabel="Stay on page"
