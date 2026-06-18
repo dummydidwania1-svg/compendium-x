@@ -640,8 +640,10 @@ export function InterviewerPageInner({
 
 	const companyLabel = useMemo(() => {
 		const explicit = caseData?.company?.trim()
-		if (explicit) return explicit
-		return 'Client Not Specified'
+		if (!explicit) return 'Client Not Specified'
+		if (/^(by (the )?)?author(s)?$/i.test(explicit)) return 'By the Authors'
+		if (/^accenture( strategy)?$/i.test(explicit)) return 'Accenture Strategy'
+		return explicit
 	}, [caseData?.company])
 	const roundLabel = useMemo(() => {
 		const explicit = caseData?.round?.trim()
@@ -782,6 +784,14 @@ useEffect(() => {
   router.replace(`/case/${slug}`)
 }, [forcePreview, previewMode, caseData, router])
 
+useEffect(() => {
+  if (loading || loadError || caseData) return
+  const repoUrl = lobbyId
+    ? `/repository?mode=select&lobby=${lobbyId}&sessionMode=${searchParams.get('sessionMode') ?? 'local'}&caseError=not_found`
+    : `/repository?caseError=not_found`
+  router.replace(repoUrl)
+}, [loading, loadError, caseData, lobbyId, searchParams, router])
+
 	const handleSubmitFeedback = async () => {
 		if (!resolvedCaseId || !caseData) return
 		if (Object.values(scores).some((value) => value < 1)) {
@@ -866,11 +876,6 @@ useEffect(() => {
 	}
 
 	if (!caseData) {
-		// Redirect to repo with a flag so it can show a friendly overlay.
-		const repoUrl = lobbyId
-			? `/repository?mode=select&lobby=${lobbyId}&sessionMode=${searchParams.get('sessionMode') ?? 'local'}&caseError=not_found`
-			: `/repository?caseError=not_found`
-		if (typeof window !== 'undefined') router.replace(repoUrl)
 		return <PlatformLoader message="Heading back to the library" />
 	}
 

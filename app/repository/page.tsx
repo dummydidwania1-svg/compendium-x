@@ -18,6 +18,20 @@ import CursorGlow from '@/components/CursorGlow'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 
 
+function normalizeCaseType(raw: string | null): string | null {
+  if (!raw) return null
+  if (/^(market growth|growth)$/i.test(raw.trim())) return 'Growth'
+  return raw
+}
+
+function normalizeCompany(raw: string | null): string | null {
+  if (!raw) return null
+  const t = raw.trim()
+  if (/^accenture( strategy)?$/i.test(t)) return 'Accenture Strategy'
+  if (/^(by (the )?)?author(s)?$/i.test(t)) return 'By the Authors'
+  return t
+}
+
 const CASES_CACHE_KEY = 'compendium_cases_v2'
 // Bump when the cached shape (CaseListItem) changes — old envelopes get
 // rejected automatically so users don't render stale, type-mismatched data.
@@ -172,7 +186,6 @@ function RepositoryContent() {
   const [levelFilter, setLevelFilter] = useState<string[]>([])
   const [industryFilter, setIndustryFilter] = useState<string[]>([])
 const [companyFilter, setCompanyFilter] = useState<string[]>([])
-const [roundFilter, setRoundFilter] = useState<string[]>([])
   const [actionError, setActionError] = useState('')
   const [failedCase, setFailedCase] = useState<{ id: string; title: string } | null>(null)
   // When selection fails because a case is already in_progress, store the
@@ -206,11 +219,10 @@ const [roundFilter, setRoundFilter] = useState<string[]>([])
 
 const hasActiveFilters =
   typeFilter.length > 0 || levelFilter.length > 0 ||
-  industryFilter.length > 0 || companyFilter.length > 0 ||
-  roundFilter.length > 0
+  industryFilter.length > 0 || companyFilter.length > 0
 const hasQuery = filter.trim().length > 0
 const clearAllFilters = () => {
-  setTypeFilter([]); setLevelFilter([]); setIndustryFilter([]); setCompanyFilter([]); setRoundFilter([])
+  setTypeFilter([]); setLevelFilter([]); setIndustryFilter([]); setCompanyFilter([])
 }
 
   // Show case-load-error overlay when redirected back from a failed interviewer panel.
@@ -289,14 +301,15 @@ const clearAllFilters = () => {
             numericId: typeof value.id === 'number' ? value.id : undefined,
             title: typeof value.title === 'string' ? value.title : 'Untitled Case',
             industry: typeof value.industry === 'string' ? value.industry : null,
-            case_type:
+            case_type: normalizeCaseType(
               typeof value.case_type === 'string'
                 ? value.case_type
                 : typeof value.caseType === 'string'
                   ? value.caseType
-                  : null,
+                  : null
+            ),
             difficulty: typeof value.difficulty === 'string' ? value.difficulty : null,
-            company: typeof value.company === 'string' ? value.company : null,
+            company: normalizeCompany(typeof value.company === 'string' ? value.company : null),
                         round: typeof value.round === 'string' ? value.round : null,
 slug:
   typeof value.slug === 'string' && value.slug
@@ -313,6 +326,9 @@ subtype:
         })
 
         data.sort((a, b) => {
+          const da = DIFFICULTY_RANK[(a.difficulty ?? '').toLowerCase()] ?? 99
+          const db = DIFFICULTY_RANK[(b.difficulty ?? '').toLowerCase()] ?? 99
+          if (da !== db) return da - db
           if (typeof a.numericId === 'number' && typeof b.numericId === 'number') {
             return a.numericId - b.numericId
           }
@@ -345,7 +361,7 @@ subtype:
   // Preferred display order; anything not listed still gets its own real
 // section (sorted after), so no case is ever dumped into "Other".
 const PREFERRED_TYPE_ORDER = [
-  'Profitability', 'Market Entry', 'Market Growth', 'Growth',
+  'Profitability', 'Market Entry', 'Growth',
   'Pricing', 'Unconventional', 'Guesstimate',
 ]
 
@@ -371,10 +387,6 @@ const companyOptions = useMemo(
   [cases],
 )
 
-const roundOptions = useMemo(
-  () => Array.from(new Set(cases.map((c) => c.round).filter(Boolean) as string[])).sort(),
-  [cases],
-)
 
 // Large, data-driven pool of example searches spanning every filter dimension.
 const searchDemos = useMemo(() => {
@@ -382,7 +394,6 @@ const searchDemos = useMemo(() => {
   const companies = companyOptions
   const industries = industryOptions
   const types = typeOptions
-  const rounds = roundOptions
   const levels = FILTER_LEVELS
   const subtypes = Array.from(
     new Set(cases.map((c) => c.subtype).filter(Boolean) as string[]),
@@ -395,7 +406,7 @@ const searchDemos = useMemo(() => {
   }
 
   // singles
-  ;[...companies, ...industries, ...types, ...levels, ...rounds, ...subtypes].forEach((v) => add(v))
+  ;[...companies, ...industries, ...types, ...levels, ...subtypes].forEach((v) => add(v))
 
   // pairs across dimensions
   companies.forEach((c) => levels.forEach((l) => add(c, l)))
@@ -405,14 +416,13 @@ const searchDemos = useMemo(() => {
   industries.forEach((i) => levels.forEach((l) => add(i, l)))
   industries.forEach((i) => subtypes.forEach((s) => add(i, s)))
   types.forEach((t) => levels.forEach((l) => add(t, l)))
-  types.forEach((t) => rounds.forEach((r) => add(t, r)))
   subtypes.forEach((s) => levels.forEach((l) => add(s, l)))
 
   // a few triples for extra variety
   industries.forEach((i) => types.forEach((t) => levels.forEach((l) => add(i, t, l))))
 
   return Array.from(out)
-}, [cases, companyOptions, industryOptions, typeOptions, roundOptions])
+}, [cases, companyOptions, industryOptions, typeOptions])
 
 // Fisher–Yates shuffle, fresh per mount → different users see different orders.
 const shuffledDemos = useMemo(() => {
@@ -447,11 +457,10 @@ return (
   eq(caseItem.case_type, typeFilter) &&
   eq(caseItem.difficulty, levelFilter) &&
   eq(caseItem.industry, industryFilter) &&
-  eq(caseItem.company, companyFilter) &&
-  eq(caseItem.round, roundFilter)
+  eq(caseItem.company, companyFilter)
 )
   })
-}, [cases, filter, typeFilter, levelFilter, industryFilter, companyFilter, roundFilter])
+}, [cases, filter, typeFilter, levelFilter, industryFilter, companyFilter])
 
 
 // Book-style lettered sections — only when browsing (no search/filter active).
@@ -563,13 +572,11 @@ const CaseRow = ({ caseItem, index }: { caseItem: CaseListItem; index: number })
     className={`repo-table-row repo-rise ${ROW_GRID} px-2 sm:px-4 ${pendingCaseId === caseItem.id ? 'opacity-50' : ''}`}
   >
     <div className="px-2 py-4 text-[11px] tabular-nums text-[#5C4033]/35">
-      {caseItem.numericId ?? caseItem.id.slice(0, 4)}
+      {index + 1}
     </div>
     <div className="px-2 py-4 pr-4">
-      <div className="repo-title flex flex-col gap-0.5">
-<span className="text-[13px] font-medium leading-snug tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>        {caseItem.subtype ? (
-          <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#3D5A35]/75">{caseItem.subtype}</span>
-        ) : null}
+      <div className="repo-title">
+        <span className="text-[13px] font-medium leading-snug tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
       </div>
     </div>
     <div className="px-2 py-4 text-[12px] text-[#5C4033]/65">
@@ -608,15 +615,12 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
   >
     <div className="flex items-start justify-between gap-3">
       <div className="flex items-baseline gap-2">
-        <span className="text-[11px] tabular-nums text-[#5C4033]/35">{caseItem.numericId ?? caseItem.id.slice(0, 4)}</span>
+        <span className="text-[11px] tabular-nums text-[#5C4033]/35">{index + 1}</span>
 <span className="text-[13px] font-medium tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
       </div>
       <DifficultyDots level={caseItem.difficulty} />
     </div>
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#5C4033]/65">
-      {caseItem.subtype ? (
-        <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#3D5A35]/80">{caseItem.subtype}</span>
-      ) : null}
       {!OPEN_ENDED(caseItem.case_type) && caseItem.industry ? <span>{caseItem.industry}</span> : null}
       {caseItem.company ? <span>· {caseItem.company}</span> : null}
     </div>
@@ -943,11 +947,10 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
 
 {/* Filters */}
 <div className="mt-4 flex flex-wrap items-center gap-1">
-  <RepoFilterDropdown label="Type" options={typeOptions} selected={typeFilter} onChange={setTypeFilter} align="left" />
+  <RepoFilterDropdown label="Type" options={typeOptions} selected={typeFilter} onChange={setTypeFilter} align="left" columns={1} width={190} />
   <RepoFilterDropdown label="Industry" options={industryOptions} selected={industryFilter} onChange={setIndustryFilter} align="left" />
   <RepoFilterDropdown label="Company" options={companyOptions} selected={companyFilter} onChange={setCompanyFilter} align="left" />
-  <RepoFilterDropdown label="Level" options={FILTER_LEVELS} selected={levelFilter} onChange={setLevelFilter} align="left" />
-<RepoFilterDropdown label="Round" options={roundOptions} selected={roundFilter} onChange={setRoundFilter} align="left" />
+  <RepoFilterDropdown label="Level" options={FILTER_LEVELS} selected={levelFilter} onChange={setLevelFilter} align="left" columns={1} width={150} />
 
 {hasActiveFilters && (
   <button

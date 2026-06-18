@@ -4,7 +4,7 @@ import React, { useState, useRef, useLayoutEffect } from 'react';
 import { ChevronRight, CheckCircle2, ChevronDown } from 'lucide-react';
 
 
-const RepoFilterDropdown = ({ label, options, selected, onChange, align = 'right' }: { label: string, options: string[], selected: string[], onChange: (v: string[]) => void, align?: 'left' | 'right' }) => {
+const RepoFilterDropdown = ({ label, options, selected, onChange, align = 'right', columns = 2, width = 300 }: { label: string, options: string[], selected: string[], onChange: (v: string[]) => void, align?: 'left' | 'right', columns?: 1 | 2, width?: number }) => {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 const scrollRef = useRef<HTMLDivElement>(null);
@@ -82,7 +82,7 @@ useLayoutEffect(() => {
 </button>
 
       {open && (
-        <div className={`absolute top-full mt-2 w-[300px] z-50 animate-scale-in ${align === 'left' ? 'left-0' : 'right-0'}`}>
+        <div className={`absolute top-full mt-2 z-50 animate-scale-in ${align === 'left' ? 'left-0' : 'right-0'}`} style={{ width }}>
           <div className="bg-[#fff8f0] rounded-2xl p-2 flex flex-col shadow-xl border border-[#5C4033]/12">
             <button
               onClick={allSelected ? deselectAll : selectAll}
@@ -96,7 +96,7 @@ useLayoutEffect(() => {
   className="repo-no-scrollbar overflow-y-auto"
     style= {{maxHeight: maxH }}
 >
-  <div className="grid grid-cols-2 gap-0.5">
+  <div className={`grid gap-0.5 ${columns === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
     {options.map(opt => {
       const isSelected = selected.includes(opt);
       return (

@@ -3267,7 +3267,14 @@ export default function CasePreviewMaster({
   const chartVisibleRef = useRef(false)
   const visitedForumRef = useRef(false)
   const [activeStep, setActiveStep] = useState(0)
-  const inForum = activeStep === 2
+  const [forumOpen, setForumOpen] = useState(false)
+  const [forumExpanded, setForumExpanded] = useState(false)
+  useEffect(() => {
+    if (!forumExpanded) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setForumExpanded(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [forumExpanded])
   useEffect(() => { activeStepRef.current = activeStep }, [activeStep])
 
   useEffect(() => {
@@ -3287,7 +3294,6 @@ export default function CasePreviewMaster({
   const STEPS = [
     { label: 'Walkthrough', number: 1 },
     { label: 'Drill Down', number: 2 },
-    ...(ForumSection ? [{ label: 'Forum', number: 3 }] : []),
   ]
 
   // ─── Chart state ─────────────────────────────
@@ -3328,31 +3334,20 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
     const step = activeStepRef.current
     if (dir === 'next') {
       if (step === 0) scrollToRef(drilldownRef)
-      else if (step === 1) { setActiveStep(2); window.scrollTo({ top: 0, behavior: 'smooth' }) }
     } else {
       if (step === 1) scrollToRef(walkthroughRef)
-      else if (step === 2) { setActiveStep(0); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50) }
     }
   }, [scrollToRef])
 
   // ─── handleStepClick — used by StepIndicator + MiniStepNav ─
   const handleStepClick = useCallback((idx: number) => {
-    if (idx === 2) {
-      setActiveStep(2); window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else if (activeStepRef.current === 2) {
-      // Returning from Forum — switch view then scroll to section
-      setActiveStep(idx)
-      setTimeout(() => scrollToRef(idx === 0 ? walkthroughRef : drilldownRef), 50)
-    } else {
-      scrollToRef(idx === 0 ? walkthroughRef : drilldownRef)
-    }
+    scrollToRef(idx === 0 ? walkthroughRef : drilldownRef)
   }, [scrollToRef])
 
   // ─── Track active step by scroll position (0 ↔ 1) ─────────
   // Uses scroll event (same approach as inContentSection) so the threshold
   // is consistent: step flips to 1 only when drilldown top has passed the header.
   useEffect(() => {
-    if (inForum) return
     let rafId = 0
     const check = () => {
       const el = drilldownRef.current; if (!el) return
@@ -3363,7 +3358,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
     check()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(rafId) }
-  }, [inForum])
+  }, [])
 
   // ─── Keyboard arrow navigation ────────────────────────────
   useEffect(() => {
@@ -3537,6 +3532,10 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   from { opacity: 0; transform: translateX(30px); filter: blur(4px); }
   to   { opacity: 1; transform: translateX(0); filter: blur(0); }
 }
+@keyframes cpm-forum-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 
 @keyframes cpm-badge-shimmer {
   0%, 100% { background-position: 0% 50%; }
@@ -3626,7 +3625,7 @@ html::-webkit-scrollbar {
 
       {/* ─── Sticky subheader ─────────────────── */}
       <div className="pt-[70px]">
-        <main className="relative mx-auto max-w-[1480px] px-4 pb-28 pt-10 lg:px-6">
+        <main className="relative mx-auto max-w-[1480px] px-4 pb-28 pt-4 lg:px-6">
 
           {/* ─── Ambient glow ──────────────────── */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -3639,10 +3638,10 @@ html::-webkit-scrollbar {
           {/* ══════════════════════════════════════
     HERO
     ══════════════════════════════════════ */}
-<section className="relative z-10 pb-3 pt-2">
+<section className="relative z-10 pb-1 pt-2">
   {/* ── Breadcrumb + context ── */}
   <div
-    className="mb-2.5 flex items-center gap-2"
+    className="mb-6 flex items-center gap-2"
     style={{ animation: 'cpm-fade-up 0.45s cubic-bezier(0.22,1,0.36,1) both' }}
   >
     <Link
@@ -3656,29 +3655,50 @@ html::-webkit-scrollbar {
     </Link>
   </div>
 
-  <h1 className="-ml-[2px] font-light leading-[1.02] tracking-tight text-[#453a2a]"
-    style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '4.2rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
+  <h1 className="text-center font-light leading-[1.02] tracking-tight text-[#453a2a]"
+    style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '3.4rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
     {caseData.title.trim()}
   </h1>
 </section>
 
 
-          {/* ── Step Indicator ── */}
-<div ref={stepIndicatorRef}>
-  <StepIndicator steps={STEPS} activeStep={activeStep} onStepClick={handleStepClick} />
-</div>
-
-{/* ── Mini step nav — Notion-style right-side bars on scroll ── */}
-{miniNavEligible && (
-  <div style={{ opacity: miniNavActive ? 1 : 0, transition: 'opacity 0.4s ease-in-out', pointerEvents: miniNavActive ? 'auto' : 'none' }}>
-    <MiniStepNav steps={STEPS} activeStep={activeStep} onStepClick={handleStepClick} />
+          {/* ── Step Indicator — sticky nav bar ── */}
+<div
+  ref={stepIndicatorRef}
+  className="sticky z-40 flex items-center gap-3 py-2"
+  style={{
+    top: '70px',
+    background: '#fff8f0',
+  }}
+>
+  <div className="flex-1">
+    <StepIndicator steps={STEPS} activeStep={activeStep} onStepClick={handleStepClick} />
   </div>
-)}
+  {/* Forum button — visible only when forum is closed */}
+  {ForumSection && !forumOpen && (
+    <button
+      onClick={() => setForumOpen(true)}
+      className="hidden lg:flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] transition-all duration-200 shrink-0"
+      style={{
+        background: 'rgba(255,248,240,0.7)',
+        border: '1px solid rgba(92,64,51,0.14)',
+        color: '#5C4033',
+        boxShadow: '0 1px 4px rgba(59,47,47,0.06)',
+      }}
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+      Forum
+    </button>
+  )}
+</div>
 
           {/* ══════════════════════════════════════
              WALKTHROUGH + DRILL DOWN (vertical scroll)
              ══════════════════════════════════════ */}
-          {!inForum && (<>
+          <div className={forumOpen ? 'flex items-start gap-5' : ''}>
+          <div className={forumOpen ? 'min-w-0 flex-1' : ''}>
           <section ref={walkthroughRef} className="relative z-10 pt-6">
 
             {/* Mobile meta tags (pills) */}
@@ -3831,14 +3851,17 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
             <div className="hidden lg:block">
 
 <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
-<div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">
+<div className={forumOpen ? '' : 'lg:grid lg:grid-cols-[200px_minmax(0,1fr)]'}>
                   {/* ── Desktop sidebar: notes ─────────── */}
+                  {!forumOpen && (
                   <aside className="hidden lg:block h-full">
   <SyncedNotesSidebar notes={NOTES}  />
 </aside>
+                  )}
 
                   {/* ── Gradient divider + chart/recommendations ── */}
                   <div className="relative min-w-0">
+                    {!forumOpen && (
                     <div className="absolute left-0 top-0 hidden h-full w-px lg:block">
   <div
     className="sticky top-[128px] w-full"
@@ -3848,8 +3871,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
       }}
   />
 </div>
+                    )}
 
-                    <div className={`relative flex flex-col pl-7 pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : hasTree ? ' pt-6' : ' pt-2'}${recommendations.length === 0 && hasTree ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
+                    <div className={`relative flex flex-col ${forumOpen ? 'pl-5' : 'pl-7'} pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : hasTree ? ' pt-6' : ' pt-2'}${recommendations.length === 0 && hasTree ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
                       {/* Glass blur overlay — only when framework is fully expanded AND bottom border is not yet visible */}
                       {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                         <div className="pointer-events-none z-20"
@@ -3994,6 +4018,29 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                   </div>
                 </div>
               </div>
+
+              {/* ── Notes below chart (forum open only, desktop) ── */}
+              {forumOpen && NOTES.length > 0 && (
+                <div className="mt-4 hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(NOTES.length, 3)}, 1fr)` }}>
+                  {NOTES.map((n, idx) => (
+                    <div
+                      key={n.title}
+                      className="rounded-[4px] border border-[rgba(61,90,53,0.10)] bg-[rgba(255,248,240,0.80)] px-3 py-3 transition-all duration-300 hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
+                      style={{ animation: `cpm-sidebar-card-in 0.45s cubic-bezier(0.22,1,0.36,1) ${idx * 80}ms both` }}
+                    >
+                      <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 text-center pb-2 shrink-0">{n.title}</p>
+                      <ul>
+                        {n.items.map(item => (
+                          <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
+                            <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="lg:hidden">
@@ -4097,17 +4144,176 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         )}
   </div>
 </section>
-          </>)}
-          
+          </div>{/* /content column */}
+          {/* ── Forum panel — flex sibling (desktop) ── */}
+          {ForumSection && forumOpen && (
+            <aside
+              className="hidden lg:flex flex-col shrink-0 rounded-2xl overflow-hidden"
+              style={{
+                width: '300px',
+                position: 'sticky',
+                top: '140px',
+                maxHeight: 'calc(100vh - 150px)',
+                marginTop: '24px',
+                zIndex: 39,
+                background: 'linear-gradient(180deg, rgba(255,250,244,0.98) 0%, rgba(250,244,236,0.96) 100%)',
+                border: '1px solid rgba(61,90,53,0.14)',
+                boxShadow: '0 8px 40px rgba(59,47,47,0.10), 0 2px 8px rgba(59,47,47,0.05)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                animation: 'cpm-forum-in 0.32s cubic-bezier(0.22,1,0.36,1) both',
+              }}
+            >
+              {/* Panel header */}
+              <div
+                className="flex shrink-0 items-center justify-between px-4 py-3"
+                style={{ borderBottom: '1px solid rgba(61,90,53,0.10)', background: 'rgba(61,90,53,0.05)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#3D5A35]">Forum</span>
+                </div>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => setForumExpanded(true)}
+                    className="flex h-6 w-6 items-center justify-center rounded-full transition-colors hover:bg-[#5C4033]/8"
+                    aria-label="Expand forum"
+                    title="Open in full view"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#5C4033" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 3.5V1h2.5M9 6.5V9H6.5M1 3.5L3.5 1M9 6.5L6.5 9" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setForumOpen(false)}
+                    className="flex h-6 w-6 items-center justify-center rounded-full transition-colors hover:bg-[#5C4033]/8"
+                    aria-label="Close forum"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#5C4033" strokeWidth="1.6" strokeLinecap="round">
+                      <path d="M1 1l8 8M9 1l-8 8" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'none' }}>
+                {ForumSection}
+              </div>
+            </aside>
+          )}
+          </div>{/* /flex row wrapper */}
 
-{/* ── Forum ──────────────────────────── */}
-{inForum && ForumSection && (
-  <section key="forum" className="relative z-10 pt-8" style={{ animation: 'cpm-step-in 0.5s cubic-bezier(0.22,1,0.36,1) both' }}>
-    <Reveal>{ForumSection}</Reveal>
-  </section>
-)}
         </main>
         <CompactFooter />
+
+        {/* ── Mobile forum floating button ── */}
+        {ForumSection && (
+          <button
+            onClick={() => setForumOpen(o => !o)}
+            className="lg:hidden fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-lg transition-all duration-200"
+            style={{
+              background: forumOpen ? '#3D5A35' : 'rgba(255,248,240,0.95)',
+              color: forumOpen ? '#fff' : '#3D5A35',
+              border: '1px solid rgba(61,90,53,0.22)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            {forumOpen ? 'Close' : 'Forum'}
+          </button>
+        )}
+
+        {/* ── Mobile forum bottom sheet ── */}
+        {ForumSection && forumOpen && (
+          <div className="lg:hidden fixed inset-0 z-40" style={{ animation: 'cpm-fade-up 0.3s cubic-bezier(0.22,1,0.36,1) both' }}>
+            <div
+              className="absolute inset-0 bg-[#3B2F2F]/20 backdrop-blur-sm"
+              onClick={() => setForumOpen(false)}
+            />
+            <div
+              className="absolute bottom-0 left-0 right-0 rounded-t-3xl overflow-hidden"
+              style={{
+                maxHeight: '82vh',
+                background: 'linear-gradient(180deg, rgba(255,250,244,0.99) 0%, rgba(250,244,236,0.98) 100%)',
+                boxShadow: '0 -8px 40px rgba(59,47,47,0.12)',
+              }}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#5C4033]/08">
+                <div className="flex items-center gap-2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#3D5A35]">Forum</span>
+                </div>
+                <button onClick={() => setForumOpen(false)} className="text-[#5C4033]/50 hover:text-[#5C4033]">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                    <path d="M2 2l12 12M14 2L2 14" />
+                  </svg>
+                </button>
+              </div>
+              <div className="overflow-y-auto px-4 pb-24 pt-3" style={{ maxHeight: 'calc(82vh - 56px)', scrollbarWidth: 'none' }}>
+                {ForumSection}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Forum expanded overlay ── */}
+        {ForumSection && forumExpanded && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center"
+            style={{ animation: 'cpm-fade-up 0.28s cubic-bezier(0.22,1,0.36,1) both' }}
+          >
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0"
+              style={{ background: 'rgba(35,28,22,0.50)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+              onClick={() => setForumExpanded(false)}
+            />
+            {/* Panel */}
+            <div
+              className="relative z-10 flex flex-col rounded-2xl overflow-hidden"
+              style={{
+                width: 'min(740px, 90vw)',
+                height: '85vh',
+                background: 'linear-gradient(180deg, rgba(255,250,244,0.99) 0%, rgba(250,244,236,0.98) 100%)',
+                border: '1px solid rgba(61,90,53,0.14)',
+                boxShadow: '0 24px 64px rgba(35,28,22,0.22), 0 4px 16px rgba(35,28,22,0.08)',
+              }}
+            >
+              {/* Header */}
+              <div
+                className="flex shrink-0 items-center justify-between px-6 py-4"
+                style={{ borderBottom: '1px solid rgba(61,90,53,0.10)', background: 'rgba(61,90,53,0.05)' }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#3D5A35]">Forum</span>
+                </div>
+                <button
+                  onClick={() => setForumExpanded(false)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-[#5C4033]/8"
+                  aria-label="Close forum view"
+                >
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="#5C4033" strokeWidth="1.7" strokeLinecap="round">
+                    <path d="M1 1l9 9M10 1l-9 9" />
+                  </svg>
+                </button>
+              </div>
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-6 py-5" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(92,64,51,0.2) transparent' }}>
+                {ForumSection}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Floating action buttons ── */}
         {previewMode && <PracticeFab visible={fabVisible} onClick={() => router.push('/practice')} />}
