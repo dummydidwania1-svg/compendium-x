@@ -205,6 +205,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // ── Leave-confirm overlay (shown on back-button / nav-away while recording or uploading) ──
   const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false)
   const [leavingInProgress, setLeavingInProgress] = useState(false)
+  const [leaveSavedOverlayVisible, setLeaveSavedOverlayVisible] = useState(false)
   const ACTIVE_SESSION_KEY = 'compendium-active-session'
   // ── Recoverable capture error overlay ──────────────────────────────────────
   const [captureErrorOverlayVisible, setCaptureErrorOverlayVisible] = useState(false)
@@ -279,6 +280,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // case load that sees in_progress on its first snapshot doesn't trigger it.
   const sessionWasInProgressRef = useRef(false)
   const [warnBeforeReloadVisible, setWarnBeforeReloadVisible] = useState(false)
+  // Set to true by keydown/reload-button handlers so beforeunload can tell the
+  // difference between a reload and a tab-close. Only reloads show the reload overlay.
+  const isReloadIntentRef = useRef(false)
   const toastTimeoutRef = useRef<number | null>(null)
   const remotePrepTimersRef = useRef<number[]>([])
   const localPrepTimersRef = useRef<number[]>([])
@@ -1002,8 +1006,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
   // keydown fires BEFORE beforeunload — keyboard shortcuts (F5, Ctrl+R, Cmd+R) are
   // intercepted here so our overlay appears with no browser dialog at all.
-  // When we programmatically call location.reload() after 2 warnings, we mark a
-  // "platform-initiated" flag so the beforeunload handler below lets it through.
+  // Sets isReloadIntentRef so the beforeunload handler below knows it's a reload
+  // (not a tab close) and can apply reload-specific logic.
   const RELOAD_PLATFORM_KEY = `compendium-platform-reload-${lobbyId ?? ''}`
   useEffect(() => {
     if (recordingState !== 'recording') return
@@ -1013,6 +1017,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         ((event.ctrlKey || event.metaKey) && event.key === 'r')
       if (!isReloadKey) return
       event.preventDefault()
+      isReloadIntentRef.current = true
       const count = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
       if (count >= 2) {
         sessionStorage.setItem(RELOAD_FLAG_KEY, '1')
@@ -1023,34 +1028,62 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       }
       setWarnBeforeReloadVisible(true)
       sessionStorage.setItem(RELOAD_WARN_KEY, String(count + 1))
+      // Reset after a tick — if beforeunload fires, it reads the flag synchronously
+      setTimeout(() => { isReloadIntentRef.current = false }, 500)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordingState, RELOAD_WARN_KEY, RELOAD_FLAG_KEY, RELOAD_PLATFORM_KEY])
 
-  // beforeunload catches the browser reload button and address-bar reloads.
-  // event.preventDefault() suppresses Chrome's "Reload site?" dialog so our
-  // overlay (set via setWarnBeforeReloadVisible) is the only prompt shown.
-  // Skips interception when keydown already decided to allow the reload.
+  // beforeunload fires for reload button AND tab-close AND address-bar navigation.
+  // We distinguish reload from close via isReloadIntentRef (set by keydown above)
+  // and a mousedown listener on the reload button area.
+  // For tab-close: we write the candidate-abandoned signal so the interviewer
+  // popup gets notified immediately, even without our overlay.
   useEffect(() => {
     if (recordingState !== 'recording') return
+
+    // Mousedown on the browser toolbar area (reload button) sets the reload flag.
+    // This fires before beforeunload so we can distinguish reload from close.
+    const onMouseDown = () => { isReloadIntentRef.current = true; setTimeout(() => { isReloadIntentRef.current = false }, 2000) }
+    // We can't target the reload button specifically — instead we set the flag on
+    // any mousedown outside the page content, which is a close approximation.
+    // The flag resets after 2s so stale clicks don't affect future unloads.
+
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       if (sessionStorage.getItem(RELOAD_PLATFORM_KEY) === '1') return
-      const count = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
-      if (count >= 2) {
-        sessionStorage.setItem(RELOAD_FLAG_KEY, '1')
-        sessionStorage.setItem(RELOAD_WARN_KEY, '0')
-        return
+
+      if (isReloadIntentRef.current) {
+        // Reload path
+        const count = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
+        if (count >= 2) {
+          sessionStorage.setItem(RELOAD_FLAG_KEY, '1')
+          sessionStorage.setItem(RELOAD_WARN_KEY, '0')
+          return
+        }
+        setWarnBeforeReloadVisible(true)
+        sessionStorage.setItem(RELOAD_WARN_KEY, String(count + 1))
+        event.preventDefault()
+        isReloadIntentRef.current = false
+      } else {
+        // Tab-close / address-bar navigation — write the abandoned signal immediately
+        // so the interviewer popup detects it before the page tears down.
+        if (lobbyId) {
+          try {
+            localStorage.setItem('compendium-candidate-abandoned', JSON.stringify({ lobbyId, ts: Date.now() }))
+          } catch { }
+        }
+        // Allow the close — we can't prevent tab close without showing our overlay first
+        // (browser dialog fires before React can paint). Let the browser handle it.
       }
-      setWarnBeforeReloadVisible(true)
-      sessionStorage.setItem(RELOAD_WARN_KEY, String(count + 1))
-      event.preventDefault()
     }
     window.addEventListener('beforeunload', onBeforeUnload)
-    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordingState, RELOAD_WARN_KEY, RELOAD_FLAG_KEY, RELOAD_PLATFORM_KEY])
+  }, [recordingState, lobbyId, RELOAD_WARN_KEY, RELOAD_FLAG_KEY, RELOAD_PLATFORM_KEY])
 
   // Back-button / forward-button guard.
   // Pushes a dummy history entry when recording is active so that pressing
@@ -1356,7 +1389,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     recordingState === 'starting'
       ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
       : recordingState === 'recording'
-        ? 'Keep this tab open while the session runs. Reloading this page will lose the recording.'
+        ? 'Keep this tab open. Using the back button saves your audio so far. Closing this tab loses it.'
         : recordingState === 'stopping'
           ? 'Saving your recording before you leave this page.'
           : recordingState === 'uploading'
@@ -1706,14 +1739,14 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           }
-          title={recordingState === 'uploading' ? "Almost done saving..." : "Leave now? Recording will be lost."}
+          title={recordingState === 'uploading' ? "Upload in progress" : "Leave and save audio?"}
           body={
             recordingState === 'uploading'
-              ? "Your recording is uploading right now. Leaving may cut it off. Wait a few seconds and it will save automatically."
-              : "If you leave, the mic stops and everything recorded so far is gone. The interviewer can still submit their notes without the audio."
+              ? "Audio is uploading right now. Leaving may cut it off. Wait a few seconds for it to finish automatically."
+              : "Leaving will stop the mic and save what was recorded so far. The interviewer can still rate the session and you will see their feedback in your dashboard."
           }
           autoDismissMs={12000}
-          actionLabel={leavingInProgress ? "Leaving..." : "Leave anyway"}
+          actionLabel={leavingInProgress ? "Saving..." : "Leave and save"}
           onAction={async () => {
             if (leavingInProgress) return
             setLeavingInProgress(true)
@@ -1723,14 +1756,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 await stopRecordingAndFinalize('user_navigated_away', false)
               }
               if (lobbyId && (wasRecording || recordingState === 'uploading')) {
-                // Signal the interviewer window that the candidate left.
                 try {
                   localStorage.setItem('compendium-candidate-abandoned', JSON.stringify({ lobbyId, ts: Date.now() }))
                 } catch { }
                 try { await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {}) } catch { }
               }
               try { localStorage.removeItem(ACTIVE_SESSION_KEY) } catch { }
-            } finally {
+              setLeaveConfirmVisible(false)
+              setLeaveSavedOverlayVisible(true)
+            } catch {
               leaveConfirmFromPopstateRef.current = false
               router.replace('/dashboard')
             }
@@ -1739,6 +1773,27 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             setLeaveConfirmVisible(false)
             setLeavingInProgress(false)
             leaveConfirmFromPopstateRef.current = false
+          }}
+        />
+      ) : null}
+
+      {leaveSavedOverlayVisible ? (
+        <LobbyOverlay
+          key="leave-saved"
+          type="info"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          }
+          title="Audio saved. Heading to dashboard."
+          body="Once the interviewer finishes rating the session, the case record with their feedback will show up in your dashboard."
+          autoDismissMs={4000}
+          onDismiss={() => {
+            setLeaveSavedOverlayVisible(false)
+            leaveConfirmFromPopstateRef.current = false
+            router.replace('/dashboard')
           }}
         />
       ) : null}

@@ -685,7 +685,7 @@ function CandidateLobby({
         .candidate-chip-btn {
           position: relative;
           z-index: 1;
-          display: inline-flex;
+          display: inline-flex; 
           align-items: center;
           gap: 6px;
           padding: 10px 15px;
@@ -968,6 +968,7 @@ function InterviewerLobby({
 }) {
   const [elapsed, setElapsed] = useState(0)
   const startRef = useRef<number | null>(null)
+  const [candidateAbandonedVisible, setCandidateAbandonedVisible] = useState(false)
 
   useEffect(() => {
     startRef.current = Date.now()
@@ -977,6 +978,18 @@ function InterviewerLobby({
     }, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== 'compendium-candidate-abandoned') return
+      try {
+        const data = event.newValue ? JSON.parse(event.newValue) as { lobbyId?: string } : null
+        if (data?.lobbyId === lobbyId) setCandidateAbandonedVisible(true)
+      } catch { }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [lobbyId])
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60)
@@ -1223,6 +1236,24 @@ function InterviewerLobby({
 
         </div>
       </main>
+
+      {candidateAbandonedVisible ? (
+        <LobbyOverlay
+          key="candidate-abandoned"
+          type="info"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="23" y1="11" x2="17" y2="11" />
+            </svg>
+          }
+          title="Candidate left the session"
+          body="The audio recording was stopped. You can still submit your notes and ratings."
+          autoDismissMs={8000}
+          onDismiss={() => setCandidateAbandonedVisible(false)}
+        />
+      ) : null}
     </div>
   )
 }

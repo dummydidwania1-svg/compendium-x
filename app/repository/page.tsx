@@ -181,6 +181,7 @@ const [roundFilter, setRoundFilter] = useState<string[]>([])
   // When interviewer navigates back to repo from a live session, show an overlay.
   const [liveSessionOverlayInfo, setLiveSessionOverlayInfo] = useState<{ caseId: string; caseName: string; lobbyId: string; sessionMode: string } | null>(null)
   // When the interviewer panel couldn't load a case and redirected back here.
+  const [candidateAbandonedVisible, setCandidateAbandonedVisible] = useState(false)
   const [caseLoadErrorVisible, setCaseLoadErrorVisible] = useState(false)
   const [offlineBanner, setOfflineBanner] = useState(false)
   const [firestoreFailed, setFirestoreFailed] = useState(false)
@@ -255,6 +256,19 @@ const clearAllFilters = () => {
     return () => {
       localStorage.removeItem('compendium-interviewer-browsing')
     }
+  }, [selectionMode, lobbyId])
+
+  useEffect(() => {
+    if (!selectionMode || !lobbyId) return
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== 'compendium-candidate-abandoned') return
+      try {
+        const data = event.newValue ? JSON.parse(event.newValue) as { lobbyId?: string } : null
+        if (data?.lobbyId === lobbyId) setCandidateAbandonedVisible(true)
+      } catch { }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [selectionMode, lobbyId])
 
   useEffect(() => {
@@ -644,6 +658,24 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
       style={{ fontFamily: "'Work Sans', sans-serif" }}
       className="relative flex min-h-screen flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
+      {candidateAbandonedVisible ? (
+        <LobbyOverlay
+          key="candidate-abandoned"
+          type="info"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="23" y1="11" x2="17" y2="11" />
+            </svg>
+          }
+          title="Candidate left the session"
+          body="The audio recording was stopped. You can still submit your notes and ratings."
+          autoDismissMs={8000}
+          onDismiss={() => setCandidateAbandonedVisible(false)}
+        />
+      ) : null}
+
       {caseLoadErrorVisible ? (
         <LobbyOverlay
           key="case-load-error"
