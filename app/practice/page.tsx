@@ -256,20 +256,34 @@ export default function PracticeModeSelection() {
           transform: translateX(1px);
         }
         @keyframes handoff-overlay-in {
-          from { opacity: 0; transform: scale(0.96); }
-          to { opacity: 1; transform: scale(1); }
+          from { opacity: 0; backdrop-filter: blur(0px); }
+          to { opacity: 1; }
+        }
+        @keyframes handoff-card-in {
+          from { opacity: 0; transform: translateY(22px) scale(0.97); filter: blur(3px); }
+          to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
         @keyframes handoff-progress {
           from { width: 100%; }
           to { width: 0%; }
         }
-        @keyframes handoff-device-float {
-          0%, 100% { transform: translateX(0px); }
-          50% { transform: translateX(6px); }
+        @keyframes handoff-laptop-left {
+          0%, 100% { transform: translateX(0px) rotate(-1deg); }
+          50% { transform: translateX(-5px) rotate(-2deg); }
         }
-        @keyframes handoff-arrow-pulse {
-          0%, 100% { opacity: 0.5; transform: translateX(0px); }
-          50% { opacity: 1; transform: translateX(3px); }
+        @keyframes handoff-laptop-right {
+          0%, 100% { transform: translateX(0px) rotate(1deg); }
+          50% { transform: translateX(5px) rotate(2deg); }
+        }
+        @keyframes handoff-arrow-travel {
+          0% { opacity: 0; transform: translateX(-8px); }
+          40% { opacity: 1; transform: translateX(0px); }
+          70% { opacity: 1; transform: translateX(4px); }
+          100% { opacity: 0; transform: translateX(10px); }
+        }
+        @keyframes handoff-glow {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.55; transform: scale(1.08); }
         }
       `}</style>
 
@@ -315,60 +329,98 @@ export default function PracticeModeSelection() {
             position: 'fixed',
             inset: 0,
             zIndex: 9998,
-            backdropFilter: 'blur(20px) saturate(1.2)',
-            WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
-            background: 'rgba(255,248,240,0.82)',
+            backdropFilter: 'blur(28px) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(28px) saturate(1.4)',
+            background: 'rgba(255,248,240,0.88)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            animation: 'handoff-overlay-in 0.45s cubic-bezier(0.22,1,0.36,1) both',
+            animation: 'handoff-overlay-in 0.5s cubic-bezier(0.22,1,0.36,1) both',
           }}
         >
-          <div className="flex flex-col items-center gap-6 px-6 text-center">
-            {/* Device hand-off animation */}
-            <div className="flex items-center gap-3" style={{ marginBottom: '4px' }}>
-              <svg width="52" height="38" viewBox="0 0 52 38" fill="none" style={{ animation: 'handoff-device-float 2.2s ease-in-out infinite' }}>
-                <rect x="1" y="1" width="22" height="34" rx="3" stroke="#453a2a" strokeWidth="1.5" fill="rgba(255,248,240,0.7)" />
-                <rect x="6" y="6" width="12" height="20" rx="1.5" fill="rgba(61,90,53,0.08)" />
-                <circle cx="12" cy="31" r="1.5" fill="#453a2a" opacity="0.35" />
-              </svg>
-              <svg width="20" height="14" viewBox="0 0 20 14" fill="none" style={{ animation: 'handoff-arrow-pulse 1.4s ease-in-out infinite' }}>
-                <path d="M1 7h15M12 2l6 5-6 5" stroke="#3D5A35" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <svg width="52" height="38" viewBox="0 0 52 38" fill="none" style={{ animation: 'handoff-device-float 2.2s ease-in-out 0.4s infinite' }}>
-                <rect x="1" y="1" width="22" height="34" rx="3" stroke="#3D5A35" strokeWidth="1.5" fill="rgba(255,248,240,0.7)" />
-                <rect x="6" y="6" width="12" height="20" rx="1.5" fill="rgba(61,90,53,0.12)" />
-                <circle cx="12" cy="31" r="1.5" fill="#3D5A35" opacity="0.45" />
-              </svg>
+          {/* Ambient glow behind card */}
+          <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', top: '30%', left: '35%', width: '360px', height: '360px', borderRadius: '999px', background: 'radial-gradient(circle, rgba(61,90,53,0.07) 0%, transparent 70%)', animation: 'handoff-glow 5s ease-in-out infinite' }} />
+            <div style={{ position: 'absolute', top: '40%', right: '30%', width: '260px', height: '260px', borderRadius: '999px', background: 'radial-gradient(circle, rgba(196,168,130,0.07) 0%, transparent 70%)', animation: 'handoff-glow 6s ease-in-out infinite reverse' }} />
+          </div>
+
+          <div
+            className="flex flex-col items-center gap-7 px-8 text-center"
+            style={{ animation: 'handoff-card-in 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both' }}
+          >
+            {/* Laptop hand-off illustration */}
+            <div className="flex items-end gap-4" style={{ marginBottom: '2px' }}>
+              {/* Left laptop (candidate) — tilts away */}
+              <div style={{ animation: 'handoff-laptop-left 3.2s ease-in-out infinite', transformOrigin: 'bottom center' }}>
+                <svg width="68" height="50" viewBox="0 0 68 50" fill="none">
+                  {/* Screen */}
+                  <rect x="4" y="2" width="60" height="38" rx="4" fill="rgba(255,248,240,0.9)" stroke="rgba(92,64,51,0.18)" strokeWidth="1.5" />
+                  {/* Screen bezel content */}
+                  <rect x="10" y="8" width="48" height="26" rx="2" fill="rgba(61,90,53,0.06)" />
+                  <rect x="14" y="12" width="28" height="2.5" rx="1" fill="rgba(92,64,51,0.14)" />
+                  <rect x="14" y="17" width="20" height="2" rx="1" fill="rgba(92,64,51,0.08)" />
+                  <rect x="14" y="21" width="24" height="2" rx="1" fill="rgba(92,64,51,0.08)" />
+                  {/* Hinge */}
+                  <rect x="1" y="40" width="66" height="3" rx="1.5" fill="rgba(92,64,51,0.12)" />
+                  {/* Base */}
+                  <path d="M6 43 Q34 48 62 43" stroke="rgba(92,64,51,0.15)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </div>
+
+              {/* Arrow — travels left to right */}
+              <div style={{ paddingBottom: '14px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                {[0, 0.35, 0.7].map((delay, i) => (
+                  <svg key={i} width="18" height="12" viewBox="0 0 18 12" fill="none" style={{ animation: `handoff-arrow-travel 1.6s ease-in-out ${delay}s infinite` }}>
+                    <path d="M1 6h13M10 1.5l5 4.5-5 4.5" stroke="#3D5A35" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ))}
+              </div>
+
+              {/* Right laptop (interviewer) — tilts toward */}
+              <div style={{ animation: 'handoff-laptop-right 3.2s ease-in-out infinite', transformOrigin: 'bottom center' }}>
+                <svg width="68" height="50" viewBox="0 0 68 50" fill="none">
+                  <rect x="4" y="2" width="60" height="38" rx="4" fill="rgba(255,248,240,0.9)" stroke="rgba(61,90,53,0.28)" strokeWidth="1.5" />
+                  <rect x="10" y="8" width="48" height="26" rx="2" fill="rgba(61,90,53,0.09)" />
+                  {/* Active cursor / selection on interviewer screen */}
+                  <rect x="14" y="12" width="32" height="2.5" rx="1" fill="rgba(61,90,53,0.22)" />
+                  <rect x="14" y="17" width="22" height="2" rx="1" fill="rgba(61,90,53,0.12)" />
+                  <rect x="14" y="21" width="26" height="2" rx="1" fill="rgba(61,90,53,0.12)" />
+                  {/* Green dot = active */}
+                  <circle cx="50" cy="13" r="2.5" fill="#3D5A35" opacity="0.5" />
+                  <rect x="1" y="40" width="66" height="3" rx="1.5" fill="rgba(61,90,53,0.14)" />
+                  <path d="M6 43 Q34 48 62 43" stroke="rgba(61,90,53,0.18)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </div>
             </div>
 
-            <div className="flex flex-col items-center gap-2">
+            {/* Text */}
+            <div className="flex flex-col items-center gap-2.5">
               <h2
-                style={{ fontFamily: "'Newsreader', serif", fontWeight: 300, color: '#3B2F2F', fontSize: '28px', lineHeight: 1.2 }}
+                style={{ fontFamily: "'Newsreader', serif", fontWeight: 300, color: '#3B2F2F', fontSize: '30px', lineHeight: 1.15, letterSpacing: '-0.01em' }}
               >
-                Time to hand over
+                Hand it over
               </h2>
               <p
-                style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.70)', maxWidth: '280px', lineHeight: 1.6 }}
+                style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.65)', maxWidth: '260px', lineHeight: 1.65 }}
               >
-                Pass the device to your interviewer. They&apos;ll pick a case and get things going from there.
+                Pass the device to your interviewer. They pick a case, and things get going from there.
               </p>
             </div>
 
-            {/* Progress bar */}
-            <div className="w-[220px] flex flex-col items-center gap-1.5">
-              <div style={{ width: '220px', height: '2px', background: 'rgba(92,64,51,0.10)', borderRadius: '999px', overflow: 'hidden' }}>
+            {/* Progress bar + countdown */}
+            <div className="flex flex-col items-center gap-2" style={{ width: '200px' }}>
+              <div style={{ width: '100%', height: '1.5px', background: 'rgba(92,64,51,0.10)', borderRadius: '999px', overflow: 'hidden' }}>
                 <div
                   style={{
                     height: '100%',
-                    background: '#3D5A35',
+                    background: 'linear-gradient(90deg, #3D5A35, rgba(61,90,53,0.6))',
                     borderRadius: '999px',
                     animation: 'handoff-progress 5s linear forwards',
                   }}
                 />
               </div>
-              <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.40)', fontFamily: "'Work Sans', sans-serif" }}>
-                Opening interviewer window in {handoffCountdown > 0 ? handoffCountdown : 1}s...
+              <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.35)', fontFamily: "'Work Sans', sans-serif", letterSpacing: '0.04em' }}>
+                Opening in {handoffCountdown > 0 ? handoffCountdown : 1}s
               </p>
             </div>
           </div>
@@ -399,7 +451,7 @@ export default function PracticeModeSelection() {
               }}
               className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
             >
-              How are you doing this case?
+              In person or remote?
             </h1>
             <p
               className="mt-4 max-w-[620px] pl-[2px] text-[13px] leading-relaxed text-[#5c4033]/62"
@@ -408,7 +460,7 @@ export default function PracticeModeSelection() {
                 opacity: mounted ? undefined : 0,
               }}
             >
-              Are you both in the same room, or is your interviewer joining remotely? Pick whichever fits.
+              Interviewer with you right now, or joining from somewhere else? Pick the one that fits.
             </p>
           </div>
 
@@ -459,10 +511,10 @@ export default function PracticeModeSelection() {
               </div>
               <div className="px-6 py-5">
                 <p className="text-[12px] leading-relaxed text-[#434840]">
-                  Your interviewer is somewhere else? Generate a link and send it over. They open it on their end and you&apos;re set.
+                  Send your interviewer a link. They open it on their end and you&apos;re both in.
                 </p>
                 <p className="practice-mode-note text-[10px] leading-relaxed text-[#5C4033]/44">
-                  Perfect when your interviewer is not physically with you.
+                  For when your interviewer is not physically with you.
                 </p>
                 <div className="mt-5">
                   <button
@@ -501,10 +553,10 @@ export default function PracticeModeSelection() {
               </div>
               <div className="px-6 py-5">
                 <p className="text-[12px] leading-relaxed text-[#434840]">
-                  Both of you are in the same room? One of you opens this, hands the device over, and the interviewer picks a case from there.
+                  Interviewer right next to you? Open this, hand over the device, and they pick a case.
                 </p>
                 <p className="practice-mode-note text-[10px] leading-relaxed text-[#5C4033]/44">
-                  Great for when you&apos;re both sitting together with one laptop.
+                  For when your interviewer is physically with you, sharing one device.
                 </p>
                 <div className="mt-5">
                   <button

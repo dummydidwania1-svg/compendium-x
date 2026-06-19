@@ -27,6 +27,10 @@ export default function OfflineBanner() {
       style={{ fontFamily: "'Work Sans', sans-serif" }}
     >
       <style>{`
+        @keyframes ob-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50%       { opacity: 0.6; transform: scale(0.93); }
+        }
         @keyframes ob-breathe {
           0%,100% { opacity: 0.4; }
           50%      { opacity: 0.8; }
@@ -41,6 +45,7 @@ export default function OfflineBanner() {
         className="flex flex-col items-center gap-6 px-6"
         style={{ animation: 'ob-rise 0.5s cubic-bezier(0.16,1,0.3,1) both' }}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logo2.png"
           alt="Case CompendiumX"
@@ -49,7 +54,7 @@ export default function OfflineBanner() {
           style={{
             objectFit: 'contain',
             mixBlendMode: 'multiply',
-            animation: 'ob-breathe 2.4s ease-in-out infinite',
+            animation: 'ob-pulse 2.4s ease-in-out infinite',
           }}
         />
 
