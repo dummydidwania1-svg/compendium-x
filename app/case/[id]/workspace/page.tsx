@@ -363,15 +363,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       const mimeType = blob.type || pickSupportedMimeType() || 'audio/webm'
       const extension = fileExtensionFromType(mimeType)
 
+      // Warm up auth before the first Storage upload. On a brand-new account's
+      // FIRST recording, the Firebase auth/token handshake hasn't been
+      // exercised yet, so the very first uploadBytes call can be rejected with
+      // an unauthenticated/permission error until the token is minted and the
+      // Storage SDK has a valid credential. Force-minting a fresh ID token here
+      // (and waiting for the auth user to be ready) primes that handshake so
+      // the first attempt succeeds, instead of failing a few times and forcing
+      // the candidate to click "Retry upload". Subsequent cases already have a
+      // warm token, which is why the bug only showed on the first case.
+      try {
+        await auth.currentUser?.getIdToken(true)
+      } catch {
+        // Non-fatal — the retry loop below still covers a slow token.
+      }
+
       // Auto-retry the upload a few times with backoff before surfacing a
-      // failure overlay. When the interviewer submits and closes their window,
-      // the candidate tab may be backgrounded or its Firebase auth token may be
-      // mid-refresh — the first Storage upload then fails transiently but
-      // succeeds moments later. Retrying silently keeps the normal flow smooth
-      // instead of forcing the candidate to click "Retry upload" themselves.
+      // failure overlay, as a safety net for any remaining transient failure.
       // Each attempt uses a fresh storage path (timestamp) so a partially
       // written object from a failed attempt is never reused.
-      const MAX_ATTEMPTS = 4
+      const MAX_ATTEMPTS = 5
       let lastError: unknown = null
 
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
