@@ -481,7 +481,7 @@ function CandidateLobby({
         onAction: () => {
           leaveGuardActiveRef.current = false
           dismissedRef.current.add('lobby-leave-warning')
-          history.back()
+          window.location.href = '/practice'
         },
       })
       // Permanently dismiss on X-close (no reshow) by pre-adding to dismissedRef
