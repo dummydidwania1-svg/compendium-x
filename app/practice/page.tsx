@@ -69,31 +69,35 @@ export default function PracticeModeSelection() {
     router.push(`/lobby/${lobbyId}?mode=remote`)
   }
 
-  const startLocalSession = async () => {
+  // Called when the user clicks "Launch Split Screen".
+  // Check mic first — only show the handoff overlay if granted.
+  const handleLocalClick = async () => {
     if (localPreparing) return
-    setLocalPreparing(true)
     setPopupBlocked(false)
     setMicBlocked(false)
 
-    const lobbyId = Math.random().toString(36).substring(7)
-    const popupHost = window as Window & {
-      __compendiumInterviewerWindow?: Window | null
-    }
-
-    // Mic permission is required before opening the interviewer popup.
-    // The candidate must grant access now — we can't record without it
-    // and handing off to the interviewer with a broken mic leads to a
-    // dead session.
     if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         stream.getTracks().forEach((track) => track.stop())
       } catch {
-        // Mic denied — don't open the popup. Show a message and let them retry.
         setMicBlocked(true)
-        setLocalPreparing(false)
         return
       }
+    }
+
+    // Mic granted — now show the handoff overlay; startLocalSession runs after 5s
+    setShowHandoffOverlay(true)
+  }
+
+  const startLocalSession = async () => {
+    if (localPreparing) return
+    setLocalPreparing(true)
+    setPopupBlocked(false)
+
+    const lobbyId = Math.random().toString(36).substring(7)
+    const popupHost = window as Window & {
+      __compendiumInterviewerWindow?: Window | null
     }
 
     const popupWidth = 800
@@ -315,7 +319,7 @@ export default function PracticeModeSelection() {
           title="Mic access needed"
           body="Click the site icon (ⓘ) in your address bar, set Microphone to Allow, then tap Try again."
           actionLabel="Try again"
-          onAction={() => void startLocalSession()}
+          onAction={() => void handleLocalClick()}
           onDismiss={() => {
             setMicBlocked(false)
             if (micReshowTimerRef.current) clearTimeout(micReshowTimerRef.current)
@@ -568,7 +572,7 @@ export default function PracticeModeSelection() {
                 animation: mounted ? 'practice-card-in 0.6s cubic-bezier(0.22,1,0.36,1) 0.25s both' : 'none',
                 opacity: mounted ? undefined : 0,
               }}
-              onClick={() => setShowHandoffOverlay(true)}
+              onClick={() => void handleLocalClick()}
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#3D5A35]/6">
                 <div>
@@ -594,7 +598,7 @@ export default function PracticeModeSelection() {
                 <div className="mt-5">
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); setShowHandoffOverlay(true) }}
+                    onClick={(e) => { e.stopPropagation(); void handleLocalClick() }}
                     disabled={localPreparing}
                     className="practice-btn w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
                   >
