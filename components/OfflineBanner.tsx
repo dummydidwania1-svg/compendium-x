@@ -23,7 +23,7 @@ export default function OfflineBanner() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#fff8f0]"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-white"
       style={{ fontFamily: "'Work Sans', sans-serif" }}
     >
       <style>{`
@@ -47,7 +47,7 @@ export default function OfflineBanner() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logo.png"
+          src="/logo2.png"
           alt="Case CompendiumX"
           width={68}
           height={68}

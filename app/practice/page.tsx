@@ -371,46 +371,41 @@ export default function PracticeModeSelection() {
                 justifyContent: 'space-between',
               }}
             >
-              {/* Giver avatar (you) */}
-              <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style={{ animation: 'handoff-giver 2.8s ease-in-out infinite', flexShrink: 0 }}>
-                <circle cx="22" cy="22" r="21" fill="rgba(92,64,51,0.05)" stroke="rgba(92,64,51,0.18)" strokeWidth="1.4" />
-                <circle cx="22" cy="17" r="6" fill="rgba(92,64,51,0.45)" />
-                <path d="M11 35 a11 9 0 0 1 22 0" fill="rgba(92,64,51,0.45)" />
+              {/* Giver — thin-stroke outline person, platform icon style */}
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(92,64,51,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'handoff-giver 2.8s ease-in-out infinite', flexShrink: 0 }}>
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
               </svg>
 
-              {/* Receiver avatar (interviewer) — warms to green when device arrives */}
-              <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style={{ animation: 'handoff-receiver 2.8s ease-in-out infinite', flexShrink: 0 }}>
-                <circle cx="22" cy="22" r="21" fill="rgba(61,90,53,0.06)" stroke="rgba(61,90,53,0.24)" strokeWidth="1.4" />
-                <circle cx="22" cy="17" r="6" fill="rgba(61,90,53,0.5)" />
-                <path d="M11 35 a11 9 0 0 1 22 0" fill="rgba(61,90,53,0.5)" />
+              {/* Receiver — same style, green tint when device arrives */}
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(61,90,53,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'handoff-receiver 2.8s ease-in-out infinite', flexShrink: 0 }}>
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
               </svg>
 
-              {/* Travelling laptop — centered, animated across via translateX */}
+              {/* Travelling laptop — outline-only, matches platform icon weight */}
               <div
                 style={{
                   position: 'absolute',
                   left: '50%',
                   top: '50%',
-                  marginLeft: '-31px',
-                  marginTop: '-22px',
+                  marginLeft: '-28px',
+                  marginTop: '-20px',
                   animation: 'handoff-pass 2.8s cubic-bezier(0.45,0,0.55,1) infinite',
                   willChange: 'transform, opacity',
                 }}
               >
-                <svg width="62" height="44" viewBox="0 0 62 44" fill="none">
-                  {/* Screen lid */}
-                  <rect x="4" y="2" width="54" height="34" rx="4" fill="rgba(255,248,240,0.97)" stroke="rgba(92,64,51,0.22)" strokeWidth="1.5" />
-                  {/* Inner screen */}
-                  <rect x="9" y="7" width="44" height="24" rx="2" fill="rgba(61,90,53,0.07)" />
-                  {/* Screen content lines */}
-                  <line x1="14" y1="13" x2="38" y2="13" stroke="rgba(61,90,53,0.22)" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="14" y1="19" x2="30" y2="19" stroke="rgba(61,90,53,0.12)" strokeWidth="1.8" strokeLinecap="round" />
-                  <line x1="14" y1="24" x2="34" y2="24" stroke="rgba(61,90,53,0.12)" strokeWidth="1.8" strokeLinecap="round" />
-                  {/* Camera dot */}
-                  <circle cx="31" cy="5" r="1" fill="rgba(92,64,51,0.2)" />
-                  {/* Hinge / base */}
-                  <path d="M1 38 L61 38 L57 42 L5 42 Z" fill="rgba(92,64,51,0.13)" />
-                  <rect x="25" y="38.5" width="12" height="2.5" rx="1.25" fill="rgba(92,64,51,0.18)" />
+                <svg width="56" height="40" viewBox="0 0 56 40" fill="none">
+                  {/* Screen lid — outline only */}
+                  <rect x="3" y="1.5" width="50" height="30" rx="3.5" stroke="rgba(92,64,51,0.28)" strokeWidth="1.5" fill="none" />
+                  {/* Three content lines on screen */}
+                  <line x1="10" y1="10" x2="34" y2="10" stroke="rgba(92,64,51,0.2)" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="10" y1="16" x2="26" y2="16" stroke="rgba(92,64,51,0.13)" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="10" y1="22" x2="30" y2="22" stroke="rgba(92,64,51,0.13)" strokeWidth="1.5" strokeLinecap="round" />
+                  {/* Base bar */}
+                  <path d="M0 33 L56 33 L53 38 L3 38 Z" stroke="rgba(92,64,51,0.2)" strokeWidth="1" strokeLinejoin="round" fill="none" />
+                  {/* Trackpad notch */}
+                  <rect x="22" y="34" width="12" height="2.5" rx="1.25" stroke="rgba(92,64,51,0.18)" strokeWidth="1" fill="none" />
                 </svg>
               </div>
 
