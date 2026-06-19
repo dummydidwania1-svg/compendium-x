@@ -810,17 +810,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   , [])
 
   const checkRatingStatus = useCallback(async (lid: string): Promise<boolean> => {
-    // Source A: Firestore eval already submitted
+    // Source A: Firestore eval already submitted by the interviewer.
+    // Firestore rules only allow the candidate to read evaluations scoped to
+    // their own candidateId — querying by lobbyId alone is rejected. So query
+    // by candidateId (allowed) and filter for this lobby client-side. Also
+    // treat any non-unrated eval as "rated".
     try {
-      const snap = await getDocs(query(evaluationsCol, where('lobbyId', '==', lid)))
-      if (!snap.empty) return true
+      if (currentUser) {
+        const snap = await getDocs(
+          query(evaluationsCol, where('candidateId', '==', currentUser.uid))
+        )
+        const match = snap.docs.find((d) => d.data().lobbyId === lid)
+        if (match && match.data().isUnrated !== true) return true
+      }
     } catch {
-      // Network error — fall back to draft
+      // Network/permission error — fall back to draft
     }
     // Source B: localStorage draft with all 4 scores > 0
     const draft = readDraftScores(lid)
     return draft !== null && isDraftAllRated(draft.scores)
-  }, [readDraftScores, isDraftAllRated])
+  }, [currentUser, readDraftScores, isDraftAllRated])
 
   const handleCandidateEndSession = useCallback(async () => {
     if (endingSession) return
@@ -852,11 +861,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     setEndSessionOverlayKind(null)
 
     // Submit draft via candidate-safe route (uses session's interviewerId server-side).
-    // submit-draft is idempotent and also marks session completed — no need to call /complete separately.
+    // submit-draft is idempotent server-side (skips creation if an eval already
+    // exists) and also marks the session completed — no need to call /complete
+    // separately. We must NOT do a client-side `where('lobbyId', ...)` query here:
+    // Firestore rules only allow reading evaluations scoped to the caller's own
+    // candidateId/interviewerId, so a lobbyId-only query throws and would skip
+    // eval creation entirely (the original "entries not showing" bug).
     try {
       const draft = readDraftScores(lobbyId)
-      const snap = await getDocs(query(evaluationsCol, where('lobbyId', '==', lobbyId)))
-      if (snap.empty && draft && isDraftAllRated(draft.scores)) {
+      if (draft && isDraftAllRated(draft.scores)) {
+        // Interviewer rated all 4 in the draft (may or may not have formally
+        // submitted) — submit-draft creates the eval if missing, idempotent.
         await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/submit-draft`, {
           scores: {
             structure: draft.scores.structure as number,
@@ -867,7 +882,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           notes: draft.notes,
         })
       } else {
-        // Eval already in Firestore (interviewer submitted) — just mark session complete
+        // No complete local draft — the interviewer already submitted formally,
+        // so the eval exists server-side. Just mark the session complete.
         await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, { completedBy: 'candidate' })
       }
     } catch {
@@ -894,11 +910,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     setCaptureErrorOverlayVisible(false)
     setEndSessionOverlayKind(null)
 
+    // Save audio as a completed-but-unrated case: creates an unrated evaluation
+    // doc + marks the session completed, so it appears in the dashboard now.
     try {
-      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {})
+      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/save-unrated`, {})
     } catch {
       // Non-fatal
     }
+
+    try { localStorage.removeItem(`compendium-interviewer-draft-${lobbyId}`) } catch { }
 
     type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
     ;(window as PopupHost).__compendiumInterviewerWindow?.close()
@@ -1412,8 +1432,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // doesn't recognise).
   const isWaitingForUserStart =
     recordingState === 'idle' || (recordingState === 'failed' && isRecoverableCaptureError)
+  const endingSessionNowForPill = endSessionActionInProgress || endSessionInitiatedRef.current
   const statusPillLabel =
-    recordingState === 'recording'
+    endingSessionNowForPill
+      ? 'Wrapping up'
+      : recordingState === 'recording'
       ? 'Live'
       : recordingState === 'starting'
         ? 'Preparing'
@@ -1427,7 +1450,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 ? 'Ready when you are'
                 : 'Needs attention'
   const statusPillTone =
-    recordingState === 'recording'
+    endingSessionNowForPill
+      ? 'working'
+      : recordingState === 'recording'
       ? 'live'
       : recordingState === 'starting' || recordingState === 'stopping' || recordingState === 'uploading'
         ? 'working'
@@ -1488,8 +1513,14 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // way (an instruction, not a status diagnosis) so a candidate on their
   // first view isn't told "needs attention" or "try again" for a thing they
   // never actually tried. Reuses isWaitingForUserStart defined above.
+  // Once the candidate has triggered an end-session action, the workspace is
+  // wrapping up — never surface a recording-error state, since recording is
+  // stopping on purpose (and may never have started, in the unrated case).
+  const isEndingSessionNow = endSessionActionInProgress || endSessionInitiatedRef.current
   const workspaceStatusTitle =
-    recordingState === 'starting'
+    isEndingSessionNow
+      ? 'Wrapping up this session'
+      : recordingState === 'starting'
       ? 'Preparing capture permission'
       : recordingState === 'recording'
         ? 'Session capture is live'
@@ -1503,7 +1534,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 ? 'Click Allow Recording to start'
                 : 'Recording couldn’t start'
   const workspaceStatusDescription =
-    recordingState === 'starting'
+    isEndingSessionNow
+      ? 'Saving your session and heading to the dashboard.'
+      : recordingState === 'starting'
       ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
       : recordingState === 'recording'
         ? 'Closing or reloading this tab will lose your recording. Keep it open until the session ends.'
