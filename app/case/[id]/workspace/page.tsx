@@ -361,54 +361,77 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
       const mimeType = blob.type || pickSupportedMimeType() || 'audio/webm'
       const extension = fileExtensionFromType(mimeType)
-      const storagePath = `session-recordings/${currentUser.uid}/${lobbyId}/${Date.now()}.${extension}`
-      const recordingRef = storageRef(storage, storagePath)
 
-      try {
-        await uploadBytes(recordingRef, blob, { contentType: mimeType })
-        const audioUrl = await getDownloadURL(recordingRef)
-        const nowMs = Date.now()
+      // Auto-retry the upload a few times with backoff before surfacing a
+      // failure overlay. When the interviewer submits and closes their window,
+      // the candidate tab may be backgrounded or its Firebase auth token may be
+      // mid-refresh — the first Storage upload then fails transiently but
+      // succeeds moments later. Retrying silently keeps the normal flow smooth
+      // instead of forcing the candidate to click "Retry upload" themselves.
+      // Each attempt uses a fresh storage path (timestamp) so a partially
+      // written object from a failed attempt is never reused.
+      const MAX_ATTEMPTS = 4
+      let lastError: unknown = null
 
-        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
-          status: 'uploaded',
-          mode: recordingMode,
-          startedAtMs: recordingStartMsRef.current,
-          stoppedAtMs: nowMs,
-          durationMs: recordingStartMsRef.current ? nowMs - recordingStartMsRef.current : null,
-          stopReason,
-          storagePath,
-          audioUrl,
-          mimeType,
-          byteSize: blob.size,
-        })
-
-        // Writing recording metadata sets transcriptStatus='pending'. The
-        // Cloud Function picks it up and writes back when done — no client
-        // wait, no HTTP timeout, candidate is free to navigate away.
-        setRecordingNote('Audio uploaded. Transcript will finish in the background — feel free to leave this page.')
-
-        pendingBlobRef.current = null
-        setCompletionPending(false)
-        setRecordingState('uploaded')
-
-        if (routeAfterUpload) {
-          setSessionCompleteOverlayVisible(true)
-        }
-      } catch (uploadError) {
-        setRecordingState('failed')
-        setRecordingError(uploadError instanceof Error ? uploadError.message : 'Unable to upload recording.')
-        setCompletionPending(routeAfterUpload)
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        const storagePath = `session-recordings/${currentUser.uid}/${lobbyId}/${Date.now()}.${extension}`
+        const recordingRef = storageRef(storage, storagePath)
         try {
+          await uploadBytes(recordingRef, blob, { contentType: mimeType })
+          const audioUrl = await getDownloadURL(recordingRef)
+          const nowMs = Date.now()
+
           await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
-            status: 'upload_failed',
+            status: 'uploaded',
             mode: recordingMode,
-            stoppedAtMs: Date.now(),
+            startedAtMs: recordingStartMsRef.current,
+            stoppedAtMs: nowMs,
+            durationMs: recordingStartMsRef.current ? nowMs - recordingStartMsRef.current : null,
             stopReason,
-            error: uploadError instanceof Error ? uploadError.message : 'Upload failed',
+            storagePath,
+            audioUrl,
+            mimeType,
+            byteSize: blob.size,
           })
-        } catch {
-          // Server-side persistence is best-effort here — UI already reflects failure.
+
+          // Writing recording metadata sets transcriptStatus='pending'. The
+          // Cloud Function picks it up and writes back when done — no client
+          // wait, no HTTP timeout, candidate is free to navigate away.
+          setRecordingNote('Audio uploaded. Transcript will finish in the background — feel free to leave this page.')
+
+          pendingBlobRef.current = null
+          setCompletionPending(false)
+          setRecordingState('uploaded')
+
+          if (routeAfterUpload) {
+            setSessionCompleteOverlayVisible(true)
+          }
+          return
+        } catch (uploadError) {
+          lastError = uploadError
+          if (attempt < MAX_ATTEMPTS) {
+            // Backoff: 600ms, 1200ms, 1800ms. Gives the auth token / network /
+            // tab-focus state time to settle before the next attempt.
+            await new Promise((resolve) => setTimeout(resolve, attempt * 600))
+          }
         }
+      }
+
+      // All attempts failed — surface the failure overlay so the candidate can
+      // retry manually (the blob is still cached in pendingBlobRef).
+      setRecordingState('failed')
+      setRecordingError(lastError instanceof Error ? lastError.message : 'Unable to upload recording.')
+      setCompletionPending(routeAfterUpload)
+      try {
+        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
+          status: 'upload_failed',
+          mode: recordingMode,
+          stoppedAtMs: Date.now(),
+          stopReason,
+          error: lastError instanceof Error ? lastError.message : 'Upload failed',
+        })
+      } catch {
+        // Server-side persistence is best-effort here — UI already reflects failure.
       }
     },
     [currentUser, lobbyId, recordingMode, router]
