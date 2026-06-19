@@ -7,6 +7,14 @@
         { "fieldPath": "candidateId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "abandonedAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
