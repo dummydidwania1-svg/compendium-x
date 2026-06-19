@@ -267,19 +267,15 @@ export default function PracticeModeSelection() {
           from { width: 100%; }
           to { width: 0%; }
         }
-        @keyframes handoff-laptop-left {
-          0%, 100% { transform: translateX(0px) rotate(-1deg); }
-          50% { transform: translateX(-5px) rotate(-2deg); }
+        @keyframes handoff-dot-travel {
+          0% { left: 0%; opacity: 0; }
+          8% { opacity: 1; }
+          92% { opacity: 1; }
+          100% { left: 100%; opacity: 0; }
         }
-        @keyframes handoff-laptop-right {
-          0%, 100% { transform: translateX(0px) rotate(1deg); }
-          50% { transform: translateX(5px) rotate(2deg); }
-        }
-        @keyframes handoff-arrow-travel {
-          0% { opacity: 0; transform: translateX(-8px); }
-          40% { opacity: 1; transform: translateX(0px); }
-          70% { opacity: 1; transform: translateX(4px); }
-          100% { opacity: 0; transform: translateX(10px); }
+        @keyframes handoff-screen-glow {
+          0%, 100% { opacity: 0.06; }
+          50% { opacity: 0.14; }
         }
         @keyframes handoff-glow {
           0%, 100% { opacity: 0.3; transform: scale(1); }
@@ -348,49 +344,58 @@ export default function PracticeModeSelection() {
             className="flex flex-col items-center gap-7 px-8 text-center"
             style={{ animation: 'handoff-card-in 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both' }}
           >
-            {/* Laptop hand-off illustration */}
-            <div className="flex items-end gap-4" style={{ marginBottom: '2px' }}>
-              {/* Left laptop (candidate) — tilts away */}
-              <div style={{ animation: 'handoff-laptop-left 3.2s ease-in-out infinite', transformOrigin: 'bottom center' }}>
-                <svg width="68" height="50" viewBox="0 0 68 50" fill="none">
-                  {/* Screen */}
-                  <rect x="4" y="2" width="60" height="38" rx="4" fill="rgba(255,248,240,0.9)" stroke="rgba(92,64,51,0.18)" strokeWidth="1.5" />
-                  {/* Screen bezel content */}
-                  <rect x="10" y="8" width="48" height="26" rx="2" fill="rgba(61,90,53,0.06)" />
-                  <rect x="14" y="12" width="28" height="2.5" rx="1" fill="rgba(92,64,51,0.14)" />
-                  <rect x="14" y="17" width="20" height="2" rx="1" fill="rgba(92,64,51,0.08)" />
-                  <rect x="14" y="21" width="24" height="2" rx="1" fill="rgba(92,64,51,0.08)" />
-                  {/* Hinge */}
-                  <rect x="1" y="40" width="66" height="3" rx="1.5" fill="rgba(92,64,51,0.12)" />
-                  {/* Base */}
-                  <path d="M6 43 Q34 48 62 43" stroke="rgba(92,64,51,0.15)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                </svg>
+            {/* Device handoff illustration */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', marginBottom: '4px' }}>
+
+              {/* Left laptop — candidate */}
+              <svg width="72" height="54" viewBox="0 0 72 54" fill="none">
+                {/* Screen lid */}
+                <rect x="6" y="2" width="60" height="38" rx="5" fill="rgba(255,248,240,0.95)" stroke="rgba(92,64,51,0.2)" strokeWidth="1.5" />
+                {/* Inner screen */}
+                <rect x="12" y="8" width="48" height="27" rx="2.5" fill="rgba(92,64,51,0.055)" />
+                {/* Content lines */}
+                <rect x="17" y="13" width="26" height="2.5" rx="1.2" fill="rgba(92,64,51,0.13)" />
+                <rect x="17" y="18" width="18" height="2" rx="1" fill="rgba(92,64,51,0.08)" />
+                <rect x="17" y="22" width="22" height="2" rx="1" fill="rgba(92,64,51,0.08)" />
+                {/* Camera dot */}
+                <circle cx="36" cy="5.5" r="1" fill="rgba(92,64,51,0.15)" />
+                {/* Hinge bar */}
+                <rect x="2" y="40" width="68" height="3.5" rx="1.75" fill="rgba(92,64,51,0.11)" />
+                {/* Base / trackpad */}
+                <rect x="8" y="43.5" width="56" height="9" rx="2" fill="rgba(92,64,51,0.06)" stroke="rgba(92,64,51,0.1)" strokeWidth="1" />
+                <rect x="26" y="46" width="20" height="4" rx="1.5" fill="rgba(92,64,51,0.08)" />
+              </svg>
+
+              {/* Travelling dot bridge */}
+              <div style={{ position: 'relative', width: '48px', height: '2px', background: 'rgba(92,64,51,0.1)', borderRadius: '999px', marginBottom: '26px', flexShrink: 0 }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '999px',
+                  background: '#3D5A35',
+                  transform: 'translate(-50%, -50%)',
+                  animation: 'handoff-dot-travel 1.8s cubic-bezier(0.4,0,0.6,1) infinite',
+                  boxShadow: '0 0 6px rgba(61,90,53,0.35)',
+                }} />
               </div>
 
-              {/* Arrow — travels left to right */}
-              <div style={{ paddingBottom: '14px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                {[0, 0.35, 0.7].map((delay, i) => (
-                  <svg key={i} width="18" height="12" viewBox="0 0 18 12" fill="none" style={{ animation: `handoff-arrow-travel 1.6s ease-in-out ${delay}s infinite` }}>
-                    <path d="M1 6h13M10 1.5l5 4.5-5 4.5" stroke="#3D5A35" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                ))}
-              </div>
+              {/* Right laptop — interviewer (slightly more active) */}
+              <svg width="72" height="54" viewBox="0 0 72 54" fill="none">
+                <rect x="6" y="2" width="60" height="38" rx="5" fill="rgba(255,248,240,0.95)" stroke="rgba(61,90,53,0.3)" strokeWidth="1.5" />
+                <rect x="12" y="8" width="48" height="27" rx="2.5" style={{ animation: 'handoff-screen-glow 2.2s ease-in-out infinite' }} fill="rgba(61,90,53,0.09)" />
+                <rect x="17" y="13" width="30" height="2.5" rx="1.2" fill="rgba(61,90,53,0.2)" />
+                <rect x="17" y="18" width="20" height="2" rx="1" fill="rgba(61,90,53,0.11)" />
+                <rect x="17" y="22" width="24" height="2" rx="1" fill="rgba(61,90,53,0.11)" />
+                {/* Active indicator */}
+                <circle cx="52" cy="13.5" r="2.5" fill="#3D5A35" opacity="0.55" />
+                <circle cx="36" cy="5.5" r="1" fill="rgba(61,90,53,0.2)" />
+                <rect x="2" y="40" width="68" height="3.5" rx="1.75" fill="rgba(61,90,53,0.13)" />
+                <rect x="8" y="43.5" width="56" height="9" rx="2" fill="rgba(61,90,53,0.06)" stroke="rgba(61,90,53,0.11)" strokeWidth="1" />
+                <rect x="26" y="46" width="20" height="4" rx="1.5" fill="rgba(61,90,53,0.09)" />
+              </svg>
 
-              {/* Right laptop (interviewer) — tilts toward */}
-              <div style={{ animation: 'handoff-laptop-right 3.2s ease-in-out infinite', transformOrigin: 'bottom center' }}>
-                <svg width="68" height="50" viewBox="0 0 68 50" fill="none">
-                  <rect x="4" y="2" width="60" height="38" rx="4" fill="rgba(255,248,240,0.9)" stroke="rgba(61,90,53,0.28)" strokeWidth="1.5" />
-                  <rect x="10" y="8" width="48" height="26" rx="2" fill="rgba(61,90,53,0.09)" />
-                  {/* Active cursor / selection on interviewer screen */}
-                  <rect x="14" y="12" width="32" height="2.5" rx="1" fill="rgba(61,90,53,0.22)" />
-                  <rect x="14" y="17" width="22" height="2" rx="1" fill="rgba(61,90,53,0.12)" />
-                  <rect x="14" y="21" width="26" height="2" rx="1" fill="rgba(61,90,53,0.12)" />
-                  {/* Green dot = active */}
-                  <circle cx="50" cy="13" r="2.5" fill="#3D5A35" opacity="0.5" />
-                  <rect x="1" y="40" width="66" height="3" rx="1.5" fill="rgba(61,90,53,0.14)" />
-                  <path d="M6 43 Q34 48 62 43" stroke="rgba(61,90,53,0.18)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                </svg>
-              </div>
             </div>
 
             {/* Text */}
@@ -553,7 +558,7 @@ export default function PracticeModeSelection() {
               </div>
               <div className="px-6 py-5">
                 <p className="text-[12px] leading-relaxed text-[#434840]">
-                  Interviewer right next to you? Open this, hand over the device, and they pick a case.
+                  Interviewer right next to you? Hand over the device and they pick a case.
                 </p>
                 <p className="practice-mode-note text-[10px] leading-relaxed text-[#5C4033]/44">
                   For when your interviewer is physically with you, sharing one device.

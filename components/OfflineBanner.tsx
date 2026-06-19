@@ -47,13 +47,12 @@ export default function OfflineBanner() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logo2.png"
+          src="/logo.png"
           alt="Case CompendiumX"
           width={68}
           height={68}
           style={{
             objectFit: 'contain',
-            mixBlendMode: 'multiply',
             animation: 'ob-pulse 2.4s ease-in-out infinite',
           }}
         />
