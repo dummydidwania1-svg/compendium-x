@@ -304,6 +304,24 @@ export default function PracticeModeSelection() {
 
       <Navbar currentPage="practice" />
 
+      {popupBlocked ? (
+        <LobbyOverlay
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+            </svg>
+          }
+          title="Popups are blocked"
+          body="Your browser blocked the interviewer window. Click the address bar icon to allow popups for this site, then try again."
+          actionLabel="Try again"
+          onAction={() => void handleLocalClick()}
+          onDismiss={() => setPopupBlocked(false)}
+        />
+      ) : null}
+
       {micBlocked ? (
         <LobbyOverlay
           type="warning"
@@ -602,30 +620,13 @@ export default function PracticeModeSelection() {
                     disabled={localPreparing}
                     className="practice-btn w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {localPreparing
-                      ? 'Setting up microphone...'
-                      : popupBlocked
-                        ? 'Retry: allow popups first'
-                        : micBlocked
-                          ? 'Retry: allow mic first'
-                          : 'Launch Split Screen'}
+                    {localPreparing ? 'Setting up...' : 'Launch Split Screen'}
                   </button>
                 </div>
                 {localPreparing ? (
                   <p className="mt-3 text-[10px] leading-relaxed text-[#5c4033]/60">
                     Allow microphone in the browser prompt. The interviewer window opens right after.
                   </p>
-                ) : null}
-                {popupBlocked ? (
-                  <div className="mt-3 rounded-lg border border-[#b48a57]/30 bg-[rgba(255,245,233,0.92)] px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
-                      Popup blocked
-                    </p>
-                    <p className="mt-1 text-[11px] leading-relaxed text-[#5c4033]">
-                      Your browser blocked the interviewer popup. Click the popup-blocked icon in your
-                      address bar to allow popups for this site, then click <strong className="font-semibold">Retry</strong> above.
-                    </p>
-                  </div>
                 ) : null}
               </div>
             </article>
