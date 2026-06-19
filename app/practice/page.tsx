@@ -91,8 +91,8 @@ export default function PracticeModeSelection() {
 
     popupHost.__compendiumInterviewerWindow = interviewerWindow
     try { interviewerWindow.resizeTo(popupWidth, popupHeight) } catch { /* ignored */ }
-    // Tab auto-switches to the interviewer window — no candidate navigation needed
     interviewerWindow.focus()
+    router.push(`/lobby/${lobbyId}?mode=local`)
   }
 
   if (loading) return <PlatformLoader message="Getting things ready" />
