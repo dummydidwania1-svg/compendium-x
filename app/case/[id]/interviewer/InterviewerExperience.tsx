@@ -901,8 +901,10 @@ export function InterviewerPageInner({
 			// Non-fatal.
 		}
 		if (draftKey) localStorage.removeItem(draftKey)
-		// Navigate back to the welcome interviewer lobby, not close the window.
-		router.replace('/')
+		// Navigate back to the interviewer controls lobby for this session so they
+		// can start fresh (reopen candidate link, pick a new case, etc.).
+		const mode = searchParams.get('sessionMode') ?? 'local'
+		router.replace(`/lobby/${encodeURIComponent(lobbyId)}?role=interviewer&mode=${mode}`)
 	}
 
 	// ── Back-button guard ────────────────────────────────────────────────────────
@@ -944,33 +946,44 @@ export function InterviewerPageInner({
 	}, [currentView, lobbyId, previewMode])
 
 	// ── Window close guard ───────────────────────────────────────────────────────
-	// Show native "Leave site?" dialog when the user presses Cmd+W or the X button.
-	// If they click Stay, show a brief informational toast.
-	// We track whether beforeunload fired via a ref; on the next animation frame
-	// after beforeunload (which only runs if the page survived), we show the toast.
+	// Intercept Cmd+W / Ctrl+W to show our own overlay instead of relying on the
+	// native beforeunload dialog, which Chrome suppresses in popup windows.
+	// beforeunload is still registered as a fallback for the browser X button.
 	useEffect(() => {
 		if (!lobbyId || previewMode) return
-		// Arm after 4s — prevents false triggers when the window first opens
-		// and loses focus as the candidate tab switches back.
 		let armed = false
 		const armTimer = setTimeout(() => { armed = true }, 4000)
 
-		const onBeforeUnload = (e: BeforeUnloadEvent) => {
-			if (!armed) return
+		const shouldBlock = () => {
+			if (!armed) return false
 			const ended = localStorage.getItem('compendium-session-ended')
 			const replacing = localStorage.getItem('compendium-session-replacing')
 			const cancelled = localStorage.getItem('compendium-session-cancelled')
-			if (ended || replacing || cancelled) return
+			return !ended && !replacing && !cancelled
+		}
+
+		const onKeyDown = (e: KeyboardEvent) => {
+			const isCmdW = (e.metaKey || e.ctrlKey) && e.key === 'w'
+			if (!isCmdW || !shouldBlock()) return
+			e.preventDefault()
+			e.stopPropagation()
+			setShowCloseWarning(true)
+		}
+
+		const onBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (!shouldBlock()) return
 			e.preventDefault()
 			e.returnValue = ''
-			// Schedule toast for the frame after beforeunload — only runs if page survives
 			requestAnimationFrame(() => {
 				requestAnimationFrame(() => { setShowCloseWarning(true) })
 			})
 		}
+
+		window.addEventListener('keydown', onKeyDown, { capture: true })
 		window.addEventListener('beforeunload', onBeforeUnload)
 		return () => {
 			clearTimeout(armTimer)
+			window.removeEventListener('keydown', onKeyDown, { capture: true })
 			window.removeEventListener('beforeunload', onBeforeUnload)
 		}
 	}, [lobbyId, previewMode])

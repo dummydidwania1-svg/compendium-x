@@ -231,26 +231,8 @@ const clearAllFilters = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // On load in selection mode, check if a session for this lobby is already
-  // in_progress (interviewer pressed back from the interviewer panel).
-  useEffect(() => {
-    if (!selectionMode || !lobbyId) return
-    try {
-      const raw = localStorage.getItem('compendium-session-start')
-      if (!raw) return
-      const data = JSON.parse(raw) as { lobbyId?: string; caseId?: string; caseName?: string; mode?: string }
-      if (data.lobbyId === lobbyId && data.caseId) {
-        setLiveSessionOverlayInfo({
-          caseId: data.caseId,
-          caseName: data.caseName ?? 'the current case',
-          lobbyId,
-          sessionMode: data.mode ?? sessionMode,
-        })
-      }
-    } catch { /* ignore */ }
-  // Only run once on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // liveSessionOverlayInfo trigger removed — the replace-case flow now clears
+  // compendium-session-start before navigating here, so this check is no longer needed.
 
   // Interviewers arriving in select-mode (via shared invite link) may not be
   // signed in. Silently provision an anonymous Firebase user so the /api
