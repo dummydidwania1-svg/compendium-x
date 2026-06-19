@@ -23,6 +23,7 @@
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore'
 import { onDocumentWritten } from 'firebase-functions/v2/firestore'
+import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { defineSecret } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/v2'
 
@@ -401,6 +402,137 @@ export const transcribeRecording = onDocumentWritten(
       storagePath,
       apiKey: GEMINI_API_KEY.value(),
     })
+  },
+)
+
+/**
+ * Runs every hour. Finds sessions abandoned more than 24 hours ago that
+ * haven't yet been promoted to a fallback dashboard entry, creates an
+ * unrated evaluation doc so the candidate sees the case in their case log,
+ * and marks the session as `fallback_unrated`.
+ *
+ * The evaluation's `createdAt` is set to `abandonedAt` (the actual session
+ * end time) so the case log timestamp reflects when the session happened,
+ * not when this function ran.
+ *
+ * Unrated entries are excluded from score-based analytics; they appear only
+ * in the case log with audio/transcript if available.
+ */
+export const promoteAbandonedSessions = onSchedule(
+  {
+    schedule: 'every 1 hours',
+    region: 'us-central1',
+    timeoutSeconds: 120,
+    memory: '256MiB',
+  },
+  async () => {
+    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000
+    const cutoff = Timestamp.fromMillis(Date.now() - TWENTY_FOUR_HOURS_MS)
+
+    // Query sessions that are abandoned, older than 24h, and not yet promoted.
+    const snapshot = await db
+      .collection('sessions')
+      .where('status', '==', 'abandoned')
+      .where('abandonedAt', '<=', cutoff)
+      .get()
+
+    if (snapshot.empty) {
+      logger.info('fallback_promote: no eligible sessions')
+      return
+    }
+
+    logger.info(`fallback_promote: found ${snapshot.docs.length} eligible session(s)`)
+
+    for (const sessionDoc of snapshot.docs) {
+      const sessionId = sessionDoc.id
+      const data = sessionDoc.data()
+
+      // Skip if already promoted (idempotency guard).
+      if (data.status === 'fallback_unrated') continue
+
+      const candidateId = typeof data.candidateId === 'string' ? data.candidateId : null
+      const caseId = typeof data.caseId === 'string' ? data.caseId : null
+      if (!candidateId || !caseId) {
+        logger.warn('fallback_promote: skipping session with missing candidateId or caseId', { sessionId })
+        continue
+      }
+
+      // Check no evaluation already exists for this lobby (e.g. interviewer
+      // submitted after candidate left but before the 24h window closed).
+      const existingEval = await db
+        .collection('evaluations')
+        .where('lobbyId', '==', sessionId)
+        .limit(1)
+        .get()
+      if (!existingEval.empty) {
+        // Interviewer rated it — just mark session completed normally.
+        await sessionDoc.ref.set({ status: 'fallback_unrated', updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+        logger.info('fallback_promote: eval already exists, marking session', { sessionId })
+        continue
+      }
+
+      // Pull case metadata for denormalized fields on the evaluation doc.
+      let caseTitle = 'Untitled Case'
+      let caseType: string | null = null
+      let industry: string | null = null
+      try {
+        const caseSnap = await db.collection('cases').doc(caseId).get()
+        if (caseSnap.exists) {
+          const caseData = caseSnap.data() ?? {}
+          if (typeof caseData.title === 'string' && caseData.title.trim()) caseTitle = caseData.title.trim()
+          if (typeof caseData.case_type === 'string') caseType = caseData.case_type
+          else if (typeof caseData.caseType === 'string') caseType = caseData.caseType
+          if (typeof caseData.industry === 'string' && caseData.industry.trim()) industry = caseData.industry.trim()
+        }
+      } catch (err) {
+        logger.warn('fallback_promote: could not fetch case metadata', { sessionId, caseId, err })
+      }
+
+      // Use abandonedAt as the evaluation timestamp so the case log shows
+      // the actual session time, not the time this function ran.
+      const sessionTimestamp = data.abandonedAt instanceof Timestamp
+        ? data.abandonedAt
+        : FieldValue.serverTimestamp()
+
+      const evalRef = db.collection('evaluations').doc()
+      const batch = db.batch()
+
+      batch.set(evalRef, {
+        caseId,
+        caseTitle,
+        caseType,
+        industry,
+        lobbyId: sessionId,
+        candidateId,
+        candidateEmail: typeof data.candidateEmail === 'string' ? data.candidateEmail : null,
+        interviewerId: null,
+        interviewerEmail: null,
+        // All scores null — this entry is unrated.
+        structureScore: null,
+        understandingScore: null,
+        deliveryScore: null,
+        creativityScore: null,
+        notes: 'No interviewer feedback. The session ended before the interviewer submitted a rating.',
+        isUnrated: true,
+        completedBy: 'timeout_fallback',
+        createdAt: sessionTimestamp,
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+
+      batch.set(
+        sessionDoc.ref,
+        {
+          status: 'fallback_unrated',
+          completedBy: 'timeout_fallback',
+          fallbackAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+
+      await batch.commit()
+      logger.info('fallback_promote: created unrated eval', { sessionId, evaluationId: evalRef.id })
+    }
   },
 )
 

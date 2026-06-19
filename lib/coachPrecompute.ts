@@ -30,16 +30,19 @@ export interface CoachMetrics {
   activeFilters: CoachFilters
 }
 
-const mean = (arr: number[]): number =>
-  arr.length ? +(arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 0
+const mean = (arr: (number | null)[]): number => {
+  const nums = arr.filter((v): v is number => typeof v === 'number')
+  return nums.length ? +(nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : 0
+}
 
 function avgOf(cases: DashboardCaseEntry[]): ParamAvg {
+  const rated = cases.filter((c) => !c.isUnrated)
   return {
-    structure: mean(cases.map((c) => c.structure)),
-    analysis: mean(cases.map((c) => c.analysis)),
-    creativity: mean(cases.map((c) => c.creativity)),
-    delivery: mean(cases.map((c) => c.delivery)),
-    caseScore: mean(cases.map((c) => c.score)),
+    structure: mean(rated.map((c) => c.structure)),
+    analysis: mean(rated.map((c) => c.analysis)),
+    creativity: mean(rated.map((c) => c.creativity)),
+    delivery: mean(rated.map((c) => c.delivery)),
+    caseScore: mean(rated.map((c) => c.score)),
   }
 }
 
@@ -129,10 +132,11 @@ export function precompute(entries: DashboardCaseEntry[], filters: CoachFilters)
     filteredCases.length > 0 && filteredAvg
       ? filteredCases.filter(
           (c) =>
-            c.structure <= filteredAvg.structure - 1.0 &&
-            c.analysis <= filteredAvg.analysis - 1.0 &&
-            c.creativity <= filteredAvg.creativity - 1.0 &&
-            c.delivery <= filteredAvg.delivery - 1.0
+            !c.isUnrated &&
+            c.structure !== null && c.structure <= filteredAvg.structure - 1.0 &&
+            c.analysis !== null && c.analysis <= filteredAvg.analysis - 1.0 &&
+            c.creativity !== null && c.creativity <= filteredAvg.creativity - 1.0 &&
+            c.delivery !== null && c.delivery <= filteredAvg.delivery - 1.0
         )
       : []
 

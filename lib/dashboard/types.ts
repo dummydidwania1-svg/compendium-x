@@ -17,6 +17,7 @@ export type EvaluationRecord = {
   workspaceImageUrls: string[]
   createdAt?: Timestamp
   scores: ScoreSet
+  isUnrated: boolean
 }
 
 export type DashboardFilters = {

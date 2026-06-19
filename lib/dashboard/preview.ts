@@ -61,6 +61,7 @@ export function buildPreviewDashboardData(): {
       candidateId: null,
       notes,
       workspaceImageUrls,
+      isUnrated: false,
       scores: {
         structure: mockCase.structure,
         understanding: mockCase.analysis,
@@ -99,6 +100,7 @@ export function buildPreviewDashboardData(): {
       hasPDF: mockCase.hasPDF,
       hasSnapshot: mockCase.hasSnapshot,
       hasAudio: false,
+      isUnrated: false,
     })
   }
 

@@ -1740,7 +1740,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           body={
             recordingState === 'uploading'
               ? "Audio is uploading right now. Leaving may cut it off. Wait a few seconds for it to finish automatically."
-              : "Leaving will stop the mic and save what was recorded so far. The interviewer can still rate the session and you will see their feedback in your dashboard."
+              : "Leaving will stop the mic and save what's recorded so far. If the interviewer rates it, you'll see their feedback in the dashboard. Either way, the case will show up there."
           }
           autoDismissMs={12000}
           actionLabel={leavingInProgress ? "Saving..." : "Leave and save"}
@@ -1784,7 +1784,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </svg>
           }
           title="Audio saved. Heading to dashboard."
-          body="Once the interviewer finishes rating the session, the case record with their feedback will show up in your dashboard."
+          body="Your audio is saved. If the interviewer rates it, you'll see their feedback in the dashboard. Either way, the case will show up there."
           autoDismissMs={4000}
           onDismiss={() => {
             setLeaveSavedOverlayVisible(false)

@@ -85,7 +85,7 @@ export type Case = z.infer<typeof caseSchema>
 /* sessions/{lobbyId}                                                         */
 /* -------------------------------------------------------------------------- */
 
-export const sessionStatus = z.enum(['waiting', 'in_progress', 'completed', 'abandoned'])
+export const sessionStatus = z.enum(['waiting', 'in_progress', 'completed', 'abandoned', 'fallback_unrated'])
 export type SessionStatus = z.infer<typeof sessionStatus>
 
 export const sessionMode = z.enum(['remote', 'local'])
@@ -151,6 +151,8 @@ export const sessionSchema = z
     selectedAt: timestamp.optional(),
     completedAt: timestamp.optional(),
     completedBy: z.string().optional(),
+    abandonedAt: timestamp.optional(),
+    fallbackAt: timestamp.optional(),
 
     recording: sessionRecordingSchema.optional(),
   })
@@ -178,10 +180,13 @@ export const evaluationSchema = z
     candidateName: optionalString,
     interviewerEmail: optionalString,
 
-    structureScore: score,
-    understandingScore: score,
-    deliveryScore: score,
-    creativityScore: score,
+    structureScore: score.nullable().optional(),
+    understandingScore: score.nullable().optional(),
+    deliveryScore: score.nullable().optional(),
+    creativityScore: score.nullable().optional(),
+
+    isUnrated: z.boolean().optional(),
+    completedBy: z.string().optional(),
 
     notes: z.string(),
     interviewerObservations: z.string().optional(),

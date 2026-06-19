@@ -30,8 +30,10 @@ export interface FAMetrics {
   initialGreeting: string
 }
 
-const mean = (arr: number[]): number =>
-  arr.length ? +(arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 0
+const mean = (arr: (number | null)[]): number => {
+  const nums = arr.filter((v): v is number => typeof v === 'number')
+  return nums.length ? +(nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : 0
+}
 
 function toDS(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -88,7 +90,8 @@ function generateDynamicQuestions(
 }
 
 export function computeFAMetrics(entries: DashboardCaseEntry[]): FAMetrics {
-  const cases = [...entries].sort((a, b) => a.date.localeCompare(b.date))
+  // Exclude unrated entries from all analytics — they have no scores.
+  const cases = [...entries].filter((e) => !e.isUnrated).sort((a, b) => a.date.localeCompare(b.date))
   const n = cases.length
   const params: Param[] = ['structure', 'analysis', 'creativity', 'delivery']
 

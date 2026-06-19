@@ -326,8 +326,9 @@ const LowestScoreCard = ({ filters }: LowestScoreCardProps) => {
   }, [entries, filters]);
 
   const lowestScore = useMemo(() => {
-    if (filteredCases.length === 0) return 0;
-    return Math.min(...filteredCases.map((c) => c.score));
+    const rated = filteredCases.filter((c) => !c.isUnrated && c.score !== null);
+    if (rated.length === 0) return 0;
+    return Math.min(...(rated.map((c) => c.score) as number[]));
   }, [filteredCases]);
 
   const lowestCases = useMemo(() => {

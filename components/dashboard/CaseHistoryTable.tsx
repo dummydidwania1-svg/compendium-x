@@ -113,7 +113,7 @@ const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void
   </div>
   <div className="flex items-center gap-2.5 shrink-0 ml-2">
     <span className="text-[9px] font-medium text-[#5C4033]/30 tabular-nums tracking-wide">
-      {entry.score} / 5
+      {entry.isUnrated ? 'Unrated' : `${entry.score} / 5`}
     </span>
     <button
       onClick={onClose}
@@ -129,7 +129,10 @@ const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void
         <span className="text-[9px] font-semibold bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/65 px-2 py-[3px] rounded-md">{entry.type}</span>
         <span className="text-[9px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/55 px-2 py-[3px] rounded-md">{entry.level}</span>
         <span className="text-[9px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/50 px-2 py-[3px] rounded-md">{formatDateStr(entry.date)}</span>
-        <span className="text-[9px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/50 px-2 py-[3px] rounded-md">Score: {entry.score}</span>
+        {entry.isUnrated
+          ? <span className="text-[9px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/50 px-2 py-[3px] rounded-md">Unrated</span>
+          : <span className="text-[9px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/50 px-2 py-[3px] rounded-md">Score: {entry.score}</span>
+        }
       </div>
 
       {/* Content sections */}
@@ -334,7 +337,11 @@ const sortedCases = useMemo(() => {
     } else if (sortField === 'date') {
       cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
     } else if (sortField === 'score') {
-      cmp = a.score - b.score;
+      // Unrated entries sort to the bottom regardless of direction.
+      if (a.score === null && b.score === null) cmp = 0;
+      else if (a.score === null) cmp = 1;
+      else if (b.score === null) cmp = -1;
+      else cmp = a.score - b.score;
     }
     return sortDir === 'asc' ? cmp : -cmp;
   });
@@ -501,6 +508,11 @@ const sortedCases = useMemo(() => {
                         <span className="text-[8px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/50 hover:text-[#3B2F2F] hover:bg-[#D9D0C4]/28 px-1.5 py-[3px] rounded-md whitespace-nowrap transition-colors">
                         {entry.level}
                         </span>
+                        {entry.isUnrated && (
+                          <span className="text-[8px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/40 px-1.5 py-[3px] rounded-md whitespace-nowrap">
+                            Unrated
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -509,7 +521,7 @@ const sortedCases = useMemo(() => {
 </td>
                     {/* Score */}
                     <td className="py-3 px-3 text-xs text-[#5C4033]/70 text-center tabular-nums align-middle">
-  {entry.score}
+  {entry.isUnrated ? <span className="text-[#5C4033]/35">--</span> : entry.score}
 </td>
 
                     {/* Assets — two icon buttons with micro-labels */}

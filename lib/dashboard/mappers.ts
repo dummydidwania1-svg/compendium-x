@@ -36,6 +36,8 @@ export function mapEvaluationDoc(id: string, value: DocumentData): EvaluationRec
     workspaceImageUrls.push(workspaceImageUrl)
   }
 
+  const isUnrated = value.isUnrated === true
+
   return {
     id,
     caseId: asString(value.caseId),
@@ -48,6 +50,7 @@ export function mapEvaluationDoc(id: string, value: DocumentData): EvaluationRec
     notes,
     workspaceImageUrls,
     createdAt: value.createdAt,
+    isUnrated,
     scores: {
       structure: structureScore,
       understanding: understandingScore,

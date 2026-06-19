@@ -23,12 +23,12 @@ export type DashboardCaseEntry = {
   level: string
   date: string
   createdAtMs: number
-  structure: number
-  analysis: number
-  understanding: number
-  delivery: number
-  creativity: number
-  score: number
+  structure: number | null
+  analysis: number | null
+  understanding: number | null
+  delivery: number | null
+  creativity: number | null
+  score: number | null
   notes: string
   summary: string
   transcript: string | null
@@ -41,6 +41,7 @@ export type DashboardCaseEntry = {
   hasPDF: boolean
   hasSnapshot: boolean
   hasAudio: boolean
+  isUnrated: boolean
 }
 
 export type DashboardCaseMeta = {
@@ -108,7 +109,8 @@ function deriveSummary(notes: string, transcriptPreview: string | null): string 
   return firstSentence.length <= 180 ? firstSentence : `${firstSentence.slice(0, 177).trim()}...`
 }
 
-function weightedScore(record: EvaluationRecord): number {
+function weightedScore(record: EvaluationRecord): number | null {
+  if (record.isUnrated) return null
   const structure = record.scores.structure ?? 0
   const analysis = record.scores.understanding ?? 0
   const delivery = record.scores.delivery ?? 0
@@ -167,11 +169,11 @@ export function mapDashboardEntry(
     level: normalizeDifficulty(record.difficulty ?? caseMeta?.difficulty),
     date,
     createdAtMs: timestampToMillis(record.createdAt),
-    structure: record.scores.structure ?? 0,
-    analysis: record.scores.understanding ?? 0,
-    understanding: record.scores.understanding ?? 0,
-    delivery: record.scores.delivery ?? 0,
-    creativity: record.scores.creativity ?? 0,
+    structure: record.scores.structure ?? null,
+    analysis: record.scores.understanding ?? null,
+    understanding: record.scores.understanding ?? null,
+    delivery: record.scores.delivery ?? null,
+    creativity: record.scores.creativity ?? null,
     score: weightedScore(record),
     notes: record.notes,
     summary: deriveSummary(record.notes, transcriptPreview),
@@ -185,6 +187,7 @@ export function mapDashboardEntry(
     hasPDF: false,
     hasSnapshot: workspaceImageUrls.length > 0,
     hasAudio: Boolean(sessionMeta?.audioUrl),
+    isUnrated: record.isUnrated,
   }
 }
 

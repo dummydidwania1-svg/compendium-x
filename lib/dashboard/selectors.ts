@@ -127,7 +127,7 @@ export function computeKpis(records: EvaluationRecord[]): DashboardKpis {
   }
 
   return {
-    totalCases: records.length,
+    totalCases: records.filter((r) => !r.isUnrated).length,
     averageScore: average(recordAverages),
     strongestSkill,
     weakestSkill,
@@ -135,12 +135,12 @@ export function computeKpis(records: EvaluationRecord[]): DashboardKpis {
 }
 
 export function trendRows(records: EvaluationRecord[], limit = 12): EvaluationRecord[] {
-  const newest = sortByNewest(records).slice(0, limit)
+  const newest = sortByNewest(records.filter((r) => !r.isUnrated)).slice(0, limit)
   return newest.reverse()
 }
 
 export function recentRows(records: EvaluationRecord[], limit = 8): EvaluationRecord[] {
-  return sortByNewest(records).slice(0, limit)
+  return sortByNewest(records.filter((r) => !r.isUnrated)).slice(0, limit)
 }
 
 function startOfDayMillis(timestamp?: Timestamp): number | null {

@@ -326,8 +326,9 @@ const HighestScoreCard = ({ filters }: HighestScoreCardProps) => {
   }, [entries, filters]);
 
   const highestScore = useMemo(() => {
-    if (filteredCases.length === 0) return 0;
-    return Math.max(...filteredCases.map((c) => c.score));
+    const rated = filteredCases.filter((c) => !c.isUnrated && c.score !== null);
+    if (rated.length === 0) return 0;
+    return Math.max(...(rated.map((c) => c.score) as number[]));
   }, [filteredCases]);
 
   const highestCases = useMemo(() => {
