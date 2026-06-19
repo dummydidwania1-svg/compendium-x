@@ -1049,6 +1049,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             const popup = (window as PopupHost).__compendiumInterviewerWindow
             const popupStillOpen = popup && !popup.closed
             if (!data.active && popupStillOpen) return
+            if (!data.active && endSessionInitiatedRef.current) return
             setInterviewerWindowClosed(!data.active)
           }
         } catch {
@@ -1257,7 +1258,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         return
       }
       if (win.closed) {
-        setInterviewerWindowClosed(true)
+        if (!endSessionInitiatedRef.current) setInterviewerWindowClosed(true)
       } else {
         setInterviewerWindowClosed(false)
       }
