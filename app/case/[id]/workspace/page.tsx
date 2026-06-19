@@ -211,6 +211,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [endSessionOverlayKind, setEndSessionOverlayKind] = useState<EndSessionOverlayKind>(null)
   const [endSessionActionInProgress, setEndSessionActionInProgress] = useState(false)
   const [endSessionSavedVisible, setEndSessionSavedVisible] = useState(false)
+  const [endSessionSavedKind, setEndSessionSavedKind] = useState<'rated' | 'unrated'>('unrated')
   // Suppresses interviewer-window-closed and capture-error overlays after end session is triggered
   const endSessionInitiatedRef = useRef(false)
   // ── Recoverable capture error overlay ──────────────────────────────────────
@@ -923,6 +924,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
     await stopRecordingAndFinalize('candidate_ended', false)
     setEndSessionActionInProgress(false)
+    setEndSessionSavedKind('rated')
     setEndSessionSavedVisible(true)
   }, [endSessionActionInProgress, lobbyId, readDraftScores, isDraftAllRated, stopRecordingAndFinalize])
 
@@ -951,6 +953,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
     await stopRecordingAndFinalize('candidate_ended', false)
     setEndSessionActionInProgress(false)
+    setEndSessionSavedKind('unrated')
     setEndSessionSavedVisible(true)
   }, [endSessionActionInProgress, lobbyId, stopRecordingAndFinalize])
 
@@ -2096,7 +2099,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </svg>
           }
           title="End session early?"
-          body="The interviewer hasn't finished rating yet. You can still save your audio and the case will show up as unrated, or drop it entirely."
+          body="The interviewer hasn't finished rating yet. You can save your audio and end now, the case will appear in your dashboard as unrated. Or drop it entirely."
           actionLabel={endSessionActionInProgress ? "Saving..." : "Save audio"}
           onAction={() => void handleEndSessionSaveAudio()}
           secondaryActionLabel="Drop session"
@@ -2117,8 +2120,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           }
-          title="Audio saved. Heading to dashboard."
-          body="Your audio is saved. The case will show up in your dashboard once the interviewer submits their rating."
+          title="Session saved. Heading to dashboard."
+          body={endSessionSavedKind === 'rated'
+            ? "Ratings and audio saved. The case is in your dashboard."
+            : "Audio saved. The case is in your dashboard as unrated."}
           autoDismissMs={4000}
           onDismiss={() => {
             setEndSessionSavedVisible(false)
