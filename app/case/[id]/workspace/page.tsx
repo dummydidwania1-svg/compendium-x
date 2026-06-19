@@ -1872,7 +1872,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         }}
       >
         <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 sm:px-6 md:px-10 lg:px-12">
-          <Link href="/" className="flex items-center gap-1 text-left transition-opacity hover:opacity-85">
+          <div className="flex items-center gap-1 text-left">
             <Image
               src="/logo.png"
               alt="Case Compendium X"
@@ -1884,7 +1884,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <span className="text-[#453a2a]">Case Compendium</span>
               <span className="text-[#3D5A35]">X</span>
             </div>
-          </Link>
+          </div>
         </div>
       </header>
 
@@ -2501,7 +2501,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         </div>
       </main>
 
-      <CompactPlatformFooter />
     </div>
   )
 }

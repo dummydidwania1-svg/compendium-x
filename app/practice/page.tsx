@@ -23,7 +23,32 @@ export default function PracticeModeSelection() {
   // opening the interviewer popup. Shows a transient "Setting up..." state
   // on the local card so the user knows their click registered.
   const [localPreparing, setLocalPreparing] = useState(false)
+  const [showHandoffOverlay, setShowHandoffOverlay] = useState(false)
+  const [handoffCountdown, setHandoffCountdown] = useState(5)
   const router = useRouter()
+
+  useEffect(() => {
+    if (!showHandoffOverlay) {
+      setHandoffCountdown(5)
+      return
+    }
+    setHandoffCountdown(5)
+    let count = 5
+    const interval = setInterval(() => {
+      count -= 1
+      setHandoffCountdown(count)
+      if (count <= 0) clearInterval(interval)
+    }, 1000)
+    const timer = setTimeout(() => {
+      setShowHandoffOverlay(false)
+      void startLocalSession()
+    }, 5000)
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timer)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHandoffOverlay])
 
   useEffect(() => {
     const checkUser = async () => {
@@ -230,6 +255,22 @@ export default function PracticeModeSelection() {
           opacity: 0.72;
           transform: translateX(1px);
         }
+        @keyframes handoff-overlay-in {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes handoff-progress {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+        @keyframes handoff-device-float {
+          0%, 100% { transform: translateX(0px); }
+          50% { transform: translateX(6px); }
+        }
+        @keyframes handoff-arrow-pulse {
+          0%, 100% { opacity: 0.5; transform: translateX(0px); }
+          50% { opacity: 1; transform: translateX(3px); }
+        }
       `}</style>
 
       <Navbar currentPage="practice" />
@@ -266,6 +307,74 @@ export default function PracticeModeSelection() {
           }}
         />
       ) : null}
+
+      {/* Handoff overlay — shown for 5s when user picks "Same Device" */}
+      {showHandoffOverlay ? (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9998,
+            backdropFilter: 'blur(20px) saturate(1.2)',
+            WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
+            background: 'rgba(255,248,240,0.82)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'handoff-overlay-in 0.45s cubic-bezier(0.22,1,0.36,1) both',
+          }}
+        >
+          <div className="flex flex-col items-center gap-6 px-6 text-center">
+            {/* Device hand-off animation */}
+            <div className="flex items-center gap-3" style={{ marginBottom: '4px' }}>
+              <svg width="52" height="38" viewBox="0 0 52 38" fill="none" style={{ animation: 'handoff-device-float 2.2s ease-in-out infinite' }}>
+                <rect x="1" y="1" width="22" height="34" rx="3" stroke="#453a2a" strokeWidth="1.5" fill="rgba(255,248,240,0.7)" />
+                <rect x="6" y="6" width="12" height="20" rx="1.5" fill="rgba(61,90,53,0.08)" />
+                <circle cx="12" cy="31" r="1.5" fill="#453a2a" opacity="0.35" />
+              </svg>
+              <svg width="20" height="14" viewBox="0 0 20 14" fill="none" style={{ animation: 'handoff-arrow-pulse 1.4s ease-in-out infinite' }}>
+                <path d="M1 7h15M12 2l6 5-6 5" stroke="#3D5A35" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <svg width="52" height="38" viewBox="0 0 52 38" fill="none" style={{ animation: 'handoff-device-float 2.2s ease-in-out 0.4s infinite' }}>
+                <rect x="1" y="1" width="22" height="34" rx="3" stroke="#3D5A35" strokeWidth="1.5" fill="rgba(255,248,240,0.7)" />
+                <rect x="6" y="6" width="12" height="20" rx="1.5" fill="rgba(61,90,53,0.12)" />
+                <circle cx="12" cy="31" r="1.5" fill="#3D5A35" opacity="0.45" />
+              </svg>
+            </div>
+
+            <div className="flex flex-col items-center gap-2">
+              <h2
+                style={{ fontFamily: "'Newsreader', serif", fontWeight: 300, color: '#3B2F2F', fontSize: '28px', lineHeight: 1.2 }}
+              >
+                Time to hand over
+              </h2>
+              <p
+                style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.70)', maxWidth: '280px', lineHeight: 1.6 }}
+              >
+                Pass the device to your interviewer. They&apos;ll pick a case and get things going from there.
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-[220px] flex flex-col items-center gap-1.5">
+              <div style={{ width: '220px', height: '2px', background: 'rgba(92,64,51,0.10)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    background: '#3D5A35',
+                    borderRadius: '999px',
+                    animation: 'handoff-progress 5s linear forwards',
+                  }}
+                />
+              </div>
+              <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.40)', fontFamily: "'Work Sans', sans-serif" }}>
+                Opening interviewer window in {handoffCountdown > 0 ? handoffCountdown : 1}s...
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <main className="relative flex min-h-[calc(100vh-70px)] flex-1 flex-col justify-center px-4 pb-20 pt-[90px] md:px-8 md:pb-24">
         <div className="mx-auto max-w-5xl">
 
@@ -281,9 +390,6 @@ export default function PracticeModeSelection() {
               <span className="text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">
                 Session Setup
               </span>
-              <span className="text-[7px] tracking-[0.1em] font-semibold px-1.5 py-[1px] rounded-sm border border-[#C4A882]/30 text-[#C4A882] bg-[#C4A882]/8 leading-tight uppercase">
-                Sample
-              </span>
             </div>
             <h1
               style={{
@@ -293,7 +399,7 @@ export default function PracticeModeSelection() {
               }}
               className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
             >
-              Choose Practice Mode
+              How are you doing this case?
             </h1>
             <p
               className="mt-4 max-w-[620px] pl-[2px] text-[13px] leading-relaxed text-[#5c4033]/62"
@@ -302,7 +408,7 @@ export default function PracticeModeSelection() {
                 opacity: mounted ? undefined : 0,
               }}
             >
-              Pick how you connect with your interviewer. Both modes route into the same practice workflow.
+              Are you both in the same room, or is your interviewer joining remotely? Pick whichever fits.
             </p>
           </div>
 
@@ -353,10 +459,10 @@ export default function PracticeModeSelection() {
               </div>
               <div className="px-6 py-5">
                 <p className="text-[12px] leading-relaxed text-[#434840]">
-                  Share a lobby link with your interviewer. They join from their own device, no setup needed.
+                  Your interviewer is somewhere else? Generate a link and send it over. They open it on their end and you&apos;re set.
                 </p>
                 <p className="practice-mode-note text-[10px] leading-relaxed text-[#5C4033]/44">
-                  Best for partners joining from separate devices.
+                  Perfect when your interviewer is not physically with you.
                 </p>
                 <div className="mt-5">
                   <button
@@ -377,13 +483,13 @@ export default function PracticeModeSelection() {
                 animation: mounted ? 'practice-card-in 0.6s cubic-bezier(0.22,1,0.36,1) 0.25s both' : 'none',
                 opacity: mounted ? undefined : 0,
               }}
-              onClick={() => void startLocalSession()}
+              onClick={() => setShowHandoffOverlay(true)}
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#3D5A35]/6">
                 <div>
                   <span className="text-[9px] uppercase tracking-[0.25em] text-[#3D5A35]/50 font-semibold">02 / Local</span>
                   <h2 style={{ fontFamily: "'Newsreader', serif" }} className="text-2xl text-[#3D5A35] leading-tight mt-0.5">
-                    On This Device
+                    Same Device
                   </h2>
                 </div>
                 <div className="practice-mode-icon">
@@ -395,15 +501,15 @@ export default function PracticeModeSelection() {
               </div>
               <div className="px-6 py-5">
                 <p className="text-[12px] leading-relaxed text-[#434840]">
-                  Interviewer controls open in a popup. Candidate stays in this tab. One laptop, both roles.
+                  Both of you are in the same room? One of you opens this, hands the device over, and the interviewer picks a case from there.
                 </p>
                 <p className="practice-mode-note text-[10px] leading-relaxed text-[#5C4033]/44">
-                  Best for in-person reps or solo walkthroughs.
+                  Great for when you&apos;re both sitting together with one laptop.
                 </p>
                 <div className="mt-5">
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); void startLocalSession() }}
+                    onClick={(e) => { e.stopPropagation(); setShowHandoffOverlay(true) }}
                     disabled={localPreparing}
                     className="practice-btn w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
                   >

@@ -27,10 +27,6 @@ export default function OfflineBanner() {
       style={{ fontFamily: "'Work Sans', sans-serif" }}
     >
       <style>{`
-        @keyframes ob-tie-swing {
-          0%,100% { transform: rotate(-5deg); }
-          50%      { transform: rotate(5deg); }
-        }
         @keyframes ob-breathe {
           0%,100% { opacity: 0.4; }
           50%      { opacity: 0.8; }
@@ -45,17 +41,17 @@ export default function OfflineBanner() {
         className="flex flex-col items-center gap-6 px-6"
         style={{ animation: 'ob-rise 0.5s cubic-bezier(0.16,1,0.3,1) both' }}
       >
-        {/* Tie logo */}
-        <div style={{ transformOrigin: 'top center', animation: 'ob-tie-swing 2.8s cubic-bezier(0.37,0,0.63,1) infinite' }}>
-          <svg viewBox="0 0 64 64" fill="none" width="34" height="34">
-            <path d="M16 10h32l-8 14 5 8-13 22-13-22 5-8-8-14Z" fill="#5C4033" opacity="0.18" />
-            <path
-              d="M32 24 27 32h10l-5-8Z"
-              fill="#3D5A35"
-              style={{ animation: 'ob-breathe 2.8s ease-in-out infinite' }}
-            />
-          </svg>
-        </div>
+        <img
+          src="/logo2.png"
+          alt="Case CompendiumX"
+          width={68}
+          height={68}
+          style={{
+            objectFit: 'contain',
+            mixBlendMode: 'multiply',
+            animation: 'ob-breathe 2.4s ease-in-out infinite',
+          }}
+        />
 
         {/* Text */}
         <div className="flex flex-col items-center gap-2 text-center">

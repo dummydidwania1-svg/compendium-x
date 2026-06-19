@@ -1619,6 +1619,17 @@ export default function LobbyPage() {
     }
   }, [isInterviewer, lobbyId, requestedSessionMode, router])
 
+  const handleCancelSession = async () => {
+    const popupHost = window as PopupWindowHost
+    popupHost.__compendiumInterviewerWindow?.close()
+    try {
+      await apiPost(`/api/sessions/${lobbyId}/abandon`, {})
+    } catch {
+      // best effort
+    }
+    router.push('/practice')
+  }
+
   const openRepoInPopup = () => {
     const popupWidth = 800
     const popupHeight = 800
@@ -1684,7 +1695,7 @@ export default function LobbyPage() {
       interviewerBrowsing={interviewerBrowsing}
       isLaunching={isLaunching}
       launchCaseName={launchCaseName}
-      onCancelSession={() => router.push('/practice')}
+      onCancelSession={() => void handleCancelSession()}
       onPrimaryAction={() => { void handleCandidatePrimaryAction() }}
       onReopenRepo={openRepoInPopup}
       onMicStateChange={setIsMicReady}
