@@ -211,6 +211,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [endSessionOverlayKind, setEndSessionOverlayKind] = useState<EndSessionOverlayKind>(null)
   const [endSessionActionInProgress, setEndSessionActionInProgress] = useState(false)
   const [endSessionSavedVisible, setEndSessionSavedVisible] = useState(false)
+  // Suppresses interviewer-window-closed and capture-error overlays after end session is triggered
+  const endSessionInitiatedRef = useRef(false)
   // ── Recoverable capture error overlay ──────────────────────────────────────
   const [captureErrorOverlayVisible, setCaptureErrorOverlayVisible] = useState(false)
   const captureErrorReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -787,93 +789,100 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     void startCaptureFlow(preferredRecordingMode)
   }, [preferredRecordingMode, requestMicrophone, startCaptureFlow])
 
+  // Shared helper: reads localStorage draft and checks if all 4 scores are filled
+  type DraftScores = { structure?: number; understanding?: number; delivery?: number; creativity?: number }
+  const readDraftScores = useCallback((lid: string): { scores: DraftScores; notes: string } | null => {
+    try {
+      const raw = localStorage.getItem(`compendium-interviewer-draft-${lid}`)
+      if (!raw) return null
+      const parsed = JSON.parse(raw) as { scores?: DraftScores; notes?: string }
+      return parsed.scores ? { scores: parsed.scores, notes: parsed.notes ?? '' } : null
+    } catch {
+      return null
+    }
+  }, [])
+
+  const isDraftAllRated = useCallback((scores: DraftScores): boolean =>
+    (scores.structure ?? 0) > 0 &&
+    (scores.understanding ?? 0) > 0 &&
+    (scores.delivery ?? 0) > 0 &&
+    (scores.creativity ?? 0) > 0
+  , [])
+
+  const checkRatingStatus = useCallback(async (lid: string): Promise<boolean> => {
+    // Source A: Firestore eval already submitted
+    try {
+      const snap = await getDocs(query(evaluationsCol, where('lobbyId', '==', lid)))
+      if (!snap.empty) return true
+    } catch {
+      // Network error — fall back to draft
+    }
+    // Source B: localStorage draft with all 4 scores > 0
+    const draft = readDraftScores(lid)
+    return draft !== null && isDraftAllRated(draft.scores)
+  }, [readDraftScores, isDraftAllRated])
+
   const handleCandidateEndSession = useCallback(async () => {
     if (endingSession) return
     if (!lobbyId) return
 
     setEndingSession(true)
-
-    // Check rating status — Source A: Firestore eval already submitted
-    let evalAlreadySubmitted = false
-    try {
-      const snap = await getDocs(query(evaluationsCol, where('lobbyId', '==', lobbyId)))
-      evalAlreadySubmitted = !snap.empty
-    } catch {
-      // Network error — fall back to draft-only check
-    }
-
-    // Source B: localStorage draft with all 4 scores filled
-    type DraftScores = { structure?: number; understanding?: number; delivery?: number; creativity?: number }
-    let draftScores: DraftScores | null = null
-    try {
-      const raw = localStorage.getItem(`compendium-interviewer-draft-${lobbyId}`)
-      if (raw) {
-        const parsed = JSON.parse(raw) as { scores?: DraftScores }
-        if (parsed.scores) draftScores = parsed.scores
-      }
-    } catch {
-      // Malformed draft — ignore
-    }
-    const draftAllRated =
-      draftScores !== null &&
-      (draftScores.structure ?? 0) > 0 &&
-      (draftScores.understanding ?? 0) > 0 &&
-      (draftScores.delivery ?? 0) > 0 &&
-      (draftScores.creativity ?? 0) > 0
-
-    const isRated = evalAlreadySubmitted || draftAllRated
-
+    const isRated = await checkRatingStatus(lobbyId)
     setEndingSession(false)
     setEndSessionOverlayKind(isRated ? 'rated' : 'unrated')
-  }, [endingSession, lobbyId])
+  }, [endingSession, lobbyId, checkRatingStatus])
 
   const handleEndSessionSaveAndEnd = useCallback(async () => {
     if (endSessionActionInProgress || !lobbyId) return
     setEndSessionActionInProgress(true)
+    endSessionInitiatedRef.current = true
     completionHandledRef.current = true
+    // Dismiss overlays that no longer apply
+    setWindowClosedOverlayVisible(false)
+    setCaptureErrorOverlayVisible(false)
+    setEndSessionOverlayKind(null)
 
-    // If draft exists and wasn't yet submitted, auto-submit it now
+    // Submit draft via candidate-safe route (uses session's interviewerId server-side)
     try {
-      const raw = localStorage.getItem(`compendium-interviewer-draft-${lobbyId}`)
-      if (raw) {
-        const parsed = JSON.parse(raw) as { scores?: Record<string, number>; notes?: string }
-        const snap = await getDocs(query(evaluationsCol, where('lobbyId', '==', lobbyId)))
-        if (snap.empty && parsed.scores) {
-          await apiPost('/api/evaluations', {
-            lobbyId,
-            caseId: caseIdRef.current || null,
-            scores: parsed.scores,
-            notes: parsed.notes ?? '',
-          })
-        }
+      const draft = readDraftScores(lobbyId)
+      const snap = await getDocs(query(evaluationsCol, where('lobbyId', '==', lobbyId)))
+      if (snap.empty && draft && isDraftAllRated(draft.scores)) {
+        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/submit-draft`, {
+          scores: {
+            structure: draft.scores.structure ?? 0,
+            understanding: draft.scores.understanding ?? 0,
+            delivery: draft.scores.delivery ?? 0,
+            creativity: draft.scores.creativity ?? 0,
+          },
+          notes: draft.notes,
+        })
+      } else if (snap.empty) {
+        // Eval already submitted (source A was true) — just complete the session
+        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, { completedBy: 'candidate' })
       }
-    } catch {
-      // Non-fatal — proceed with end regardless
-    }
-
-    try {
-      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, { completedBy: 'candidate' })
     } catch {
       // Non-fatal
     }
 
-    try {
-      localStorage.removeItem(`compendium-interviewer-draft-${lobbyId}`)
-    } catch { }
+    try { localStorage.removeItem(`compendium-interviewer-draft-${lobbyId}`) } catch { }
 
     type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
     ;(window as PopupHost).__compendiumInterviewerWindow?.close()
 
     await stopRecordingAndFinalize('candidate_ended', false)
     setEndSessionActionInProgress(false)
-    setEndSessionOverlayKind(null)
     setEndSessionSavedVisible(true)
-  }, [endSessionActionInProgress, lobbyId, stopRecordingAndFinalize])
+  }, [endSessionActionInProgress, lobbyId, readDraftScores, isDraftAllRated, stopRecordingAndFinalize])
 
   const handleEndSessionSaveAudio = useCallback(async () => {
     if (endSessionActionInProgress || !lobbyId) return
     setEndSessionActionInProgress(true)
+    endSessionInitiatedRef.current = true
     completionHandledRef.current = true
+    // Dismiss overlays that no longer apply
+    setWindowClosedOverlayVisible(false)
+    setCaptureErrorOverlayVisible(false)
+    setEndSessionOverlayKind(null)
 
     try {
       await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {})
@@ -886,14 +895,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
     await stopRecordingAndFinalize('candidate_ended', false)
     setEndSessionActionInProgress(false)
-    setEndSessionOverlayKind(null)
     setEndSessionSavedVisible(true)
   }, [endSessionActionInProgress, lobbyId, stopRecordingAndFinalize])
 
   const handleEndSessionDrop = useCallback(async () => {
     if (endSessionActionInProgress || !lobbyId) return
     setEndSessionActionInProgress(true)
+    endSessionInitiatedRef.current = true
     completionHandledRef.current = true
+    setWindowClosedOverlayVisible(false)
+    setCaptureErrorOverlayVisible(false)
+    setEndSessionOverlayKind(null)
 
     teardownMedia()
 
@@ -1198,7 +1210,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     const onPopState = () => {
       history.pushState(null, '', window.location.href)
       leaveConfirmFromPopstateRef.current = true
-      setLeaveConfirmVisible(true)
+      if (recordingState === 'recording' && lobbyId) {
+        // During active recording: show rated/unrated end-session flow (same as End Session button)
+        void handleCandidateEndSession()
+      } else {
+        // During upload: show the simple upload-in-progress warning
+        setLeaveConfirmVisible(true)
+      }
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
@@ -1243,6 +1261,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // cycle isn't interrupted by the 2s poll re-setting state unnecessarily).
   useEffect(() => {
     if (preferredRecordingMode !== 'local') return
+    // Suppress when candidate has already initiated end session (they closed the window deliberately)
+    if (endSessionInitiatedRef.current) {
+      stopTitlePulse()
+      setWindowClosedOverlayVisible(false)
+      return
+    }
     // Interviewer closing after submitting feedback is expected — don't show the overlay.
     if (feedbackSubmitted) {
       stopTitlePulse()
@@ -1412,7 +1436,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // Drive recoverable capture-error overlay — must be after isRecoverableCaptureError is declared.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    if (isRecoverableCaptureError) {
+    if (isRecoverableCaptureError && !endSessionInitiatedRef.current) {
       setCaptureErrorOverlayVisible((prev) => (prev ? prev : true))
     } else {
       if (captureErrorReshowTimerRef.current) {
@@ -2056,7 +2080,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </svg>
           }
           title="Interviewer window closed"
-          body="Your recording is still running. Reopen the interviewer window to continue."
+          body={
+            recordingState === 'recording'
+              ? "Your recording is still running. Reopen the interviewer window to continue, or end the session from here."
+              : "Your recording is still running. Reopen the interviewer window to continue."
+          }
           actionLabel="Reopen window"
           onAction={() => {
             const url = `/case/${resolvedCaseId}/interviewer?lobby=${encodeURIComponent(lobbyId)}&role=interviewer&sessionMode=local`
@@ -2067,6 +2095,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               win.focus()
             }
           }}
+          secondaryActionLabel={recordingState === 'recording' ? "End session" : undefined}
+          onSecondaryAction={recordingState === 'recording' ? () => {
+            setWindowClosedOverlayVisible(false)
+            if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
+            void handleCandidateEndSession()
+          } : undefined}
           onDismiss={() => {
             setWindowClosedOverlayVisible(false)
             // If the window is still closed, re-show after 1.5s so the
@@ -2076,7 +2110,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               windowClosedReshowTimerRef.current = null
               // Only reshow if the window is still actually closed
               setInterviewerWindowClosed((closed) => {
-                if (closed) setWindowClosedOverlayVisible(true)
+                if (closed && !endSessionInitiatedRef.current) setWindowClosedOverlayVisible(true)
                 return closed
               })
             }, 1500)
