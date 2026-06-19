@@ -208,7 +208,7 @@ function CandidateLobby({
   const step01Text = isLocalSession ? 'Controls ready' : 'Send invite'
   const step02Text =
     sessionPhase === 'launching' ? 'Case selected' :
-    interviewerReplacing ? 'Interviewer is replacing the case' :
+    interviewerReplacing ? 'Replacing case' :
     sessionPhase === 'browsing' ? 'Picking a case now' :
     'Interviewer picks case'
   const step02Active = sessionPhase === 'browsing' || sessionPhase === 'launching' || interviewerReplacing
@@ -225,47 +225,57 @@ function CandidateLobby({
       ? (launchCaseName || 'your workspace')
       : sessionPhase === 'browsing'
         ? 'Picking a Case'
-        : popupWindowClosed
-          ? 'Window Closed'
-          : 'for Interviewer'
+        : interviewerReplacing
+          ? 'Replacing Case'
+          : popupWindowClosed
+            ? 'Window Closed'
+            : 'for Interviewer'
 
   const pageH1Primary =
     sessionPhase === 'launching'
       ? 'Opening'
       : sessionPhase === 'browsing'
         ? 'Interviewer is'
-        : popupWindowClosed
-          ? 'Interviewer'
-          : 'Waiting'
+        : interviewerReplacing
+          ? 'Interviewer is'
+          : popupWindowClosed
+            ? 'Interviewer'
+            : 'Waiting'
 
   const pageSubtitle =
     sessionPhase === 'launching'
       ? 'Session capture is live. Your workspace is opening now.'
       : sessionPhase === 'browsing'
         ? 'Sit tight, a case is on its way.'
-        : popupWindowClosed
-          ? 'The interviewer window closed. Reopen it to continue.'
-          : 'Your workspace opens on its own once the interviewer picks a case.'
+        : interviewerReplacing
+          ? 'The interviewer swapped the case. Sit tight while they pick a new one.'
+          : popupWindowClosed
+            ? 'The interviewer window closed. Reopen it to continue.'
+            : 'Your workspace opens on its own once the interviewer picks a case.'
 
   const statusTitle =
     sessionPhase === 'launching'
       ? 'Session capture is live'
       : sessionPhase === 'browsing'
         ? 'Interviewer is choosing a case'
-        : popupWindowClosed
-          ? 'Interviewer window was closed'
-          : isLocalSession ? 'Interviewer controls are ready' : 'Invite ready to share'
+        : interviewerReplacing
+          ? 'Interviewer is picking a new case'
+          : popupWindowClosed
+            ? 'Interviewer window was closed'
+            : isLocalSession ? 'Interviewer controls are ready' : 'Invite ready to share'
 
   const statusHelper =
     sessionPhase === 'launching'
       ? 'Opening your workspace in a moment.'
       : sessionPhase === 'browsing'
         ? 'Your workspace will open the second they confirm.'
-        : popupWindowClosed
-          ? 'Reopen it below so the interviewer can pick a case.'
-          : isLocalSession
-            ? 'Lost it? Bring the window back anytime.'
-            : 'Copy the link below and send it to your interviewer.'
+        : interviewerReplacing
+          ? 'Your workspace will open again once the new case is confirmed.'
+          : popupWindowClosed
+            ? 'Reopen it below so the interviewer can pick a case.'
+            : isLocalSession
+              ? 'Lost it? Bring the window back anytime.'
+              : 'Copy the link below and send it to your interviewer.'
 
   const localActionDescription = localPopupBlocked
     ? 'Allow popups first, then try again.'

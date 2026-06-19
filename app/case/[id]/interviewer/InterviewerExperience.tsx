@@ -599,7 +599,6 @@ export function InterviewerPageInner({
 	const [showBackGuardToast, setShowBackGuardToast] = useState(false)
 	const [showCloseWarning, setShowCloseWarning] = useState(false)
 	const [isActioning, setIsActioning] = useState(false)
-	const wasHiddenRef = useRef(false)
 
 	// Restore draft scores/notes/view from localStorage so a refresh doesn't
 	// wipe the interviewer's in-progress ratings. Keyed by lobbyId so different
@@ -882,6 +881,9 @@ export function InterviewerPageInner({
 			// Non-fatal — Firestore update may have already happened; navigate anyway.
 		}
 		if (draftKey) localStorage.removeItem(draftKey)
+		// Clear the old session-start key so the repository page doesn't show
+		// the "Session still going" overlay when the interviewer arrives to pick a new case.
+		localStorage.removeItem('compendium-session-start')
 		const sessionMode = searchParams.get('sessionMode') ?? 'local'
 		router.replace(`/repository?mode=select&lobby=${lobbyId}&sessionMode=${sessionMode}`)
 	}
@@ -899,9 +901,8 @@ export function InterviewerPageInner({
 			// Non-fatal.
 		}
 		if (draftKey) localStorage.removeItem(draftKey)
-		window.close()
-		// Fallback if window.close() doesn't work (non-popup context)
-		setTimeout(() => { if (!document.hidden) router.replace('/') }, 300)
+		// Navigate back to the welcome interviewer lobby, not close the window.
+		router.replace('/')
 	}
 
 	// ── Back-button guard ────────────────────────────────────────────────────────
@@ -943,41 +944,34 @@ export function InterviewerPageInner({
 	}, [currentView, lobbyId, previewMode])
 
 	// ── Window close guard ───────────────────────────────────────────────────────
-	// Trigger the native "Leave site?" dialog. A separate visibilitychange handler
-	// shows an informational toast if the user decides to stay.
+	// Show native "Leave site?" dialog when the user presses Cmd+W or the X button.
+	// If they click Stay, show a brief informational toast.
+	// We track whether beforeunload fired via a ref; on the next animation frame
+	// after beforeunload (which only runs if the page survived), we show the toast.
 	useEffect(() => {
 		if (!lobbyId || previewMode) return
-		// Only arm the close guard after the user has been on the page for 3s.
-		// This prevents the toast from firing when the interviewer window first
-		// opens and the candidate tab switches to it (causing an immediate hidden event).
+		// Arm after 4s — prevents false triggers when the window first opens
+		// and loses focus as the candidate tab switches back.
 		let armed = false
-		const armTimer = setTimeout(() => { armed = true }, 3000)
+		const armTimer = setTimeout(() => { armed = true }, 4000)
 
 		const onBeforeUnload = (e: BeforeUnloadEvent) => {
 			if (!armed) return
 			const ended = localStorage.getItem('compendium-session-ended')
-			if (ended) return
+			const replacing = localStorage.getItem('compendium-session-replacing')
+			const cancelled = localStorage.getItem('compendium-session-cancelled')
+			if (ended || replacing || cancelled) return
 			e.preventDefault()
-			e.returnValue = '' // Required for Chrome popup windows
-		}
-		const onVisibilityChange = () => {
-			if (!armed) return
-			if (document.visibilityState === 'hidden') {
-				wasHiddenRef.current = true
-				return
-			}
-			// Tab became visible again — user stayed after the native dialog.
-			if (wasHiddenRef.current) {
-				wasHiddenRef.current = false
-				setShowCloseWarning(true)
-			}
+			e.returnValue = ''
+			// Schedule toast for the frame after beforeunload — only runs if page survives
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => { setShowCloseWarning(true) })
+			})
 		}
 		window.addEventListener('beforeunload', onBeforeUnload)
-		document.addEventListener('visibilitychange', onVisibilityChange)
 		return () => {
 			clearTimeout(armTimer)
 			window.removeEventListener('beforeunload', onBeforeUnload)
-			document.removeEventListener('visibilitychange', onVisibilityChange)
 		}
 	}, [lobbyId, previewMode])
 
@@ -1161,8 +1155,8 @@ if (previewMode && !forcePreview) {
 					<LobbyOverlay
 						type="warning"
 						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
-						title="Heads up — you tried to close this"
-						body="Any ratings you haven't submitted will be gone. Come back and hit submit if you still need to."
+						title="Heads up, you tried to close this"
+						body="Any ratings you haven't submitted will be gone. Hit submit before closing."
 						autoDismissMs={7000}
 						onDismiss={() => setShowCloseWarning(false)}
 					/>
