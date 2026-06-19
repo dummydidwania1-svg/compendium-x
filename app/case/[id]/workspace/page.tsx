@@ -2502,7 +2502,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                   <button
                     type="button"
                     onClick={() => void handleCandidateEndSession()}
-                    disabled={endingSession}
+                    disabled={endingSession || recordingState === 'stopping' || recordingState === 'uploading' || recordingState === 'uploaded'}
                     className="workspace-btn rounded-full px-5 py-3 text-[10px] uppercase tracking-[0.22em] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {endingSession ? 'Ending Session...' : 'End Session'}
