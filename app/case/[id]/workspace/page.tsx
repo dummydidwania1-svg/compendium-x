@@ -281,6 +281,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const stopInProgressRef = useRef(false)
   const caseIdRef = useRef('')
   const autoStartAttemptedRef = useRef(false)
+  // True once we've redirected away from a finished lobby (back-button into a
+  // completed/abandoned session). Blocks the auto-start effect from firing.
+  const terminalRedirectRef = useRef(false)
   // Only true when we've previously started recording (auto-start ran) AND
   // the page was then reloaded. Set AFTER autoStartAttemptedRef so a fresh
   // case load that sees in_progress on its first snapshot doesn't trigger it.
@@ -950,7 +953,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
     setEndSessionActionInProgress(false)
     setEndSessionOverlayKind(null)
-    router.replace('/')
+    // Dropped session: the lobby is now invalid. Send the candidate back to
+    // the case "Choose a mode" page so they can restart cleanly.
+    router.replace(caseIdRef.current ? `/case/${caseIdRef.current}` : '/')
   }, [endSessionActionInProgress, lobbyId, teardownMedia, router])
 
   useEffect(() => {
@@ -986,6 +991,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (!raw) return
       if (raw.caseName) setCaseName(raw.caseName)
       setPreferredRecordingMode(resolveSessionMode(raw.sessionMode))
+
+      // Terminal lobby reached via browser back/forward: if this session is
+      // already finished (completed or abandoned) and we never started
+      // recording in this page instance, the candidate navigated back into a
+      // lobby whose job is done. Send them to "Choose a mode" rather than
+      // re-entering the workspace. (When we DID run the session here, the
+      // normal completion flow below routes to the dashboard instead.)
+      const isTerminal = raw.status === 'completed' || raw.status === 'abandoned'
+      const neverRanHere =
+        !autoStartAttemptedRef.current &&
+        !completionHandledRef.current &&
+        !endSessionInitiatedRef.current
+      if (isTerminal && neverRanHere) {
+        terminalRedirectRef.current = true
+        router.replace(caseIdRef.current ? `/case/${caseIdRef.current}` : '/')
+        return
+      }
+
       if (raw.status === 'in_progress' && autoStartAttemptedRef.current) {
         // Only mark as "was in progress" once we've already started recording.
         // On a fresh case load the first snapshot delivers in_progress before
@@ -1013,6 +1036,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setCurrentUser(user)
 
       parseAndHandleEnded(localStorage.getItem('compendium-session-ended'))
+
+      // Upfront terminal-state check (closes the race with auto-start): if the
+      // candidate landed here via browser back/forward on a finished or
+      // abandoned lobby, bounce to "Choose a mode" before recording can start.
+      if (sessionRef) {
+        try {
+          const firstSnap = await getDoc(sessionRef)
+          if (firstSnap.exists()) {
+            const data = firstSnap.data() as SessionState
+            const isTerminal = data.status === 'completed' || data.status === 'abandoned'
+            if (isTerminal && !autoStartAttemptedRef.current && !completionHandledRef.current && !endSessionInitiatedRef.current) {
+              terminalRedirectRef.current = true
+              router.replace(`/case/${resolved.id}`)
+              return
+            }
+          }
+        } catch {
+          // Network error — fall through to live subscription below.
+        }
+      }
 
       if (sessionRef) {
         const startPolling = () => {
@@ -1111,6 +1154,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
   useEffect(() => {
     if (autoStartAttemptedRef.current) return
+    // Don't auto-start when we're bouncing the user out of a finished lobby.
+    if (terminalRedirectRef.current) return
     if (!lobbyId || !resolvedCaseId || !currentUser) return
     if (!canStartRecording) return
     // Skip auto-start when mic is denied — calling getUserMedia would fail
