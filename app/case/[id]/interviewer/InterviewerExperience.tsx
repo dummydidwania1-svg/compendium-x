@@ -703,7 +703,7 @@ export function InterviewerPageInner({
 		const id = setInterval(() => {
 			const allRated = Object.values(scores).every((v) => v > 0)
 			if (!allRated) return
-			if (Date.now() - lastScoreChangedAtRef.current > 6000) {
+			if (Date.now() - lastScoreChangedAtRef.current > 99999999) {
 				void autoEndSession()
 			}
 		}, 3000)
