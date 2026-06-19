@@ -85,7 +85,7 @@ export type Case = z.infer<typeof caseSchema>
 /* sessions/{lobbyId}                                                         */
 /* -------------------------------------------------------------------------- */
 
-export const sessionStatus = z.enum(['waiting', 'in_progress', 'completed', 'abandoned', 'fallback_unrated'])
+export const sessionStatus = z.enum(['waiting', 'in_progress', 'completed', 'abandoned', 'fallback_unrated', 'replacing'])
 export type SessionStatus = z.infer<typeof sessionStatus>
 
 export const sessionMode = z.enum(['remote', 'local'])

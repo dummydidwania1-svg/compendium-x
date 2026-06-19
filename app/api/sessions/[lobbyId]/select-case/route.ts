@@ -58,7 +58,7 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         )
       }
       const data = snap.data() ?? {}
-      if (data.status !== 'waiting') {
+      if (data.status !== 'waiting' && data.status !== 'replacing') {
         const friendlyMessage =
           data.status === 'completed'
             ? 'This session has already ended. You can close this window.'

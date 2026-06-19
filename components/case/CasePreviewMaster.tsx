@@ -2140,6 +2140,7 @@ export type CaseInterviewerMasterProps = Omit<CasePreviewMasterProps, 'previewMo
   scores: ScoreState
   setScores: (s: ScoreState) => void
   onEndCase: () => void
+  onReplaceCase?: () => void
 }
 
 const EVAL_CRITERIA: Array<{ id: keyof ScoreState; label: string }> = [
@@ -4333,7 +4334,7 @@ export function CaseInterviewerMaster({
   promptLines, caseTypeLabel, industryLabel, difficultyLabel,
   companyLabel, roundLabel, frameworkTree, additionalFrameworkTrees,
   visualisations, recommendationsTable, abbreviations,
-  notes, setNotes, scores, setScores, onEndCase,
+  notes, setNotes, scores, setScores, onEndCase, onReplaceCase,
 }: CaseInterviewerMasterProps) {
   // ─── Sync tree data (same as preview) ────────────────
   const tree = frameworkTree ?? BANKING_ON_YOU_TREE
@@ -4559,7 +4560,7 @@ export function CaseInterviewerMaster({
           borderBottom: '1px solid rgba(92,64,51,0.06)',
         }}
       >
-        <div className="mx-auto flex h-full max-w-screen-2xl items-center px-4 md:px-12">
+        <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 md:px-12">
           <div className="flex items-center gap-1">
             <Image src="/logo.png" alt="Case Compendium X" width={56} height={56} className="h-14 w-14 object-contain" />
             <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
@@ -4567,6 +4568,20 @@ export function CaseInterviewerMaster({
               <span className="text-[#3D5A35]">X</span>
             </div>
           </div>
+          {onReplaceCase && (
+            <button
+              type="button"
+              onClick={onReplaceCase}
+              style={{ fontFamily: "'Work Sans', sans-serif" }}
+              className="flex items-center gap-1.5 rounded-full border border-[rgba(92,64,51,0.18)] px-3.5 py-1.5 text-[11px] font-medium text-[#5c4033]/60 transition hover:border-[rgba(92,64,51,0.35)] hover:text-[#5c4033]/90"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              Replace case
+            </button>
+          )}
         </div>
       </header>
 

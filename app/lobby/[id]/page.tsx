@@ -17,7 +17,7 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 type SessionState = {
   caseId?: string
   caseName?: string
-  status?: 'waiting' | 'in_progress' | 'completed'
+  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
   sessionMode?: 'remote' | 'local'
   expiresAt?: { toDate: () => Date } | Date
 }
@@ -65,6 +65,7 @@ function CandidateLobby({
   candidateActionStatus,
   waitingNudgeVisible,
   interviewerBrowsing,
+  interviewerReplacing,
   isLaunching,
   launchCaseName,
   onCancelSession,
@@ -78,6 +79,7 @@ function CandidateLobby({
   candidateActionStatus: string
   waitingNudgeVisible: boolean
   interviewerBrowsing: boolean
+  interviewerReplacing: boolean
   isLaunching: boolean
   launchCaseName: string
   onCancelSession: () => void
@@ -205,10 +207,11 @@ function CandidateLobby({
   // ── Dynamic text — all driven by sessionPhase + popupWindowClosed ─────────
   const step01Text = isLocalSession ? 'Controls ready' : 'Send invite'
   const step02Text =
-    sessionPhase === 'browsing' ? 'Picking a case now' :
     sessionPhase === 'launching' ? 'Case selected' :
+    interviewerReplacing ? 'Interviewer is replacing the case' :
+    sessionPhase === 'browsing' ? 'Picking a case now' :
     'Interviewer picks case'
-  const step02Active = sessionPhase === 'browsing' || sessionPhase === 'launching'
+  const step02Active = sessionPhase === 'browsing' || sessionPhase === 'launching' || interviewerReplacing
 
   const waitingSteps = [
     { num: '01', text: step01Text, active: sessionPhase === 'waiting' && !popupWindowClosed },
@@ -1323,6 +1326,7 @@ export default function LobbyPage() {
   // Interviewer browsing signal — set when the interviewer tab writes
   // 'compendium-interviewer-browsing' to localStorage.
   const [interviewerBrowsing, setInterviewerBrowsing] = useState(false)
+  const [interviewerReplacing, setInterviewerReplacing] = useState(false)
   // Brief launching state shown while router.replace fires after case selection.
   const [isLaunching, setIsLaunching] = useState(false)
   const [launchCaseName, setLaunchCaseName] = useState('')
@@ -1458,9 +1462,17 @@ export default function LobbyPage() {
 
     const routeFromSessionData = (data: SessionState | null) => {
       if (!data) return
+      if (data.status === 'replacing') {
+        disarmWaitingNudge()
+        setIsLaunching(false)
+        setInterviewerBrowsing(false)
+        setInterviewerReplacing(true)
+        return
+      }
       if (data.status === 'in_progress' && data.caseId) {
         disarmWaitingNudge()
         setInterviewerBrowsing(false)
+        setInterviewerReplacing(false)
         setIsLaunching(true)
         setLaunchCaseName(data.caseName ?? '')
         setTimeout(() => router.replace(workspaceRoute(data.caseId!, data.sessionMode)), 600)
@@ -1472,6 +1484,8 @@ export default function LobbyPage() {
         return
       }
       if (data.status === 'waiting') {
+        setInterviewerReplacing(false)
+        setInterviewerBrowsing(false)
         armWaitingNudge()
       }
     }
@@ -1703,6 +1717,7 @@ export default function LobbyPage() {
       candidateActionStatus={candidateActionStatus}
       waitingNudgeVisible={waitingNudgeVisible}
       interviewerBrowsing={interviewerBrowsing}
+      interviewerReplacing={interviewerReplacing}
       isLaunching={isLaunching}
       launchCaseName={launchCaseName}
       onCancelSession={() => void handleCancelSession()}

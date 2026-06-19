@@ -593,6 +593,14 @@ export function InterviewerPageInner({
 	const [notes, setNotes] = useState('')
 	const [submitting, setSubmitting] = useState(false)
 
+	// ── Replace / Cancel / Back guard state ─────────────────────────────────────
+	const [showReplaceCaseConfirm, setShowReplaceCaseConfirm] = useState(false)
+	const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+	const [showBackGuardToast, setShowBackGuardToast] = useState(false)
+	const [showCloseWarning, setShowCloseWarning] = useState(false)
+	const [isActioning, setIsActioning] = useState(false)
+	const wasHiddenRef = useRef(false)
+
 	// Restore draft scores/notes/view from localStorage so a refresh doesn't
 	// wipe the interviewer's in-progress ratings. Keyed by lobbyId so different
 	// sessions never bleed into each other.
@@ -861,6 +869,88 @@ export function InterviewerPageInner({
 		}
 	}, [lobbyId, previewMode])
 
+	// ── Replace case handler ─────────────────────────────────────────────────────
+	const handleReplaceCase = async () => {
+		if (!lobbyId || isActioning) return
+		setIsActioning(true)
+		try {
+			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/replace`, {})
+		} catch {
+			// Non-fatal — Firestore update may have already happened; navigate anyway.
+		}
+		if (draftKey) localStorage.removeItem(draftKey)
+		const sessionMode = searchParams.get('sessionMode') ?? 'local'
+		router.replace(`/repository?mode=select&lobby=${lobbyId}&sessionMode=${sessionMode}`)
+	}
+
+	// ── Cancel session handler ───────────────────────────────────────────────────
+	const handleCancelSession = async () => {
+		if (!lobbyId || isActioning) return
+		setIsActioning(true)
+		try {
+			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/cancel`, {})
+		} catch {
+			// Non-fatal.
+		}
+		if (draftKey) localStorage.removeItem(draftKey)
+		window.close()
+		// Fallback if window.close() doesn't work (non-popup context)
+		setTimeout(() => { if (!document.hidden) router.replace('/') }, 300)
+	}
+
+	// ── Back-button guard ────────────────────────────────────────────────────────
+	// Active only while the interviewer is reading the case (not on feedback/success views).
+	useEffect(() => {
+		if (currentView !== 'case' || !lobbyId || previewMode) return
+		history.pushState(null, '', window.location.href)
+		const onPopstate = () => {
+			history.pushState(null, '', window.location.href)
+			setShowBackGuardToast(true)
+		}
+		const onKeyDown = (e: KeyboardEvent) => {
+			const isAltLeft = e.altKey && e.key === 'ArrowLeft'
+			const isCmdBracket = (e.metaKey || e.ctrlKey) && e.key === '['
+			if (isAltLeft || isCmdBracket) {
+				e.preventDefault()
+				setShowBackGuardToast(true)
+			}
+		}
+		window.addEventListener('popstate', onPopstate)
+		window.addEventListener('keydown', onKeyDown)
+		return () => {
+			window.removeEventListener('popstate', onPopstate)
+			window.removeEventListener('keydown', onKeyDown)
+		}
+	}, [currentView, lobbyId, previewMode])
+
+	// ── Window close guard ───────────────────────────────────────────────────────
+	// Trigger the native "Leave site?" dialog. A separate visibilitychange handler
+	// shows an informational toast if the user decides to stay.
+	useEffect(() => {
+		if (!lobbyId || previewMode) return
+		const onBeforeUnload = (e: BeforeUnloadEvent) => {
+			const ended = localStorage.getItem('compendium-session-ended')
+			if (ended) return
+			e.preventDefault()
+		}
+		const onVisibilityChange = () => {
+			if (document.visibilityState === 'hidden') {
+				wasHiddenRef.current = true
+				return
+			}
+			// Tab became visible again — user stayed after the native dialog.
+			if (wasHiddenRef.current) {
+				wasHiddenRef.current = false
+				setShowCloseWarning(true)
+			}
+		}
+		window.addEventListener('beforeunload', onBeforeUnload)
+		document.addEventListener('visibilitychange', onVisibilityChange)
+		return () => {
+			window.removeEventListener('beforeunload', onBeforeUnload)
+			document.removeEventListener('visibilitychange', onVisibilityChange)
+		}
+	}, [lobbyId, previewMode])
 
 	// Legacy /case/[id]/interviewer?preview=1 links → bounce to the clean /case/[slug] URL.
 useEffect(() => {
@@ -998,27 +1088,123 @@ if (previewMode && !forcePreview) {
 }
 
 		return (
-			<CaseInterviewerMaster
-				caseData={caseData}
-				transcriptDisplayLines={transcriptDisplayLines}
-				parsedFramework={parsedFramework}
-				promptLines={promptLines}
-				caseTypeLabel={caseTypeLabel}
-				industryLabel={industryLabel}
-				difficultyLabel={difficultyLabel}
-				companyLabel={companyLabel}
-				roundLabel={roundLabel}
-				frameworkTree={caseData.frameworkTree}
-				additionalFrameworkTrees={caseData.additionalFrameworkTrees}
-				visualisations={caseData.visualisations}
-				recommendationsTable={caseData.recommendationsTable}
-				abbreviations={caseData.abbreviations}
-				notes={notes}
-				setNotes={setNotes}
-				scores={scores}
-				setScores={setScores}
-				onEndCase={() => setCurrentView('feedback')}
-			/>
+			<>
+				<CaseInterviewerMaster
+					caseData={caseData}
+					transcriptDisplayLines={transcriptDisplayLines}
+					parsedFramework={parsedFramework}
+					promptLines={promptLines}
+					caseTypeLabel={caseTypeLabel}
+					industryLabel={industryLabel}
+					difficultyLabel={difficultyLabel}
+					companyLabel={companyLabel}
+					roundLabel={roundLabel}
+					frameworkTree={caseData.frameworkTree}
+					additionalFrameworkTrees={caseData.additionalFrameworkTrees}
+					visualisations={caseData.visualisations}
+					recommendationsTable={caseData.recommendationsTable}
+					abbreviations={caseData.abbreviations}
+					notes={notes}
+					setNotes={setNotes}
+					scores={scores}
+					setScores={setScores}
+					onEndCase={() => setCurrentView('feedback')}
+					onReplaceCase={lobbyId && !previewMode ? () => setShowReplaceCaseConfirm(true) : undefined}
+				/>
+
+				{/* Back-button guard toast (top-right LobbyOverlay) */}
+				{showBackGuardToast && (
+					<LobbyOverlay
+						type="warning"
+						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>}
+						title="Heading back?"
+						body="You can swap the case, or cancel the session entirely."
+						actionLabel="Replace case"
+						onAction={() => { setShowBackGuardToast(false); setShowReplaceCaseConfirm(true) }}
+						secondaryActionLabel="Cancel session"
+						onSecondaryAction={() => { setShowBackGuardToast(false); setShowCancelConfirm(true) }}
+						onDismiss={() => setShowBackGuardToast(false)}
+					/>
+				)}
+
+				{/* Window close informational toast */}
+				{showCloseWarning && (
+					<LobbyOverlay
+						type="info"
+						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>}
+						title="Ratings not saved yet"
+						body="Submit your evaluation before closing, or scores won't be saved."
+						autoDismissMs={6000}
+						onDismiss={() => setShowCloseWarning(false)}
+					/>
+				)}
+
+				{/* Replace case — centered confirmation overlay */}
+				{showReplaceCaseConfirm && (
+					<div style={{ position: 'fixed', inset: 0, zIndex: 9999, backdropFilter: 'blur(28px) saturate(1.4)', WebkitBackdropFilter: 'blur(28px) saturate(1.4)', background: 'rgba(255,248,240,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+						<div style={{ background: 'rgba(255,248,240,0.96)', border: '1px solid rgba(92,64,51,0.10)', borderRadius: '16px', padding: '40px 36px', maxWidth: '380px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', textAlign: 'center', boxShadow: '0 8px 40px rgba(59,47,47,0.10)' }}>
+							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(92,64,51,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+								<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
+							</svg>
+							<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+								<h2 style={{ fontFamily: "'Newsreader', serif", fontWeight: 300, fontSize: '26px', color: '#3B2F2F', lineHeight: 1.2 }}>Replace this case?</h2>
+								<p style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.60)', lineHeight: 1.65 }}>This cancels the current session and takes you back to the case library. The candidate will wait while you pick a new one.</p>
+							</div>
+							<div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+								<button
+									type="button"
+									disabled={isActioning}
+									onClick={() => void handleReplaceCase()}
+									style={{ fontFamily: "'Work Sans', sans-serif", background: '#3D5A35', color: '#fff', border: 'none', borderRadius: '999px', padding: '10px 24px', fontSize: '12px', fontWeight: 600, cursor: isActioning ? 'not-allowed' : 'pointer', opacity: isActioning ? 0.6 : 1, letterSpacing: '0.04em' }}
+								>
+									{isActioning ? 'Replacing...' : 'Replace case'}
+								</button>
+								<button
+									type="button"
+									disabled={isActioning}
+									onClick={() => setShowReplaceCaseConfirm(false)}
+									style={{ fontFamily: "'Work Sans', sans-serif", background: 'transparent', color: 'rgba(92,64,51,0.55)', border: '1px solid rgba(92,64,51,0.15)', borderRadius: '999px', padding: '10px 24px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', letterSpacing: '0.04em' }}
+								>
+									Stay here
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Cancel session — centered confirmation overlay */}
+				{showCancelConfirm && (
+					<div style={{ position: 'fixed', inset: 0, zIndex: 9999, backdropFilter: 'blur(28px) saturate(1.4)', WebkitBackdropFilter: 'blur(28px) saturate(1.4)', background: 'rgba(255,248,240,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+						<div style={{ background: 'rgba(255,248,240,0.96)', border: '1px solid rgba(92,64,51,0.10)', borderRadius: '16px', padding: '40px 36px', maxWidth: '380px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', textAlign: 'center', boxShadow: '0 8px 40px rgba(59,47,47,0.10)' }}>
+							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(92,64,51,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+								<circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+							</svg>
+							<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+								<h2 style={{ fontFamily: "'Newsreader', serif", fontWeight: 300, fontSize: '26px', color: '#3B2F2F', lineHeight: 1.2 }}>Cancel this session?</h2>
+								<p style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.60)', lineHeight: 1.65 }}>This closes your window and sends the candidate back to the beginning. Nothing gets saved.</p>
+							</div>
+							<div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+								<button
+									type="button"
+									disabled={isActioning}
+									onClick={() => void handleCancelSession()}
+									style={{ fontFamily: "'Work Sans', sans-serif", background: 'rgba(92,64,51,0.85)', color: '#fff', border: 'none', borderRadius: '999px', padding: '10px 24px', fontSize: '12px', fontWeight: 600, cursor: isActioning ? 'not-allowed' : 'pointer', opacity: isActioning ? 0.6 : 1, letterSpacing: '0.04em' }}
+								>
+									{isActioning ? 'Cancelling...' : 'Cancel session'}
+								</button>
+								<button
+									type="button"
+									disabled={isActioning}
+									onClick={() => setShowCancelConfirm(false)}
+									style={{ fontFamily: "'Work Sans', sans-serif", background: 'transparent', color: 'rgba(92,64,51,0.55)', border: '1px solid rgba(92,64,51,0.15)', borderRadius: '999px', padding: '10px 24px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', letterSpacing: '0.04em' }}
+								>
+									Go back
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+			</>
 		)
 
 		// Legacy block start (never reached)

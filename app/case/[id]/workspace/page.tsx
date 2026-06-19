@@ -18,7 +18,7 @@ import {
 } from '@/lib/permissions/displayMedia'
 
 type SessionState = {
-  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned'
+  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
   caseId?: string
   caseName?: string
   completedBy?: string
@@ -1038,11 +1038,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (!raw) return
       if (raw.caseName) setCaseName(raw.caseName)
       setPreferredRecordingMode(resolveSessionMode(raw.sessionMode))
+      if (raw.status === 'replacing') {
+        setWorkspaceToast({ tone: 'warn', message: 'Interviewer is picking a new case. Hang tight.' })
+        return
+      }
+      if (raw.status === 'in_progress' && raw.caseId && raw.caseId !== caseIdRef.current) {
+        // Interviewer replaced the case — navigate candidate to the new workspace.
+        router.replace(`/case/${raw.caseId}/workspace?lobby=${lobbyId}&mode=${requestedMode}`)
+        return
+      }
       if (raw.status === 'in_progress' && autoStartAttemptedRef.current) {
         // Only mark as "was in progress" once we've already started recording.
         // On a fresh case load the first snapshot delivers in_progress before
         // auto-start fires, so we'd incorrectly show the refresh overlay.
         sessionWasInProgressRef.current = true
+      }
+      if (raw.status === 'waiting') {
+        // Interviewer cancelled the session — stop recording and return to lobby.
+        void stopRecordingAndFinalize('interviewer_cancelled', false)
+        router.replace(`/lobby/${lobbyId}?mode=${requestedMode}`)
+        return
       }
       if (raw.status === 'completed') {
         const stopReason = raw.completedBy === 'candidate' ? 'candidate_ended' : 'feedback_submitted'
