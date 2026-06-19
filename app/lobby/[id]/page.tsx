@@ -953,13 +953,30 @@ function InterviewerLobby({
   lobbyId,
   requestedSessionMode,
   router,
+  showHandoff,
 }: {
   lobbyId: string
   requestedSessionMode: string
   router: AppRouterInstance
+  showHandoff: boolean
 }) {
   const [elapsed, setElapsed] = useState(0)
+  const [handoffVisible, setHandoffVisible] = useState(showHandoff)
+  const [handoffCountdown, setHandoffCountdown] = useState(5)
   const startRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!handoffVisible) return
+    let count = 5
+    const interval = setInterval(() => {
+      count -= 1
+      setHandoffCountdown(count)
+      if (count <= 0) clearInterval(interval)
+    }, 1000)
+    const timer = setTimeout(() => setHandoffVisible(false), 5000)
+    return () => { clearInterval(interval); clearTimeout(timer) }
+  }, [handoffVisible])
+
   useEffect(() => {
     startRef.current = Date.now()
     const interval = setInterval(() => {
@@ -984,6 +1001,26 @@ function InterviewerLobby({
       <style>{`
         @keyframes _hi{from{opacity:0;transform:translateY(10px)}to{opacity:0.5;transform:translateY(0)}}
         @keyframes _name{from{opacity:0;transform:translateY(16px);filter:blur(8px)}to{opacity:1;transform:translateY(0);filter:blur(0px)}}
+        @keyframes handoff-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes handoff-card-in { from { opacity: 0; transform: translateY(22px) scale(0.97); filter: blur(3px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+        @keyframes handoff-progress { from { width: 100%; } to { width: 0%; } }
+        @keyframes handoff-pass {
+          0%   { transform: translateX(-46px) translateY(0) scale(0.96); opacity: 0; }
+          14%  { transform: translateX(-46px) translateY(0) scale(0.96); opacity: 1; }
+          50%  { transform: translateX(0) translateY(-10px) scale(1.04); opacity: 1; }
+          86%  { transform: translateX(46px) translateY(0) scale(0.96); opacity: 1; }
+          100% { transform: translateX(46px) translateY(0) scale(0.96); opacity: 0; }
+        }
+        @keyframes handoff-giver { 0%, 20% { opacity: 0.85; } 55%, 100% { opacity: 0.30; } }
+        @keyframes handoff-receiver { 0%, 55% { opacity: 0.30; } 88%, 100% { opacity: 0.85; } }
+        @keyframes handoff-pass-shadow {
+          0%   { transform: translateX(-46px) scaleX(1); opacity: 0; }
+          14%  { transform: translateX(-46px) scaleX(1); opacity: 0.14; }
+          50%  { transform: translateX(0) scaleX(0.7); opacity: 0.06; }
+          86%  { transform: translateX(46px) scaleX(1); opacity: 0.14; }
+          100% { transform: translateX(46px) scaleX(1); opacity: 0; }
+        }
+        @keyframes handoff-glow { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.55; transform: scale(1.08); } }
         @keyframes lobby-fade-up {
           from { opacity: 0; transform: translateY(16px); filter: blur(2px); }
           to { opacity: 1; transform: translateY(0); filter: blur(0); }
@@ -1061,6 +1098,52 @@ function InterviewerLobby({
           animation: lobby-step-pulse 2.8s ease-in-out infinite;
         }
       `}</style>
+
+      {/* Handoff overlay — covers the interviewer window for 5s on first load */}
+      {handoffVisible ? (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backdropFilter: 'blur(28px) saturate(1.4)', WebkitBackdropFilter: 'blur(28px) saturate(1.4)', background: 'rgba(255,248,240,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'handoff-overlay-in 0.5s cubic-bezier(0.22,1,0.36,1) both' }}>
+          <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', top: '30%', left: '35%', width: '360px', height: '360px', borderRadius: '999px', background: 'radial-gradient(circle, rgba(61,90,53,0.07) 0%, transparent 70%)', animation: 'handoff-glow 5s ease-in-out infinite' }} />
+            <div style={{ position: 'absolute', top: '40%', right: '30%', width: '260px', height: '260px', borderRadius: '999px', background: 'radial-gradient(circle, rgba(196,168,130,0.07) 0%, transparent 70%)', animation: 'handoff-glow 6s ease-in-out infinite reverse' }} />
+          </div>
+          <div className="flex flex-col items-center gap-7 px-8 text-center" style={{ animation: 'handoff-card-in 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both' }}>
+            {/* Illustration */}
+            <div style={{ position: 'relative', width: '210px', height: '88px', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(92,64,51,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'handoff-giver 2.8s ease-in-out infinite', flexShrink: 0 }}>
+                <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+              </svg>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(61,90,53,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'handoff-receiver 2.8s ease-in-out infinite', flexShrink: 0 }}>
+                <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+              </svg>
+              <div style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: '-28px', marginTop: '-20px', animation: 'handoff-pass 2.8s cubic-bezier(0.45,0,0.55,1) infinite', willChange: 'transform, opacity' }}>
+                <svg width="56" height="40" viewBox="0 0 56 40" fill="none">
+                  <rect x="3" y="1.5" width="50" height="30" rx="3.5" stroke="rgba(92,64,51,0.28)" strokeWidth="1.5" fill="none" />
+                  <line x1="10" y1="10" x2="34" y2="10" stroke="rgba(92,64,51,0.2)" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="10" y1="16" x2="26" y2="16" stroke="rgba(92,64,51,0.13)" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="10" y1="22" x2="30" y2="22" stroke="rgba(92,64,51,0.13)" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M0 33 L56 33 L53 38 L3 38 Z" stroke="rgba(92,64,51,0.2)" strokeWidth="1" strokeLinejoin="round" fill="none" />
+                  <rect x="22" y="34" width="12" height="2.5" rx="1.25" stroke="rgba(92,64,51,0.18)" strokeWidth="1" fill="none" />
+                </svg>
+              </div>
+              <div style={{ position: 'absolute', left: '50%', bottom: '2px', marginLeft: '-26px', width: '52px', height: '5px', borderRadius: '999px', background: 'rgba(92,64,51,0.16)', filter: 'blur(3px)', animation: 'handoff-pass-shadow 2.8s cubic-bezier(0.45,0,0.55,1) infinite' }} />
+            </div>
+            {/* Text */}
+            <div className="flex flex-col items-center gap-2.5">
+              <h2 style={{ fontFamily: "'Newsreader', serif", fontWeight: 300, color: '#3B2F2F', fontSize: '30px', lineHeight: 1.15, letterSpacing: '-0.01em' }}>Hand it over</h2>
+              <p style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.65)', maxWidth: '260px', lineHeight: 1.65 }}>Pass the device to your interviewer. They pick a case, and things get going from there.</p>
+            </div>
+            {/* Progress bar */}
+            <div className="flex flex-col items-center gap-2" style={{ width: '200px' }}>
+              <div style={{ width: '100%', height: '1.5px', background: 'rgba(92,64,51,0.10)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: 'linear-gradient(90deg, #3D5A35, rgba(61,90,53,0.6))', borderRadius: '999px', animation: 'handoff-progress 5s linear forwards' }} />
+              </div>
+              <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.35)', fontFamily: "'Work Sans', sans-serif", letterSpacing: '0.04em' }}>
+                Opening in {handoffCountdown > 0 ? handoffCountdown : 1}s
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Navbar */}
       <header
@@ -1607,6 +1690,7 @@ export default function LobbyPage() {
         lobbyId={lobbyId}
         requestedSessionMode={requestedSessionMode}
         router={router}
+        showHandoff={searchParams.get('handoff') === '1'}
       />
     )
   }
