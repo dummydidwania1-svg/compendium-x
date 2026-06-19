@@ -846,6 +846,9 @@ export function InterviewerPageInner({
 	// Signal to the candidate workspace that the interviewer case window is open
 	// (or closed). The workspace tab picks these up via 'storage' events.
 	// Only relevant for local (same-device) sessions where both tabs share localStorage.
+	// pagehide fires when the page is actually being torn down (after the user
+	// confirms the native beforeunload dialog), so it's the right place to mark
+	// the window closed. beforeunload is handled separately below as the guard.
 	useEffect(() => {
 		if (!lobbyId || previewMode) return
 		const markActive = () =>
@@ -858,13 +861,9 @@ export function InterviewerPageInner({
 			localStorage.setItem('compendium-interviewer-window', JSON.stringify({ lobbyId, active: false, ts: Date.now() }))
 		}
 		markActive()
-		// pagehide fires more reliably than beforeunload for popup close on Chrome/Safari.
-		// Both are registered so whichever fires first wins.
 		window.addEventListener('pagehide', markClosed)
-		window.addEventListener('beforeunload', markClosed)
 		return () => {
 			window.removeEventListener('pagehide', markClosed)
-			window.removeEventListener('beforeunload', markClosed)
 		}
 	}, [lobbyId, previewMode])
 
@@ -946,9 +945,15 @@ export function InterviewerPageInner({
 	}, [currentView, lobbyId, previewMode])
 
 	// ── Window close guard ───────────────────────────────────────────────────────
-	// Intercept Cmd+W / Ctrl+W to show our own overlay instead of relying on the
-	// native beforeunload dialog, which Chrome suppresses in popup windows.
-	// beforeunload is still registered as a fallback for the browser X button.
+	// The browser-level shortcut Cmd+W and the window X button CANNOT be blocked
+	// by a custom overlay — the browser tears the page down before React can
+	// render. The only sanctioned warning is the native beforeunload dialog
+	// ("Changes you made may not be saved"). We fire that here.
+	//
+	// If the user cancels that native dialog (chooses to stay), the page never
+	// unloads and becomes visible/focused again — we detect that and show our
+	// own timed top-right toast reminding them to submit before closing.
+	const closeAttemptRef = useRef(false)
 	useEffect(() => {
 		if (!lobbyId || previewMode) return
 		let armed = false
@@ -962,29 +967,40 @@ export function InterviewerPageInner({
 			return !ended && !replacing && !cancelled
 		}
 
-		const onKeyDown = (e: KeyboardEvent) => {
-			const isCmdW = (e.metaKey || e.ctrlKey) && e.key === 'w'
-			if (!isCmdW || !shouldBlock()) return
+		// Native dialog: the only thing that actually stops X / Cmd+W.
+		const onBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (!shouldBlock()) return
+			// Mark that a close was attempted so the follow-up toast can fire if
+			// the user cancels and returns to the page.
+			closeAttemptRef.current = true
 			e.preventDefault()
-			e.stopPropagation()
+			e.returnValue = ''
+			return ''
+		}
+
+		// User cancelled the native dialog and came back — show our reminder toast.
+		const onVisibility = () => {
+			if (document.visibilityState !== 'visible') return
+			if (!closeAttemptRef.current) return
+			closeAttemptRef.current = false
+			if (!shouldBlock()) return
+			setShowCloseWarning(true)
+		}
+		const onFocus = () => {
+			if (!closeAttemptRef.current) return
+			closeAttemptRef.current = false
+			if (!shouldBlock()) return
 			setShowCloseWarning(true)
 		}
 
-		const onBeforeUnload = (e: BeforeUnloadEvent) => {
-			if (!shouldBlock()) return
-			e.preventDefault()
-			e.returnValue = ''
-			requestAnimationFrame(() => {
-				requestAnimationFrame(() => { setShowCloseWarning(true) })
-			})
-		}
-
-		window.addEventListener('keydown', onKeyDown, { capture: true })
 		window.addEventListener('beforeunload', onBeforeUnload)
+		document.addEventListener('visibilitychange', onVisibility)
+		window.addEventListener('focus', onFocus)
 		return () => {
 			clearTimeout(armTimer)
-			window.removeEventListener('keydown', onKeyDown, { capture: true })
 			window.removeEventListener('beforeunload', onBeforeUnload)
+			document.removeEventListener('visibilitychange', onVisibility)
+			window.removeEventListener('focus', onFocus)
 		}
 	}, [lobbyId, previewMode])
 
@@ -1164,49 +1180,19 @@ if (previewMode && !forcePreview) {
 					/>
 				)}
 
-				{/* Window close — centered blocking overlay */}
+				{/* Window close — timed top-right toast shown after the user cancels
+				    the native beforeunload dialog and returns to the page. */}
 				{showCloseWarning && (
-					<div
-						style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif" }}
-					>
-						<div style={{ position: 'absolute', inset: 0, background: 'rgba(69,58,42,0.08)', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', animation: 'ixo-scrim-in 0.4s ease forwards' }} />
-						<div style={{ position: 'relative', zIndex: 1, width: 'min(320px, calc(100vw - 48px))', borderRadius: '16px', border: '1px solid rgba(127,29,29,0.22)', background: 'rgba(255,248,240,0.62)', backdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)', WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)', boxShadow: '0 4px 24px rgba(196,168,130,0.18), 0 1px 4px rgba(59,47,47,0.06), inset 0 1px 0 rgba(255,255,255,0.82)', overflow: 'hidden', animation: 'ixo-card-in 0.38s cubic-bezier(0.22,1,0.36,1) forwards' }}>
-							<div style={{ height: '2px', background: 'linear-gradient(90deg, #7f1d1d 0%, rgba(127,29,29,0.12) 100%)' }} />
-							<div style={{ padding: '20px 18px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-								<div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-									<div style={{ width: '26px', height: '26px', flexShrink: 0, borderRadius: '999px', background: 'rgba(127,29,29,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7f1d1d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-											<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-											<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-										</svg>
-									</div>
-									<div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-										<p style={{ fontSize: '12px', fontWeight: 600, color: '#3B2F2F', lineHeight: 1.3, letterSpacing: '-0.01em' }}>Submit before closing</p>
-										<p style={{ fontSize: '11px', color: 'rgba(92,64,51,0.62)', lineHeight: 1.45 }}>Any ratings you have not submitted will be lost. Hit submit first, then close.</p>
-									</div>
-									<button type="button" onClick={() => setShowCloseWarning(false)} style={{ flexShrink: 0, marginTop: '1px', padding: '4px', borderRadius: '999px', border: 'none', background: 'transparent', color: 'rgba(92,64,51,0.35)', cursor: 'pointer' }}>
-										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
-									</button>
-								</div>
-								<div style={{ display: 'flex', gap: '6px' }}>
-									<button
-										type="button"
-										onClick={() => { setShowCloseWarning(false); setCurrentView('feedback') }}
-										style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.02em', color: '#3D5A35', border: '1px solid rgba(61,90,53,0.22)', background: 'rgba(61,90,53,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)', borderRadius: '999px', padding: '4px 12px', cursor: 'pointer' }}
-									>
-										Go to submit
-									</button>
-									<button
-										type="button"
-										onClick={() => setShowCloseWarning(false)}
-										style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.02em', color: 'rgba(92,64,51,0.5)', border: '1px solid rgba(92,64,51,0.14)', background: 'rgba(92,64,51,0.04)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)', borderRadius: '999px', padding: '4px 12px', cursor: 'pointer' }}
-									>
-										Stay here
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>
+					<LobbyOverlay
+						type="warning"
+						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+						title="You tried to close this"
+						body="Any ratings you have not submitted will be gone. Hit submit before closing."
+						actionLabel="Go to submit"
+						onAction={() => { setShowCloseWarning(false); setCurrentView('feedback') }}
+						autoDismissMs={7000}
+						onDismiss={() => setShowCloseWarning(false)}
+					/>
 				)}
 
 				{/* Keyframes for centered overlay animations */}
