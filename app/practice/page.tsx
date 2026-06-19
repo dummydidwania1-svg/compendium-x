@@ -267,15 +267,17 @@ export default function PracticeModeSelection() {
           from { width: 100%; }
           to { width: 0%; }
         }
-        @keyframes handoff-dot-travel {
-          0% { left: 0%; opacity: 0; }
-          8% { opacity: 1; }
-          92% { opacity: 1; }
-          100% { left: 100%; opacity: 0; }
+        @keyframes handoff-lift {
+          0%   { transform: translateY(0px) rotate(-1deg); }
+          45%  { transform: translateY(-9px) rotate(0deg); }
+          55%  { transform: translateY(-9px) rotate(0deg); }
+          100% { transform: translateY(0px) rotate(-1deg); }
         }
-        @keyframes handoff-screen-glow {
-          0%, 100% { opacity: 0.06; }
-          50% { opacity: 0.14; }
+        @keyframes handoff-shadow {
+          0%   { transform: scaleX(1); opacity: 0.18; }
+          45%  { transform: scaleX(0.72); opacity: 0.08; }
+          55%  { transform: scaleX(0.72); opacity: 0.08; }
+          100% { transform: scaleX(1); opacity: 0.18; }
         }
         @keyframes handoff-glow {
           0%, 100% { opacity: 0.3; transform: scale(1); }
@@ -344,58 +346,70 @@ export default function PracticeModeSelection() {
             className="flex flex-col items-center gap-7 px-8 text-center"
             style={{ animation: 'handoff-card-in 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both' }}
           >
-            {/* Device handoff illustration */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', marginBottom: '4px' }}>
+            {/* Laptop lift illustration — one device being offered/handed over */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+              <div style={{ animation: 'handoff-lift 2.8s cubic-bezier(0.45,0,0.55,1) infinite' }}>
+                {/*
+                  Proper laptop in 3/4 open perspective:
+                  - Lid angled back (parallelogram) with screen content inside
+                  - Hinge edge visible between lid and base
+                  - Base rectangle with trackpad
+                */}
+                <svg width="120" height="90" viewBox="0 0 120 90" fill="none">
+                  {/* ── Lid (screen) drawn as a parallelogram, angled back ── */}
+                  {/* Outer lid shell */}
+                  <path
+                    d="M14 52 L22 8 L106 8 L98 52 Z"
+                    fill="rgba(255,248,240,0.96)"
+                    stroke="rgba(92,64,51,0.22)"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+                  {/* Screen glass (inset) */}
+                  <path
+                    d="M22 46 L29 14 L99 14 L92 46 Z"
+                    fill="rgba(92,64,51,0.055)"
+                  />
+                  {/* Screen content — 3 text lines suggesting UI */}
+                  <line x1="36" y1="22" x2="74" y2="22" stroke="rgba(92,64,51,0.18)" strokeWidth="2.2" strokeLinecap="round" />
+                  <line x1="34" y1="29" x2="62" y2="29" stroke="rgba(92,64,51,0.10)" strokeWidth="1.8" strokeLinecap="round" />
+                  <line x1="33" y1="35" x2="68" y2="35" stroke="rgba(92,64,51,0.10)" strokeWidth="1.8" strokeLinecap="round" />
+                  {/* Camera dot centered on top bezel */}
+                  <circle cx="60" cy="11" r="1.5" fill="rgba(92,64,51,0.18)" />
 
-              {/* Left laptop — candidate */}
-              <svg width="72" height="54" viewBox="0 0 72 54" fill="none">
-                {/* Screen lid */}
-                <rect x="6" y="2" width="60" height="38" rx="5" fill="rgba(255,248,240,0.95)" stroke="rgba(92,64,51,0.2)" strokeWidth="1.5" />
-                {/* Inner screen */}
-                <rect x="12" y="8" width="48" height="27" rx="2.5" fill="rgba(92,64,51,0.055)" />
-                {/* Content lines */}
-                <rect x="17" y="13" width="26" height="2.5" rx="1.2" fill="rgba(92,64,51,0.13)" />
-                <rect x="17" y="18" width="18" height="2" rx="1" fill="rgba(92,64,51,0.08)" />
-                <rect x="17" y="22" width="22" height="2" rx="1" fill="rgba(92,64,51,0.08)" />
-                {/* Camera dot */}
-                <circle cx="36" cy="5.5" r="1" fill="rgba(92,64,51,0.15)" />
-                {/* Hinge bar */}
-                <rect x="2" y="40" width="68" height="3.5" rx="1.75" fill="rgba(92,64,51,0.11)" />
-                {/* Base / trackpad */}
-                <rect x="8" y="43.5" width="56" height="9" rx="2" fill="rgba(92,64,51,0.06)" stroke="rgba(92,64,51,0.1)" strokeWidth="1" />
-                <rect x="26" y="46" width="20" height="4" rx="1.5" fill="rgba(92,64,51,0.08)" />
-              </svg>
+                  {/* ── Hinge edge (thin strip between lid and base) ── */}
+                  <path
+                    d="M10 55 L16 53 L102 53 L108 55 L102 57 L16 57 Z"
+                    fill="rgba(92,64,51,0.13)"
+                  />
 
-              {/* Travelling dot bridge */}
-              <div style={{ position: 'relative', width: '48px', height: '2px', background: 'rgba(92,64,51,0.1)', borderRadius: '999px', marginBottom: '26px', flexShrink: 0 }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  width: '7px',
-                  height: '7px',
-                  borderRadius: '999px',
-                  background: '#3D5A35',
-                  transform: 'translate(-50%, -50%)',
-                  animation: 'handoff-dot-travel 1.8s cubic-bezier(0.4,0,0.6,1) infinite',
-                  boxShadow: '0 0 6px rgba(61,90,53,0.35)',
-                }} />
+                  {/* ── Base (keyboard deck) ── */}
+                  <path
+                    d="M10 55 L108 55 L108 74 L10 74 Z"
+                    fill="rgba(255,248,240,0.92)"
+                    stroke="rgba(92,64,51,0.15)"
+                    strokeWidth="1.2"
+                    strokeLinejoin="round"
+                  />
+                  {/* Trackpad */}
+                  <rect x="46" y="60" width="28" height="10" rx="2.5" fill="rgba(92,64,51,0.07)" stroke="rgba(92,64,51,0.11)" strokeWidth="1" />
+
+                  {/* ── Bottom chamfer (gives depth) ── */}
+                  <path
+                    d="M10 74 L6 78 L114 78 L108 74 Z"
+                    fill="rgba(92,64,51,0.08)"
+                  />
+                </svg>
               </div>
-
-              {/* Right laptop — interviewer (slightly more active) */}
-              <svg width="72" height="54" viewBox="0 0 72 54" fill="none">
-                <rect x="6" y="2" width="60" height="38" rx="5" fill="rgba(255,248,240,0.95)" stroke="rgba(61,90,53,0.3)" strokeWidth="1.5" />
-                <rect x="12" y="8" width="48" height="27" rx="2.5" style={{ animation: 'handoff-screen-glow 2.2s ease-in-out infinite' }} fill="rgba(61,90,53,0.09)" />
-                <rect x="17" y="13" width="30" height="2.5" rx="1.2" fill="rgba(61,90,53,0.2)" />
-                <rect x="17" y="18" width="20" height="2" rx="1" fill="rgba(61,90,53,0.11)" />
-                <rect x="17" y="22" width="24" height="2" rx="1" fill="rgba(61,90,53,0.11)" />
-                {/* Active indicator */}
-                <circle cx="52" cy="13.5" r="2.5" fill="#3D5A35" opacity="0.55" />
-                <circle cx="36" cy="5.5" r="1" fill="rgba(61,90,53,0.2)" />
-                <rect x="2" y="40" width="68" height="3.5" rx="1.75" fill="rgba(61,90,53,0.13)" />
-                <rect x="8" y="43.5" width="56" height="9" rx="2" fill="rgba(61,90,53,0.06)" stroke="rgba(61,90,53,0.11)" strokeWidth="1" />
-                <rect x="26" y="46" width="20" height="4" rx="1.5" fill="rgba(61,90,53,0.09)" />
-              </svg>
-
+              {/* Shadow that shrinks as laptop lifts */}
+              <div style={{
+                width: '88px',
+                height: '6px',
+                borderRadius: '999px',
+                background: 'rgba(92,64,51,0.12)',
+                filter: 'blur(3px)',
+                animation: 'handoff-shadow 2.8s cubic-bezier(0.45,0,0.55,1) infinite',
+              }} />
             </div>
 
             {/* Text */}
