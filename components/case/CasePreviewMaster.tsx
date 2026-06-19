@@ -2141,6 +2141,7 @@ export type CaseInterviewerMasterProps = Omit<CasePreviewMasterProps, 'previewMo
   setScores: (s: ScoreState) => void
   onEndCase: () => void
   onReplaceCase?: () => void
+  onCancelSession?: () => void
 }
 
 const EVAL_CRITERIA: Array<{ id: keyof ScoreState; label: string }> = [
@@ -4334,7 +4335,7 @@ export function CaseInterviewerMaster({
   promptLines, caseTypeLabel, industryLabel, difficultyLabel,
   companyLabel, roundLabel, frameworkTree, additionalFrameworkTrees,
   visualisations, recommendationsTable, abbreviations,
-  notes, setNotes, scores, setScores, onEndCase, onReplaceCase,
+  notes, setNotes, scores, setScores, onEndCase, onReplaceCase, onCancelSession,
 }: CaseInterviewerMasterProps) {
   // ─── Sync tree data (same as preview) ────────────────
   const tree = frameworkTree ?? BANKING_ON_YOU_TREE
@@ -4568,19 +4569,52 @@ export function CaseInterviewerMaster({
               <span className="text-[#3D5A35]">X</span>
             </div>
           </div>
-          {onReplaceCase && (
-            <button
-              type="button"
-              onClick={onReplaceCase}
-              style={{ fontFamily: "'Work Sans', sans-serif" }}
-              className="flex items-center gap-1.5 rounded-full border border-[rgba(92,64,51,0.18)] px-3.5 py-1.5 text-[11px] font-medium text-[#5c4033]/60 transition hover:border-[rgba(92,64,51,0.35)] hover:text-[#5c4033]/90"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-              </svg>
-              Replace case
-            </button>
+          {(onReplaceCase || onCancelSession) && (
+            <div className="flex items-center gap-2" style={{ fontFamily: "'Work Sans', sans-serif" }}>
+              <style>{`
+                @keyframes ixm-pulse-amber {
+                  0%, 100% { box-shadow: 0 0 0 0 rgba(146,64,14,0); }
+                  50% { box-shadow: 0 0 0 3px rgba(146,64,14,0.10); }
+                }
+                @keyframes ixm-pulse-red {
+                  0%, 100% { box-shadow: 0 0 0 0 rgba(127,29,29,0); }
+                  50% { box-shadow: 0 0 0 3px rgba(127,29,29,0.10); }
+                }
+              `}</style>
+              {onCancelSession && (
+                <button
+                  type="button"
+                  onClick={onCancelSession}
+                  style={{
+                    animation: 'ixm-pulse-red 4s ease-in-out infinite',
+                    animationDelay: '2s',
+                  }}
+                  className="flex items-center gap-1.5 rounded-full border border-[rgba(127,29,29,0.16)] px-3.5 py-1.5 text-[11px] font-medium text-[#7f1d1d]/50 transition-all hover:border-[rgba(127,29,29,0.32)] hover:text-[#7f1d1d]/80 hover:bg-[rgba(127,29,29,0.04)]"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M15 9l-6 6M9 9l6 6" />
+                  </svg>
+                  Cancel session
+                </button>
+              )}
+              {onReplaceCase && (
+                <button
+                  type="button"
+                  onClick={onReplaceCase}
+                  style={{
+                    animation: 'ixm-pulse-amber 4s ease-in-out infinite',
+                  }}
+                  className="flex items-center gap-1.5 rounded-full border border-[rgba(92,64,51,0.18)] px-3.5 py-1.5 text-[11px] font-medium text-[#5c4033]/60 transition-all hover:border-[rgba(92,64,51,0.35)] hover:text-[#5c4033]/90 hover:bg-[rgba(92,64,51,0.04)]"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                  Replace case
+                </button>
+              )}
+            </div>
           )}
         </div>
       </header>

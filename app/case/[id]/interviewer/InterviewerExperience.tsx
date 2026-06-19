@@ -1146,6 +1146,7 @@ if (previewMode && !forcePreview) {
 					setScores={setScores}
 					onEndCase={() => setCurrentView('feedback')}
 					onReplaceCase={lobbyId && !previewMode ? () => setShowReplaceCaseConfirm(true) : undefined}
+					onCancelSession={lobbyId && !previewMode ? () => setShowCancelConfirm(true) : undefined}
 				/>
 
 				{/* Back-button guard toast (top-right LobbyOverlay) */}
@@ -1163,16 +1164,49 @@ if (previewMode && !forcePreview) {
 					/>
 				)}
 
-				{/* Window close informational toast */}
+				{/* Window close — centered blocking overlay */}
 				{showCloseWarning && (
-					<LobbyOverlay
-						type="warning"
-						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
-						title="Heads up, you tried to close this"
-						body="Any ratings you haven't submitted will be gone. Hit submit before closing."
-						autoDismissMs={7000}
-						onDismiss={() => setShowCloseWarning(false)}
-					/>
+					<div
+						style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif" }}
+					>
+						<div style={{ position: 'absolute', inset: 0, background: 'rgba(69,58,42,0.08)', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', animation: 'ixo-scrim-in 0.4s ease forwards' }} />
+						<div style={{ position: 'relative', zIndex: 1, width: 'min(320px, calc(100vw - 48px))', borderRadius: '16px', border: '1px solid rgba(127,29,29,0.22)', background: 'rgba(255,248,240,0.62)', backdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)', WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)', boxShadow: '0 4px 24px rgba(196,168,130,0.18), 0 1px 4px rgba(59,47,47,0.06), inset 0 1px 0 rgba(255,255,255,0.82)', overflow: 'hidden', animation: 'ixo-card-in 0.38s cubic-bezier(0.22,1,0.36,1) forwards' }}>
+							<div style={{ height: '2px', background: 'linear-gradient(90deg, #7f1d1d 0%, rgba(127,29,29,0.12) 100%)' }} />
+							<div style={{ padding: '20px 18px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+								<div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+									<div style={{ width: '26px', height: '26px', flexShrink: 0, borderRadius: '999px', background: 'rgba(127,29,29,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7f1d1d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+											<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+											<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+										</svg>
+									</div>
+									<div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+										<p style={{ fontSize: '12px', fontWeight: 600, color: '#3B2F2F', lineHeight: 1.3, letterSpacing: '-0.01em' }}>Submit before closing</p>
+										<p style={{ fontSize: '11px', color: 'rgba(92,64,51,0.62)', lineHeight: 1.45 }}>Any ratings you have not submitted will be lost. Hit submit first, then close.</p>
+									</div>
+									<button type="button" onClick={() => setShowCloseWarning(false)} style={{ flexShrink: 0, marginTop: '1px', padding: '4px', borderRadius: '999px', border: 'none', background: 'transparent', color: 'rgba(92,64,51,0.35)', cursor: 'pointer' }}>
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+									</button>
+								</div>
+								<div style={{ display: 'flex', gap: '6px' }}>
+									<button
+										type="button"
+										onClick={() => { setShowCloseWarning(false); setCurrentView('feedback') }}
+										style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.02em', color: '#3D5A35', border: '1px solid rgba(61,90,53,0.22)', background: 'rgba(61,90,53,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)', borderRadius: '999px', padding: '4px 12px', cursor: 'pointer' }}
+									>
+										Go to submit
+									</button>
+									<button
+										type="button"
+										onClick={() => setShowCloseWarning(false)}
+										style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.02em', color: 'rgba(92,64,51,0.5)', border: '1px solid rgba(92,64,51,0.14)', background: 'rgba(92,64,51,0.04)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)', borderRadius: '999px', padding: '4px 12px', cursor: 'pointer' }}
+									>
+										Stay here
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
 				)}
 
 				{/* Keyframes for centered overlay animations */}
