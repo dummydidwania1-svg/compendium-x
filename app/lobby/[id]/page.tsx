@@ -1326,7 +1326,7 @@ export default function LobbyPage() {
   // Interviewer browsing signal — set when the interviewer tab writes
   // 'compendium-interviewer-browsing' to localStorage.
   const [interviewerBrowsing, setInterviewerBrowsing] = useState(false)
-  const [interviewerReplacing, setInterviewerReplacing] = useState(false)
+  const [interviewerReplacing, setInterviewerReplacing] = useState(() => searchParams.get('replacing') === '1')
   // Brief launching state shown while router.replace fires after case selection.
   const [isLaunching, setIsLaunching] = useState(false)
   const [launchCaseName, setLaunchCaseName] = useState('')

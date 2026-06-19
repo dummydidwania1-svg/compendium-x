@@ -1039,7 +1039,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (raw.caseName) setCaseName(raw.caseName)
       setPreferredRecordingMode(resolveSessionMode(raw.sessionMode))
       if (raw.status === 'replacing') {
-        setWorkspaceToast({ tone: 'warn', message: 'Interviewer is picking a new case. Hang tight.' })
+        // Interviewer is swapping the case — abort recording (no upload), go back to lobby.
+        endSessionInitiatedRef.current = true
+        setWindowClosedOverlayVisible(false)
+        teardownMedia()
+        router.replace(`/lobby/${lobbyId}?mode=${requestedMode}&replacing=1`)
         return
       }
       if (raw.status === 'in_progress' && raw.caseId && raw.caseId !== caseIdRef.current) {
@@ -1054,8 +1058,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         sessionWasInProgressRef.current = true
       }
       if (raw.status === 'waiting') {
-        // Interviewer cancelled the session — stop recording and return to lobby.
-        void stopRecordingAndFinalize('interviewer_cancelled', false)
+        // Interviewer cancelled the session — abort recording (no upload), go back to lobby.
+        endSessionInitiatedRef.current = true
+        setWindowClosedOverlayVisible(false)
+        teardownMedia()
         router.replace(`/lobby/${lobbyId}?mode=${requestedMode}`)
         return
       }
@@ -1137,11 +1143,39 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             const popupStillOpen = popup && !popup.closed
             if (!data.active && popupStillOpen) return
             if (!data.active && endSessionInitiatedRef.current) return
+            // Suppress if interviewer deliberately replaced or cancelled
+            const replacing = localStorage.getItem('compendium-session-replacing')
+            const cancelled = localStorage.getItem('compendium-session-cancelled')
+            if (!data.active && (replacing || cancelled)) return
             setInterviewerWindowClosed(!data.active)
           }
         } catch {
           // Ignore malformed payloads.
         }
+      }
+      // Interviewer replacing — abort recording, go back to lobby (step 2)
+      if (event.key === 'compendium-session-replacing' && event.newValue) {
+        try {
+          const data = JSON.parse(event.newValue)
+          if (data?.lobbyId === lobbyId) {
+            endSessionInitiatedRef.current = true
+            setWindowClosedOverlayVisible(false)
+            teardownMedia()
+            router.replace(`/lobby/${lobbyId}?mode=${requestedMode}&replacing=1`)
+          }
+        } catch { /* ignore */ }
+      }
+      // Interviewer cancelled — abort recording, go back to lobby (step 1)
+      if (event.key === 'compendium-session-cancelled' && event.newValue) {
+        try {
+          const data = JSON.parse(event.newValue)
+          if (data?.lobbyId === lobbyId) {
+            endSessionInitiatedRef.current = true
+            setWindowClosedOverlayVisible(false)
+            teardownMedia()
+            router.replace(`/lobby/${lobbyId}?mode=${requestedMode}`)
+          }
+        } catch { /* ignore */ }
       }
     }
 

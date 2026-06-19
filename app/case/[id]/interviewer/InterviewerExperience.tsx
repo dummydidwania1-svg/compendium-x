@@ -873,6 +873,9 @@ export function InterviewerPageInner({
 	const handleReplaceCase = async () => {
 		if (!lobbyId || isActioning) return
 		setIsActioning(true)
+		// Signal to workspace before navigating so the interviewer-window-closed
+		// overlay doesn't fire when this window's pagehide event writes active:false.
+		localStorage.setItem('compendium-session-replacing', JSON.stringify({ lobbyId, ts: Date.now() }))
 		try {
 			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/replace`, {})
 		} catch {
@@ -887,6 +890,9 @@ export function InterviewerPageInner({
 	const handleCancelSession = async () => {
 		if (!lobbyId || isActioning) return
 		setIsActioning(true)
+		// Signal to workspace before closing so the interviewer-window-closed overlay
+		// doesn't fire when this window's pagehide event writes active:false.
+		localStorage.setItem('compendium-session-cancelled', JSON.stringify({ lobbyId, ts: Date.now() }))
 		try {
 			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/cancel`, {})
 		} catch {
@@ -899,13 +905,26 @@ export function InterviewerPageInner({
 	}
 
 	// ── Back-button guard ────────────────────────────────────────────────────────
-	// Active only while the interviewer is reading the case (not on feedback/success views).
+	// Push a single dummy history entry on mount so the browser back button fires
+	// popstate instead of navigating away. Only active on the case view.
+	const backGuardPushedRef = useRef(false)
+	useEffect(() => {
+		if (!lobbyId || previewMode || backGuardPushedRef.current) return
+		backGuardPushedRef.current = true
+		history.pushState({ backGuard: true }, '', window.location.href)
+	}, [lobbyId, previewMode])
+
 	useEffect(() => {
 		if (currentView !== 'case' || !lobbyId || previewMode) return
-		history.pushState(null, '', window.location.href)
-		const onPopstate = () => {
-			history.pushState(null, '', window.location.href)
-			setShowBackGuardToast(true)
+		const onPopstate = (e: PopStateEvent) => {
+			// Re-push so the user stays on this page until they confirm
+			history.pushState({ backGuard: true }, '', window.location.href)
+			// Only intercept our own guard entry, not programmatic pops
+			if (e.state && typeof e.state === 'object' && 'backGuard' in e.state) {
+				setShowBackGuardToast(true)
+			} else {
+				setShowBackGuardToast(true)
+			}
 		}
 		const onKeyDown = (e: KeyboardEvent) => {
 			const isAltLeft = e.altKey && e.key === 'ArrowLeft'
@@ -928,12 +947,21 @@ export function InterviewerPageInner({
 	// shows an informational toast if the user decides to stay.
 	useEffect(() => {
 		if (!lobbyId || previewMode) return
+		// Only arm the close guard after the user has been on the page for 3s.
+		// This prevents the toast from firing when the interviewer window first
+		// opens and the candidate tab switches to it (causing an immediate hidden event).
+		let armed = false
+		const armTimer = setTimeout(() => { armed = true }, 3000)
+
 		const onBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (!armed) return
 			const ended = localStorage.getItem('compendium-session-ended')
 			if (ended) return
 			e.preventDefault()
+			e.returnValue = '' // Required for Chrome popup windows
 		}
 		const onVisibilityChange = () => {
+			if (!armed) return
 			if (document.visibilityState === 'hidden') {
 				wasHiddenRef.current = true
 				return
@@ -947,6 +975,7 @@ export function InterviewerPageInner({
 		window.addEventListener('beforeunload', onBeforeUnload)
 		document.addEventListener('visibilitychange', onVisibilityChange)
 		return () => {
+			clearTimeout(armTimer)
 			window.removeEventListener('beforeunload', onBeforeUnload)
 			document.removeEventListener('visibilitychange', onVisibilityChange)
 		}
@@ -1130,43 +1159,70 @@ if (previewMode && !forcePreview) {
 				{/* Window close informational toast */}
 				{showCloseWarning && (
 					<LobbyOverlay
-						type="info"
-						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>}
-						title="Ratings not saved yet"
-						body="Submit your evaluation before closing, or scores won't be saved."
-						autoDismissMs={6000}
+						type="warning"
+						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+						title="Heads up — you tried to close this"
+						body="Any ratings you haven't submitted will be gone. Come back and hit submit if you still need to."
+						autoDismissMs={7000}
 						onDismiss={() => setShowCloseWarning(false)}
 					/>
 				)}
 
+				{/* Keyframes for centered overlay animations */}
+				<style>{`
+					@keyframes ixo-scrim-in { from { opacity: 0 } to { opacity: 1 } }
+					@keyframes ixo-card-in { from { opacity: 0; transform: translateY(10px) scale(0.97) } to { opacity: 1; transform: translateY(0) scale(1) } }
+					@keyframes ixo-card-out { from { opacity: 1; transform: translateY(0) scale(1) } to { opacity: 0; transform: translateY(6px) scale(0.98) } }
+				`}</style>
+
 				{/* Replace case — centered confirmation overlay */}
 				{showReplaceCaseConfirm && (
-					<div style={{ position: 'fixed', inset: 0, zIndex: 9999, backdropFilter: 'blur(28px) saturate(1.4)', WebkitBackdropFilter: 'blur(28px) saturate(1.4)', background: 'rgba(255,248,240,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-						<div style={{ background: 'rgba(255,248,240,0.96)', border: '1px solid rgba(92,64,51,0.10)', borderRadius: '16px', padding: '40px 36px', maxWidth: '380px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', textAlign: 'center', boxShadow: '0 8px 40px rgba(59,47,47,0.10)' }}>
-							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(92,64,51,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-								<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
-							</svg>
-							<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-								<h2 style={{ fontFamily: "'Newsreader', serif", fontWeight: 300, fontSize: '26px', color: '#3B2F2F', lineHeight: 1.2 }}>Replace this case?</h2>
-								<p style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.60)', lineHeight: 1.65 }}>This cancels the current session and takes you back to the case library. The candidate will wait while you pick a new one.</p>
-							</div>
-							<div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-								<button
-									type="button"
-									disabled={isActioning}
-									onClick={() => void handleReplaceCase()}
-									style={{ fontFamily: "'Work Sans', sans-serif", background: '#3D5A35', color: '#fff', border: 'none', borderRadius: '999px', padding: '10px 24px', fontSize: '12px', fontWeight: 600, cursor: isActioning ? 'not-allowed' : 'pointer', opacity: isActioning ? 0.6 : 1, letterSpacing: '0.04em' }}
-								>
-									{isActioning ? 'Replacing...' : 'Replace case'}
-								</button>
-								<button
-									type="button"
-									disabled={isActioning}
-									onClick={() => setShowReplaceCaseConfirm(false)}
-									style={{ fontFamily: "'Work Sans', sans-serif", background: 'transparent', color: 'rgba(92,64,51,0.55)', border: '1px solid rgba(92,64,51,0.15)', borderRadius: '999px', padding: '10px 24px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', letterSpacing: '0.04em' }}
-								>
-									Stay here
-								</button>
+					<div
+						style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif" }}
+					>
+						{/* Scrim */}
+						<div style={{ position: 'absolute', inset: 0, background: 'rgba(69,58,42,0.08)', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', animation: 'ixo-scrim-in 0.4s ease forwards' }} />
+						{/* Card */}
+						<div
+							style={{ position: 'relative', zIndex: 1, width: 'min(320px, calc(100vw - 48px))', borderRadius: '16px', border: '1px solid rgba(180,138,87,0.28)', background: 'rgba(255,248,240,0.62)', backdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)', WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)', boxShadow: '0 4px 24px rgba(196,168,130,0.18), 0 1px 4px rgba(59,47,47,0.06), inset 0 1px 0 rgba(255,255,255,0.82)', overflow: 'hidden', animation: 'ixo-card-in 0.38s cubic-bezier(0.22,1,0.36,1) forwards' }}
+						>
+							{/* Top accent */}
+							<div style={{ height: '2px', background: 'linear-gradient(90deg, #92400e 0%, rgba(146,64,14,0.12) 100%)' }} />
+							<div style={{ padding: '20px 18px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+								{/* Header */}
+								<div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+									<div style={{ width: '26px', height: '26px', flexShrink: 0, borderRadius: '999px', background: 'rgba(146,64,14,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'lo-icon-breathe 3s ease-in-out infinite' }}>
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+											<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
+										</svg>
+									</div>
+									<div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+										<p style={{ fontSize: '12px', fontWeight: 600, color: '#3B2F2F', lineHeight: 1.3, letterSpacing: '-0.01em' }}>Replace this case?</p>
+										<p style={{ fontSize: '11px', color: 'rgba(92,64,51,0.62)', lineHeight: 1.45 }}>This wraps the current session and takes you back to the library. The candidate will wait while you pick a new one.</p>
+									</div>
+									<button type="button" onClick={() => setShowReplaceCaseConfirm(false)} style={{ flexShrink: 0, marginTop: '1px', padding: '4px', borderRadius: '999px', border: 'none', background: 'transparent', color: 'rgba(92,64,51,0.35)', cursor: 'pointer' }}>
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+									</button>
+								</div>
+								{/* Buttons */}
+								<div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+									<button
+										type="button"
+										disabled={isActioning}
+										onClick={() => void handleReplaceCase()}
+										style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.02em', color: '#92400e', border: '1px solid rgba(146,64,14,0.22)', background: 'rgba(146,64,14,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)', borderRadius: '999px', padding: '4px 12px', cursor: isActioning ? 'not-allowed' : 'pointer', opacity: isActioning ? 0.6 : 1 }}
+									>
+										{isActioning ? 'Replacing...' : 'Replace case'}
+									</button>
+									<button
+										type="button"
+										disabled={isActioning}
+										onClick={() => setShowReplaceCaseConfirm(false)}
+										style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.02em', color: 'rgba(92,64,51,0.5)', border: '1px solid rgba(92,64,51,0.14)', background: 'rgba(92,64,51,0.04)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)', borderRadius: '999px', padding: '4px 12px', cursor: 'pointer' }}
+									>
+										Stay here
+									</button>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -1174,32 +1230,52 @@ if (previewMode && !forcePreview) {
 
 				{/* Cancel session — centered confirmation overlay */}
 				{showCancelConfirm && (
-					<div style={{ position: 'fixed', inset: 0, zIndex: 9999, backdropFilter: 'blur(28px) saturate(1.4)', WebkitBackdropFilter: 'blur(28px) saturate(1.4)', background: 'rgba(255,248,240,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-						<div style={{ background: 'rgba(255,248,240,0.96)', border: '1px solid rgba(92,64,51,0.10)', borderRadius: '16px', padding: '40px 36px', maxWidth: '380px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', textAlign: 'center', boxShadow: '0 8px 40px rgba(59,47,47,0.10)' }}>
-							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(92,64,51,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-								<circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-							</svg>
-							<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-								<h2 style={{ fontFamily: "'Newsreader', serif", fontWeight: 300, fontSize: '26px', color: '#3B2F2F', lineHeight: 1.2 }}>Cancel this session?</h2>
-								<p style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.60)', lineHeight: 1.65 }}>This closes your window and sends the candidate back to the beginning. Nothing gets saved.</p>
-							</div>
-							<div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-								<button
-									type="button"
-									disabled={isActioning}
-									onClick={() => void handleCancelSession()}
-									style={{ fontFamily: "'Work Sans', sans-serif", background: 'rgba(92,64,51,0.85)', color: '#fff', border: 'none', borderRadius: '999px', padding: '10px 24px', fontSize: '12px', fontWeight: 600, cursor: isActioning ? 'not-allowed' : 'pointer', opacity: isActioning ? 0.6 : 1, letterSpacing: '0.04em' }}
-								>
-									{isActioning ? 'Cancelling...' : 'Cancel session'}
-								</button>
-								<button
-									type="button"
-									disabled={isActioning}
-									onClick={() => setShowCancelConfirm(false)}
-									style={{ fontFamily: "'Work Sans', sans-serif", background: 'transparent', color: 'rgba(92,64,51,0.55)', border: '1px solid rgba(92,64,51,0.15)', borderRadius: '999px', padding: '10px 24px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', letterSpacing: '0.04em' }}
-								>
-									Go back
-								</button>
+					<div
+						style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif" }}
+					>
+						{/* Scrim */}
+						<div style={{ position: 'absolute', inset: 0, background: 'rgba(69,58,42,0.08)', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', animation: 'ixo-scrim-in 0.4s ease forwards' }} />
+						{/* Card */}
+						<div
+							style={{ position: 'relative', zIndex: 1, width: 'min(320px, calc(100vw - 48px))', borderRadius: '16px', border: '1px solid rgba(127,29,29,0.22)', background: 'rgba(255,248,240,0.62)', backdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)', WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)', boxShadow: '0 4px 24px rgba(196,168,130,0.18), 0 1px 4px rgba(59,47,47,0.06), inset 0 1px 0 rgba(255,255,255,0.82)', overflow: 'hidden', animation: 'ixo-card-in 0.38s cubic-bezier(0.22,1,0.36,1) forwards' }}
+						>
+							{/* Top accent */}
+							<div style={{ height: '2px', background: 'linear-gradient(90deg, #7f1d1d 0%, rgba(127,29,29,0.12) 100%)' }} />
+							<div style={{ padding: '20px 18px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+								{/* Header */}
+								<div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+									<div style={{ width: '26px', height: '26px', flexShrink: 0, borderRadius: '999px', background: 'rgba(127,29,29,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'lo-icon-shake 0.5s ease 0.4s both' }}>
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7f1d1d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+											<circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+										</svg>
+									</div>
+									<div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+										<p style={{ fontSize: '12px', fontWeight: 600, color: '#3B2F2F', lineHeight: 1.3, letterSpacing: '-0.01em' }}>Cancel this session?</p>
+										<p style={{ fontSize: '11px', color: 'rgba(92,64,51,0.62)', lineHeight: 1.45 }}>This closes your window and sends the candidate back to the start. Nothing from this session gets saved.</p>
+									</div>
+									<button type="button" onClick={() => setShowCancelConfirm(false)} style={{ flexShrink: 0, marginTop: '1px', padding: '4px', borderRadius: '999px', border: 'none', background: 'transparent', color: 'rgba(92,64,51,0.35)', cursor: 'pointer' }}>
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+									</button>
+								</div>
+								{/* Buttons */}
+								<div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+									<button
+										type="button"
+										disabled={isActioning}
+										onClick={() => void handleCancelSession()}
+										style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.02em', color: '#7f1d1d', border: '1px solid rgba(127,29,29,0.22)', background: 'rgba(127,29,29,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)', borderRadius: '999px', padding: '4px 12px', cursor: isActioning ? 'not-allowed' : 'pointer', opacity: isActioning ? 0.6 : 1 }}
+									>
+										{isActioning ? 'Cancelling...' : 'Yes, cancel it'}
+									</button>
+									<button
+										type="button"
+										disabled={isActioning}
+										onClick={() => setShowCancelConfirm(false)}
+										style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.02em', color: 'rgba(92,64,51,0.5)', border: '1px solid rgba(92,64,51,0.14)', background: 'rgba(92,64,51,0.04)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)', borderRadius: '999px', padding: '4px 12px', cursor: 'pointer' }}
+									>
+										Go back
+									</button>
+								</div>
 							</div>
 						</div>
 					</div>
