@@ -24,6 +24,8 @@ export interface LobbyOverlayProps {
   body?: string
   actionLabel?: string
   onAction?: () => void
+  secondaryActionLabel?: string
+  onSecondaryAction?: () => void
   onDismiss: () => void
   /** Auto-dismiss delay in ms. Defaults to 3500 for 'info'; other types don't auto-dismiss unless this is set. */
   autoDismissMs?: number
@@ -36,6 +38,8 @@ export function LobbyOverlay({
   body,
   actionLabel,
   onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
   onDismiss,
   autoDismissMs: autoDismissMsProp,
 }: LobbyOverlayProps) {
@@ -226,34 +230,58 @@ export function LobbyOverlay({
             </button>
           </div>
 
-          {/* Action button */}
-          {actionLabel && onAction ? (
-            <button
-              type="button"
-              onClick={() => { onAction(); dismiss() }}
-              className="mt-2.5 self-start rounded-full px-3 py-1 transition-all"
-              style={{
-                fontSize: '10.5px',
-                fontWeight: 600,
-                letterSpacing: '0.02em',
-                color: type === 'warning' ? '#92400e' : type === 'error' ? '#7f1d1d' : '#3D5A35',
-                border: type === 'warning'
-                  ? '1px solid rgba(146,64,14,0.22)'
-                  : type === 'error'
-                    ? '1px solid rgba(127,29,29,0.22)'
-                    : '1px solid rgba(61,90,53,0.22)',
-                background: type === 'warning'
-                  ? 'rgba(146,64,14,0.06)'
-                  : type === 'error'
-                    ? 'rgba(127,29,29,0.06)'
-                    : 'rgba(61,90,53,0.06)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-            >
-              {actionLabel}
-            </button>
+          {/* Action buttons */}
+          {(actionLabel && onAction) || (secondaryActionLabel && onSecondaryAction) ? (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {actionLabel && onAction ? (
+                <button
+                  type="button"
+                  onClick={() => { onAction(); dismiss() }}
+                  className="self-start rounded-full px-3 py-1 transition-all"
+                  style={{
+                    fontSize: '10.5px',
+                    fontWeight: 600,
+                    letterSpacing: '0.02em',
+                    color: type === 'warning' ? '#92400e' : type === 'error' ? '#7f1d1d' : '#3D5A35',
+                    border: type === 'warning'
+                      ? '1px solid rgba(146,64,14,0.22)'
+                      : type === 'error'
+                        ? '1px solid rgba(127,29,29,0.22)'
+                        : '1px solid rgba(61,90,53,0.22)',
+                    background: type === 'warning'
+                      ? 'rgba(146,64,14,0.06)'
+                      : type === 'error'
+                        ? 'rgba(127,29,29,0.06)'
+                        : 'rgba(61,90,53,0.06)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+                >
+                  {actionLabel}
+                </button>
+              ) : null}
+              {secondaryActionLabel && onSecondaryAction ? (
+                <button
+                  type="button"
+                  onClick={() => { onSecondaryAction(); dismiss() }}
+                  className="self-start rounded-full px-3 py-1 transition-all"
+                  style={{
+                    fontSize: '10.5px',
+                    fontWeight: 600,
+                    letterSpacing: '0.02em',
+                    color: 'rgba(92,64,51,0.5)',
+                    border: '1px solid rgba(92,64,51,0.14)',
+                    background: 'rgba(92,64,51,0.04)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.7' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+                >
+                  {secondaryActionLabel}
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
 

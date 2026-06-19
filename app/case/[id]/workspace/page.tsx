@@ -5,10 +5,10 @@ import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { type User } from 'firebase/auth'
-import { getDoc, onSnapshot } from 'firebase/firestore'
+import { getDocs, getDoc, onSnapshot, query, where } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
 import { storage, waitForAuthUser } from '@/lib/firebase/config'
-import { sessionDoc } from '@/lib/firebase/collections'
+import { sessionDoc, evaluationsCol } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
@@ -206,6 +206,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false)
   const [leavingInProgress, setLeavingInProgress] = useState(false)
   const [leaveSavedOverlayVisible, setLeaveSavedOverlayVisible] = useState(false)
+  // ── End-session overlay (shown when candidate clicks "End Session" button) ──
+  type EndSessionOverlayKind = 'rated' | 'unrated' | null
+  const [endSessionOverlayKind, setEndSessionOverlayKind] = useState<EndSessionOverlayKind>(null)
+  const [endSessionActionInProgress, setEndSessionActionInProgress] = useState(false)
+  const [endSessionSavedVisible, setEndSessionSavedVisible] = useState(false)
   // ── Recoverable capture error overlay ──────────────────────────────────────
   const [captureErrorOverlayVisible, setCaptureErrorOverlayVisible] = useState(false)
   const captureErrorReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -784,34 +789,127 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
   const handleCandidateEndSession = useCallback(async () => {
     if (endingSession) return
-    setEndingSession(true)
-    setSessionIssue('')
+    if (!lobbyId) return
 
+    setEndingSession(true)
+
+    // Check rating status — Source A: Firestore eval already submitted
+    let evalAlreadySubmitted = false
+    try {
+      const snap = await getDocs(query(evaluationsCol, where('lobbyId', '==', lobbyId)))
+      evalAlreadySubmitted = !snap.empty
+    } catch {
+      // Network error — fall back to draft-only check
+    }
+
+    // Source B: localStorage draft with all 4 scores filled
+    type DraftScores = { structure?: number; understanding?: number; delivery?: number; creativity?: number }
+    let draftScores: DraftScores | null = null
+    try {
+      const raw = localStorage.getItem(`compendium-interviewer-draft-${lobbyId}`)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { scores?: DraftScores }
+        if (parsed.scores) draftScores = parsed.scores
+      }
+    } catch {
+      // Malformed draft — ignore
+    }
+    const draftAllRated =
+      draftScores !== null &&
+      (draftScores.structure ?? 0) > 0 &&
+      (draftScores.understanding ?? 0) > 0 &&
+      (draftScores.delivery ?? 0) > 0 &&
+      (draftScores.creativity ?? 0) > 0
+
+    const isRated = evalAlreadySubmitted || draftAllRated
+
+    setEndingSession(false)
+    setEndSessionOverlayKind(isRated ? 'rated' : 'unrated')
+  }, [endingSession, lobbyId])
+
+  const handleEndSessionSaveAndEnd = useCallback(async () => {
+    if (endSessionActionInProgress || !lobbyId) return
+    setEndSessionActionInProgress(true)
+    completionHandledRef.current = true
+
+    // If draft exists and wasn't yet submitted, auto-submit it now
+    try {
+      const raw = localStorage.getItem(`compendium-interviewer-draft-${lobbyId}`)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { scores?: Record<string, number>; notes?: string }
+        const snap = await getDocs(query(evaluationsCol, where('lobbyId', '==', lobbyId)))
+        if (snap.empty && parsed.scores) {
+          await apiPost('/api/evaluations', {
+            lobbyId,
+            caseId: caseIdRef.current || null,
+            scores: parsed.scores,
+            notes: parsed.notes ?? '',
+          })
+        }
+      }
+    } catch {
+      // Non-fatal — proceed with end regardless
+    }
+
+    try {
+      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, { completedBy: 'candidate' })
+    } catch {
+      // Non-fatal
+    }
+
+    try {
+      localStorage.removeItem(`compendium-interviewer-draft-${lobbyId}`)
+    } catch { }
+
+    type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
+    ;(window as PopupHost).__compendiumInterviewerWindow?.close()
+
+    await stopRecordingAndFinalize('candidate_ended', false)
+    setEndSessionActionInProgress(false)
+    setEndSessionOverlayKind(null)
+    setEndSessionSavedVisible(true)
+  }, [endSessionActionInProgress, lobbyId, stopRecordingAndFinalize])
+
+  const handleEndSessionSaveAudio = useCallback(async () => {
+    if (endSessionActionInProgress || !lobbyId) return
+    setEndSessionActionInProgress(true)
     completionHandledRef.current = true
 
     try {
-      if (lobbyId) {
-        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, {
-          completedBy: 'candidate',
-        })
-      }
-    } catch (endError) {
-      setSessionIssue(endError instanceof Error ? endError.message : 'Unable to update session state in cloud.')
+      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {})
+    } catch {
+      // Non-fatal
     }
 
-    localStorage.setItem(
-      'compendium-session-ended',
-      JSON.stringify({
-        lobbyId,
-        caseId: caseIdRef.current || null,
-        endedAt: Date.now(),
-        endedBy: 'candidate',
-      })
-    )
+    type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
+    ;(window as PopupHost).__compendiumInterviewerWindow?.close()
 
-    await stopRecordingAndFinalize('candidate_ended', true)
-    setEndingSession(false)
-  }, [endingSession, lobbyId, stopRecordingAndFinalize])
+    await stopRecordingAndFinalize('candidate_ended', false)
+    setEndSessionActionInProgress(false)
+    setEndSessionOverlayKind(null)
+    setEndSessionSavedVisible(true)
+  }, [endSessionActionInProgress, lobbyId, stopRecordingAndFinalize])
+
+  const handleEndSessionDrop = useCallback(async () => {
+    if (endSessionActionInProgress || !lobbyId) return
+    setEndSessionActionInProgress(true)
+    completionHandledRef.current = true
+
+    teardownMedia()
+
+    try {
+      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {})
+    } catch {
+      // Non-fatal
+    }
+
+    type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
+    ;(window as PopupHost).__compendiumInterviewerWindow?.close()
+
+    setEndSessionActionInProgress(false)
+    setEndSessionOverlayKind(null)
+    router.replace('/')
+  }, [endSessionActionInProgress, lobbyId, teardownMedia, router])
 
   useEffect(() => {
     let unsubscribeSession = () => {}
@@ -1010,7 +1108,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // (not a tab close) and can apply reload-specific logic.
   const RELOAD_PLATFORM_KEY = `compendium-platform-reload-${lobbyId ?? ''}`
   useEffect(() => {
-    if (recordingState !== 'recording') return
+    if (recordingState !== 'recording' && recordingState !== 'uploading') return
     const onKeyDown = (event: KeyboardEvent) => {
       const isReloadKey =
         event.key === 'F5' ||
@@ -1018,6 +1116,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (!isReloadKey) return
       event.preventDefault()
       isReloadIntentRef.current = true
+      if (recordingState === 'uploading') {
+        // During upload, always show the upload-specific warning (no count logic)
+        setWarnBeforeReloadVisible(true)
+        setTimeout(() => { isReloadIntentRef.current = false }, 500)
+        return
+      }
       const count = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
       if (count >= 2) {
         sessionStorage.setItem(RELOAD_FLAG_KEY, '1')
@@ -1042,7 +1146,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // if the user clicks Stay, our overlay renders on the next tick.
   // pagehide is registered separately as a reliable final signal for the interviewer.
   useEffect(() => {
-    if (recordingState !== 'recording') return
+    if (recordingState !== 'recording' && recordingState !== 'uploading') return
 
     const writeAbandonedSignal = () => {
       if (!lobbyId) return
@@ -1678,8 +1782,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       ) : null}
 
       {warnBeforeReloadVisible ? (() => {
+        const isUploading = recordingState === 'uploading'
         const warnCount = parseInt(sessionStorage.getItem(RELOAD_WARN_KEY) ?? '0', 10)
-        const isFinalWarning = warnCount >= 2
+        const isFinalWarning = !isUploading && warnCount >= 2
         return (
           <LobbyOverlay
             key="warn-before-reload"
@@ -1691,13 +1796,21 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             }
-            title={isFinalWarning ? "One more reload and we let you go" : "Heads up: reloading will lose your recording"}
-            body={
-              isFinalWarning
-                ? "You have tried to reload twice now. The next reload will go through and your recording will be gone. Stay on the page to keep it."
-                : "Reloading stops the mic and wipes everything captured so far. A new recording will start fresh. Stay on the page to keep what you have."
+            title={
+              isUploading
+                ? "Your audio is uploading right now"
+                : isFinalWarning
+                  ? "One more reload and we let you go"
+                  : "Heads up: reloading will lose your recording"
             }
-            autoDismissMs={isFinalWarning ? 8000 : 6000}
+            body={
+              isUploading
+                ? "Reloading now would cut the upload and your audio would be lost. It wraps up on its own, just wait a moment."
+                : isFinalWarning
+                  ? "You have tried to reload twice now. The next reload will go through and your recording will be gone. Stay on the page to keep it."
+                  : "Reloading stops the mic and wipes everything captured so far. A new recording will start fresh. Stay on the page to keep what you have."
+            }
+            autoDismissMs={isUploading ? 8000 : isFinalWarning ? 8000 : 6000}
             actionLabel="Stay on page"
             onAction={() => setWarnBeforeReloadVisible(false)}
             onDismiss={() => setWarnBeforeReloadVisible(false)}
@@ -1705,25 +1818,32 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         )
       })() : null}
 
-      {warnBeforeCloseVisible ? (
-        <LobbyOverlay
-          key="warn-before-close"
-          type="warning"
-          icon={
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-          }
-          title="Leaving will lose your recording"
-          body="You tried to close or reload this tab. If you go through with it, the mic stops and everything recorded so far is gone."
-          autoDismissMs={8000}
-          actionLabel="Stay on page"
-          onAction={() => setWarnBeforeCloseVisible(false)}
-          onDismiss={() => setWarnBeforeCloseVisible(false)}
-        />
-      ) : null}
+      {warnBeforeCloseVisible ? (() => {
+        const isUploadingNow = (recordingState as string) === 'uploading'
+        return (
+          <LobbyOverlay
+            key="warn-before-close"
+            type="warning"
+            icon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            }
+            title={isUploadingNow ? "Your audio is uploading right now" : "Leaving will lose your recording"}
+            body={
+              isUploadingNow
+                ? "Closing or reloading now would cut the upload and your audio would be lost. It finishes on its own, just give it a few seconds."
+                : "You tried to close or reload this tab. If you go through with it, the mic stops and everything recorded so far is gone."
+            }
+            autoDismissMs={8000}
+            actionLabel="Stay on page"
+            onAction={() => setWarnBeforeCloseVisible(false)}
+            onDismiss={() => setWarnBeforeCloseVisible(false)}
+          />
+        )
+      })() : null}
 
       {leaveConfirmVisible ? (
         <LobbyOverlay
@@ -1736,15 +1856,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           }
-          title={recordingState === 'uploading' ? "Upload in progress" : "Leave and save audio?"}
+          title={recordingState === 'uploading' ? "Your audio is uploading right now" : "Leave and save audio?"}
           body={
             recordingState === 'uploading'
-              ? "Audio is uploading right now. Leaving may cut it off. Wait a few seconds for it to finish automatically."
+              ? "Going back now would cut the upload and your audio would be lost. Just hang tight, it finishes on its own in a few seconds."
               : "Leaving will stop the mic and save what's recorded so far. If the interviewer rates it, you'll see their feedback in the dashboard. Either way, the case will show up there."
           }
           autoDismissMs={12000}
-          actionLabel={leavingInProgress ? "Saving..." : "Leave and save"}
-          onAction={async () => {
+          actionLabel={recordingState === 'uploading' ? undefined : (leavingInProgress ? "Saving..." : "Leave and save")}
+          onAction={recordingState === 'uploading' ? undefined : async () => {
             if (leavingInProgress) return
             setLeavingInProgress(true)
             const wasRecording = recordingState === 'recording' || recordingState === 'stopping'
@@ -1752,7 +1872,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               if (recordingState === 'recording') {
                 await stopRecordingAndFinalize('user_navigated_away', false)
               }
-              if (lobbyId && (wasRecording || recordingState === 'uploading')) {
+              if (lobbyId && wasRecording) {
                 try {
                   localStorage.setItem('compendium-candidate-abandoned', JSON.stringify({ lobbyId, ts: Date.now() }))
                 } catch { }
@@ -1789,6 +1909,70 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           onDismiss={() => {
             setLeaveSavedOverlayVisible(false)
             leaveConfirmFromPopstateRef.current = false
+            router.replace('/dashboard')
+          }}
+        />
+      ) : null}
+
+      {endSessionOverlayKind === 'rated' ? (
+        <LobbyOverlay
+          key="end-session-rated"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          }
+          title="Ready to wrap up?"
+          body="The interviewer has rated the session. You can save your audio and end the case, or drop the whole thing if something went wrong."
+          actionLabel={endSessionActionInProgress ? "Saving..." : "Save and end"}
+          onAction={() => void handleEndSessionSaveAndEnd()}
+          secondaryActionLabel="Drop session"
+          onSecondaryAction={() => void handleEndSessionDrop()}
+          onDismiss={() => {
+            if (!endSessionActionInProgress) setEndSessionOverlayKind(null)
+          }}
+        />
+      ) : null}
+
+      {endSessionOverlayKind === 'unrated' ? (
+        <LobbyOverlay
+          key="end-session-unrated"
+          type="warning"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          }
+          title="End session early?"
+          body="The interviewer hasn't finished rating yet. You can still save your audio and the case will show up as unrated, or drop it entirely."
+          actionLabel={endSessionActionInProgress ? "Saving..." : "Save audio"}
+          onAction={() => void handleEndSessionSaveAudio()}
+          secondaryActionLabel="Drop session"
+          onSecondaryAction={() => void handleEndSessionDrop()}
+          onDismiss={() => {
+            if (!endSessionActionInProgress) setEndSessionOverlayKind(null)
+          }}
+        />
+      ) : null}
+
+      {endSessionSavedVisible ? (
+        <LobbyOverlay
+          key="end-session-saved"
+          type="info"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          }
+          title="Audio saved. Heading to dashboard."
+          body="Your audio is saved. The case will show up in your dashboard once the interviewer submits their rating."
+          autoDismissMs={4000}
+          onDismiss={() => {
+            setEndSessionSavedVisible(false)
             router.replace('/dashboard')
           }}
         />

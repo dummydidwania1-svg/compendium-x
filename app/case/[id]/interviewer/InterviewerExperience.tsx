@@ -1,6 +1,6 @@
 'use client'
 import Image from 'next/image'
-import { useEffect, useMemo, useState, useRef, ReactNode, Component } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef, ReactNode, Component } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getDoc } from 'firebase/firestore'
@@ -625,6 +625,92 @@ export function InterviewerPageInner({
 			// Storage quota exceeded — non-fatal.
 		}
 	}, [draftKey, scores, notes, currentView])
+
+	// ── Auto-end timers ──────────────────────────────────────────────────────────
+	// Trigger 1: 30 min inactivity (after all 4 scores filled)
+	// Trigger 2: 2 h since last score change (regardless of activity, after all 4 scores filled)
+	const lastActivityAtRef = useRef(Date.now())
+	const lastScoreChangedAtRef = useRef(Date.now())
+	const autoEndFiredRef = useRef(false)
+
+	// Track score changes to reset the 2h stale clock
+	useEffect(() => {
+		lastScoreChangedAtRef.current = Date.now()
+	}, [scores])
+
+	// Track view changes as activity
+	useEffect(() => {
+		lastActivityAtRef.current = Date.now()
+	}, [currentView])
+
+	// DOM activity listeners (mousemove, keydown, etc.)
+	useEffect(() => {
+		const bump = () => { lastActivityAtRef.current = Date.now() }
+		const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const
+		for (const ev of events) document.addEventListener(ev, bump, { passive: true })
+		return () => { for (const ev of events) document.removeEventListener(ev, bump) }
+	}, [])
+
+	// Auto-submit helper shared by both triggers
+	const autoEndSession = useCallback(async () => {
+		if (autoEndFiredRef.current || !lobbyId || !resolvedCaseId) return
+		if (Object.values(scores).some((v) => v < 1)) return
+		autoEndFiredRef.current = true
+
+		try {
+			await apiPost('/api/evaluations', {
+				lobbyId,
+				caseId: resolvedCaseId,
+				scores: {
+					structure: scores.structure,
+					understanding: scores.understanding,
+					delivery: scores.delivery,
+					creativity: scores.creativity,
+				},
+				notes,
+			})
+		} catch {
+			// Non-fatal — still signal the candidate
+		}
+
+		try {
+			localStorage.setItem(
+				'compendium-session-ended',
+				JSON.stringify({ caseId: resolvedCaseId, lobbyId, endedAt: Date.now() }),
+			)
+			if (draftKey) localStorage.removeItem(draftKey)
+		} catch { }
+
+		window.close()
+	}, [lobbyId, resolvedCaseId, scores, notes, draftKey])
+
+	// Trigger 1: check every 60s for 30min inactivity
+	useEffect(() => {
+		if (!lobbyId || previewMode) return
+		const id = setInterval(() => {
+			const allRated = Object.values(scores).every((v) => v > 0)
+			if (!allRated) return
+			if (Date.now() - lastActivityAtRef.current > 30 * 60 * 1000) {
+				void autoEndSession()
+			}
+		}, 60_000)
+		return () => clearInterval(id)
+	}, [lobbyId, previewMode, scores, autoEndSession])
+
+	// Trigger 2: check every 5min for 2h score stale
+	useEffect(() => {
+		if (!lobbyId || previewMode) return
+		const id = setInterval(() => {
+			const allRated = Object.values(scores).every((v) => v > 0)
+			if (!allRated) return
+			if (Date.now() - lastScoreChangedAtRef.current > 2 * 60 * 60 * 1000) {
+				void autoEndSession()
+			}
+		}, 5 * 60_000)
+		return () => clearInterval(id)
+	}, [lobbyId, previewMode, scores, autoEndSession])
+	// ── End auto-end timers ───────────────────────────────────────────────────
+
 	const [submitError, setSubmitError] = useState('')
 	// Locked-by-default review screen: the interviewer fills scores/notes
 	// during the case (sidebar in CaseInterviewerMaster), then this view
