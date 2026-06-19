@@ -1530,12 +1530,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [isRecoverableCaptureError])
 
   // Drive persistent recording-error overlay — must be after persistentRecordingError is declared.
-  // Suppressed after end session is initiated (recording stops intentionally, not as an error).
+  // This overlay is ONLY for a failed capture START (recording never began, e.g.
+  // mic/permission failure on launch). It must NOT fire for:
+  //  - upload failures (completionPending): those are owned by the upload-fail
+  //    overlay, which has correct retry-upload wording and logic. Showing the
+  //    "Recording couldn't start / check your microphone" copy there is wrong
+  //    and confusing (recording already happened; it's the upload that failed).
+  //  - a session that is wrapping up (feedbackSubmitted) or an end-session the
+  //    candidate initiated: recording stops on purpose, not as an error.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    setPersistentErrorOverlayVisible(!!persistentRecordingError && !endSessionInitiatedRef.current)
+    const isCaptureStartFailure =
+      !!persistentRecordingError &&
+      !completionPending &&
+      !feedbackSubmitted &&
+      !endSessionInitiatedRef.current
+    setPersistentErrorOverlayVisible(isCaptureStartFailure)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persistentRecordingError])
+  }, [persistentRecordingError, completionPending, feedbackSubmitted])
 
   const workflowCurrentStep = feedbackSubmitted
     ? 4
