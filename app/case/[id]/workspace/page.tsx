@@ -2170,11 +2170,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </svg>
           }
           title="Interviewer window closed"
-          body={
-            recordingState === 'recording'
-              ? "Your recording is still running. Reopen the interviewer window to continue, or end the session from here."
-              : "Your recording is still running. Reopen the interviewer window to continue."
-          }
+          body={(() => {
+            const draft = readDraftScores(lobbyId)
+            const allRated = draft !== null && isDraftAllRated(draft.scores)
+            if (recordingState === 'recording') {
+              return allRated
+                ? "The interviewer has rated all four parameters but closed their window before submitting. You can reopen it so they can submit, or just end the session and the ratings will be saved."
+                : "The interviewer closed their window and hasn't finished rating yet. You can reopen it for them to continue, or end the session now and the case will be marked unrated."
+            }
+            return allRated
+              ? "The interviewer has rated all four parameters. Reopen their window to let them submit, or end the session to save what's there."
+              : "The interviewer closed their window without finishing the rating. Reopen it to continue, or end the session."
+          })()}
           actionLabel="Reopen window"
           onAction={() => {
             const url = `/case/${resolvedCaseId}/interviewer?lobby=${encodeURIComponent(lobbyId)}&role=interviewer&sessionMode=local`
