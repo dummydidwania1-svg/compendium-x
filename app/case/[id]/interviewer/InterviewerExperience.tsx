@@ -690,10 +690,10 @@ export function InterviewerPageInner({
 		const id = setInterval(() => {
 			const allRated = Object.values(scores).every((v) => v > 0)
 			if (!allRated) return
-			if (Date.now() - lastActivityAtRef.current > 6000) {
+			if (Date.now() - lastActivityAtRef.current > 30 * 60 * 1000) {
 				void autoEndSession()
 			}
-		}, 3000)
+		}, 60_000)
 		return () => clearInterval(id)
 	}, [lobbyId, previewMode, scores, autoEndSession])
 
@@ -703,10 +703,10 @@ export function InterviewerPageInner({
 		const id = setInterval(() => {
 			const allRated = Object.values(scores).every((v) => v > 0)
 			if (!allRated) return
-			if (Date.now() - lastScoreChangedAtRef.current > 99999999) {
+			if (Date.now() - lastScoreChangedAtRef.current > 2 * 60 * 60 * 1000) {
 				void autoEndSession()
 			}
-		}, 3000)
+		}, 5 * 60_000)
 		return () => clearInterval(id)
 	}, [lobbyId, previewMode, scores, autoEndSession])
 	// ── End auto-end timers ───────────────────────────────────────────────────
