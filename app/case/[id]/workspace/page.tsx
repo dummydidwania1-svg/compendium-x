@@ -826,6 +826,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     if (endingSession) return
     if (!lobbyId) return
 
+    // Set immediately so the window-closed reshow timer is suppressed
+    // even before the user picks an action from the overlay
+    endSessionInitiatedRef.current = true
+    setWindowClosedOverlayVisible(false)
+    if (windowClosedReshowTimerRef.current) {
+      clearTimeout(windowClosedReshowTimerRef.current)
+      windowClosedReshowTimerRef.current = null
+    }
+
     setEndingSession(true)
     const isRated = await checkRatingStatus(lobbyId)
     setEndingSession(false)
@@ -842,22 +851,23 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     setCaptureErrorOverlayVisible(false)
     setEndSessionOverlayKind(null)
 
-    // Submit draft via candidate-safe route (uses session's interviewerId server-side)
+    // Submit draft via candidate-safe route (uses session's interviewerId server-side).
+    // submit-draft is idempotent and also marks session completed — no need to call /complete separately.
     try {
       const draft = readDraftScores(lobbyId)
       const snap = await getDocs(query(evaluationsCol, where('lobbyId', '==', lobbyId)))
       if (snap.empty && draft && isDraftAllRated(draft.scores)) {
         await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/submit-draft`, {
           scores: {
-            structure: draft.scores.structure ?? 0,
-            understanding: draft.scores.understanding ?? 0,
-            delivery: draft.scores.delivery ?? 0,
-            creativity: draft.scores.creativity ?? 0,
+            structure: draft.scores.structure as number,
+            understanding: draft.scores.understanding as number,
+            delivery: draft.scores.delivery as number,
+            creativity: draft.scores.creativity as number,
           },
           notes: draft.notes,
         })
-      } else if (snap.empty) {
-        // Eval already submitted (source A was true) — just complete the session
+      } else {
+        // Eval already in Firestore (interviewer submitted) — just mark session complete
         await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, { completedBy: 'candidate' })
       }
     } catch {
@@ -1449,15 +1459,16 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [isRecoverableCaptureError])
 
   // Drive persistent recording-error overlay — must be after persistentRecordingError is declared.
+  // Suppressed after end session is initiated (recording stops intentionally, not as an error).
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    setPersistentErrorOverlayVisible(!!persistentRecordingError)
+    setPersistentErrorOverlayVisible(!!persistentRecordingError && !endSessionInitiatedRef.current)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persistentRecordingError])
 
   const workflowCurrentStep = feedbackSubmitted
     ? 4
-    : recordingState === 'uploaded' && !completionPending ? 4 : 3
+    : (recordingState === 'uploading' || (recordingState === 'uploaded' && !completionPending)) ? 4 : 3
   const workflowSteps = isLocalSession
     ? [
         { num: '01', text: 'Controls ready' },
