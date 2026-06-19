@@ -100,10 +100,14 @@ function CandidateLobby({
   // Poll every 2s to detect if the interviewer window was closed by the user.
   // Drives dynamic H1, subtitle, status row, and title pulse so the candidate
   // knows they need to reopen it.
+  // cancelInitiatedRef: set true just before we intentionally close the popup
+  // via "Cancel session" so the poller doesn't fire the "window closed" overlay.
+  const cancelInitiatedRef = useRef(false)
   const [popupWindowClosed, setPopupWindowClosed] = useState(false)
   useEffect(() => {
     if (!isLocalSession) return
     const interval = setInterval(() => {
+      if (cancelInitiatedRef.current) return
       const host = window as PopupWindowHost
       const win = host.__compendiumInterviewerWindow
       if (win && win.closed) {
@@ -435,7 +439,7 @@ function CandidateLobby({
         ? "The interviewer window hasn't picked a case. Stuck? Start fresh."
         : "Your interviewer hasn't joined yet. Resend the link or start fresh.",
       actionLabel: 'Cancel session',
-      onAction: onCancelSession,
+      onAction: () => { cancelInitiatedRef.current = true; onCancelSession() },
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [waitingNudgeVisible])
@@ -1542,14 +1546,11 @@ export default function LobbyPage() {
     }
   }, [isInterviewer, lobbyId, requestedSessionMode, router])
 
-  const handleCancelSession = async () => {
+  const handleCancelSession = () => {
     const popupHost = window as PopupWindowHost
     popupHost.__compendiumInterviewerWindow?.close()
-    try {
-      await apiPost(`/api/sessions/${lobbyId}/abandon`, {})
-    } catch {
-      // best effort
-    }
+    // Fire-and-forget: don't block navigation on the API call
+    apiPost(`/api/sessions/${lobbyId}/abandon`, {}).catch(() => {})
     router.push('/practice')
   }
 
