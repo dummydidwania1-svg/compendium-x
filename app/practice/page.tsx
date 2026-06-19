@@ -362,9 +362,6 @@ export default function PracticeModeSelection() {
                 <p className="text-[12px] leading-relaxed text-[#434840]">
                   Send your interviewer a link. They open it on their end and you&apos;re both in.
                 </p>
-                <p className="practice-mode-note text-[10px] leading-relaxed text-[#5C4033]/44">
-                  For when your interviewer is not physically with you.
-                </p>
                 <div className="mt-5">
                   <button
                     type="button"
@@ -404,9 +401,6 @@ export default function PracticeModeSelection() {
                 <p className="text-[12px] leading-relaxed text-[#434840]">
                   Interviewer right next to you? Hand over the device and they pick a case.
                 </p>
-                <p className="practice-mode-note text-[10px] leading-relaxed text-[#5C4033]/44">
-                  For when your interviewer is physically with you, sharing one device.
-                </p>
                 <div className="mt-5">
                   <button
                     type="button"
@@ -417,11 +411,6 @@ export default function PracticeModeSelection() {
                     {localPreparing ? 'Setting up...' : 'Launch Split Screen'}
                   </button>
                 </div>
-                {localPreparing ? (
-                  <p className="mt-3 text-[10px] leading-relaxed text-[#5c4033]/60">
-                    Allow microphone in the browser prompt. The interviewer window opens right after.
-                  </p>
-                ) : null}
               </div>
             </article>
 
