@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { type User } from 'firebase/auth'
 import { getDocs, getDoc, onSnapshot, query, where } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
-import { storage, waitForAuthUser } from '@/lib/firebase/config'
+import { auth, storage, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc, evaluationsCol } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
@@ -410,6 +410,21 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           return
         } catch (uploadError) {
           lastError = uploadError
+          // TEMP DIAGNOSTIC: log the exact failure so we can see which step
+          // (uploadBytes / getDownloadURL / apiPost) fails and the error code.
+          console.error(`[upload attempt ${attempt}/${MAX_ATTEMPTS}] failed`, {
+            name: (uploadError as { name?: string })?.name,
+            code: (uploadError as { code?: string })?.code,
+            status: (uploadError as { status?: number })?.status,
+            message: uploadError instanceof Error ? uploadError.message : String(uploadError),
+            serverResponse: (uploadError as { customData?: { serverResponse?: string } })?.customData?.serverResponse,
+            currentUserUid: currentUser?.uid,
+            authUid: auth.currentUser?.uid,
+            blobType: blob.type,
+            blobSize: blob.size,
+            startedAtMs: recordingStartMsRef.current,
+            recordingMode,
+          })
           if (attempt < MAX_ATTEMPTS) {
             // Backoff: 600ms, 1200ms, 1800ms. Gives the auth token / network /
             // tab-focus state time to settle before the next attempt.
