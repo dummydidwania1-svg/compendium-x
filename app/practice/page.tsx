@@ -267,17 +267,30 @@ export default function PracticeModeSelection() {
           from { width: 100%; }
           to { width: 0%; }
         }
-        @keyframes handoff-lift {
-          0%   { transform: translateY(0px) rotate(-1deg); }
-          45%  { transform: translateY(-9px) rotate(0deg); }
-          55%  { transform: translateY(-9px) rotate(0deg); }
-          100% { transform: translateY(0px) rotate(-1deg); }
+        /* Laptop glides from giver (left) to receiver (right), lifting in an arc */
+        @keyframes handoff-pass {
+          0%   { transform: translateX(-46px) translateY(0) scale(0.96); opacity: 0; }
+          14%  { transform: translateX(-46px) translateY(0) scale(0.96); opacity: 1; }
+          50%  { transform: translateX(0) translateY(-10px) scale(1.04); opacity: 1; }
+          86%  { transform: translateX(46px) translateY(0) scale(0.96); opacity: 1; }
+          100% { transform: translateX(46px) translateY(0) scale(0.96); opacity: 0; }
         }
-        @keyframes handoff-shadow {
-          0%   { transform: scaleX(1); opacity: 0.18; }
-          45%  { transform: scaleX(0.72); opacity: 0.08; }
-          55%  { transform: scaleX(0.72); opacity: 0.08; }
-          100% { transform: scaleX(1); opacity: 0.18; }
+        /* Giver avatar: bright at start, dims as it lets go */
+        @keyframes handoff-giver {
+          0%, 20%   { opacity: 0.85; }
+          55%, 100% { opacity: 0.30; }
+        }
+        /* Receiver avatar: dim until the device arrives, then warms up */
+        @keyframes handoff-receiver {
+          0%, 55%  { opacity: 0.30; }
+          88%, 100%{ opacity: 0.85; }
+        }
+        @keyframes handoff-pass-shadow {
+          0%   { transform: translateX(-46px) scaleX(1); opacity: 0; }
+          14%  { transform: translateX(-46px) scaleX(1); opacity: 0.14; }
+          50%  { transform: translateX(0) scaleX(0.7); opacity: 0.06; }
+          86%  { transform: translateX(46px) scaleX(1); opacity: 0.14; }
+          100% { transform: translateX(46px) scaleX(1); opacity: 0; }
         }
         @keyframes handoff-glow {
           0%, 100% { opacity: 0.3; transform: scale(1); }
@@ -346,70 +359,76 @@ export default function PracticeModeSelection() {
             className="flex flex-col items-center gap-7 px-8 text-center"
             style={{ animation: 'handoff-card-in 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both' }}
           >
-            {/* Laptop lift illustration — one device being offered/handed over */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-              <div style={{ animation: 'handoff-lift 2.8s cubic-bezier(0.45,0,0.55,1) infinite' }}>
-                {/*
-                  Proper laptop in 3/4 open perspective:
-                  - Lid angled back (parallelogram) with screen content inside
-                  - Hinge edge visible between lid and base
-                  - Base rectangle with trackpad
-                */}
-                <svg width="120" height="90" viewBox="0 0 120 90" fill="none">
-                  {/* ── Lid (screen) drawn as a parallelogram, angled back ── */}
-                  {/* Outer lid shell */}
-                  <path
-                    d="M14 52 L22 8 L106 8 L98 52 Z"
-                    fill="rgba(255,248,240,0.96)"
-                    stroke="rgba(92,64,51,0.22)"
-                    strokeWidth="1.5"
-                    strokeLinejoin="round"
-                  />
-                  {/* Screen glass (inset) */}
-                  <path
-                    d="M22 46 L29 14 L99 14 L92 46 Z"
-                    fill="rgba(92,64,51,0.055)"
-                  />
-                  {/* Screen content — 3 text lines suggesting UI */}
-                  <line x1="36" y1="22" x2="74" y2="22" stroke="rgba(92,64,51,0.18)" strokeWidth="2.2" strokeLinecap="round" />
-                  <line x1="34" y1="29" x2="62" y2="29" stroke="rgba(92,64,51,0.10)" strokeWidth="1.8" strokeLinecap="round" />
-                  <line x1="33" y1="35" x2="68" y2="35" stroke="rgba(92,64,51,0.10)" strokeWidth="1.8" strokeLinecap="round" />
-                  {/* Camera dot centered on top bezel */}
-                  <circle cx="60" cy="11" r="1.5" fill="rgba(92,64,51,0.18)" />
+            {/* Handover illustration — laptop passes from you (left) to interviewer (right) */}
+            <div
+              style={{
+                position: 'relative',
+                width: '210px',
+                height: '88px',
+                marginBottom: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              {/* Giver avatar (you) */}
+              <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style={{ animation: 'handoff-giver 2.8s ease-in-out infinite', flexShrink: 0 }}>
+                <circle cx="22" cy="22" r="21" fill="rgba(92,64,51,0.05)" stroke="rgba(92,64,51,0.18)" strokeWidth="1.4" />
+                <circle cx="22" cy="17" r="6" fill="rgba(92,64,51,0.45)" />
+                <path d="M11 35 a11 9 0 0 1 22 0" fill="rgba(92,64,51,0.45)" />
+              </svg>
 
-                  {/* ── Hinge edge (thin strip between lid and base) ── */}
-                  <path
-                    d="M10 55 L16 53 L102 53 L108 55 L102 57 L16 57 Z"
-                    fill="rgba(92,64,51,0.13)"
-                  />
+              {/* Receiver avatar (interviewer) — warms to green when device arrives */}
+              <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style={{ animation: 'handoff-receiver 2.8s ease-in-out infinite', flexShrink: 0 }}>
+                <circle cx="22" cy="22" r="21" fill="rgba(61,90,53,0.06)" stroke="rgba(61,90,53,0.24)" strokeWidth="1.4" />
+                <circle cx="22" cy="17" r="6" fill="rgba(61,90,53,0.5)" />
+                <path d="M11 35 a11 9 0 0 1 22 0" fill="rgba(61,90,53,0.5)" />
+              </svg>
 
-                  {/* ── Base (keyboard deck) ── */}
-                  <path
-                    d="M10 55 L108 55 L108 74 L10 74 Z"
-                    fill="rgba(255,248,240,0.92)"
-                    stroke="rgba(92,64,51,0.15)"
-                    strokeWidth="1.2"
-                    strokeLinejoin="round"
-                  />
-                  {/* Trackpad */}
-                  <rect x="46" y="60" width="28" height="10" rx="2.5" fill="rgba(92,64,51,0.07)" stroke="rgba(92,64,51,0.11)" strokeWidth="1" />
-
-                  {/* ── Bottom chamfer (gives depth) ── */}
-                  <path
-                    d="M10 74 L6 78 L114 78 L108 74 Z"
-                    fill="rgba(92,64,51,0.08)"
-                  />
+              {/* Travelling laptop — centered, animated across via translateX */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  marginLeft: '-31px',
+                  marginTop: '-22px',
+                  animation: 'handoff-pass 2.8s cubic-bezier(0.45,0,0.55,1) infinite',
+                  willChange: 'transform, opacity',
+                }}
+              >
+                <svg width="62" height="44" viewBox="0 0 62 44" fill="none">
+                  {/* Screen lid */}
+                  <rect x="4" y="2" width="54" height="34" rx="4" fill="rgba(255,248,240,0.97)" stroke="rgba(92,64,51,0.22)" strokeWidth="1.5" />
+                  {/* Inner screen */}
+                  <rect x="9" y="7" width="44" height="24" rx="2" fill="rgba(61,90,53,0.07)" />
+                  {/* Screen content lines */}
+                  <line x1="14" y1="13" x2="38" y2="13" stroke="rgba(61,90,53,0.22)" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="14" y1="19" x2="30" y2="19" stroke="rgba(61,90,53,0.12)" strokeWidth="1.8" strokeLinecap="round" />
+                  <line x1="14" y1="24" x2="34" y2="24" stroke="rgba(61,90,53,0.12)" strokeWidth="1.8" strokeLinecap="round" />
+                  {/* Camera dot */}
+                  <circle cx="31" cy="5" r="1" fill="rgba(92,64,51,0.2)" />
+                  {/* Hinge / base */}
+                  <path d="M1 38 L61 38 L57 42 L5 42 Z" fill="rgba(92,64,51,0.13)" />
+                  <rect x="25" y="38.5" width="12" height="2.5" rx="1.25" fill="rgba(92,64,51,0.18)" />
                 </svg>
               </div>
-              {/* Shadow that shrinks as laptop lifts */}
-              <div style={{
-                width: '88px',
-                height: '6px',
-                borderRadius: '999px',
-                background: 'rgba(92,64,51,0.12)',
-                filter: 'blur(3px)',
-                animation: 'handoff-shadow 2.8s cubic-bezier(0.45,0,0.55,1) infinite',
-              }} />
+
+              {/* Soft moving shadow under the laptop */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  bottom: '2px',
+                  marginLeft: '-26px',
+                  width: '52px',
+                  height: '5px',
+                  borderRadius: '999px',
+                  background: 'rgba(92,64,51,0.16)',
+                  filter: 'blur(3px)',
+                  animation: 'handoff-pass-shadow 2.8s cubic-bezier(0.45,0,0.55,1) infinite',
+                }}
+              />
             </div>
 
             {/* Text */}
