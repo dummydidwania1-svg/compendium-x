@@ -219,7 +219,7 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
 
   // ── Global filter ──
   const filteredCases = useMemo(() => {
-    return filterDashboardEntries(entries, filters);
+    return filterDashboardEntries(entries, filters).filter((c) => !c.isUnrated);
   }, [entries, filters]);
 
   // Available options constrained by global filter

@@ -171,7 +171,7 @@ const CaseScoreCard = ({ filters }: CaseScoreCardProps) => {
 
   // ── Filter cases ──
   const filteredCases = useMemo(() => {
-    return filterDashboardEntries(entries, filters);
+    return filterDashboardEntries(entries, filters).filter((c) => !c.isUnrated);
   }, [entries, filters]);
 
   // ── Computed scores ──

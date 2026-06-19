@@ -508,11 +508,6 @@ const sortedCases = useMemo(() => {
                         <span className="text-[8px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/50 hover:text-[#3B2F2F] hover:bg-[#D9D0C4]/28 px-1.5 py-[3px] rounded-md whitespace-nowrap transition-colors">
                         {entry.level}
                         </span>
-                        {entry.isUnrated && (
-                          <span className="text-[8px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/40 px-1.5 py-[3px] rounded-md whitespace-nowrap">
-                            Unrated
-                          </span>
-                        )}
                       </div>
                     </td>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, Settings2, Target, Sparkles, LockKeyhole } from 'lucide-react';
 import CalendarPicker from '@/components/ui/CalendarPicker';
 import { useDashboard } from './DashboardContext';
@@ -217,7 +217,8 @@ const GTF_VERBS = ['Calibrating', 'Mapping gaps', 'Analysing pace', 'Reading zon
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
-  const { entries } = useDashboard();
+  const { entries: allEntries } = useDashboard();
+  const entries = useMemo(() => allEntries.filter((e) => !e.isUnrated), [allEntries]);
   const [lockHovered, setLockHovered] = useState(false);
   const [phase, setPhase]         = useState<Phase>('welcome');
   const [history, setHistory]     = useState<Phase[]>([]);

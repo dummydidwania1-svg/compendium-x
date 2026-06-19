@@ -157,7 +157,7 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
 
   // ── Filter cases (same logic as CaseScoreCard) ──
   const filteredCases = useMemo(() => {
-    return filterDashboardEntries(entries, filters);
+    return filterDashboardEntries(entries, filters).filter((c) => !c.isUnrated);
   }, [entries, filters]);
 
   // ── Compute parameter scores from filtered cases ──
