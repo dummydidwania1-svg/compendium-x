@@ -202,6 +202,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // ── Upload-fail overlay (replaces completion-pending inline block) ───────────
   const [uploadFailOverlayVisible, setUploadFailOverlayVisible] = useState(false)
   const uploadFailReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Live mirrors of upload state so the reshow timer's closure never reads
+  // stale values (it would otherwise capture the state at dismiss-time and
+  // re-pop the "Upload didn't go through" overlay even after a successful
+  // retry). Kept in sync by the effect below.
+  const completionPendingRef = useRef(false)
+  const recordingStateRef = useRef<RecordingState>('idle')
   // ── Leave-confirm overlay (shown on back-button / nav-away while recording or uploading) ──
   const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false)
   const [leavingInProgress, setLeavingInProgress] = useState(false)
@@ -366,14 +372,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       // Warm up auth before the first Storage upload. On a brand-new account's
       // FIRST recording, the Firebase auth/token handshake hasn't been
       // exercised yet, so the very first uploadBytes call can be rejected with
-      // an unauthenticated/permission error until the token is minted and the
-      // Storage SDK has a valid credential. Force-minting a fresh ID token here
-      // (and waiting for the auth user to be ready) primes that handshake so
-      // the first attempt succeeds, instead of failing a few times and forcing
-      // the candidate to click "Retry upload". Subsequent cases already have a
-      // warm token, which is why the bug only showed on the first case.
+      // an unauthenticated/permission error until a valid token is available to
+      // the Storage SDK. Ensure the auth user is resolved and a (cached) token
+      // exists before uploading. We use a NON-forced getIdToken() so we don't
+      // trigger a token-refresh storm that would churn the Firestore long-poll
+      // listener while the interviewer window is closing. Subsequent cases
+      // already have a warm token, which is why the bug only showed first time.
       try {
-        await auth.currentUser?.getIdToken(true)
+        const warmUser = auth.currentUser ?? (await waitForAuthUser())
+        await warmUser?.getIdToken()
       } catch {
         // Non-fatal — the retry loop below still covers a slow token.
       }
@@ -807,6 +814,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setRecordingError('No pending audio blob found to retry.')
       return
     }
+    // Synchronously cancel any pending reshow timer and flip out of the
+    // 'failed' state before the async upload begins, so the overlay can't
+    // re-pop during the brief window before uploadRecordingBlob sets
+    // 'uploading' itself (the token warm-up adds a little latency).
+    if (uploadFailReshowTimerRef.current) {
+      clearTimeout(uploadFailReshowTimerRef.current)
+      uploadFailReshowTimerRef.current = null
+    }
+    setUploadFailOverlayVisible(false)
+    setRecordingState('uploading')
+    recordingStateRef.current = 'uploading'
     await uploadRecordingBlob(pendingBlobRef.current, stopReasonRef.current || 'retry_upload', completionPending)
   }, [completionPending, uploadRecordingBlob])
 
@@ -1416,17 +1434,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [feedbackSubmitted, interviewerWindowClosed, microphonePermissionState, preferredRecordingMode, startTitlePulse, stopTitlePulse])
 
   // Drive the upload-fail overlay from completionPending + failed state.
+  // Suppressed when feedbackSubmitted=true (interviewer-triggered completion) or
+  // endSessionInitiatedRef (candidate-triggered end session) — in those flows the
+  // upload runs automatically in the background and is not a user-retry scenario.
   useEffect(() => {
-    if (completionPending && recordingState === 'failed') {
+    // Keep live mirrors in sync for the reshow timer's closure.
+    completionPendingRef.current = completionPending
+    recordingStateRef.current = recordingState
+    const suppressOverlay = feedbackSubmitted || endSessionInitiatedRef.current
+    if (completionPending && recordingState === 'failed' && !suppressOverlay) {
       setUploadFailOverlayVisible((prev) => (prev ? prev : true))
     } else {
+      // Upload is no longer in a failed/pending state (e.g. a retry started or
+      // succeeded), or overlay is suppressed for this completion path.
       if (uploadFailReshowTimerRef.current) {
         clearTimeout(uploadFailReshowTimerRef.current)
         uploadFailReshowTimerRef.current = null
       }
       setUploadFailOverlayVisible(false)
     }
-  }, [completionPending, recordingState])
+  }, [completionPending, recordingState, feedbackSubmitted])
 
   // Drive the mic-blocked overlay from microphonePermissionState (local mode only).
   // Title pulse starts immediately; overlay reshows after 1.5s if still blocked.
@@ -1529,7 +1556,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // doesn't recognise).
   const isWaitingForUserStart =
     recordingState === 'idle' || (recordingState === 'failed' && isRecoverableCaptureError)
-  const endingSessionNowForPill = endSessionActionInProgress || endSessionInitiatedRef.current
+  const endingSessionNowForPill = endSessionActionInProgress || endSessionInitiatedRef.current || feedbackSubmitted
   const statusPillLabel =
     endingSessionNowForPill
       ? 'Wrapping up'
@@ -1569,7 +1596,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // Drive recoverable capture-error overlay — must be after isRecoverableCaptureError is declared.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    if (isRecoverableCaptureError && !endSessionInitiatedRef.current) {
+    if (isRecoverableCaptureError && !endSessionInitiatedRef.current && !feedbackSubmitted) {
       setCaptureErrorOverlayVisible((prev) => (prev ? prev : true))
     } else {
       if (captureErrorReshowTimerRef.current) {
@@ -1579,7 +1606,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setCaptureErrorOverlayVisible(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRecoverableCaptureError])
+  }, [isRecoverableCaptureError, feedbackSubmitted])
 
   // Drive persistent recording-error overlay — must be after persistentRecordingError is declared.
   // This overlay is ONLY for a failed capture START (recording never began, e.g.
@@ -1625,7 +1652,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // Once the candidate has triggered an end-session action, the workspace is
   // wrapping up — never surface a recording-error state, since recording is
   // stopping on purpose (and may never have started, in the unrated case).
-  const isEndingSessionNow = endSessionActionInProgress || endSessionInitiatedRef.current
+  const isEndingSessionNow = endSessionActionInProgress || endSessionInitiatedRef.current || feedbackSubmitted
   const workspaceStatusTitle =
     isEndingSessionNow
       ? 'Wrapping up this session'
@@ -1951,9 +1978,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           onDismiss={() => {
             setUploadFailOverlayVisible(false)
             if (uploadFailReshowTimerRef.current) clearTimeout(uploadFailReshowTimerRef.current)
+            // Reshow after 1.5s ONLY if the upload is still genuinely failed.
+            // Read live refs (not stale closure state) so a successful retry —
+            // which flips recordingState to 'uploading'/'uploaded' and clears
+            // completionPending — never re-pops this overlay.
             uploadFailReshowTimerRef.current = setTimeout(() => {
               uploadFailReshowTimerRef.current = null
-              if (completionPending && recordingState === 'failed') setUploadFailOverlayVisible(true)
+              if (completionPendingRef.current && recordingStateRef.current === 'failed') {
+                setUploadFailOverlayVisible(true)
+              }
             }, 1500)
           }}
         />
