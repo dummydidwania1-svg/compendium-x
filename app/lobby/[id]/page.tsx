@@ -144,6 +144,8 @@ function CandidateLobby({
           : 'Reopen it so the interviewer can pick a case.',
         actionLabel: wasOnRepo ? 'Reopen library' : 'Reopen window',
         onAction: wasOnRepo ? onReopenRepo : onPrimaryAction,
+        secondaryActionLabel: 'Cancel session',
+        onSecondaryAction: () => { cancelInitiatedRef.current = true; onCancelSession() },
       })
     } else {
       if (activePulseMessageRef.current === '🖥 Reopen Controls') stopTitlePulse()
