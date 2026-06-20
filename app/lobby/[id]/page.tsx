@@ -974,7 +974,12 @@ function InterviewerLobby({
   showHandoff: boolean
 }) {
   const [elapsed, setElapsed] = useState(0)
-  const [handoffVisible, setHandoffVisible] = useState(showHandoff)
+  // Only show handoff if ?handoff=1 AND it hasn't already played this session.
+  // sessionStorage survives back-navigation within the same tab but resets on
+  // a fresh open — so navigating back from the repo no longer replays it.
+  const handoffKey = `compendium-handoff-shown-${lobbyId}`
+  const alreadyShown = typeof sessionStorage !== 'undefined' && sessionStorage.getItem(handoffKey) === '1'
+  const [handoffVisible, setHandoffVisible] = useState(showHandoff && !alreadyShown)
   const [handoffCountdown, setHandoffCountdown] = useState(5)
   const startRef = useRef<number | null>(null)
   const [showCloseWarning, setShowCloseWarning] = useState(false)
@@ -1007,6 +1012,8 @@ function InterviewerLobby({
 
   useEffect(() => {
     if (!handoffVisible) return
+    // Mark as shown so back-navigation never replays it.
+    try { sessionStorage.setItem(handoffKey, '1') } catch { /* quota */ }
     let count = 5
     const interval = setInterval(() => {
       count -= 1
@@ -1015,7 +1022,7 @@ function InterviewerLobby({
     }, 1000)
     const timer = setTimeout(() => setHandoffVisible(false), 5000)
     return () => { clearInterval(interval); clearTimeout(timer) }
-  }, [handoffVisible])
+  }, [handoffVisible, handoffKey])
 
   useEffect(() => {
     startRef.current = Date.now()
