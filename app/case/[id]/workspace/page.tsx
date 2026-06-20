@@ -1348,14 +1348,19 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // we pop the dummy entry ourselves, then navigate to the dashboard.
   const leaveConfirmFromPopstateRef = useRef(false)
   useEffect(() => {
-    const isActive = recordingState === 'recording' || recordingState === 'uploading'
+    // Arm the back-button guard while a recording is active OR while the case is
+    // running without recording (no active recording, but the session is still
+    // live and leaving must route through the end-session flow, not navigate away).
+    const runningNoRecord = recordingConsentDeclined && !completionPending && !feedbackSubmitted
+    const isActive = recordingState === 'recording' || recordingState === 'uploading' || runningNoRecord
     if (!isActive) return
     history.pushState(null, '', window.location.href)
     const onPopState = () => {
       history.pushState(null, '', window.location.href)
       leaveConfirmFromPopstateRef.current = true
-      if (recordingState === 'recording' && lobbyId) {
-        // During active recording: show rated/unrated end-session flow (same as End Session button)
+      if ((recordingState === 'recording' || runningNoRecord) && lobbyId) {
+        // Active recording OR running without recording: show the rated/unrated
+        // end-session flow (same as the End Session button).
         void handleCandidateEndSession()
       } else {
         // During upload: show the simple upload-in-progress warning
@@ -1364,7 +1369,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
-  }, [recordingState])
+  }, [recordingState, recordingConsentDeclined, completionPending, feedbackSubmitted])
 
 
   // Poll every 2s to detect if the interviewer popup was closed.
