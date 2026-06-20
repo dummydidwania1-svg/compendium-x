@@ -1405,11 +1405,7 @@ export default function LobbyPage() {
       return
     }
 
-    const popupWidth = 800
-    const popupHeight = 800
     const popupHost = window as PopupWindowHost
-    const left = Math.max(0, window.screenX + Math.round((window.outerWidth - popupWidth) / 2))
-    const top = Math.max(0, window.screenY + Math.round((window.outerHeight - popupHeight) / 2))
 
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
       popupHost.__compendiumInterviewerWindow.focus()
@@ -1419,8 +1415,7 @@ export default function LobbyPage() {
 
     const interviewerWindow = window.open(
       `/lobby/${lobbyId}?role=interviewer&mode=local`,
-      'InterviewerControl',
-      `popup=yes,resizable=yes,width=${popupWidth},height=${popupHeight},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+      '_blank'
     )
 
     if (!interviewerWindow) {
@@ -1429,11 +1424,6 @@ export default function LobbyPage() {
     }
 
     popupHost.__compendiumInterviewerWindow = interviewerWindow
-    try {
-      interviewerWindow.resizeTo(popupWidth, popupHeight)
-    } catch {
-      // Some browsers ignore programmatic resizing.
-    }
     interviewerWindow.focus()
     flashCandidateActionStatus('Interviewer window ready')
   }

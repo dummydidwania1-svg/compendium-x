@@ -68,10 +68,6 @@ export default function PracticeModeSelection() {
     setLocalPreparing(true)
     const lobbyId = Math.random().toString(36).substring(7)
     const popupHost = window as Window & { __compendiumInterviewerWindow?: Window | null }
-    const popupWidth = 800
-    const popupHeight = 800
-    const left = Math.max(0, window.screenX + Math.round((window.outerWidth - popupWidth) / 2))
-    const top = Math.max(0, window.screenY + Math.round((window.outerHeight - popupHeight) / 2))
 
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
       popupHost.__compendiumInterviewerWindow.close()
@@ -79,8 +75,7 @@ export default function PracticeModeSelection() {
 
     const interviewerWindow = window.open(
       `/lobby/${lobbyId}?role=interviewer&mode=local&handoff=1`,
-      'InterviewerControl',
-      `width=${popupWidth},height=${popupHeight},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes`
+      '_blank'
     )
 
     if (!interviewerWindow) {
@@ -90,7 +85,6 @@ export default function PracticeModeSelection() {
     }
 
     popupHost.__compendiumInterviewerWindow = interviewerWindow
-    try { interviewerWindow.resizeTo(popupWidth, popupHeight) } catch { /* ignored */ }
     interviewerWindow.focus()
     router.push(`/lobby/${lobbyId}?mode=local`)
   }
