@@ -750,13 +750,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const startCaptureFlow = useCallback(
     async (mode: RecordingMode) => {
       if (mode === 'local') {
-        if (localPrepVisible || recordingState === 'starting') return
+        if (recordingState === 'starting') return
 
         clearRemotePrep()
+        clearLocalPrep()
         setRecordingError('')
         setCaptureWarning('')
         setWorkspaceToast(null)
 
+        // Mic was already granted on the practice page before the candidate
+        // ever reached the workspace, so there is no permission prompt and no
+        // "allow recording" prep animation in local mode — recording just
+        // starts silently as soon as the interviewer launches the case.
         const permissionState = await retryMicrophonePermission()
         if (permissionState === 'denied') {
           setRecordingState('failed')
@@ -764,17 +769,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           return
         }
 
-        setLocalPrepVisible(true)
-        setLocalPrepStep(0)
-
-        localPrepTimersRef.current = [
-          window.setTimeout(() => setLocalPrepStep(1), 800),
-          window.setTimeout(() => setLocalPrepStep(2), 1600),
-          window.setTimeout(() => {
-            clearLocalPrep()
-            void startRecording(mode)
-          }, 2450),
-        ]
+        void startRecording(mode)
         return
       }
 
@@ -1605,15 +1600,22 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persistentRecordingError, completionPending, feedbackSubmitted])
 
-  const workflowCurrentStep = feedbackSubmitted
+  // Remote mode keeps the 4-step flow (incl. "Allow recording" for the share
+  // screen prompt). Local mode dropped that step: mic is granted on the
+  // practice page and recording auto-starts, so the session jumps straight to
+  // "in session" with no recording prompt.
+  const remoteWorkflowCurrentStep = feedbackSubmitted
     ? 4
     : (recordingState === 'uploading' || (recordingState === 'uploaded' && !completionPending)) ? 4 : 3
+  const localWorkflowCurrentStep = feedbackSubmitted
+    ? 3
+    : (recordingState === 'uploading' || (recordingState === 'uploaded' && !completionPending)) ? 3 : 2
+  const workflowCurrentStep = isLocalSession ? localWorkflowCurrentStep : remoteWorkflowCurrentStep
   const workflowSteps = isLocalSession
     ? [
         { num: '01', text: 'Controls ready' },
-        { num: '02', text: 'Case in session' },
-        { num: '03', text: feedbackSubmitted ? 'Feedback submitted' : 'Allow recording' },
-        { num: '04', text: 'Review dashboard' },
+        { num: '02', text: 'Interviewer session in progress' },
+        { num: '03', text: feedbackSubmitted ? 'Feedback submitted' : 'Review dashboard' },
       ]
     : [
         { num: '01', text: 'Send invite' },
@@ -1634,7 +1636,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     isEndingSessionNow
       ? 'Wrapping up this session'
       : recordingState === 'starting'
-      ? 'Preparing capture permission'
+      ? (isLocalSession ? 'Interview session in progress' : 'Preparing capture permission')
       : recordingState === 'recording'
         ? 'Session capture is live'
         : recordingState === 'stopping'
@@ -1644,13 +1646,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             : recordingState === 'uploaded'
               ? 'Review is ready'
               : isWaitingForUserStart
-                ? 'Click Allow Recording to start'
+                ? (isLocalSession ? 'Interview session in progress' : 'Click Allow Recording to start')
                 : 'Recording couldn’t start'
   const workspaceStatusDescription =
     isEndingSessionNow
       ? 'Saving your session and heading to the dashboard.'
       : recordingState === 'starting'
-      ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
+      ? (isLocalSession ? 'Your session is being captured. Keep this tab open.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
       : recordingState === 'recording'
         ? 'Closing or reloading this tab will lose your recording. Keep it open until the session ends.'
         : recordingState === 'stopping'
@@ -1661,7 +1663,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               ? 'You can move to the dashboard now.'
               : isWaitingForUserStart
                 ? (isLocalSession
-                    ? 'When you press the button below, Chrome will ask for microphone access.'
+                    ? 'Your session is being captured. Keep this tab open until it ends.'
                     : 'When you press the button below, Chrome will ask you to choose a meeting tab — turn on Share audio.')
                 : recoverableCaptureMessage || 'Use the Allow Recording button below to try again.'
 
@@ -2455,7 +2457,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                     <span className="text-[11px] leading-relaxed text-[#5C4033]/72">{workspaceToast.message}</span>
                   </div>
                 ) : null}
-                <div className="relative grid gap-5 grid-cols-2 md:grid-cols-4">
+                <div className={`relative grid gap-5 ${isLocalSession ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}>
                   {workflowSteps.map((step, index) => {
                     const isCurrent = workflowCurrentStep === index + 1
                     const isPast = workflowCurrentStep > index + 1
@@ -2519,7 +2521,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
 
               <div className="mt-6 flex flex-wrap justify-center gap-3">
-                {(recordingState === 'idle' || recordingState === 'failed' || prepVisible) ? (
+                {/* Local mode: recording auto-starts (mic already granted on the
+                    practice page), so the idle state is just a momentary gap before
+                    capture begins — never surface the "Allow Recording" button there.
+                    Only show it on a genuine failure the candidate must recover from.
+                    Remote mode keeps showing it on idle for the share-screen prompt. */}
+                {((isLocalSession ? recordingState === 'failed' : (recordingState === 'idle' || recordingState === 'failed')) || prepVisible) ? (
                   <button
                     type="button"
                     onClick={handleEnableCapture}
