@@ -2202,14 +2202,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {/* ── Toast overlay priority queue ──────────────────────────────────────
-           Only one toast shows at a time. Priority (high→low):
-             1. session-issue  — session doc gone, everything else moot
-             2. mic-blocked    — can't record; must fix before anything else
-             3. window-closed  — interviewer gone; fix after mic is resolved
-             4. capture-error  — recoverable recording error
-           Each level gates on all higher-priority toasts being inactive. */}
-      {micBlockedOverlayVisible && isLocalSession && !sessionIssueOverlayVisible ? (
+      {micBlockedOverlayVisible && isLocalSession ? (
         <LobbyOverlay
           key="mic-blocked"
           type="warning"
@@ -2237,7 +2230,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {windowClosedOverlayVisible && lobbyId && resolvedCaseId && !sessionIssueOverlayVisible && !micBlockedOverlayVisible ? (
+      {windowClosedOverlayVisible && lobbyId && resolvedCaseId ? (
         <LobbyOverlay
           key="interviewer-window-closed"
           type="warning"
@@ -2322,7 +2315,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {captureErrorOverlayVisible && !sessionIssueOverlayVisible && !micBlockedOverlayVisible && !windowClosedOverlayVisible ? (
+      {captureErrorOverlayVisible ? (
         <LobbyOverlay
           key="capture-error"
           type="warning"
