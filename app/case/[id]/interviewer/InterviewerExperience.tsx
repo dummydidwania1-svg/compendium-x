@@ -1717,8 +1717,8 @@ if (previewMode && !forcePreview) {
 												style={{ height: '6px' }}
 											/>
 											<div className="mt-1.5 flex justify-between text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5c4033]/55">
-												<span>1 — Poor</span>
-												<span>5 — Excellent</span>
+												<span>1: Poor</span>
+												<span>5: Excellent</span>
 											</div>
 										</>
 									) : (
