@@ -1614,7 +1614,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const workflowSteps = isLocalSession
     ? [
         { num: '01', text: 'Controls ready' },
-        { num: '02', text: 'Interviewer session in progress' },
+        { num: '02', text: 'Case in session' },
         { num: '03', text: feedbackSubmitted ? 'Feedback submitted' : 'Review dashboard' },
       ]
     : [
@@ -1636,7 +1636,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     isEndingSessionNow
       ? 'Wrapping up this session'
       : recordingState === 'starting'
-      ? (isLocalSession ? 'Interview session in progress' : 'Preparing capture permission')
+      ? 'Preparing capture permission'
       : recordingState === 'recording'
         ? 'Session capture is live'
         : recordingState === 'stopping'
@@ -1646,13 +1646,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             : recordingState === 'uploaded'
               ? 'Review is ready'
               : isWaitingForUserStart
-                ? (isLocalSession ? 'Interview session in progress' : 'Click Allow Recording to start')
+                ? 'Click Allow Recording to start'
                 : 'Recording couldn’t start'
   const workspaceStatusDescription =
     isEndingSessionNow
       ? 'Saving your session and heading to the dashboard.'
       : recordingState === 'starting'
-      ? (isLocalSession ? 'Your session is being captured. Keep this tab open.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
+      ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
       : recordingState === 'recording'
         ? 'Closing or reloading this tab will lose your recording. Keep it open until the session ends.'
         : recordingState === 'stopping'
@@ -1663,7 +1663,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               ? 'You can move to the dashboard now.'
               : isWaitingForUserStart
                 ? (isLocalSession
-                    ? 'Your session is being captured. Keep this tab open until it ends.'
+                    ? 'When you press the button below, Chrome will ask for microphone access.'
                     : 'When you press the button below, Chrome will ask you to choose a meeting tab — turn on Share audio.')
                 : recoverableCaptureMessage || 'Use the Allow Recording button below to try again.'
 
