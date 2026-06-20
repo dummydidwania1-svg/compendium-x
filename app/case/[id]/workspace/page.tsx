@@ -1750,6 +1750,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // wrapping up — never surface a recording-error state, since recording is
   // stopping on purpose (and may never have started, in the unrated case).
   const isEndingSessionNow = endSessionActionInProgress || endSessionInitiatedRef.current
+  if (typeof window !== 'undefined') {
+    // TEMP DIAGNOSTIC — remove after confirming the wrong-text bug source
+    console.log('[ws-status]', {
+      recordingState,
+      isEndingSessionNow,
+      endSessionActionInProgress,
+      endSessionInitiatedRef: endSessionInitiatedRef.current,
+      recordingConsentDeclined,
+      feedbackSubmitted,
+      completionPending,
+    })
+  }
   // When the candidate opted out of recording, the case runs in a plain
   // "no capture" state — only override the idle/waiting copy, never the
   // active wrap-up / upload states (which can't occur without a recording).
