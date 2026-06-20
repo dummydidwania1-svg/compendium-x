@@ -754,7 +754,7 @@ function CandidateLobby({
             </div>
 
             <div className="px-6 py-6">
-              <div className="grid gap-5 grid-cols-2 md:grid-cols-4">
+              <div className={`grid gap-5 ${isLocalSession ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}>
                 {waitingSteps.map((step, index) => (
                   <div
                     key={step.num}
