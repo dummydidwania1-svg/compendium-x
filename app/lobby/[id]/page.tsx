@@ -1654,24 +1654,16 @@ export default function LobbyPage() {
   }
 
   const openRepoInPopup = () => {
-    const popupWidth = 800
-    const popupHeight = 800
     const popupHost = window as PopupWindowHost
-    const left = Math.max(0, window.screenX + Math.round((window.outerWidth - popupWidth) / 2))
-    const top = Math.max(0, window.screenY + Math.round((window.outerHeight - popupHeight) / 2))
     const repoUrl = `/repository?mode=select&lobby=${lobbyId}&sessionMode=${requestedSessionMode}`
-    // If the existing popup is still open, navigate it to the repo page
+    // If the existing tab is still open, navigate it to the repo page
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
       popupHost.__compendiumInterviewerWindow.location.href = repoUrl
       popupHost.__compendiumInterviewerWindow.focus()
       return
     }
-    // Otherwise open a new popup
-    const win = window.open(
-      repoUrl,
-      'InterviewerControl',
-      `popup=yes,resizable=yes,width=${popupWidth},height=${popupHeight},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
-    )
+    // Otherwise open a new tab
+    const win = window.open(repoUrl, '_blank')
     if (win) {
       popupHost.__compendiumInterviewerWindow = win
       win.focus()

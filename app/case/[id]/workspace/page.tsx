@@ -1369,7 +1369,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       const win = host.__compendiumInterviewerWindow
       if (!win) {
         // Reference missing — could be a hard refresh. Try to reclaim via named window.
-        const named = window.open('', 'InterviewerControl')
+        const named = window.open('', '_blank')
         if (named && !named.closed) {
           host.__compendiumInterviewerWindow = named
           named.blur()
@@ -2256,7 +2256,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           onAction={() => {
             const url = `/case/${resolvedCaseId}/interviewer?lobby=${encodeURIComponent(lobbyId)}&role=interviewer&sessionMode=local`
             type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
-            const win = window.open(url, 'InterviewerControl', 'popup=yes,resizable=yes,width=800,height=800')
+            const win = window.open(url, '_blank')
             if (win) {
               ;(window as PopupHost).__compendiumInterviewerWindow = win
               win.focus()
