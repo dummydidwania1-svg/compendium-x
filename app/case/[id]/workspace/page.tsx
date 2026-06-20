@@ -2161,14 +2161,16 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           }
-          title={recordingState === 'uploading' ? "Your audio is uploading right now" : "Leave and save audio?"}
+          title={recordingConsentDeclined ? "Leave this case?" : (recordingState === 'uploading' ? "Your audio is uploading right now" : "Leave and save audio?")}
           body={
-            recordingState === 'uploading'
+            recordingConsentDeclined
+              ? "This case is running without recording, so there's no audio or transcript to save. If the interviewer rates it, you'll see their feedback in the dashboard. Either way, the case will show up there."
+              : recordingState === 'uploading'
               ? "Going back now would cut the upload and your audio would be lost. Just hang tight, it finishes on its own in a few seconds."
               : "Leaving will stop the mic and save what's recorded so far. If the interviewer rates it, you'll see their feedback in the dashboard. Either way, the case will show up there."
           }
           autoDismissMs={12000}
-          actionLabel={recordingState === 'uploading' ? undefined : (leavingInProgress ? "Saving..." : "Leave and save")}
+          actionLabel={recordingState === 'uploading' && !recordingConsentDeclined ? undefined : (leavingInProgress ? "Saving..." : (recordingConsentDeclined ? "Leave case" : "Leave and save"))}
           onAction={recordingState === 'uploading' ? undefined : async () => {
             if (leavingInProgress) return
             setLeavingInProgress(true)
@@ -2208,8 +2210,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           }
-          title="Audio saved. Heading to dashboard."
-          body="Your audio is saved. If the interviewer rates it, you'll see their feedback in the dashboard. Either way, the case will show up there."
+          title={recordingConsentDeclined ? "Heading to dashboard." : "Audio saved. Heading to dashboard."}
+          body={recordingConsentDeclined
+            ? "This case ran without recording, so there's no audio or transcript. If the interviewer rates it, you'll see their feedback in the dashboard. Either way, the case will show up there."
+            : "Your audio is saved. If the interviewer rates it, you'll see their feedback in the dashboard. Either way, the case will show up there."}
           autoDismissMs={4000}
           onDismiss={() => {
             setLeaveSavedOverlayVisible(false)
@@ -2230,8 +2234,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </svg>
           }
           title="Ready to wrap up?"
-          body="The interviewer has rated the session. You can save your audio and end the case, or drop the whole thing if something went wrong."
-          actionLabel={endSessionActionInProgress ? "Saving..." : "Save and end"}
+          body={recordingConsentDeclined
+            ? "The interviewer has rated the session. This case ran without recording, so there's no audio or transcript, just the ratings. End the case, or drop the whole thing if something went wrong."
+            : "The interviewer has rated the session. You can save your audio and end the case, or drop the whole thing if something went wrong."}
+          actionLabel={endSessionActionInProgress ? "Saving..." : (recordingConsentDeclined ? "End case" : "Save and end")}
           onAction={() => void handleEndSessionSaveAndEnd()}
           secondaryActionLabel="Drop session"
           onSecondaryAction={() => void handleEndSessionDrop()}
@@ -2252,8 +2258,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </svg>
           }
           title="End session early?"
-          body="The interviewer hasn't finished rating yet. You can save your audio and end now, the case will appear in your dashboard as unrated. Or drop it entirely."
-          actionLabel={endSessionActionInProgress ? "Saving..." : "Save audio"}
+          body={recordingConsentDeclined
+            ? "The interviewer hasn't finished rating yet. This case ran without recording, so there's no audio or transcript. End now and it appears in your dashboard as unrated, or drop it entirely."
+            : "The interviewer hasn't finished rating yet. You can save your audio and end now, the case will appear in your dashboard as unrated. Or drop it entirely."}
+          actionLabel={endSessionActionInProgress ? "Saving..." : (recordingConsentDeclined ? "End case" : "Save audio")}
           onAction={() => void handleEndSessionSaveAudio()}
           secondaryActionLabel="Drop session"
           onSecondaryAction={() => void handleEndSessionDrop()}
@@ -2274,9 +2282,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </svg>
           }
           title="Session saved. Heading to dashboard."
-          body={endSessionSavedKind === 'rated'
-            ? "Ratings and audio saved. The case is in your dashboard."
-            : "Audio saved. The case is in your dashboard as unrated."}
+          body={recordingConsentDeclined
+            ? (endSessionSavedKind === 'rated'
+                ? "Ratings saved. This case ran without recording, so there's no audio or transcript. It's in your dashboard."
+                : "This case ran without recording, so there's no audio or transcript. It's in your dashboard as unrated.")
+            : endSessionSavedKind === 'rated'
+              ? "Ratings and audio saved. The case is in your dashboard."
+              : "Audio saved. The case is in your dashboard as unrated."}
           autoDismissMs={4000}
           onDismiss={() => {
             setEndSessionSavedVisible(false)
