@@ -137,11 +137,26 @@ export const sessionRecordingSchema = z
   .loose()
 export type SessionRecording = z.infer<typeof sessionRecordingSchema>
 
+/** Presence subdoc written by each participant via /presence heartbeat (remote mode). */
+export const participantPresenceSchema = z
+  .object({
+    active: z.boolean(),
+    lastSeenAt: timestamp,
+  })
+  .loose()
+
+/** Candidate-specific presence includes whether their recording is active. */
+export const candidatePresenceSchema = participantPresenceSchema.extend({
+  recording: z.boolean(),
+})
+
 export const sessionSchema = z
   .object({
     lobbyId: z.string(),
     candidateId: z.string(),
     candidateEmail: optionalString,
+    interviewerId: z.string().optional(),
+    interviewerEmail: optionalString,
     status: sessionStatus,
     sessionMode: sessionMode,
     caseId: optionalString,
@@ -155,9 +170,16 @@ export const sessionSchema = z
     fallbackAt: timestamp.optional(),
 
     recording: sessionRecordingSchema.optional(),
+
+    // Remote-mode presence: each side writes a heartbeat every ~10s.
+    // The other side reads these via onSnapshot to detect disconnection.
+    candidatePresence: candidatePresenceSchema.optional(),
+    interviewerPresence: participantPresenceSchema.optional(),
   })
   .loose()
 export type Session = z.infer<typeof sessionSchema>
+export type CandidatePresence = z.infer<typeof candidatePresenceSchema>
+export type InterviewerPresence = z.infer<typeof participantPresenceSchema>
 
 /* -------------------------------------------------------------------------- */
 /* evaluations/{evaluationId}                                                 */

@@ -58,6 +58,35 @@ function fileExtensionFromType(mimeType: string): string {
   return 'webm'
 }
 
+// C8 — detect the user's browser so we can show the right share-audio / mic
+// prompt copy. Evaluated once per page load (userAgent never changes mid-session).
+type BrowserName = 'chrome' | 'edge' | 'safari' | 'firefox' | 'other'
+function detectBrowser(): BrowserName {
+  if (typeof navigator === 'undefined') return 'other'
+  const ua = navigator.userAgent
+  if (ua.includes('Edg/') || ua.includes('EdgA/')) return 'edge'
+  if (ua.includes('Chrome/')) return 'chrome'
+  if (ua.includes('Safari/') && ua.includes('Version/')) return 'safari'
+  if (ua.includes('Firefox/')) return 'firefox'
+  return 'other'
+}
+const BROWSER = detectBrowser()
+
+// Returns the browser-appropriate verb phrase for the share-audio prompt, e.g.
+// "when Chrome asks" vs "when the dialog appears".
+function shareAudioPrompt(): string {
+  if (BROWSER === 'chrome') return 'when Chrome asks'
+  if (BROWSER === 'edge') return 'when Edge asks'
+  if (BROWSER === 'safari') return 'when Safari asks'
+  return 'when the dialog appears'
+}
+function micPrompt(): string {
+  if (BROWSER === 'chrome') return 'when Chrome asks'
+  if (BROWSER === 'edge') return 'when Edge asks'
+  if (BROWSER === 'safari') return 'when Safari asks'
+  return 'when the dialog appears'
+}
+
 function getFriendlyRecoverableCaptureMessage(mode: RecordingMode, message: string): string {
   const normalized = message.toLowerCase()
 
@@ -181,6 +210,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [recordingMode, setRecordingMode] = useState<RecordingMode>(requestedMode)
   const [preferredRecordingMode, setPreferredRecordingMode] = useState<RecordingMode>(requestedMode)
   const [recordingState, setRecordingState] = useState<RecordingState>('idle')
+  const recordingStateRef = useRef<RecordingState>('idle')
+  useEffect(() => { recordingStateRef.current = recordingState }, [recordingState])
   const [recordingError, setRecordingError] = useState('')
   const [, setRecordingNote] = useState('')
   const [captureWarning, setCaptureWarning] = useState('')
@@ -566,8 +597,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setRecordingError('')
       setCaptureWarning('')
       setRecordingNote(mode === 'remote'
-        ? 'Starting remote capture. In the browser prompt, choose your meeting tab and turn on Share audio.'
-        : 'Starting microphone capture...')
+        ? 'Starting recording. In the browser prompt, choose your meeting tab and turn on Share audio.'
+        : 'Starting microphone recording...')
 
       try {
         const microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
@@ -1015,6 +1046,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     router.replace('/')
   }, [endSessionActionInProgress, lobbyId, teardownMedia, router])
 
+  // Stable ref so the routeIfCompleted closure (created once on mount) can
+  // read the current recording mode set by the first session snapshot without
+  // being in the useEffect dependency list.
+  const preferredRecordingModeRef = useRef(preferredRecordingMode)
+  useEffect(() => { preferredRecordingModeRef.current = preferredRecordingMode }, [preferredRecordingMode])
+
+  // B4 (remote): staleness threshold for interviewerPresence.
+  // If lastSeenAt is older than 25s (2.5× the 10s heartbeat), the interviewer
+  // is treated as disconnected. Only used in remote mode.
+  const PRESENCE_STALE_MS = 25_000
+
   useEffect(() => {
     let unsubscribeSession = () => {}
     let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -1079,6 +1121,20 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         const stopReason = raw.completedBy === 'candidate' ? 'candidate_ended' : 'feedback_submitted'
         if (stopReason === 'feedback_submitted') setFeedbackSubmitted(true)
         void handleSessionCompleted(stopReason)
+      }
+
+      // B4 — Remote mode: detect interviewer disconnection via presence staleness.
+      // In local mode the popup-window poll drives interviewerWindowClosed; in
+      // remote mode we derive it from interviewerPresence on the session doc.
+      if (preferredRecordingModeRef.current !== 'local' && !endSessionInitiatedRef.current && !feedbackSubmitted) {
+        const presence = (raw as { interviewerPresence?: { active?: boolean; lastSeenAt?: { toDate: () => Date } } }).interviewerPresence
+        if (presence?.lastSeenAt) {
+          const age = Date.now() - presence.lastSeenAt.toDate().getTime()
+          const isDisconnected = presence.active === false || age > PRESENCE_STALE_MS
+          setInterviewerWindowClosed(isDisconnected)
+        }
+        // If no presence data yet (interviewer hasn't sent first heartbeat), don't
+        // show the overlay — assume connected until we have data.
       }
     }
 
@@ -1203,7 +1259,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     // visibility because some browsers don't fire the change event when
     // the user grants permission via the address-bar lock icon (the
     // canonical way to recover from a previous denial).
-    if (preferredRecordingMode !== 'local' || typeof window === 'undefined') return
+    // C7: this applies to both local and remote — in remote the candidate
+    // also needs mic permission for their own audio track. Gate only on
+    // window existence, not on recording mode.
+    if (typeof window === 'undefined') return
 
     const handleWindowFocus = () => void retryMicrophonePermission()
     const handleVisibilityChange = () => {
@@ -1218,7 +1277,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       window.removeEventListener('focus', handleWindowFocus)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [preferredRecordingMode, retryMicrophonePermission])
+  }, [retryMicrophonePermission])
 
   useEffect(() => {
     if (autoStartAttemptedRef.current) return
@@ -1245,8 +1304,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
     setRecordingNote(
       preferredRecordingMode === 'remote'
-        ? 'Preparing remote capture setup...'
-        : 'Auto-starting microphone capture...'
+        ? 'Preparing to start recording...'
+        : 'Auto-starting microphone recording...'
     )
     void startCaptureFlow(preferredRecordingMode)
   }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, recordingConsentDeclined, resolvedCaseId, startCaptureFlow])
@@ -1329,7 +1388,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     // pagehide fires more reliably than beforeunload when the tab is actually
     // closing (Chrome may defer/drop beforeunload writes on real close).
     // We use it as a belt-and-suspenders signal for the interviewer popup.
-    const onPageHide = () => { writeAbandonedSignal() }
+    const onPageHide = () => {
+      writeAbandonedSignal()
+      // E13 — Remote: fire /abandon so the interviewer's onSnapshot reacts and
+      // the 24h Cloud Function fallback engages. keepalive: true ensures the
+      // fetch survives page unload even if the page context is torn down first.
+      // Skip if we already ended the session cleanly (endSessionInitiatedRef).
+      if (preferredRecordingModeRef.current !== 'local' && lobbyId && !endSessionInitiatedRef.current) {
+        void auth.currentUser?.getIdToken().then((token) => {
+          if (!token) return
+          void fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: '{}',
+            keepalive: true,
+          })
+        })
+      }
+    }
 
     window.addEventListener('beforeunload', onBeforeUnload)
     window.addEventListener('pagehide', onPageHide)
@@ -1408,8 +1484,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // When the window reopens, clear immediately. When it closes, show the
   // overlay — but only if it isn't already visible (so a dismissed+reshow
   // cycle isn't interrupted by the 2s poll re-setting state unnecessarily).
+  // B4: In remote mode, interviewerWindowClosed is set by routeIfCompleted based
+  // on interviewerPresence staleness (not the popup-poll), but the same overlay
+  // state drives both — so we remove the local-only gate here.
   useEffect(() => {
-    if (preferredRecordingMode !== 'local') return
     // Suppress when candidate has already initiated end session (they closed the window deliberately)
     if (endSessionInitiatedRef.current) {
       stopTitlePulse()
@@ -1434,7 +1512,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (microphonePermissionState !== 'denied') stopTitlePulse()
       setWindowClosedOverlayVisible(false)
     }
-  }, [feedbackSubmitted, interviewerWindowClosed, microphonePermissionState, preferredRecordingMode, startTitlePulse, stopTitlePulse])
+  }, [feedbackSubmitted, interviewerWindowClosed, microphonePermissionState, startTitlePulse, stopTitlePulse])
 
   // Drive the upload-fail overlay from completionPending + failed state.
   useEffect(() => {
@@ -1582,6 +1660,42 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       teardownMedia()
     }
   }, [clearLocalPrep, clearRemotePrep, teardownMedia])
+
+  // Candidate presence heartbeat (remote mode only, B5).
+  // Writes `candidatePresence` to the session doc every 10s so the interviewer's
+  // onSnapshot can detect whether the candidate's recording window is live.
+  // The `recording` field drives the B5 overlay on the interviewer side.
+  useEffect(() => {
+    if (preferredRecordingMode === 'local' || !lobbyId) return
+
+    const sendHeartbeat = async (active: boolean) => {
+      try {
+        const token = await auth.currentUser?.getIdToken()
+        if (!token) return
+        await fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ role: 'candidate', active, recording: recordingStateRef.current === 'recording' }),
+          keepalive: true,
+        })
+      } catch {
+        // Best-effort — a missed heartbeat is tolerable; the stale threshold is 25s.
+      }
+    }
+
+    void sendHeartbeat(true)
+    const timer = setInterval(() => { void sendHeartbeat(true) }, 10_000)
+
+    const onPageHide = () => { void sendHeartbeat(false) }
+    window.addEventListener('pagehide', onPageHide)
+
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('pagehide', onPageHide)
+    }
+  // recordingStateRef keeps the recording value fresh without re-running the effect.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preferredRecordingMode, lobbyId])
 
   const isLocalSession = preferredRecordingMode === 'local'
   // Top-priority overlay gate — see the mic-blocked render block for rationale.
@@ -1769,9 +1883,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       : runningWithoutRecording
       ? 'Running without recording'
       : recordingState === 'starting'
-      ? 'Preparing capture permission'
+      ? 'Requesting permission'
       : recordingState === 'recording'
-        ? 'Session capture is live'
+        ? 'Recording is live'
         : recordingState === 'stopping'
           ? 'Ending this session'
           : recordingState === 'uploading'
@@ -1787,7 +1901,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       : runningWithoutRecording
       ? 'No audio or transcript is being captured for this run. The case still completes and shows in your dashboard.'
       : recordingState === 'starting'
-      ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
+      ? (isLocalSession ? `Allow microphone access ${micPrompt()}.` : `Choose the meeting tab and turn on Share audio ${shareAudioPrompt()}.`)
       : recordingState === 'recording'
         ? 'Closing or reloading this tab will lose your recording. Keep it open until the session ends.'
         : recordingState === 'stopping'
@@ -1798,8 +1912,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               ? 'You can move to the dashboard now.'
               : isWaitingForUserStart
                 ? (isLocalSession
-                    ? 'When you press the button below, Chrome will ask for microphone access.'
-                    : 'When you press the button below, Chrome will ask you to choose a meeting tab — turn on Share audio.')
+                    ? `When you press the button below, ${BROWSER === 'safari' ? 'Safari' : BROWSER === 'edge' ? 'Edge' : BROWSER === 'firefox' ? 'Firefox' : 'Chrome'} will ask for microphone access.`
+                    : `When you press the button below, ${BROWSER === 'safari' ? 'Safari' : BROWSER === 'edge' ? 'Edge' : BROWSER === 'firefox' ? 'Firefox' : 'Chrome'} will ask you to choose a meeting tab — turn on Share audio.`)
                 : recoverableCaptureMessage || 'Use the Allow Recording button below to try again.'
 
   return (
@@ -2071,6 +2185,19 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <span className="text-[#3D5A35]">X</span>
             </div>
           </div>
+          {/* F17 — nav access: dashboard link in header so the candidate can
+              navigate out of the workspace without needing the browser's
+              address bar. Gated to completed state so it doesn't distract
+              during an active session. */}
+          {feedbackSubmitted ? (
+            <Link
+              href="/"
+              style={{ fontFamily: "'Work Sans', sans-serif", color: '#3D5A35' }}
+              className="text-[11px] tracking-[0.18em] uppercase font-medium hover:opacity-75 transition-opacity"
+            >
+              Dashboard
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -2385,60 +2512,94 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       ) : null}
 
       {windowClosedOverlayVisible && lobbyId && resolvedCaseId && !micBlockedActive ? (
-        <LobbyOverlay
-          key="interviewer-window-closed"
-          type="warning"
-          icon={
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2" />
-              <path d="M8 21h8M12 17v4" />
-              <line x1="2" y1="2" x2="22" y2="22" />
-            </svg>
-          }
-          title="Interviewer window closed"
-          body={(() => {
-            const draft = readDraftScores(lobbyId)
-            const allRated = draft !== null && isDraftAllRated(draft.scores)
-            if (recordingState === 'recording') {
+        isLocalSession ? (
+          // Local mode: interviewer popup closed on THIS machine — show reopen action.
+          <LobbyOverlay
+            key="interviewer-window-closed"
+            type="warning"
+            icon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <path d="M8 21h8M12 17v4" />
+                <line x1="2" y1="2" x2="22" y2="22" />
+              </svg>
+            }
+            title="Interviewer window closed"
+            body={(() => {
+              const draft = readDraftScores(lobbyId)
+              const allRated = draft !== null && isDraftAllRated(draft.scores)
+              if (recordingState === 'recording') {
+                return allRated
+                  ? "The interviewer has rated all four parameters but closed their window before submitting. You can reopen it so they can submit, or just end the session and the ratings will be saved."
+                  : "The interviewer closed their window and hasn't finished rating yet. You can reopen it for them to continue, or end the session now and the case will be marked unrated."
+              }
               return allRated
-                ? "The interviewer has rated all four parameters but closed their window before submitting. You can reopen it so they can submit, or just end the session and the ratings will be saved."
-                : "The interviewer closed their window and hasn't finished rating yet. You can reopen it for them to continue, or end the session now and the case will be marked unrated."
+                ? "The interviewer has rated all four parameters. Reopen their window to let them submit, or end the session to save what's there."
+                : "The interviewer closed their window without finishing the rating. Reopen it to continue, or end the session."
+            })()}
+            actionLabel="Reopen window"
+            onAction={() => {
+              const url = `/case/${resolvedCaseId}/interviewer?lobby=${encodeURIComponent(lobbyId)}&role=interviewer&sessionMode=local`
+              type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
+              const win = window.open(url, '_blank')
+              if (win) {
+                ;(window as PopupHost).__compendiumInterviewerWindow = win
+                win.focus()
+              }
+            }}
+            secondaryActionLabel={recordingState === 'recording' ? "End session" : undefined}
+            onSecondaryAction={recordingState === 'recording' ? () => {
+              setWindowClosedOverlayVisible(false)
+              if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
+              void handleCandidateEndSession()
+            } : undefined}
+            onDismiss={() => {
+              setWindowClosedOverlayVisible(false)
+              if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
+              windowClosedReshowTimerRef.current = setTimeout(() => {
+                windowClosedReshowTimerRef.current = null
+                setInterviewerWindowClosed((closed) => {
+                  if (closed && !endSessionInitiatedRef.current) setWindowClosedOverlayVisible(true)
+                  return closed
+                })
+              }, 1500)
+            }}
+          />
+        ) : (
+          // B4 — Remote mode: interviewer disconnected on their own device.
+          // No "Reopen window" — we can't open their browser. The overlay
+          // auto-clears via routeIfCompleted when their heartbeat resumes.
+          <LobbyOverlay
+            key="interviewer-disconnected"
+            type="warning"
+            icon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <path d="M8 21h8M12 17v4" />
+                <line x1="2" y1="2" x2="22" y2="22" />
+              </svg>
             }
-            return allRated
-              ? "The interviewer has rated all four parameters. Reopen their window to let them submit, or end the session to save what's there."
-              : "The interviewer closed their window without finishing the rating. Reopen it to continue, or end the session."
-          })()}
-          actionLabel="Reopen window"
-          onAction={() => {
-            const url = `/case/${resolvedCaseId}/interviewer?lobby=${encodeURIComponent(lobbyId)}&role=interviewer&sessionMode=local`
-            type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
-            const win = window.open(url, '_blank')
-            if (win) {
-              ;(window as PopupHost).__compendiumInterviewerWindow = win
-              win.focus()
-            }
-          }}
-          secondaryActionLabel={recordingState === 'recording' ? "End session" : undefined}
-          onSecondaryAction={recordingState === 'recording' ? () => {
-            setWindowClosedOverlayVisible(false)
-            if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
-            void handleCandidateEndSession()
-          } : undefined}
-          onDismiss={() => {
-            setWindowClosedOverlayVisible(false)
-            // If the window is still closed, re-show after 1.5s so the
-            // candidate can't permanently dismiss a blocking issue.
-            if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
-            windowClosedReshowTimerRef.current = setTimeout(() => {
-              windowClosedReshowTimerRef.current = null
-              // Only reshow if the window is still actually closed
-              setInterviewerWindowClosed((closed) => {
-                if (closed && !endSessionInitiatedRef.current) setWindowClosedOverlayVisible(true)
-                return closed
-              })
-            }, 1500)
-          }}
-        />
+            title="Interviewer disconnected"
+            body="Your interviewer seems to have disconnected. Waiting for them to rejoin — your recording is still running."
+            secondaryActionLabel={recordingState === 'recording' ? "End session" : undefined}
+            onSecondaryAction={recordingState === 'recording' ? () => {
+              setWindowClosedOverlayVisible(false)
+              if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
+              void handleCandidateEndSession()
+            } : undefined}
+            onDismiss={() => {
+              setWindowClosedOverlayVisible(false)
+              if (windowClosedReshowTimerRef.current) clearTimeout(windowClosedReshowTimerRef.current)
+              windowClosedReshowTimerRef.current = setTimeout(() => {
+                windowClosedReshowTimerRef.current = null
+                setInterviewerWindowClosed((closed) => {
+                  if (closed && !endSessionInitiatedRef.current) setWindowClosedOverlayVisible(true)
+                  return closed
+                })
+              }, 1500)
+            }}
+          />
+        )
       ) : null}
 
       {sessionIssueOverlayVisible && !micBlockedActive ? (
@@ -2710,6 +2871,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           </section>
         </div>
       </main>
+
+      {/* F17 — footer: shown after the session is submitted so it doesn't
+          distract from the active session. CompactPlatformFooter is defined
+          at the top of this file. */}
+      {feedbackSubmitted ? <CompactPlatformFooter /> : null}
 
     </div>
   )

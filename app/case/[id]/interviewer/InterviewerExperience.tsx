@@ -3,9 +3,9 @@ import Image from 'next/image'
 import { useCallback, useEffect, useMemo, useState, useRef, ReactNode, Component } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getDoc } from 'firebase/firestore'
+import { getDoc, onSnapshot } from 'firebase/firestore'
 import { waitForAuthUser } from '@/lib/firebase/config'
-import { caseDoc } from '@/lib/firebase/collections'
+import { caseDoc, sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import { CaseForumSection } from '@/components/forum/CaseForumSection'
 import CasePreviewView from '@/components/case/CasePreviewView'
@@ -607,7 +607,16 @@ export function InterviewerPageInner({
 	// until the session ends — once feedback is submitted (currentView 'success')
 	// the recording has stopped/uploaded, so the guard turns off.
 	const isLocalMode = (searchParams.get('sessionMode') ?? searchParams.get('mode') ?? 'local') === 'local'
+	// Remote mode: candidate and interviewer are on separate devices, separate browsers.
+	// No localStorage sharing — all cross-device coordination goes through Firestore.
+	const isRemoteMode = !isLocalMode
 	const [micGuardShowing, setMicGuardShowing] = useState(false)
+
+	// ── Remote-mode overlays ─────────────────────────────────────────────────────
+	// B5: Candidate's recording window is closed / recording not active.
+	const [candidateRecordingClosed, setCandidateRecordingClosed] = useState(false)
+	// A3/D10: Candidate ended the session before the interviewer submitted feedback.
+	const [candidateEndedSession, setCandidateEndedSession] = useState(false)
 
 	// Restore draft scores/notes/view from localStorage so a refresh doesn't
 	// wipe the interviewer's in-progress ratings. Keyed by lobbyId so different
@@ -641,6 +650,125 @@ export function InterviewerPageInner({
 			// Storage quota exceeded — non-fatal.
 		}
 	}, [draftKey, scores, notes, currentView])
+
+	// ── Remote mode: session doc subscription (mechanism #2) ────────────────────
+	// In remote mode there is no shared localStorage, so the interviewer must
+	// subscribe to the Firestore session doc to learn about candidate actions.
+	// Same-device mode keeps its existing storage-event listeners unchanged.
+	const currentViewRef = useRef(currentView)
+	useEffect(() => { currentViewRef.current = currentView }, [currentView])
+
+	useEffect(() => {
+		if (!isRemoteMode || !lobbyId || previewMode) return
+		const ref = sessionDoc(lobbyId)
+		let pollTimer: ReturnType<typeof setInterval> | null = null
+
+		const clearPoll = () => { if (pollTimer) { clearInterval(pollTimer); pollTimer = null } }
+
+		let seedApplied = false
+		const handleSnapshot = (data: Record<string, unknown> | null) => {
+			if (!data) return
+			const status = data.status as string | undefined
+			const view = currentViewRef.current
+
+			// D9: Seed inactivity clocks from server timestamps on the first snapshot
+			// so a page refresh doesn't restart the 2h stale timer from zero.
+			// `selectedAt` is written when the case starts (in_progress); using it as
+			// the floor means a session that's been running for 90 min picks up with
+			// only 30 min remaining on the 2h clock, not a fresh full 2h window.
+			if (!seedApplied && status === 'in_progress') {
+				const selectedAt = (data.selectedAt as { toDate: () => Date } | undefined)?.toDate()
+				if (selectedAt) {
+					const age = Date.now() - selectedAt.getTime()
+					// Back-date both clocks by the elapsed session time.
+					lastScoreChangedAtRef.current = Date.now() - age
+					lastActivityAtRef.current = Date.now() - age
+				}
+				seedApplied = true
+			}
+
+			// A3/D10: Candidate ended the session while interviewer hasn't submitted.
+			// The /submit-draft, /save-unrated, and /complete routes all write
+			// status:'completed', so a Firestore snapshot is the reliable cross-device signal.
+			if (status === 'completed' && view !== 'success') {
+				setCandidateEndedSession(true)
+			}
+
+			// D10: Session cancelled by candidate or expired — return interviewer to lobby.
+			if (status === 'waiting' || status === 'abandoned') {
+				if (view !== 'success') {
+					router.replace(`/lobby/${encodeURIComponent(lobbyId)}?role=interviewer&mode=${searchParams.get('sessionMode') ?? 'remote'}`)
+				}
+			}
+
+			// B5: Candidate's recording is no longer active.
+			// candidatePresence.recording:false while session is in_progress means
+			// their capture window was closed. Suppress once session ends.
+			if (status === 'in_progress') {
+				const STALE_MS = 25000
+				const presence = data.candidatePresence as { active?: boolean; recording?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined
+				if (presence?.lastSeenAt) {
+					const age = Date.now() - presence.lastSeenAt.toDate().getTime()
+					const recordingGone = !presence.recording || !presence.active || age > STALE_MS
+					setCandidateRecordingClosed(recordingGone)
+				}
+			} else {
+				// Clear once session leaves in_progress (ended, cancelled, etc.)
+				setCandidateRecordingClosed(false)
+			}
+		}
+
+		const unsubscribe = onSnapshot(
+			ref,
+			(snap) => {
+				clearPoll()
+				handleSnapshot(snap.exists() ? (snap.data() as Record<string, unknown>) : null)
+			},
+			() => {
+				// Snapshot error — fall back to polling
+				if (!pollTimer) {
+					pollTimer = setInterval(async () => {
+						try {
+							const snap = await (await import('firebase/firestore')).getDoc(ref)
+							handleSnapshot(snap.exists() ? (snap.data() as Record<string, unknown>) : null)
+						} catch { /* ignore poll errors */ }
+					}, 5000)
+				}
+			},
+		)
+
+		return () => { unsubscribe(); clearPoll() }
+	// isRemoteMode, lobbyId, previewMode are stable for the session lifetime
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isRemoteMode, lobbyId, previewMode])
+
+	// ── Remote mode: interviewer presence heartbeat ──────────────────────────────
+	// Sends a heartbeat to Firestore every 10s so the candidate's workspace can
+	// detect if the interviewer disconnects (B4). Also marks inactive on pagehide.
+	// Local mode uses compendium-interviewer-window localStorage — unchanged.
+	useEffect(() => {
+		if (!isRemoteMode || !lobbyId || previewMode) return
+
+		const sendHeartbeat = (active: boolean) => {
+			apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+				role: 'interviewer',
+				active,
+			}).catch(() => { /* best-effort */ })
+		}
+
+		sendHeartbeat(true)
+		const interval = setInterval(() => { sendHeartbeat(true) }, 10_000)
+
+		// Best-effort inactive signal on page close.
+		const onPageHide = () => { sendHeartbeat(false) }
+		window.addEventListener('pagehide', onPageHide)
+
+		return () => {
+			clearInterval(interval)
+			window.removeEventListener('pagehide', onPageHide)
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isRemoteMode, lobbyId, previewMode])
 
 	// ── Auto-end timers ──────────────────────────────────────────────────────────
 	// Trigger 1: 30 min inactivity (after all 4 scores filled)
@@ -689,16 +817,23 @@ export function InterviewerPageInner({
 			// Non-fatal — still signal the candidate
 		}
 
-		try {
-			localStorage.setItem(
-				'compendium-session-ended',
-				JSON.stringify({ caseId: resolvedCaseId, lobbyId, endedAt: Date.now() }),
-			)
-			if (draftKey) localStorage.removeItem(draftKey)
-		} catch { }
+		if (isLocalMode) {
+			try {
+				localStorage.setItem(
+					'compendium-session-ended',
+					JSON.stringify({ caseId: resolvedCaseId, lobbyId, endedAt: Date.now() }),
+				)
+			} catch { }
+		}
+		if (draftKey) { try { localStorage.removeItem(draftKey) } catch { } }
 
-		window.close()
-	}, [lobbyId, resolvedCaseId, scores, notes, draftKey])
+		if (isLocalMode) {
+			window.close()
+		} else {
+			// Remote: no window to close; route to success view.
+			setCurrentView('success')
+		}
+	}, [isLocalMode, lobbyId, resolvedCaseId, scores, notes, draftKey])
 
 	// Trigger 1: check every 60s for 30min inactivity
 	useEffect(() => {
@@ -880,9 +1015,12 @@ export function InterviewerPageInner({
 	const handleReplaceCase = async () => {
 		if (!lobbyId || isActioning) return
 		setIsActioning(true)
-		// Signal to workspace before navigating so the interviewer-window-closed
-		// overlay doesn't fire when this window's pagehide event writes active:false.
-		localStorage.setItem('compendium-session-replacing', JSON.stringify({ lobbyId, ts: Date.now() }))
+		if (isLocalMode) {
+			// Local: signal the candidate workspace via localStorage so the
+			// interviewer-window-closed overlay is suppressed when this tab's
+			// pagehide fires active:false. Remote: no localStorage cross-device.
+			localStorage.setItem('compendium-session-replacing', JSON.stringify({ lobbyId, ts: Date.now() }))
+		}
 		try {
 			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/replace`, {})
 		} catch {
@@ -900,9 +1038,11 @@ export function InterviewerPageInner({
 	const handleCancelSession = async () => {
 		if (!lobbyId || isActioning) return
 		setIsActioning(true)
-		// Signal to workspace before closing so the interviewer-window-closed overlay
-		// doesn't fire when this window's pagehide event writes active:false.
-		localStorage.setItem('compendium-session-cancelled', JSON.stringify({ lobbyId, ts: Date.now() }))
+		if (isLocalMode) {
+			// Local: signal the candidate workspace via localStorage so the
+			// interviewer-window-closed overlay is suppressed. Remote: no-op cross-device.
+			localStorage.setItem('compendium-session-cancelled', JSON.stringify({ lobbyId, ts: Date.now() }))
+		}
 		try {
 			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/cancel`, {})
 		} catch {
@@ -970,6 +1110,11 @@ export function InterviewerPageInner({
 
 		const shouldBlock = () => {
 			if (!armed) return false
+			// Remote: localStorage keys are never written across devices.
+			// Use the current view as the resolved signal instead.
+			if (!isLocalMode) {
+				return currentViewRef.current !== 'success'
+			}
 			const ended = localStorage.getItem('compendium-session-ended')
 			const replacing = localStorage.getItem('compendium-session-replacing')
 			const cancelled = localStorage.getItem('compendium-session-cancelled')
@@ -1060,11 +1205,21 @@ useEffect(() => {
 			return
 		}
 
-		localStorage.setItem(
-			'compendium-session-ended',
-			JSON.stringify({ caseId: resolvedCaseId, lobbyId, endedAt: Date.now() }),
-		)
+		if (isLocalMode) {
+			// Local mode: signal the candidate's workspace tab on the same device
+			// that the interviewer has submitted. Remote: /api/evaluations already
+			// sets status:'completed' on the session doc, which the candidate's
+			// onSnapshot picks up — no localStorage needed cross-device.
+			try {
+				localStorage.setItem(
+					'compendium-session-ended',
+					JSON.stringify({ caseId: resolvedCaseId, lobbyId, endedAt: Date.now() }),
+				)
+			} catch { }
+		}
 		if (draftKey) localStorage.removeItem(draftKey)
+		// Clear the remote overlay — interviewer just submitted successfully.
+		setCandidateEndedSession(false)
 
 		if (lobbyId) {
 			setCurrentView('success')
@@ -1209,6 +1364,39 @@ if (previewMode && !forcePreview) {
 					lobbyId={lobbyId}
 					onShowingChange={setMicGuardShowing}
 				/>
+
+				{/* B5 — Remote mode: candidate's recording window is closed.
+				    Triggered when candidatePresence.recording goes false or presence
+				    goes stale while session is in_progress. Interviewer-only; local
+				    mode never shows this (the candidate's mic is on the same device). */}
+				{isRemoteMode && candidateRecordingClosed && !micGuardShowing && (
+					<LobbyOverlay
+						type="warning"
+						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/><line x1="2" y1="2" x2="22" y2="22"/></svg>}
+						title="Candidate's recording window is closed"
+						body="Ask your candidate to reopen their practice tab so their audio can be recorded. The session will continue once they reconnect."
+						onDismiss={() => setCandidateRecordingClosed(false)}
+					/>
+				)}
+
+				{/* A3/D10 — Remote mode: candidate ended the session.
+				    Firestore status:'completed' detected via onSnapshot while the
+				    interviewer hasn't submitted feedback yet. Prompt to submit now. */}
+				{isRemoteMode && candidateEndedSession && !micGuardShowing && (
+					<LobbyOverlay
+						type="warning"
+						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+						title="Candidate ended the session"
+						body={Object.values(scores).some((v) => v > 0)
+							? "Your candidate wrapped up. Submit your ratings to complete the evaluation — or skip and it'll be saved as pending for you to rate later."
+							: "Your candidate wrapped up before you rated the case. Submit feedback now or it will be saved as pending."}
+						actionLabel="Submit feedback"
+						onAction={() => { setCandidateEndedSession(false); setCurrentView('feedback') }}
+						secondaryActionLabel="Skip for now"
+						onSecondaryAction={() => { setCandidateEndedSession(false); setCurrentView('success') }}
+						onDismiss={() => setCandidateEndedSession(false)}
+					/>
+				)}
 
 				{/* Keyframes for centered overlay animations */}
 				<style>{`
