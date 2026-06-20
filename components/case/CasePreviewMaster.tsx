@@ -553,14 +553,12 @@ const DifficultyBar = ({ level, index = 0 }: { level: number; index?: number }) 
           DIFFICULTY
         </p>
       </div>
-      <div className="px-4 pt-1 pb-3 flex items-center gap-1.5">
-        {[1, 2, 3].map((i) => (
+      <div className="px-4 pt-1 pb-3 flex items-end gap-1.5">
+        {([10, 18, 26] as const).map((h, idx) => (
           <div
-            key={i}
-            className="h-5 w-3 rounded-sm transition-all duration-500"
-            style=
-              {{backgroundColor: i <= filled ? '#3D5A35' : 'rgba(217,208,196,0.3)',}}
-            
+            key={idx}
+            className="w-3 rounded-sm transition-all duration-500"
+            style={{ height: `${h}px`, backgroundColor: idx + 1 <= filled ? '#3D5A35' : 'rgba(217,208,196,0.3)' }}
           />
         ))}
       </div>
@@ -943,8 +941,8 @@ function VerticalChart({
                 key={`${pid}-${cid}-${edgeAnimKey}`}
                 d={`M ${px} ${py} H ${midX} V ${cy} H ${cx}`}
                 fill="none"
-                stroke="#c9bdb0"
-                strokeWidth="1"
+                stroke="#5C4033"
+                strokeWidth="2"
                 strokeLinecap="round"
                 shapeRendering="crispEdges"
                 pathLength={1}
@@ -971,10 +969,10 @@ function VerticalChart({
           const hasCh = node.children.length > 0
 
           const cls = isDefaultPath
-            ? 'border-[#3D5A35]/90 bg-[#3D5A35] text-[#f0f5ee] shadow-[0_8px_20px_-10px_rgba(61,90,53,0.30)]'
+            ? 'border-[#5C4033] bg-[#5C4033] text-[#f5f0ea] shadow-[0_8px_20px_-10px_rgba(92,64,51,0.30)]'
             : isSelected
               ? 'border-[#C4A882]/50 bg-[rgba(255,248,240,0.96)] text-[#4f4335] shadow-[0_0_0_1px_rgba(196,168,130,0.2)]'
-              : 'border-[rgba(92,64,51,0.08)] bg-[rgba(255,248,240,1)] text-[#5C4033] shadow-[0_2px_8px_rgba(59,47,47,0.04)]'
+              : 'border-[rgba(92,64,51,0.25)] bg-[#EAE2D5] text-[#3B2F2F] shadow-[0_2px_8px_rgba(59,47,47,0.04)]'
 
           return (
             <div
@@ -1174,7 +1172,7 @@ const sY = pp.y + halfH(pid), eY = cp.y - halfH(cid), mY = sY + (eY - sY) / 2
             return (
               <path key={`${pid}-${cid}-${edgeAnimKey}`} 
   d={`M ${Math.round(pp.x)} ${Math.round(sY)} V ${Math.round(mY)} H ${Math.round(cp.x)} V ${Math.round(eY)}`}
-  fill="none" stroke="#c9bdb0" strokeWidth="1" strokeLinecap="round"
+  fill="none" stroke="#8B6B5A" strokeWidth="2" strokeLinecap="round"
   shapeRendering="crispEdges"
   pathLength={1}
   style={{
@@ -1201,10 +1199,10 @@ const sY = pp.y + halfH(pid), eY = cp.y - halfH(cid), mY = sY + (eY - sY) / 2
           const nw = nodeWidths.get(id) ?? estNodeW(id)
           const lw = hasCh ? nw - 18 : nw
           const cls = isDefaultPath
-  ? 'border-[#3D5A35]/90 bg-[#3D5A35] text-[#f0f5ee] shadow-[0_16px_30px_-26px_rgba(61,90,53,0.22)]'
+  ? 'border-[#5C4033] bg-[#5C4033] text-[#f5f0ea] shadow-[0_16px_30px_-26px_rgba(92,64,51,0.30)]'
   : isSelected
     ? 'border-[#C4A882]/50 bg-[rgba(255,248,240,0.96)] text-[#4f4335] shadow-[0_0_0_1px_rgba(196,168,130,0.2),0_0_20px_-10px_rgba(196,168,130,0.18)]'
-    : 'border-[rgba(92,64,51,0.08)] bg-[rgba(255,248,240,1)] text-[#5C4033] shadow-[0_4px_14px_rgba(59,47,47,0.035)]'
+    : 'border-[rgba(92,64,51,0.25)] bg-[#EAE2D5] text-[#3B2F2F] shadow-[0_4px_14px_rgba(59,47,47,0.035)]'
           return (
             <div key={id} className="absolute z-20 flex items-center gap-2 transition-all duration-500"
               style={{ left: p.x, top: p.y, transform: 'translate(-50%,-50%)', opacity: isRevealed ? 1 : 0, transitionDelay: `${stagger}ms` }}>
@@ -1552,7 +1550,7 @@ function OverlaySubtree({
           }
           const delay = (L.depth.get(pid) ?? 0) * 90 + 40
           return (
-            <path key={pid} d={d} fill="none" stroke="rgba(92,64,51,0.3)" strokeWidth={1.5}
+            <path key={pid} d={d} fill="none" stroke="#8B6B5A" strokeWidth={2}
               strokeLinecap="round" strokeLinejoin="round" pathLength={1}
               className="cpm-sub-edge" style={{ animationDelay: `${delay}ms` }} />
           )
@@ -2155,24 +2153,13 @@ const EVAL_CRITERIA: Array<{ id: keyof ScoreState; label: string }> = [
    Synced Notes Sidebar — scroll-synced with window, fades at bottom
    ═══════════════════════════════════════════════════════════ */
 function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[] }[] }) {
-  // Use overflow layout if any card has more than 3 items OR total chars > 100
-  const overflows = notes.some(n =>
-    n.items.length > 3 ||
-    n.items.reduce((sum, item) => sum + item.length, 0) > 100
-  )
-  // If last card itself also has too much content, container must grow beyond viewport
-  const lastNote = notes[notes.length - 1]
-  const lastCardOverflows = lastNote
-    ? lastNote.items.length > 3 || lastNote.items.reduce((s, i) => s + i.length, 0) > 100
-    : false
-
   return (
     <div className="h-full">
       <div
         className="sticky top-[128px] relative flex flex-col gap-3.5 px-3 py-4"
         style={{
-          height: overflows && lastCardOverflows ? 'auto' : 'calc(100vh - 168px)',
           minHeight: 'calc(100vh - 168px)',
+          height: 'auto',
           overflow: 'visible',
         }}
       >
@@ -2180,17 +2167,9 @@ function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[]
         <div className="pointer-events-none absolute inset-0 z-0"
           style={{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)'}} />
 
-        {notes.map((n, idx) => {
-          const isLast = idx === notes.length - 1
-          return (
+        {notes.map((n, idx) => (
           <div key={n.title}
-            className={`group relative rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)] ${
-              !overflows
-                ? 'flex-1 min-h-0 flex flex-col justify-center'           // default: equal flex
-                : isLast
-                  ? 'flex-1 min-h-0 flex flex-col justify-center'         // last: fill remaining
-                  : 'flex flex-col shrink-0'                               // others: size to content
-            }`}
+            className="group relative flex-1 min-h-0 flex flex-col justify-center rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
             style={{ background: 'rgba(255,248,240,0.80)', animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
           >
             <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center pt-4 pb-2 px-3 shrink-0">{n.title}</p>
@@ -2203,7 +2182,7 @@ function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[]
               ))}
             </ul>
           </div>
-        )})}
+        ))}
       </div>
     </div>
   )
@@ -3217,6 +3196,7 @@ export default function CasePreviewMaster({
 
   // ─── Mini step nav on scroll + auto-hide on inactivity ──────────────────
   const stepIndicatorRef = useRef<HTMLDivElement>(null)
+  const [stepIndicatorHeight, setStepIndicatorHeight] = useState(76)
   const [miniNavEligible, setMiniNavEligible] = useState(false)
   const [miniNavActive, setMiniNavActive] = useState(true)
   const miniNavTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -3231,6 +3211,15 @@ export default function CasePreviewMaster({
     )
     obs.observe(el)
     return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const el = stepIndicatorRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setStepIndicatorHeight(el.offsetHeight))
+    ro.observe(el)
+    setStepIndicatorHeight(el.offsetHeight)
+    return () => ro.disconnect()
   }, [])
 
   // Auto-hide after 4s of inactivity; show again on interaction
@@ -3732,54 +3721,50 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
       style={{background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)'}}
     />
 
-    {[
-      { label: 'CASE TYPE', value: caseTypeLabel },
-      ...(companyLabel !== 'Client Not Specified' ? [{ label: 'COMPANY', value: companyLabel }] : []),
-      ...(roundLabel !== 'Round Not Specified' ? [{ label: 'ROUND', value: roundLabel }] : []),
-      { label: 'INDUSTRY', value: industryLabel },
-    ].map((item, idx) => (
-      <div
-        key={item.label}
-        className="group relative flex-1 flex flex-col items-center justify-center rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
-        style={{
-          background: 'rgba(255,248,240,0.80)',
-          animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`,
-          zIndex: 1,
-        }}
-      >
-        <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center">
-          {item.label}
-        </p>
-        <p
-          className="text-[22px] font-medium text-[#3B2F2F] tracking-tight mt-2 leading-none text-center relative z-10"
-          style={{fontFamily: "'Newsreader', serif"}}
-        >
-          {item.value}
-        </p>
-      </div>
-    ))}
+    {(() => {
+      const HEADER: Record<string, { bg: string; fg: string }> = {
+        'CASE TYPE': { bg: '#2E1B0A', fg: 'rgba(255,255,255,0.85)' },
+        'COMPANY':   { bg: '#C5AF95', fg: '#3B2F2F' },
+        'ROUND':     { bg: '#CBBDA8', fg: '#3B2F2F' },
+        'INDUSTRY':  { bg: '#7A5530', fg: 'rgba(255,255,255,0.85)' },
+      }
+      return [
+        { label: 'CASE TYPE', value: caseTypeLabel },
+        ...(companyLabel !== 'Client Not Specified' ? [{ label: 'COMPANY', value: companyLabel }] : []),
+        ...(roundLabel !== 'Round Not Specified' ? [{ label: 'ROUND', value: roundLabel }] : []),
+        { label: 'INDUSTRY', value: industryLabel },
+      ].map((item, idx) => {
+        const h = HEADER[item.label] ?? { bg: '#3B2F2F', fg: 'rgba(255,255,255,0.85)' }
+        return (
+          <div
+            key={item.label}
+            className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
+            style={{ animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
+          >
+            <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: h.bg }}>
+              <p className="text-[11px] uppercase tracking-[0.2em] font-semibold leading-none" style={{ color: h.fg }}>{item.label}</p>
+            </div>
+            <div className="flex flex-1 items-center justify-center border border-[rgba(61,90,53,0.12)] px-2 py-1.5" style={{ background: 'rgba(255,248,240,0.90)' }}>
+              <p className="text-[20px] font-medium text-[#3B2F2F] tracking-tight text-center leading-tight" style={{ fontFamily: "'Newsreader', serif" }}>
+                {item.value}
+              </p>
+            </div>
+          </div>
+        )
+      })
+    })()}
 
     {/* Difficulty card */}
-<div
-  className="group relative flex-1 flex flex-col items-center justify-center rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
-  style={{
-    background: 'rgba(255,248,240,0.80)',
-    animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both`,
-    zIndex: 1,}}
->
-      
-      <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center">
-        DIFFICULTY
-      </p>
-      <div className="flex items-center justify-center gap-2.5 mt-2.5">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-8 w-5 rounded-[2px] transition-all duration-500"
-            style=
-             {{ backgroundColor: i <= difficultyLevel ? '#3D5A35' : 'rgba(217,208,196,0.3)',}}
-            
-          />
+    <div
+      className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
+      style={{ animation: 'cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both', zIndex: 1 }}
+    >
+      <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: '#C5AF95' }}>
+        <p className="text-[11px] uppercase tracking-[0.2em] font-semibold leading-none text-[#3B2F2F]">Difficulty</p>
+      </div>
+      <div className="flex flex-1 items-end justify-center gap-2.5 border border-[rgba(61,90,53,0.12)] px-2 pb-2 pt-1.5" style={{ background: 'rgba(255,248,240,0.90)' }}>
+        {([22, 34, 48] as const).map((h, idx) => (
+          <div key={idx} className="w-7 transition-all duration-500" style={{ height: `${h}px`, backgroundColor: idx + 1 <= difficultyLevel ? '#3B2F2F' : 'transparent', border: idx + 1 <= difficultyLevel ? 'none' : '1.5px solid #3B2F2F' }} />
         ))}
       </div>
     </div>
@@ -4154,8 +4139,8 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
               style={{
                 width: '300px',
                 position: 'sticky',
-                top: '140px',
-                maxHeight: 'calc(100vh - 150px)',
+                top: `${70 + stepIndicatorHeight + 8}px`,
+                maxHeight: `calc(100vh - ${70 + stepIndicatorHeight + 16}px)`,
                 marginTop: '24px',
                 zIndex: 39,
                 background: 'linear-gradient(180deg, rgba(255,250,244,0.98) 0%, rgba(250,244,236,0.96) 100%)',
@@ -4268,7 +4253,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
         {/* ── Forum expanded overlay ── */}
         {ForumSection && forumExpanded && (
           <div
-            className="fixed inset-0 z-[60] flex items-center justify-center"
+            className="fixed inset-0 z-[60] flex items-center justify-center pt-[70px]"
             style={{ animation: 'cpm-fade-up 0.28s cubic-bezier(0.22,1,0.36,1) both' }}
           >
             {/* Backdrop */}
@@ -4667,23 +4652,40 @@ export function CaseInterviewerMaster({
                   <aside className="hidden lg:block">
                     <div className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{ height: 'calc(100vh - 168px)' }}>
                       <div className="pointer-events-none absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)', animation: 'cpm-sidebar-glow 14s ease-in-out infinite' }} />
-                      {[
-                        { label: 'CASE TYPE', value: caseTypeLabel },
-                        ...(companyLabel !== 'Client Not Specified' ? [{ label: 'COMPANY',  value: companyLabel }] : []),
-                        ...(roundLabel   !== 'Round Not Specified'  ? [{ label: 'ROUND',    value: roundLabel   }] : []),
-                        { label: 'INDUSTRY', value: industryLabel },
-                      ].map((item, idx) => (
-                        <div key={item.label} className="group relative flex-1 flex flex-col items-center justify-center rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
-                          style={{ background: 'rgba(255,248,240,0.80)', animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}>
-                          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center">{item.label}</p>
-                          <p className="text-[22px] font-medium text-[#3B2F2F] tracking-tight mt-2 leading-none text-center relative z-10" style={{ fontFamily: "'Newsreader', serif" }}>{item.value}</p>
+                      {(() => {
+                        const HEADER: Record<string, { bg: string; fg: string }> = {
+                          'CASE TYPE': { bg: '#2E1B0A', fg: 'rgba(255,255,255,0.85)' },
+                          'COMPANY':   { bg: '#C5AF95', fg: '#3B2F2F' },
+                          'ROUND':     { bg: '#CBBDA8', fg: '#3B2F2F' },
+                          'INDUSTRY':  { bg: '#7A5530', fg: 'rgba(255,255,255,0.85)' },
+                        }
+                        return [
+                          { label: 'CASE TYPE', value: caseTypeLabel },
+                          ...(companyLabel !== 'Client Not Specified' ? [{ label: 'COMPANY',  value: companyLabel }] : []),
+                          ...(roundLabel   !== 'Round Not Specified'  ? [{ label: 'ROUND',    value: roundLabel   }] : []),
+                          { label: 'INDUSTRY', value: industryLabel },
+                        ].map((item, idx) => {
+                          const h = HEADER[item.label] ?? { bg: '#3B2F2F', fg: 'rgba(255,255,255,0.85)' }
+                          return (
+                            <div key={item.label} className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
+                              style={{ animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}>
+                              <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: h.bg }}>
+                                <p className="text-[11px] uppercase tracking-[0.2em] font-semibold leading-none" style={{ color: h.fg }}>{item.label}</p>
+                              </div>
+                              <div className="flex flex-1 items-center justify-center border border-[rgba(61,90,53,0.12)] px-2 py-1.5" style={{ background: 'rgba(255,248,240,0.90)' }}>
+                                <p className="text-[20px] font-medium text-[#3B2F2F] tracking-tight text-center leading-tight" style={{ fontFamily: "'Newsreader', serif" }}>{item.value}</p>
+                              </div>
+                            </div>
+                          )
+                        })
+                      })()}
+                      <div className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
+                        style={{ animation: 'cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both', zIndex: 1 }}>
+                        <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: '#C5AF95' }}>
+                          <p className="text-[11px] uppercase tracking-[0.2em] font-semibold leading-none text-[#3B2F2F]">Difficulty</p>
                         </div>
-                      ))}
-                      <div className="group relative flex-1 flex flex-col items-center justify-center rounded-[4px] border border-[rgba(61,90,53,0.10)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
-                        style={{ background: 'rgba(255,248,240,0.80)', animation: 'cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both', zIndex: 1 }}>
-                        <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 leading-none text-center">DIFFICULTY</p>
-                        <div className="flex items-center justify-center gap-2.5 mt-2.5">
-                          {[1,2,3].map(i => <div key={i} className="h-8 w-5 rounded-[2px] transition-all duration-500" style={{ backgroundColor: i <= difficultyLevel ? '#3D5A35' : 'rgba(217,208,196,0.3)' }} />)}
+                        <div className="flex flex-1 items-end justify-center gap-2.5 border border-[rgba(61,90,53,0.12)] px-2 pb-2 pt-1.5" style={{ background: 'rgba(255,248,240,0.90)' }}>
+                          {([22, 34, 48] as const).map((h, idx) => <div key={idx} className="w-7 transition-all duration-500" style={{ height: `${h}px`, backgroundColor: idx + 1 <= difficultyLevel ? '#3B2F2F' : 'transparent', border: idx + 1 <= difficultyLevel ? 'none' : '1.5px solid #3B2F2F' }} />)}
                         </div>
                       </div>
                     </div>
