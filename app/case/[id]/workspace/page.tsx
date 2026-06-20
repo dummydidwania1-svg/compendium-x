@@ -1454,16 +1454,35 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
   }, [lobbyId])
 
-  // Single entry point for opting out of recording. Persists the choice so it
-  // survives reloads and the lobby hop, dismisses the mic overlay for good, and
-  // lets the case run with no audio/transcript.
-  const declineRecording = useCallback(() => {
+  // Discard any in-progress recording WITHOUT uploading — used when the
+  // candidate opts out of recording mid-session. The captured audio is dropped
+  // (no upload, no transcript) and state resets to idle so the workspace shows
+  // the "Running without recording" view.
+  const discardActiveRecording = useCallback(() => {
+    const recorder = recorderRef.current
+    if (recorder && recorder.state !== 'inactive') {
+      try { recorder.ondataavailable = null } catch { /* noop */ }
+      try { recorder.stop() } catch { /* noop */ }
+    }
+    recorderRef.current = null
+    chunksRef.current = []
+    pendingBlobRef.current = null
+    teardownMedia()
+    setCompletionPending(false)
+    setRecordingState('idle')
+  }, [teardownMedia])
+
+  // Shared core for opting out — applies the decline locally (state + persistence
+  // + discard any active capture). `broadcast` controls whether we also signal
+  // the other window (true for a user action here, false when mirroring theirs).
+  const applyRecordingDecline = useCallback((broadcast: boolean) => {
     recordingConsentDeclinedRef.current = true
     setRecordingConsentDeclined(true)
     if (lobbyId && typeof window !== 'undefined') {
       try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
-      // Broadcast to the interviewer window so it stops nagging about mic too.
-      try { localStorage.setItem('compendium-norecord-signal', JSON.stringify({ lobbyId, ts: Date.now() })) } catch { /* quota */ }
+      if (broadcast) {
+        try { localStorage.setItem('compendium-norecord-signal', JSON.stringify({ lobbyId, ts: Date.now() })) } catch { /* quota */ }
+      }
     }
     if (micBlockedReshowTimerRef.current) {
       clearTimeout(micBlockedReshowTimerRef.current)
@@ -1471,34 +1490,48 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
     setMicBlockedOverlayVisible(false)
     stopTitlePulse()
-  }, [lobbyId, stopTitlePulse])
+    discardActiveRecording()
+  }, [lobbyId, stopTitlePulse, discardActiveRecording])
+
+  // Single entry point for the user opting out of recording in THIS window.
+  const declineRecording = useCallback(() => applyRecordingDecline(true), [applyRecordingDecline])
 
   // Listen for the interviewer window declining recording — mirror it here so
-  // the candidate workspace skips capture and stops showing the mic overlay.
+  // the candidate workspace skips capture, discards any active recording, and
+  // stops showing the mic overlay.
   useEffect(() => {
     if (!lobbyId || typeof window === 'undefined') return
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'compendium-norecord-signal' && e.newValue) {
         try {
           const data = JSON.parse(e.newValue) as { lobbyId?: string }
-          if (data.lobbyId === lobbyId) {
-            recordingConsentDeclinedRef.current = true
-            setRecordingConsentDeclined(true)
-            try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
-          }
+          if (data.lobbyId === lobbyId) applyRecordingDecline(false)
         } catch { /* ignore */ }
       }
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
-  }, [lobbyId])
+  }, [lobbyId, applyRecordingDecline])
+
+  // Once the recording has been captured and is uploading / done, or the
+  // session is wrapping up / submitted, a blocked mic no longer matters — the
+  // audio is already secured (or the run is ending). Turn the guard off then.
+  const micGuardDisengaged =
+    recordingState === 'stopping' ||
+    recordingState === 'uploading' ||
+    recordingState === 'uploaded' ||
+    completionPending ||
+    feedbackSubmitted ||
+    endingSession ||
+    endSessionInitiatedRef.current
 
   // Drive the mic-blocked overlay from microphonePermissionState (local mode only).
   // Title pulse starts immediately; overlay reshows after 1.5s if still blocked.
-  // Suppressed entirely once the candidate has chosen to run without recording.
+  // Suppressed entirely once the candidate has chosen to run without recording,
+  // or once the recording is captured / the session is ending.
   useEffect(() => {
     if (!isLocalSession) return
-    if (recordingConsentDeclined) {
+    if (recordingConsentDeclined || micGuardDisengaged) {
       if (micBlockedReshowTimerRef.current) {
         clearTimeout(micBlockedReshowTimerRef.current)
         micBlockedReshowTimerRef.current = null
@@ -1520,7 +1553,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
   // isLocalSession is derived from preferredRecordingMode which is stable after mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphonePermissionState, recordingConsentDeclined])
+  }, [microphonePermissionState, recordingConsentDeclined, micGuardDisengaged])
 
   // Drive the session-issue overlay from sessionIssue. Shows immediately on
   // error, auto-clears when the session doc reappears. Uses the same

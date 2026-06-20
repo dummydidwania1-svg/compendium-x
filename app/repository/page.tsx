@@ -16,6 +16,7 @@ import { slugifyCase } from '@/lib/slug'
 import PlatformLoader from '@/components/PlatformLoader'
 import CursorGlow from '@/components/CursorGlow'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
+import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 
 
 function normalizeCaseType(raw: string | null): string | null {
@@ -205,6 +206,7 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
   const [pendingCaseId, setPendingCaseId] = useState<string | null>(null)
   const [showCloseWarning, setShowCloseWarning] = useState(false)
   const closeAttemptRef = useRef(false)
+  const [micGuardShowing, setMicGuardShowing] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   // Track which case destinations we've already asked Next.js to prefetch
@@ -663,7 +665,15 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
       style={{ fontFamily: "'Work Sans', sans-serif" }}
       className="relative flex min-h-screen flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
-      {caseLoadErrorVisible ? (
+      {/* Mic-blocked guard — only while picking a case for a live local session.
+          Top priority: suppresses every other repository overlay while shown. */}
+      <MicGuardOverlay
+        active={selectionMode && !!lobbyId && sessionMode === 'local'}
+        lobbyId={lobbyId}
+        onShowingChange={setMicGuardShowing}
+      />
+
+      {caseLoadErrorVisible && !micGuardShowing ? (
         <LobbyOverlay
           key="case-load-error"
           type="warning"
@@ -680,7 +690,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
         />
       ) : null}
 
-      {showCloseWarning ? (
+      {showCloseWarning && !micGuardShowing ? (
         <LobbyOverlay
           key="close-warning"
           type="warning"
@@ -692,7 +702,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
         />
       ) : null}
 
-      {liveSessionOverlayInfo ? (
+      {liveSessionOverlayInfo && !micGuardShowing ? (
         <LobbyOverlay
           key="live-session"
           type="warning"
@@ -712,7 +722,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
         />
       ) : null}
 
-      {selectionMode && actionError ? (
+      {selectionMode && actionError && !micGuardShowing ? (
         <LobbyOverlay
           key={actionError}
           type={activeSessionCaseId ? 'warning' : 'error'}

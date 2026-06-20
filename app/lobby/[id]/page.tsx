@@ -7,6 +7,7 @@ import { getDoc, onSnapshot } from 'firebase/firestore'
 import { MeetingTabShareCard } from '@/components/permissions/MeetingTabShareCard'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import type { LobbyOverlayProps } from '@/components/lobby/LobbyOverlay'
+import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import PlatformLoader from '@/components/PlatformLoader'
 import { signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
@@ -58,6 +59,7 @@ function SelectionShellHeader() {
 }
 
 function CandidateLobby({
+  lobbyId,
   requestedSessionMode,
   interviewerLink,
   sessionIssue,
@@ -71,6 +73,7 @@ function CandidateLobby({
   onPrimaryAction,
   onReopenRepo,
 }: {
+  lobbyId: string
   requestedSessionMode: 'remote' | 'local'
   interviewerLink: string
   sessionIssue: string
@@ -85,6 +88,9 @@ function CandidateLobby({
   onReopenRepo: () => void
 }) {
   const isLocalSession = requestedSessionMode === 'local'
+  // Mic-blocked guard is live from lobby load until the workspace takes over.
+  // On the lobby we're always pre-recording, so it's simply on for local mode.
+  const [micGuardShowing, setMicGuardShowing] = useState(false)
 
   // ── Session phase ──────────────────────────────────────────────────────────
   // Derives a single phase string from the combination of prop flags so the
@@ -665,8 +671,15 @@ function CandidateLobby({
         }
       `}</style>
 
-      {/* Overlay toast */}
-      {activeOverlay ? (
+      {/* Mic-blocked guard — top priority; suppresses the toast below while shown. */}
+      <MicGuardOverlay
+        active={isLocalSession}
+        lobbyId={lobbyId}
+        onShowingChange={setMicGuardShowing}
+      />
+
+      {/* Overlay toast (suppressed while the mic-blocked guard is on screen) */}
+      {activeOverlay && !micGuardShowing ? (
         <LobbyOverlay
           key={activeOverlay.id}
           {...activeOverlay}
@@ -889,6 +902,8 @@ function InterviewerLobby({
   const startRef = useRef<number | null>(null)
   const [showCloseWarning, setShowCloseWarning] = useState(false)
   const closeAttemptRef = useRef(false)
+  const isLocalMode = requestedSessionMode === 'local'
+  const [micGuardShowing, setMicGuardShowing] = useState(false)
 
   useEffect(() => {
     let armed = false
@@ -1251,7 +1266,14 @@ function InterviewerLobby({
         </div>
       </main>
 
-      {showCloseWarning && (
+      {/* Mic-blocked guard — top priority; suppresses the close toast while shown. */}
+      <MicGuardOverlay
+        active={isLocalMode}
+        lobbyId={lobbyId}
+        onShowingChange={setMicGuardShowing}
+      />
+
+      {showCloseWarning && !micGuardShowing && (
         <LobbyOverlay
           type="warning"
           icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
@@ -1640,6 +1662,7 @@ export default function LobbyPage() {
 
   return (
     <CandidateLobby
+      lobbyId={lobbyId}
       requestedSessionMode={requestedSessionMode}
       interviewerLink={interviewerLink}
       sessionIssue={sessionIssue}
