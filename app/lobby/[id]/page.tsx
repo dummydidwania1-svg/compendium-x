@@ -4,7 +4,6 @@ import Image from 'next/image'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getDoc, onSnapshot } from 'firebase/firestore'
-import { MicPermissionCard, type MicOverlayPayload } from '@/components/permissions/MicPermissionCard'
 import { MeetingTabShareCard } from '@/components/permissions/MeetingTabShareCard'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import type { LobbyOverlayProps } from '@/components/lobby/LobbyOverlay'
@@ -71,7 +70,6 @@ function CandidateLobby({
   onCancelSession,
   onPrimaryAction,
   onReopenRepo,
-  onMicStateChange,
 }: {
   requestedSessionMode: 'remote' | 'local'
   interviewerLink: string
@@ -85,7 +83,6 @@ function CandidateLobby({
   onCancelSession: () => void
   onPrimaryAction: () => void
   onReopenRepo: () => void
-  onMicStateChange: (granted: boolean) => void
 }) {
   const isLocalSession = requestedSessionMode === 'local'
 
@@ -216,8 +213,7 @@ function CandidateLobby({
   const waitingSteps = [
     { num: '01', text: step01Text, active: sessionPhase === 'waiting' && !popupWindowClosed },
     { num: '02', text: step02Text, active: step02Active },
-    { num: '03', text: 'Allow recording' },
-    { num: '04', text: 'Review dashboard' },
+    { num: '03', text: 'Review dashboard' },
   ]
 
   const pageH1Secondary =
@@ -365,72 +361,6 @@ function CandidateLobby({
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
-
-  // ── Mic overlay bridge ─────────────────────────────────────────────────────
-  const handleMicOverlay = useCallback((payload: MicOverlayPayload) => {
-    if (payload.kind === 'hidden') {
-      dismissedRef.current.delete('mic-denied')
-      dismissedRef.current.delete('mic-prompt')
-      stopTitlePulse()
-      onMicStateChange(true)
-      return
-    }
-    if (payload.kind === 'granted') {
-      // Cancel any pending reshow of the blocked/prompt overlay
-      if (reshowTimerRef.current) { clearTimeout(reshowTimerRef.current); reshowTimerRef.current = null }
-      dismissedRef.current.delete('mic-denied')
-      dismissedRef.current.delete('mic-prompt')
-      // Always clear granted from dismissed so re-grants always show the toast
-      dismissedRef.current.delete('mic-granted')
-      stopTitlePulse()
-      onMicStateChange(true)
-      showOverlay({
-        id: 'mic-granted',
-        type: 'info',
-        icon: <MicIcon size={14} />,
-        title: 'Microphone is all set',
-        autoDismissMs: 3500,
-      })
-      return
-    }
-    if (payload.kind === 'denied') {
-      stopTitlePulse()
-      startTitlePulse('🎙 Mic Blocked')
-      onMicStateChange(false)
-      // Clear dismissed state so this overlay always re-shows while denied
-      dismissedRef.current.delete('mic-denied')
-      // Clear granted dismissed so the next successful grant shows the toast fresh
-      dismissedRef.current.delete('mic-granted')
-      showOverlay({
-        id: 'mic-denied',
-        type: 'warning',
-        icon: <MicOffIcon size={14} />,
-        title: 'Mic is blocked',
-        body: payload.stillBlocked
-          ? "Still blocked. Click the info icon (ⓘ) in your address bar, set Microphone to Allow, then try again."
-          : "Click the info icon (ⓘ) in your address bar, set Microphone to Allow, then tap the button below.",
-        actionLabel: 'Check now',
-        onAction: payload.onRetry,
-      })
-      return
-    }
-    if (payload.kind === 'prompt') {
-      onMicStateChange(false)
-      startTitlePulse('🎙 Allow Mic')
-      showOverlay({
-        id: 'mic-prompt',
-        type: 'action',
-        icon: <MicIcon size={14} />,
-        title: 'Allow your microphone',
-        body: payload.requesting
-          ? 'Waiting for your browser...'
-          : 'We need mic access to record your case audio.',
-        actionLabel: payload.requesting ? undefined : 'Allow mic',
-        onAction: payload.requesting ? undefined : payload.onAllow,
-      })
-      return
-    }
-  }, [onMicStateChange, showOverlay, startTitlePulse, stopTitlePulse])
 
   // Clear repo-closed overlay when interviewer reopens the library or case launches
   useEffect(() => {
@@ -735,9 +665,6 @@ function CandidateLobby({
         }
       `}</style>
 
-      {/* Headless mic permission controller — emits overlay signals */}
-      <MicPermissionCard onOverlay={handleMicOverlay} />
-
       {/* Overlay toast */}
       {activeOverlay ? (
         <LobbyOverlay
@@ -918,28 +845,6 @@ function CandidateLobby({
   )
 }
 
-// ── Inline SVG icon helpers (no external dep, tiny) ───────────────────────────
-function MicIcon({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" />
-      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-      <line x1="12" y1="19" x2="12" y2="22" />
-    </svg>
-  )
-}
-function MicOffIcon({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="2" y1="2" x2="22" y2="22" />
-      <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2" />
-      <path d="M5 10v2a7 7 0 0 0 12 5" />
-      <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33" />
-      <path d="M9 9v3a3 3 0 0 0 5.12 2.12" />
-      <line x1="12" y1="19" x2="12" y2="22" />
-    </svg>
-  )
-}
 function ClockIcon({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1385,12 +1290,6 @@ export default function LobbyPage() {
   // Brief launching state shown while router.replace fires after case selection.
   const [isLaunching, setIsLaunching] = useState(false)
   const [launchCaseName, setLaunchCaseName] = useState('')
-  // Tracks whether mic is ready (granted or not applicable). Used to gate
-  // opening the interviewer popup in local/split-screen mode.
-  // Starts true (optimistic) — MicPermissionCard fires onMicStateChange(false)
-  // quickly if mic is actually denied, avoiding a false block on first click.
-  const [isMicReady, setIsMicReady] = useState(true)
-
   // Interviewers arrive via shared invite links. Silently provision an
   // anonymous Firebase user so they can call /api routes (which all require
   // a valid bearer token) without ever needing to sign up. Anonymous users
@@ -1443,13 +1342,6 @@ export default function LobbyPage() {
   }, [isInterviewer])
 
   const focusOrOpenLocalInterviewerWindow = () => {
-    if (!isMicReady) {
-      // Mic isn't set up yet — the overlay in CandidateLobby is already
-      // showing the blocked/prompt state. Don't open the popup until it's fixed.
-      flashCandidateActionStatus('Fix the mic first')
-      return
-    }
-
     const popupHost = window as PopupWindowHost
 
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
@@ -1760,7 +1652,6 @@ export default function LobbyPage() {
       onCancelSession={() => void handleCancelSession()}
       onPrimaryAction={() => { void handleCandidatePrimaryAction() }}
       onReopenRepo={openRepoInPopup}
-      onMicStateChange={setIsMicReady}
     />
   )
 }
