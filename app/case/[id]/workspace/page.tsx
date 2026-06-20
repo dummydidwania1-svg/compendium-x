@@ -1644,7 +1644,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // doesn't recognise).
   const isWaitingForUserStart =
     recordingState === 'idle' || (recordingState === 'failed' && isRecoverableCaptureError)
-  const endingSessionNowForPill = endSessionActionInProgress || endSessionInitiatedRef.current
+  const endingSessionNowForPill =
+    (recordingState !== 'starting' && recordingState !== 'recording') &&
+    (endSessionActionInProgress || endSessionInitiatedRef.current)
   const statusPillLabel =
     endingSessionNowForPill
       ? 'Wrapping up'
@@ -1749,19 +1751,14 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // Once the candidate has triggered an end-session action, the workspace is
   // wrapping up — never surface a recording-error state, since recording is
   // stopping on purpose (and may never have started, in the unrated case).
-  const isEndingSessionNow = endSessionActionInProgress || endSessionInitiatedRef.current
-  if (typeof window !== 'undefined') {
-    // TEMP DIAGNOSTIC — remove after confirming the wrong-text bug source
-    console.log('[ws-status]', {
-      recordingState,
-      isEndingSessionNow,
-      endSessionActionInProgress,
-      endSessionInitiatedRef: endSessionInitiatedRef.current,
-      recordingConsentDeclined,
-      feedbackSubmitted,
-      completionPending,
-    })
-  }
+  // "Ending now" should never show while capture is still actively starting or
+  // running — in a real end the recorder is stopped first (state moves to
+  // stopping/uploading), so a 'starting'/'recording' state here means the
+  // end-session ref is stale (e.g. left over from a prior session signal) and
+  // must not hijack the live-session status text.
+  const captureActiveNow = recordingState === 'starting' || recordingState === 'recording'
+  const isEndingSessionNow =
+    !captureActiveNow && (endSessionActionInProgress || endSessionInitiatedRef.current)
   // When the candidate opted out of recording, the case runs in a plain
   // "no capture" state — only override the idle/waiting copy, never the
   // active wrap-up / upload states (which can't occur without a recording).
