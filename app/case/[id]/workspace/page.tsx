@@ -1939,7 +1939,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         </div>
       </header>
 
-      {uploadFailOverlayVisible ? (
+      {/* ── Transient override toasts (reload / close warning) ─────────────────
+           These fire on an imminent destructive action and must show immediately
+           above everything else. They suppress all persistent status toasts
+           while active, since a pending reload/close supersedes any other issue. */}
+      {uploadFailOverlayVisible && !warnBeforeReloadVisible && !warnBeforeCloseVisible ? (
         <LobbyOverlay
           key="upload-fail"
           type="error"
@@ -2204,12 +2208,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
       {/* ── Toast overlay priority queue ──────────────────────────────────────
            Only one toast shows at a time. Priority (high→low):
-             1. session-issue  — session doc gone, everything else moot
-             2. mic-blocked    — can't record; must fix before anything else
-             3. window-closed  — interviewer gone; fix after mic is resolved
-             4. capture-error  — recoverable recording error
-           Each level gates on all higher-priority toasts being inactive. */}
-      {micBlockedOverlayVisible && isLocalSession && !sessionIssueOverlayVisible ? (
+             0. warn-before-reload / warn-before-close — imminent destructive action
+             1. upload-fail     — fatal upload failure; user must act or lose audio
+             2. session-issue   — session doc gone, everything else moot
+             3. mic-blocked     — can't record; must fix before anything else
+             4. window-closed   — interviewer gone; fix after mic is resolved
+             5. capture-error   — recoverable recording error
+           Levels 1-5 are suppressed while a transient override (level 0) is active.
+           Each lower level gates on all higher-priority toasts being inactive. */}
+      {micBlockedOverlayVisible && isLocalSession && !sessionIssueOverlayVisible && !uploadFailOverlayVisible && !warnBeforeReloadVisible && !warnBeforeCloseVisible ? (
         <LobbyOverlay
           key="mic-blocked"
           type="warning"
@@ -2237,7 +2244,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {windowClosedOverlayVisible && lobbyId && resolvedCaseId && !sessionIssueOverlayVisible && !micBlockedOverlayVisible ? (
+      {windowClosedOverlayVisible && lobbyId && resolvedCaseId && !sessionIssueOverlayVisible && !micBlockedOverlayVisible && !uploadFailOverlayVisible && !warnBeforeReloadVisible && !warnBeforeCloseVisible ? (
         <LobbyOverlay
           key="interviewer-window-closed"
           type="warning"
@@ -2294,7 +2301,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {sessionIssueOverlayVisible ? (
+      {sessionIssueOverlayVisible && !uploadFailOverlayVisible && !warnBeforeReloadVisible && !warnBeforeCloseVisible ? (
         <LobbyOverlay
           key="session-issue"
           type="warning"
@@ -2322,7 +2329,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {captureErrorOverlayVisible && !sessionIssueOverlayVisible && !micBlockedOverlayVisible && !windowClosedOverlayVisible ? (
+      {captureErrorOverlayVisible && !sessionIssueOverlayVisible && !micBlockedOverlayVisible && !windowClosedOverlayVisible && !uploadFailOverlayVisible && !warnBeforeReloadVisible && !warnBeforeCloseVisible ? (
         <LobbyOverlay
           key="capture-error"
           type="warning"
