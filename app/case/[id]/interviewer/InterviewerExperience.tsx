@@ -13,6 +13,7 @@ import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
 import PlatformLoader from '@/components/PlatformLoader'
 import { slugifyCase } from '@/lib/slug'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
+import { useMicPermission } from '@/lib/permissions/microphone'
 
 
 /* ── Error boundary — catches client-side crashes, auto-reloads ── */
@@ -600,6 +601,15 @@ export function InterviewerPageInner({
 	const [showCloseWarning, setShowCloseWarning] = useState(false)
 	const [isActioning, setIsActioning] = useState(false)
 
+	// ── Mic-blocked overlay (split-screen shares the candidate's mic permission) ──
+	// The interviewer doesn't record, but blocking mic here breaks the candidate's
+	// recording, so we surface the same warning + Allow / Skip recording choice.
+	const { state: micState, request: requestMic, retry: retryMic } = useMicPermission()
+	const isLocalMode = (searchParams.get('sessionMode') ?? searchParams.get('mode') ?? 'local') === 'local'
+	const [micBlockedVisible, setMicBlockedVisible] = useState(false)
+	const [recordingDeclined, setRecordingDeclined] = useState(false)
+	const micReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
 	// Restore draft scores/notes/view from localStorage so a refresh doesn't
 	// wipe the interviewer's in-progress ratings. Keyed by lobbyId so different
 	// sessions never bleed into each other.
@@ -866,6 +876,80 @@ export function InterviewerPageInner({
 			window.removeEventListener('pagehide', markClosed)
 		}
 	}, [lobbyId, previewMode])
+
+	// ── Mic-blocked detection (split-screen only) ────────────────────────────────
+	// Hydrate the no-record choice from sessionStorage (set by the practice page or
+	// the candidate workspace, both of which share this lobby key within the tab
+	// group). Note: sessionStorage is per-tab, so this only reflects a decline made
+	// in THIS window; the cross-window signal below covers the candidate's choice.
+	useEffect(() => {
+		if (!lobbyId || typeof sessionStorage === 'undefined') return
+		if (sessionStorage.getItem(`compendium-norecord-${lobbyId}`) === '1') setRecordingDeclined(true)
+	}, [lobbyId])
+
+	// Listen for the candidate window declining recording so we stop nagging here too.
+	useEffect(() => {
+		if (!lobbyId || previewMode) return
+		const onStorage = (e: StorageEvent) => {
+			if (e.key === 'compendium-norecord-signal' && e.newValue) {
+				try {
+					const data = JSON.parse(e.newValue) as { lobbyId?: string }
+					if (data.lobbyId === lobbyId) setRecordingDeclined(true)
+				} catch { /* ignore */ }
+			}
+		}
+		window.addEventListener('storage', onStorage)
+		return () => window.removeEventListener('storage', onStorage)
+	}, [lobbyId, previewMode])
+
+	// Re-query mic on focus/visibility — Permissions API onchange can lag when the
+	// user toggles mic via the address-bar lock icon in another window.
+	useEffect(() => {
+		if (!isLocalMode || previewMode || typeof window === 'undefined') return
+		const recheck = () => { void retryMic() }
+		const onVis = () => { if (document.visibilityState === 'visible') void retryMic() }
+		window.addEventListener('focus', recheck)
+		document.addEventListener('visibilitychange', onVis)
+		return () => {
+			window.removeEventListener('focus', recheck)
+			document.removeEventListener('visibilitychange', onVis)
+		}
+	}, [isLocalMode, previewMode, retryMic])
+
+	// Drive the overlay from mic state. Suppressed once recording is declined.
+	useEffect(() => {
+		if (!isLocalMode || previewMode) return
+		if (recordingDeclined) {
+			if (micReshowTimerRef.current) { clearTimeout(micReshowTimerRef.current); micReshowTimerRef.current = null }
+			setMicBlockedVisible(false)
+			return
+		}
+		if (micState === 'denied') {
+			setMicBlockedVisible((prev) => (prev ? prev : true))
+		} else {
+			if (micReshowTimerRef.current) { clearTimeout(micReshowTimerRef.current); micReshowTimerRef.current = null }
+			setMicBlockedVisible(false)
+		}
+	}, [micState, isLocalMode, previewMode, recordingDeclined])
+
+	// Allow-mic handler — triggers the native prompt (or re-queries if already set).
+	const handleInterviewerAllowMic = useCallback(async () => {
+		const stream = await requestMic()
+		if (stream) stream.getTracks().forEach((t) => t.stop())
+		else await retryMic()
+	}, [requestMic, retryMic])
+
+	// Decline recording — persist + broadcast to the candidate window so neither
+	// side nags again and the candidate workspace skips capture.
+	const handleInterviewerDeclineRecording = useCallback(() => {
+		setRecordingDeclined(true)
+		if (micReshowTimerRef.current) { clearTimeout(micReshowTimerRef.current); micReshowTimerRef.current = null }
+		setMicBlockedVisible(false)
+		if (lobbyId) {
+			try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
+			try { localStorage.setItem('compendium-norecord-signal', JSON.stringify({ lobbyId, ts: Date.now() })) } catch { /* quota */ }
+		}
+	}, [lobbyId])
 
 	// ── Replace case handler ─────────────────────────────────────────────────────
 	const handleReplaceCase = async () => {
@@ -1188,6 +1272,29 @@ if (previewMode && !forcePreview) {
 						body="Any ratings you have not submitted will be gone. Hit submit before closing."
 						autoDismissMs={7000}
 						onDismiss={() => setShowCloseWarning(false)}
+					/>
+				)}
+
+				{/* Mic blocked — split-screen shares the candidate's mic permission, so
+				    a block here breaks the candidate's recording. Surface Allow / Skip. */}
+				{micBlockedVisible && (
+					<LobbyOverlay
+						type="warning"
+						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>}
+						title="Mic is blocked"
+						body="The session needs mic access to record audio and generate AI feedback. Set Microphone to Allow in your address bar and tap Allow mic, or carry on without recording."
+						actionLabel="Allow mic"
+						onAction={() => void handleInterviewerAllowMic()}
+						secondaryActionLabel="Skip recording"
+						onSecondaryAction={handleInterviewerDeclineRecording}
+						onDismiss={() => {
+							setMicBlockedVisible(false)
+							if (micReshowTimerRef.current) clearTimeout(micReshowTimerRef.current)
+							micReshowTimerRef.current = setTimeout(() => {
+								micReshowTimerRef.current = null
+								if (micState === 'denied' && !recordingDeclined) setMicBlockedVisible(true)
+							}, 1500)
+						}}
 					/>
 				)}
 

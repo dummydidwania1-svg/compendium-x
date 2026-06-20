@@ -47,13 +47,16 @@ export default function PracticeModeSelection() {
   // Called when the user clicks "Launch Split Screen".
   // Mic check first, then open the interviewer popup directly.
   // The handoff animation lives inside the interviewer window itself.
-  const handleLocalClick = async () => {
+  // When skipRecording is true (the "continue without recording" path), the
+  // mic check is bypassed entirely and the session is flagged no-record so the
+  // candidate workspace never tries to capture audio or nag for mic access.
+  const handleLocalClick = async (skipRecording = false) => {
     if (localPreparing) return
     setPopupBlocked(false)
     setMicBlocked(false)
 
-    // Step 1: mic check
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+    // Step 1: mic check (skipped when the user opted out of recording)
+    if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         stream.getTracks().forEach((track) => track.stop())
@@ -63,10 +66,15 @@ export default function PracticeModeSelection() {
       }
     }
 
-    // Step 2: mic granted — open interviewer popup immediately.
+    // Step 2: mic granted (or skipped) — open interviewer popup immediately.
     // ?handoff=1 tells the lobby page to show the 5s handoff overlay on load.
     setLocalPreparing(true)
     const lobbyId = Math.random().toString(36).substring(7)
+    // Persist the no-record choice keyed by lobby so the candidate workspace
+    // (a separate route reached after the lobby) reads it on mount.
+    if (skipRecording && typeof sessionStorage !== 'undefined') {
+      try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
+    }
     const popupHost = window as Window & { __compendiumInterviewerWindow?: Window | null }
 
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
@@ -249,9 +257,11 @@ export default function PracticeModeSelection() {
             </svg>
           }
           title="Mic access needed"
-          body="Click the site icon (ⓘ) in your address bar, set Microphone to Allow, then tap Try again."
+          body="We use your mic to record the session and generate AI feedback. Without it, this run won't have audio or a transcript. Set Microphone to Allow in your address bar and tap Try again, or continue without recording."
           actionLabel="Try again"
           onAction={() => void handleLocalClick()}
+          secondaryActionLabel="Continue without recording"
+          onSecondaryAction={() => void handleLocalClick(true)}
           onDismiss={() => {
             setMicBlocked(false)
             if (micReshowTimerRef.current) clearTimeout(micReshowTimerRef.current)

@@ -227,6 +227,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // ── Mic-blocked overlay (replaces MicSoftWarningBanner with reshow logic) ──
   const [micBlockedOverlayVisible, setMicBlockedOverlayVisible] = useState(false)
   const micBlockedReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The candidate can opt to run the case without recording (no audio/transcript).
+  // Once set, the mic-blocked overlay never re-appears and auto-start is skipped.
+  // Backed by sessionStorage (keyed by lobby) so a decline made on the practice
+  // page survives the lobby → workspace hop, and survives reloads within the tab.
+  const [recordingConsentDeclined, setRecordingConsentDeclined] = useState(false)
+  const recordingConsentDeclinedRef = useRef(false)
 
   // ── Interviewer-window-closed overlay (same-device sessions) ─────────────
   const [windowClosedOverlayVisible, setWindowClosedOverlayVisible] = useState(false)
@@ -648,6 +654,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           const micSource = audioContext.createMediaStreamSource(new MediaStream(micTracks))
           micSource.connect(destination)
           hasAnyAudio = true
+          // If the mic gets blocked mid-recording (address-bar lock, OS-level
+          // revoke, device unplug), the track fires 'mute'/'ended' but the
+          // Permissions API onchange can lag. Re-query immediately so the
+          // mic-blocked overlay surfaces without waiting for a focus/visibility
+          // bounce.
+          for (const track of micTracks) {
+            track.onmute = () => { void retryMicrophonePermission() }
+            track.onended = () => { void retryMicrophonePermission() }
+          }
         }
 
         if (!hasAnyAudio) {
@@ -1209,6 +1224,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     if (autoStartAttemptedRef.current) return
     if (!lobbyId || !resolvedCaseId || !currentUser) return
     if (!canStartRecording) return
+    // Candidate chose to run the case without recording — never auto-start.
+    if (recordingConsentDeclined) return
     // Skip auto-start when mic is denied — calling getUserMedia would fail
     // silently, leaving the user staring at a frozen UI. The soft-warning
     // banner surfaces the situation and lets them recover; once permission
@@ -1232,7 +1249,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         : 'Auto-starting microphone capture...'
     )
     void startCaptureFlow(preferredRecordingMode)
-  }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, resolvedCaseId, startCaptureFlow])
+  }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, recordingConsentDeclined, resolvedCaseId, startCaptureFlow])
 
   // Reload guard — intercepts reload triggers while recording is active.
   // Two separate sessionStorage keys:
@@ -1427,10 +1444,69 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
   }, [completionPending, recordingState])
 
+  // Hydrate the "run without recording" choice from sessionStorage on mount.
+  // The practice page may have set it before this tab even reached the workspace.
+  useEffect(() => {
+    if (!lobbyId || typeof sessionStorage === 'undefined') return
+    if (sessionStorage.getItem(`compendium-norecord-${lobbyId}`) === '1') {
+      recordingConsentDeclinedRef.current = true
+      setRecordingConsentDeclined(true)
+    }
+  }, [lobbyId])
+
+  // Single entry point for opting out of recording. Persists the choice so it
+  // survives reloads and the lobby hop, dismisses the mic overlay for good, and
+  // lets the case run with no audio/transcript.
+  const declineRecording = useCallback(() => {
+    recordingConsentDeclinedRef.current = true
+    setRecordingConsentDeclined(true)
+    if (lobbyId && typeof window !== 'undefined') {
+      try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
+      // Broadcast to the interviewer window so it stops nagging about mic too.
+      try { localStorage.setItem('compendium-norecord-signal', JSON.stringify({ lobbyId, ts: Date.now() })) } catch { /* quota */ }
+    }
+    if (micBlockedReshowTimerRef.current) {
+      clearTimeout(micBlockedReshowTimerRef.current)
+      micBlockedReshowTimerRef.current = null
+    }
+    setMicBlockedOverlayVisible(false)
+    stopTitlePulse()
+  }, [lobbyId, stopTitlePulse])
+
+  // Listen for the interviewer window declining recording — mirror it here so
+  // the candidate workspace skips capture and stops showing the mic overlay.
+  useEffect(() => {
+    if (!lobbyId || typeof window === 'undefined') return
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'compendium-norecord-signal' && e.newValue) {
+        try {
+          const data = JSON.parse(e.newValue) as { lobbyId?: string }
+          if (data.lobbyId === lobbyId) {
+            recordingConsentDeclinedRef.current = true
+            setRecordingConsentDeclined(true)
+            try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
+          }
+        } catch { /* ignore */ }
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [lobbyId])
+
   // Drive the mic-blocked overlay from microphonePermissionState (local mode only).
   // Title pulse starts immediately; overlay reshows after 1.5s if still blocked.
+  // Suppressed entirely once the candidate has chosen to run without recording.
   useEffect(() => {
     if (!isLocalSession) return
+    if (recordingConsentDeclined) {
+      if (micBlockedReshowTimerRef.current) {
+        clearTimeout(micBlockedReshowTimerRef.current)
+        micBlockedReshowTimerRef.current = null
+      }
+      stopTitlePulse()
+      setMicBlockedOverlayVisible(false)
+      return
+    }
     if (microphonePermissionState === 'denied') {
       startTitlePulse()
       setMicBlockedOverlayVisible((prev) => (prev ? prev : true))
@@ -1444,7 +1520,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
   // isLocalSession is derived from preferredRecordingMode which is stable after mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphonePermissionState])
+  }, [microphonePermissionState, recordingConsentDeclined])
 
   // Drive the session-issue overlay from sessionIssue. Shows immediately on
   // error, auto-clears when the session doc reappears. Uses the same
@@ -1470,6 +1546,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [clearLocalPrep, clearRemotePrep, teardownMedia])
 
   const isLocalSession = preferredRecordingMode === 'local'
+  // Top-priority overlay gate — see the mic-blocked render block for rationale.
+  const micBlockedActive = micBlockedOverlayVisible && isLocalSession
 
   // ── Dynamic header text ───────────────────────────────────────────────────
   const wsH1Primary = feedbackSubmitted ? 'Wrapping up' : 'Interview Session'
@@ -1542,6 +1620,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             ? 'Syncing'
             : recordingState === 'uploaded'
               ? 'Ready'
+              : recordingConsentDeclined && isWaitingForUserStart
+                ? 'No recording'
               : isWaitingForUserStart
                 ? 'Ready when you are'
                 : 'Needs attention'
@@ -1632,9 +1712,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // wrapping up — never surface a recording-error state, since recording is
   // stopping on purpose (and may never have started, in the unrated case).
   const isEndingSessionNow = endSessionActionInProgress || endSessionInitiatedRef.current
+  // When the candidate opted out of recording, the case runs in a plain
+  // "no capture" state — only override the idle/waiting copy, never the
+  // active wrap-up / upload states (which can't occur without a recording).
+  const runningWithoutRecording = recordingConsentDeclined && isWaitingForUserStart && !isEndingSessionNow
   const workspaceStatusTitle =
     isEndingSessionNow
       ? 'Wrapping up this session'
+      : runningWithoutRecording
+      ? 'Running without recording'
       : recordingState === 'starting'
       ? 'Preparing capture permission'
       : recordingState === 'recording'
@@ -1651,6 +1737,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const workspaceStatusDescription =
     isEndingSessionNow
       ? 'Saving your session and heading to the dashboard.'
+      : runningWithoutRecording
+      ? 'No audio or transcript is being captured for this run. The case still completes and shows in your dashboard.'
       : recordingState === 'starting'
       ? (isLocalSession ? 'Allow microphone access when Chrome asks.' : 'Choose the meeting tab and turn on Share audio when Chrome asks.')
       : recordingState === 'recording'
@@ -2202,7 +2290,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {micBlockedOverlayVisible && isLocalSession ? (
+      {/* Mic-blocked is the top-priority status toast: from case start until the
+          recording is captured, a blocked mic must be resolved (or explicitly
+          skipped) before any other status toast can surface. The other toasts'
+          underlying state stays set — they're only visually suppressed here — so
+          the moment mic is resolved (granted or skipped), they appear. */}
+      {micBlockedActive ? (
         <LobbyOverlay
           key="mic-blocked"
           type="warning"
@@ -2216,21 +2309,23 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </svg>
           }
           title="Mic is blocked"
-          body="Without mic access we can't record your audio or generate AI feedback. Click the lock icon in your address bar, set Microphone to Allow, then tap the button below."
+          body="Without mic access we can't record your audio or generate AI feedback. Click the lock icon in your address bar, set Microphone to Allow, then tap Allow mic. Or carry on without recording."
           actionLabel="Allow mic"
           onAction={() => void handleBannerAllow()}
+          secondaryActionLabel="Skip recording"
+          onSecondaryAction={declineRecording}
           onDismiss={() => {
             setMicBlockedOverlayVisible(false)
             if (micBlockedReshowTimerRef.current) clearTimeout(micBlockedReshowTimerRef.current)
             micBlockedReshowTimerRef.current = setTimeout(() => {
               micBlockedReshowTimerRef.current = null
-              if (microphonePermissionState === 'denied') setMicBlockedOverlayVisible(true)
+              if (microphonePermissionState === 'denied' && !recordingConsentDeclinedRef.current) setMicBlockedOverlayVisible(true)
             }, 1500)
           }}
         />
       ) : null}
 
-      {windowClosedOverlayVisible && lobbyId && resolvedCaseId ? (
+      {windowClosedOverlayVisible && lobbyId && resolvedCaseId && !micBlockedActive ? (
         <LobbyOverlay
           key="interviewer-window-closed"
           type="warning"
@@ -2287,7 +2382,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {sessionIssueOverlayVisible ? (
+      {sessionIssueOverlayVisible && !micBlockedActive ? (
         <LobbyOverlay
           key="session-issue"
           type="warning"
@@ -2315,7 +2410,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {captureErrorOverlayVisible ? (
+      {captureErrorOverlayVisible && !micBlockedActive ? (
         <LobbyOverlay
           key="capture-error"
           type="warning"
@@ -2526,7 +2621,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                     capture begins — never surface the "Allow Recording" button there.
                     Only show it on a genuine failure the candidate must recover from.
                     Remote mode keeps showing it on idle for the share-screen prompt. */}
-                {((isLocalSession ? recordingState === 'failed' : (recordingState === 'idle' || recordingState === 'failed')) || prepVisible) ? (
+                {!recordingConsentDeclined && ((isLocalSession ? recordingState === 'failed' : (recordingState === 'idle' || recordingState === 'failed')) || prepVisible) ? (
                   <button
                     type="button"
                     onClick={handleEnableCapture}
