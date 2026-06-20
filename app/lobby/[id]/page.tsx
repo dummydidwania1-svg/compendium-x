@@ -977,6 +977,33 @@ function InterviewerLobby({
   const [handoffVisible, setHandoffVisible] = useState(showHandoff)
   const [handoffCountdown, setHandoffCountdown] = useState(5)
   const startRef = useRef<number | null>(null)
+  const [showCloseWarning, setShowCloseWarning] = useState(false)
+  const closeAttemptRef = useRef(false)
+
+  useEffect(() => {
+    let armed = false
+    const armTimer = setTimeout(() => { armed = true }, 3000)
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!armed) return
+      closeAttemptRef.current = true
+      e.preventDefault()
+      e.returnValue = ''
+      return ''
+    }
+    const onReturn = () => {
+      if (!closeAttemptRef.current) return
+      closeAttemptRef.current = false
+      if (armed) setShowCloseWarning(true)
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') onReturn() })
+    window.addEventListener('focus', onReturn)
+    return () => {
+      clearTimeout(armTimer)
+      window.removeEventListener('beforeunload', onBeforeUnload)
+      window.removeEventListener('focus', onReturn)
+    }
+  }, [])
 
   useEffect(() => {
     if (!handoffVisible) return
@@ -1311,6 +1338,17 @@ function InterviewerLobby({
 
         </div>
       </main>
+
+      {showCloseWarning && (
+        <LobbyOverlay
+          type="warning"
+          icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+          title="Heads up, closing this stops the session"
+          body="Your candidate is waiting. If you close now, the session won't start."
+          autoDismissMs={7000}
+          onDismiss={() => setShowCloseWarning(false)}
+        />
+      )}
 
     </div>
   )

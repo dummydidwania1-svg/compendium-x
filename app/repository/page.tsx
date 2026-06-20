@@ -203,6 +203,8 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
   // user can retry; on success the page navigates away before clearing is
   // needed.
   const [pendingCaseId, setPendingCaseId] = useState<string | null>(null)
+  const [showCloseWarning, setShowCloseWarning] = useState(false)
+  const closeAttemptRef = useRef(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   // Track which case destinations we've already asked Next.js to prefetch
@@ -230,6 +232,36 @@ const clearAllFilters = () => {
     if (caseError) setCaseLoadErrorVisible(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Close guard — only in selection mode (interviewer is picking a case for a live session).
+  useEffect(() => {
+    if (!selectionMode || !lobbyId) return
+    let armed = false
+    const armTimer = setTimeout(() => { armed = true }, 3000)
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!armed) return
+      closeAttemptRef.current = true
+      e.preventDefault()
+      e.returnValue = ''
+      return ''
+    }
+    const onReturn = () => {
+      if (!closeAttemptRef.current) return
+      closeAttemptRef.current = false
+      if (armed) setShowCloseWarning(true)
+    }
+    const onVisibility = () => { if (document.visibilityState === 'visible') onReturn() }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('focus', onReturn)
+    return () => {
+      clearTimeout(armTimer)
+      window.removeEventListener('beforeunload', onBeforeUnload)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', onReturn)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionMode, lobbyId])
 
   // liveSessionOverlayInfo trigger removed — the replace-case flow now clears
   // compendium-session-start before navigating here, so this check is no longer needed.
@@ -645,6 +677,18 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
           title="That case couldn't load"
           body="Something went wrong opening the case. Pick a different one to try again."
           onDismiss={() => setCaseLoadErrorVisible(false)}
+        />
+      ) : null}
+
+      {showCloseWarning ? (
+        <LobbyOverlay
+          key="close-warning"
+          type="warning"
+          icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+          title="Case not picked yet"
+          body="Your candidate is waiting. Close this and they'll be stuck on the loading screen."
+          autoDismissMs={7000}
+          onDismiss={() => setShowCloseWarning(false)}
         />
       ) : null}
 
