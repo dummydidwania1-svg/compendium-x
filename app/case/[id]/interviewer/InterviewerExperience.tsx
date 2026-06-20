@@ -969,14 +969,10 @@ export function InterviewerPageInner({
 
 		// Native dialog: the only thing that actually stops X / Cmd+W.
 		const onBeforeUnload = (e: BeforeUnloadEvent) => {
-			console.log('[close-guard] beforeunload fired. armed=', armed, 'shouldBlock=', shouldBlock())
 			if (!shouldBlock()) return
-			// Mark that a close was attempted so the follow-up toast can fire if
-			// the user cancels and returns to the page.
 			closeAttemptRef.current = true
 			e.preventDefault()
 			e.returnValue = ''
-			console.log('[close-guard] dialog should appear now')
 			return ''
 		}
 
