@@ -55,6 +55,18 @@ const dualMicFields = {
   startOffsetMs: z.number().int().optional(),
   /** Device's ms reading of selectedAt used as anchor (for skew debugging). */
   anchorSelectedAtMs: z.number().int().optional(),
+  /**
+   * Periodic cumulative flush (overwrite stable live path).
+   * When true, sets transcriptStatus:'recording' — does NOT trigger transcription.
+   * Omit or false for the final upload.
+   */
+  live: z.boolean().optional(),
+  /**
+   * Hard-close beacon: the interviewer left mid-session.
+   * Finalizes the last-flushed audio (sets transcriptStatus:'pending') and marks
+   * the track + session as interviewerInterrupted so the merge can label it.
+   */
+  interrupted: z.boolean().optional(),
 }
 
 const recordingUploadedInput = z.object({

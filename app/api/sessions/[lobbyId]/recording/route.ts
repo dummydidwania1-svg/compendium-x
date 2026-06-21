@@ -92,6 +92,14 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         ...(body.anchorSelectedAtMs !== undefined ? { anchorSelectedAtMs: body.anchorSelectedAtMs } : {}),
       }
 
+      // For interviewer periodic flushes (live:true), keep transcriptStatus:'recording'
+      // so transcription does NOT fire mid-session. Only the final upload or the
+      // interrupted beacon sets 'pending' to trigger transcription.
+      const transcriptStatusOnUpload =
+        role === 'interviewer' && body.status === 'uploaded' && body.live === true
+          ? 'recording'
+          : 'pending'
+
       const trackData =
         body.status === 'uploaded'
           ? {
@@ -103,7 +111,7 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
               audioUrl: body.audioUrl,
               mimeType: body.mimeType,
               byteSize: body.byteSize,
-              transcriptStatus: 'pending',
+              transcriptStatus: transcriptStatusOnUpload,
             }
           : {
               ...sharedFields,
@@ -121,16 +129,29 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
           .doc(lobbyId)
           .collection('recordings')
           .doc(role)
-        tx.set(trackRef, { ...trackData, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
-        // For candidate uploads, denormalize fields onto the session doc so the
-        // dashboard can read them without querying the subcollection:
-        //   candidateAudioUrl → dashboard audio player
-        //   mergedTranscriptStatus:'pending' → show "Generating…" immediately
+
+        // For interrupted beacons, mark the track so the merge can label it.
+        const interviewerExtras: Record<string, unknown> = {}
+        if (role === 'interviewer' && body.status === 'uploaded' && body.interrupted === true) {
+          interviewerExtras.interviewerInterrupted = true
+        }
+
+        tx.set(trackRef, { ...trackData, ...interviewerExtras, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+
+        // Denormalize fields onto the session doc so the dashboard can read them
+        // without querying the subcollection, and merge triggers can fire.
         const sessionUpdate: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() }
         if (role === 'candidate' && body.status === 'uploaded') {
           sessionUpdate.candidateAudioUrl = body.audioUrl
           if (!data.mergedTranscriptStatus) {
             sessionUpdate.mergedTranscriptStatus = 'pending'
+          }
+        }
+        if (role === 'interviewer' && body.status === 'uploaded') {
+          // Denormalize so the dashboard audio player works without a subcollection read.
+          sessionUpdate.interviewerAudioUrl = body.audioUrl
+          if (body.interrupted === true) {
+            sessionUpdate.interviewerInterrupted = true
           }
         }
         tx.set(sessionRef, sessionUpdate, { merge: true })
