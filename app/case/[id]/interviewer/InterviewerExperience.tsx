@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState, useRef, ReactNode, Component
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getDoc, onSnapshot } from 'firebase/firestore'
-import { waitForAuthUser } from '@/lib/firebase/config'
+import { auth, storage, waitForAuthUser } from '@/lib/firebase/config'
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { caseDoc, sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import { CaseForumSection } from '@/components/forum/CaseForumSection'
@@ -566,6 +567,15 @@ function DefaultFramework({ framework }: { framework: ParsedFramework }) {
 	)
 }
 
+const INTERVIEWER_MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
+function pickInterviewerMimeType(): string | null {
+  if (typeof MediaRecorder === 'undefined') return null
+  for (const candidate of INTERVIEWER_MIME_CANDIDATES) {
+    if (MediaRecorder.isTypeSupported(candidate)) return candidate
+  }
+  return null
+}
+
 export function InterviewerPageInner({
   params,
   forcePreview = false,
@@ -611,6 +621,19 @@ export function InterviewerPageInner({
 	// No localStorage sharing — all cross-device coordination goes through Firestore.
 	const isRemoteMode = !isLocalMode
 	const [micGuardShowing, setMicGuardShowing] = useState(false)
+
+	// ── Interviewer mic recording (remote mode, dual-mic architecture) ────────────
+	// The interviewer records their own mic; the Cloud Function merges both
+	// tracks into one merged transcript. Permission flow: auto-ask → remind once
+	// → continue without forcing (signal interviewerAudioCaptured:false).
+	const [interviewerMicBannerVisible, setInterviewerMicBannerVisible] = useState(false)
+	const interviewerRecorderRef = useRef<MediaRecorder | null>(null)
+	const interviewerChunksRef = useRef<Blob[]>([])
+	const interviewerMicStreamRef = useRef<MediaStream | null>(null)
+	const interviewerStartMsRef = useRef<number | null>(null)
+	const interviewerSelectedAtMsRef = useRef<number | null>(null)
+	const micDeclineCountRef = useRef(0)
+	const interviewerRecordingStartedRef = useRef(false)
 
 	// ── Remote-mode overlays ─────────────────────────────────────────────────────
 	// B5: Candidate's recording window is closed / recording not active.
@@ -671,20 +694,23 @@ export function InterviewerPageInner({
 			const status = data.status as string | undefined
 			const view = currentViewRef.current
 
-			// D9: Seed inactivity clocks from server timestamps on the first snapshot
-			// so a page refresh doesn't restart the 2h stale timer from zero.
-			// `selectedAt` is written when the case starts (in_progress); using it as
-			// the floor means a session that's been running for 90 min picks up with
-			// only 30 min remaining on the 2h clock, not a fresh full 2h window.
+			// D9: Seed inactivity clocks from server timestamps on the first snapshot.
+			// Also capture selectedAt for dual-mic startOffsetMs calculation.
 			if (!seedApplied && status === 'in_progress') {
-				const selectedAt = (data.selectedAt as { toDate: () => Date } | undefined)?.toDate()
+				const selectedAt = (data.selectedAt as { toDate: () => Date; toMillis: () => number } | undefined)
 				if (selectedAt) {
-					const age = Date.now() - selectedAt.getTime()
-					// Back-date both clocks by the elapsed session time.
+					const age = Date.now() - selectedAt.toDate().getTime()
 					lastScoreChangedAtRef.current = Date.now() - age
 					lastActivityAtRef.current = Date.now() - age
+					// Store for interviewer recording offset.
+					interviewerSelectedAtMsRef.current = selectedAt.toMillis()
 				}
 				seedApplied = true
+				// Start the interviewer's mic recording now that the session is live.
+				if (!interviewerRecordingStartedRef.current) {
+					interviewerRecordingStartedRef.current = true
+					void startInterviewerRecording()
+				}
 			}
 
 			// A3/D10: Candidate ended the session while interviewer hasn't submitted.
@@ -770,6 +796,115 @@ export function InterviewerPageInner({
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isRemoteMode, lobbyId, previewMode])
 
+	// ── Interviewer mic recording helpers ────────────────────────────────────────
+
+	const signalNoInterviewerAudio = useCallback(async () => {
+		if (!lobbyId) return
+		try {
+			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+				role: 'interviewer',
+				active: true,
+				interviewerAudioCaptured: false,
+			})
+		} catch { /* best-effort */ }
+	}, [lobbyId])
+
+	const startInterviewerRecording = useCallback(async () => {
+		if (!isRemoteMode || !lobbyId || previewMode) return
+		try {
+			await auth.currentUser?.getIdToken(true).catch(() => {})
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+			interviewerMicStreamRef.current = stream
+			const mimeType = pickInterviewerMimeType()
+			const recorder = mimeType
+				? new MediaRecorder(stream, { mimeType })
+				: new MediaRecorder(stream)
+			interviewerRecorderRef.current = recorder
+			interviewerChunksRef.current = []
+			interviewerStartMsRef.current = Date.now()
+			recorder.ondataavailable = (e) => {
+				if (e.data.size > 0) interviewerChunksRef.current.push(e.data)
+			}
+			recorder.start(1000)
+		} catch {
+			micDeclineCountRef.current += 1
+			if (micDeclineCountRef.current === 1) {
+				// First denial: show reminder banner once.
+				setInterviewerMicBannerVisible(true)
+			} else {
+				// Second denial: continue without mic, signal partial transcript.
+				setInterviewerMicBannerVisible(false)
+				void signalNoInterviewerAudio()
+			}
+		}
+	}, [isRemoteMode, lobbyId, previewMode, signalNoInterviewerAudio])
+
+	const stopInterviewerRecordingAndUpload = useCallback(async () => {
+		const recorder = interviewerRecorderRef.current
+		if (!recorder || recorder.state === 'inactive') {
+			interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
+			interviewerMicStreamRef.current = null
+			return
+		}
+		const blob = await new Promise<Blob>((resolve) => {
+			recorder.addEventListener('stop', () => {
+				resolve(new Blob(interviewerChunksRef.current, {
+					type: recorder.mimeType || pickInterviewerMimeType() || 'audio/webm',
+				}))
+			}, { once: true })
+			try { recorder.stop() } catch { resolve(new Blob([])) }
+		})
+		interviewerRecorderRef.current = null
+		interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
+		interviewerMicStreamRef.current = null
+
+		if (!blob.size || !lobbyId) return
+		const user = await waitForAuthUser()
+		if (!user) return
+		try {
+			await auth.currentUser?.getIdToken(true).catch(() => {})
+			const mimeType = blob.type || 'audio/webm'
+			const ext = mimeType.includes('ogg') ? 'ogg' : 'webm'
+			const storagePath = `session-recordings/${user.uid}/${lobbyId}/interviewer-${Date.now()}.${ext}`
+			const sRef = storageRef(storage, storagePath)
+			await uploadBytes(sRef, blob, { contentType: mimeType })
+			const audioUrl = await getDownloadURL(sRef)
+			const nowMs = Date.now()
+			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
+				status: 'uploaded',
+				mode: 'remote' as const,
+				startedAtMs: interviewerStartMsRef.current,
+				stoppedAtMs: nowMs,
+				durationMs: interviewerStartMsRef.current ? nowMs - interviewerStartMsRef.current : null,
+				stopReason: 'session_completed',
+				storagePath,
+				audioUrl,
+				mimeType,
+				byteSize: blob.size,
+				role: 'interviewer' as const,
+				startOffsetMs: interviewerStartMsRef.current !== null && interviewerSelectedAtMsRef.current !== null
+					? Math.max(0, interviewerStartMsRef.current - interviewerSelectedAtMsRef.current)
+					: undefined,
+				anchorSelectedAtMs: interviewerSelectedAtMsRef.current ?? undefined,
+			})
+		} catch {
+			// Best-effort: upload failure produces a partial (candidate-only) transcript.
+			void signalNoInterviewerAudio()
+		}
+	}, [lobbyId, signalNoInterviewerAudio])
+
+	// Cleanup recorder on unmount.
+	useEffect(() => {
+		return () => {
+			try {
+				if (interviewerRecorderRef.current && interviewerRecorderRef.current.state !== 'inactive') {
+					interviewerRecorderRef.current.stop()
+				}
+			} catch { /* noop */ }
+			interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
+		}
+	}, [])
+
 	// ── Auto-end timers ──────────────────────────────────────────────────────────
 	// Trigger 1: 30 min inactivity (after all 4 scores filled)
 	// Trigger 2: 2 h since last score change (regardless of activity, after all 4 scores filled)
@@ -826,6 +961,8 @@ export function InterviewerPageInner({
 			} catch { }
 		}
 		if (draftKey) { try { localStorage.removeItem(draftKey) } catch { } }
+		// Stop and upload the interviewer's mic recording (remote dual-mic).
+		void stopInterviewerRecordingAndUpload()
 
 		if (isLocalMode) {
 			window.close()
@@ -833,7 +970,7 @@ export function InterviewerPageInner({
 			// Remote: no window to close; route to success view.
 			setCurrentView('success')
 		}
-	}, [isLocalMode, lobbyId, resolvedCaseId, scores, notes, draftKey])
+	}, [isLocalMode, lobbyId, resolvedCaseId, scores, notes, draftKey, stopInterviewerRecordingAndUpload])
 
 	// Trigger 1: check every 60s for 30min inactivity
 	useEffect(() => {
@@ -1220,6 +1357,10 @@ useEffect(() => {
 		if (draftKey) localStorage.removeItem(draftKey)
 		// Clear the remote overlay — interviewer just submitted successfully.
 		setCandidateEndedSession(false)
+		// Stop and upload the interviewer's mic recording (remote dual-mic).
+		// Fire-and-forget: the upload writes to the subcollection independently
+		// of the eval submission; the Cloud Function merges both tracks after.
+		void stopInterviewerRecordingAndUpload()
 
 		if (lobbyId) {
 			setCurrentView('success')
@@ -1376,6 +1517,33 @@ if (previewMode && !forcePreview) {
 						title="Candidate's recording window is closed"
 						body="Ask your candidate to reopen their practice tab so their audio can be recorded. The session will continue once they reconnect."
 						onDismiss={() => setCandidateRecordingClosed(false)}
+					/>
+				)}
+
+				{/* Interviewer mic permission — ask once, remind once, then continue.
+				    Only shown in remote mode when getUserMedia was denied on auto-start. */}
+				{isRemoteMode && interviewerMicBannerVisible && !micGuardShowing && (
+					<LobbyOverlay
+						type="warning"
+						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>}
+						title="Allow mic for a complete transcript"
+						body="Your microphone wasn't captured. Allowing it records your side of the conversation too, giving the candidate a full speaker-labeled transcript. You can skip — only their audio will be used."
+						actionLabel="Allow mic"
+						onAction={async () => {
+							setInterviewerMicBannerVisible(false)
+							await startInterviewerRecording()
+						}}
+						secondaryActionLabel="Skip"
+						onSecondaryAction={async () => {
+							setInterviewerMicBannerVisible(false)
+							micDeclineCountRef.current += 1
+							await signalNoInterviewerAudio()
+						}}
+						onDismiss={async () => {
+							setInterviewerMicBannerVisible(false)
+							micDeclineCountRef.current += 1
+							await signalNoInterviewerAudio()
+						}}
 					/>
 				)}
 

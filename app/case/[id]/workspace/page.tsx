@@ -12,10 +12,7 @@ import { sessionDoc, evaluationsCol } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
-import {
-  getActiveDisplayStream,
-  releaseDisplayMedia,
-} from '@/lib/permissions/displayMedia'
+import { releaseDisplayMedia } from '@/lib/permissions/displayMedia'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
@@ -23,6 +20,10 @@ type SessionState = {
   caseName?: string
   completedBy?: string
   sessionMode?: RecordingMode
+  /** Server timestamp written by select-case; used as timing anchor for dual-mic merge. */
+  selectedAt?: { toMillis: () => number }
+  /** Set to false by the interviewer when they decline mic twice in remote mode. */
+  interviewerAudioCaptured?: boolean
   recording?: {
     transcriptStatus?: 'pending' | 'processing' | 'completed' | 'failed'
     audioUrl?: string
@@ -36,9 +37,6 @@ type RecordingState = 'idle' | 'starting' | 'recording' | 'stopping' | 'uploadin
 type WorkspaceToast = {
   tone: 'default' | 'success' | 'warn'
   message: string
-}
-type CaptureControllerLike = {
-  setFocusBehavior?: (behavior: string) => void
 }
 
 const MIME_TYPE_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
@@ -87,40 +85,16 @@ function micPrompt(): string {
   return 'when the dialog appears'
 }
 
-function getFriendlyRecoverableCaptureMessage(mode: RecordingMode, message: string): string {
+function getFriendlyRecoverableCaptureMessage(_mode: RecordingMode, message: string): string {
   const normalized = message.toLowerCase()
-
-  if (mode === 'local') {
-    if (
-      normalized.includes('permission') ||
-      normalized.includes('notallowed') ||
-      normalized.includes('denied')
-    ) {
-      return 'Microphone is blocked. Click the lock icon in your address bar and set Microphone to Allow.'
-    }
-
-    return 'Allow microphone access to continue.'
-  }
-
   if (
-    normalized.includes('timeout starting video source') ||
-    normalized.includes('video source') ||
-    normalized.includes('screen') ||
-    normalized.includes('window') ||
-    normalized.includes('monitor') ||
-    normalized.includes('share audio') ||
-    normalized.includes('audio source') ||
-    normalized.includes('audio was captured') ||
-    normalized.includes('display surface') ||
-    normalized.includes('meeting tab') ||
     normalized.includes('permission') ||
     normalized.includes('notallowed') ||
     normalized.includes('denied')
   ) {
-    return 'Share the meeting tab with Share audio turned on.'
+    return 'Microphone is blocked. Click the lock icon in your address bar and set Microphone to Allow.'
   }
-
-  return 'Share the meeting tab with Share audio turned on.'
+  return 'Allow microphone access to continue.'
 }
 
 function CompactPlatformFooter() {
@@ -223,6 +197,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [localPrepVisible, setLocalPrepVisible] = useState(false)
   const [localPrepStep, setLocalPrepStep] = useState(0)
   const [interviewerWindowClosed, setInterviewerWindowClosed] = useState(false)
+  const [interviewerAudioDeclined, setInterviewerAudioDeclined] = useState(false)
   const [caseName, setCaseName] = useState('')
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   // ── Session-complete overlay (timed, auto-dismisses then routes to dashboard) ──
@@ -315,6 +290,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const pendingBlobRef = useRef<Blob | null>(null)
   const recordingStartMsRef = useRef<number | null>(null)
   const stopReasonRef = useRef('session_completed')
+  const selectedAtMsRef = useRef<number | null>(null)
   const completionHandledRef = useRef(false)
   const stopInProgressRef = useRef(false)
   const caseIdRef = useRef('')
@@ -438,6 +414,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             audioUrl,
             mimeType,
             byteSize: blob.size,
+            // Dual-mic remote fields — tell the server this is the candidate's
+            // track and provide timing offsets for the merge function.
+            ...(preferredRecordingModeRef.current !== 'local' ? {
+              role: 'candidate' as const,
+              startOffsetMs: recordingStartMsRef.current !== null && selectedAtMsRef.current !== null
+                ? Math.max(0, recordingStartMsRef.current - selectedAtMsRef.current)
+                : undefined,
+              anchorSelectedAtMs: selectedAtMsRef.current ?? undefined,
+            } : {}),
           })
 
           // Writing recording metadata sets transcriptStatus='pending'. The
@@ -596,108 +581,34 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setRecordingState('starting')
       setRecordingError('')
       setCaptureWarning('')
-      setRecordingNote(mode === 'remote'
-        ? 'Starting recording. In the browser prompt, choose your meeting tab and turn on Share audio.'
-        : 'Starting microphone recording...')
+      setRecordingNote('Starting microphone recording...')
 
       try {
         const microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         micStreamRef.current = microphoneStream
 
-        let displayStream: MediaStream | null = null
-        let captureController: CaptureControllerLike | null = null
-        if (mode === 'remote') {
-          // Prefer the stream the candidate already authorized on the lobby
-          // page. Without this we'd re-prompt mid-case which forces a
-          // context-switch off the case prompt onto Chrome's tab picker.
-          const preAcquired = getActiveDisplayStream()
-          if (preAcquired) {
-            displayStream = preAcquired
-            displayStreamRef.current = displayStream
-            // No captureController on a pre-acquired stream — its focus
-            // behaviour was already settled when it was first granted.
-            // No displaySurface validation either: acquireDisplayMedia()
-            // on the lobby side already enforced that audio tracks exist.
-          } else {
-            const CaptureControllerCtor =
-              typeof window !== 'undefined'
-                ? (
-                    window as Window & {
-                      CaptureController?: new () => CaptureControllerLike
-                    }
-                  ).CaptureController
-                : undefined
-            captureController = CaptureControllerCtor ? new CaptureControllerCtor() : null
-            displayStream = await navigator.mediaDevices.getDisplayMedia(
-              captureController
-                ? ({ video: true, audio: true, controller: captureController } as DisplayMediaStreamOptions & {
-                    controller: CaptureControllerLike
-                  })
-                : { video: true, audio: true }
-            )
-            displayStreamRef.current = displayStream
-
-            const displayTrack = displayStream.getVideoTracks()[0]
-            const displaySurface = displayTrack?.getSettings?.().displaySurface
-
-            if (displaySurface === 'browser' && captureController?.setFocusBehavior) {
-              try {
-                captureController.setFocusBehavior('focus-capturing-application')
-              } catch {
-                // Ignore unsupported focus behavior APIs and continue recording.
-              }
-            }
-
-            if (displaySurface && displaySurface !== 'browser') {
-              const unsupportedSurfaceMessage = 'Share the meeting tab with Share audio turned on.'
-              for (const track of displayStream.getTracks()) {
-                track.stop()
-              }
-              displayStreamRef.current = null
-              setCaptureWarning(unsupportedSurfaceMessage)
-              throw new Error(unsupportedSurfaceMessage)
-            }
-          }
-        }
-
+        // Mic-only recording for all modes (dual-mic architecture for remote,
+        // mic-only for local). No getDisplayMedia — each participant records
+        // their own mic; the Cloud Function merges tracks into one transcript.
         const audioContext = new AudioContext()
         audioContextRef.current = audioContext
         await audioContext.resume()
         const destination = audioContext.createMediaStreamDestination()
 
-        let hasAnyAudio = false
-
-        if (displayStream) {
-          const displayAudioTracks = displayStream.getAudioTracks()
-          if (displayAudioTracks.length > 0) {
-            const systemSource = audioContext.createMediaStreamSource(new MediaStream(displayAudioTracks))
-            systemSource.connect(destination)
-            hasAnyAudio = true
-          } else {
-            const warningMessage = 'Share the meeting tab with Share audio turned on.'
-            setCaptureWarning(warningMessage)
-            throw new Error(warningMessage)
-          }
-        }
-
         const micTracks = microphoneStream.getAudioTracks()
-        if (micTracks.length > 0) {
-          const micSource = audioContext.createMediaStreamSource(new MediaStream(micTracks))
-          micSource.connect(destination)
-          hasAnyAudio = true
-          // If the mic gets blocked mid-recording (address-bar lock, OS-level
-          // revoke, device unplug), the track fires 'mute'/'ended' but the
-          // Permissions API onchange can lag. Re-query immediately so the
-          // mic-blocked overlay surfaces without waiting for a focus/visibility
-          // bounce.
-          for (const track of micTracks) {
-            track.onmute = () => { void retryMicrophonePermission() }
-            track.onended = () => { void retryMicrophonePermission() }
-          }
-        }
-
-        if (!hasAnyAudio) {
+        if (micTracks.length === 0) {
           throw new Error('No audio source available for recording.')
+        }
+        const micSource = audioContext.createMediaStreamSource(new MediaStream(micTracks))
+        micSource.connect(destination)
+        // If the mic gets blocked mid-recording (address-bar lock, OS-level
+        // revoke, device unplug), the track fires 'mute'/'ended' but the
+        // Permissions API onchange can lag. Re-query immediately so the
+        // mic-blocked overlay surfaces without waiting for a focus/visibility
+        // bounce.
+        for (const track of micTracks) {
+          track.onmute = () => { void retryMicrophonePermission() }
+          track.onended = () => { void retryMicrophonePermission() }
         }
 
         mixedStreamRef.current = destination.stream
@@ -717,24 +628,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           }
         }
 
-        if (displayStream) {
-          for (const track of displayStream.getVideoTracks()) {
-            track.onended = () => {
-              if (recorderRef.current && recorderRef.current.state === 'recording') {
-                void stopRecordingAndFinalize('screen_share_stopped', false)
-              }
-            }
-          }
-        }
-
         recorder.start(1000)
         setRecordingState('recording')
         // microphonePermissionState is now reactive (via useMicPermission);
         // no manual sync needed — the browser fires onchange when getUserMedia
         // succeeds.
-        setRecordingNote(mode === 'remote'
-          ? 'Recording tab/system audio + microphone. Keep this tab open until feedback submission.'
-          : 'Recording microphone audio. Keep this tab open until feedback submission.')
+        setRecordingNote('Recording microphone audio. Keep this tab open until feedback submission.')
         // Recording-in-progress is local UI state only; nothing else reads it
         // so we don't write it to Firestore. The server learns about the
         // recording when it's uploaded (or failed) via /api/sessions/[id]/recording.
@@ -762,30 +661,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         if (mode === 'remote') {
           const normalized = message.toLowerCase()
           if (
-            normalized.includes('timeout') ||
-            normalized.includes('video source') ||
             normalized.includes('notallowed') ||
             normalized.includes('permission') ||
-            normalized.includes('gesture') ||
-            normalized.includes('share audio') ||
-            normalized.includes('meeting tab') ||
-            normalized.includes('window') ||
-            normalized.includes('screen') ||
-            normalized.includes('monitor') ||
-            normalized.includes('display surface') ||
-            normalized.includes('audio source') ||
-            // Chrome/Edge throw a bare DOMException "Invalid state" when
-            // getDisplayMedia is invoked without a fresh user activation —
-            // the candidate-side auto-start always hits this because the
-            // route into workspace is triggered by the interviewer's
-            // onSnapshot event, not a click on the candidate's tab. Treat
-            // it as a recoverable "user needs to click Allow Recording"
-            // case rather than surfacing the raw string.
-            normalized.includes('invalid state') ||
-            normalized === 'invalidstateerror'
+            normalized.includes('denied')
           ) {
             setCaptureWarning(getFriendlyRecoverableCaptureMessage(mode, message))
           }
+          void retryMicrophonePermission()
         }
         setRecordingError(message)
       }
@@ -1090,6 +972,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (!raw) return
       if (raw.caseName) setCaseName(raw.caseName)
       setPreferredRecordingMode(resolveSessionMode(raw.sessionMode))
+      // Store selectedAt once (on first snapshot) — used as timing anchor for
+      // dual-mic merge startOffsetMs calculation.
+      if (raw.selectedAt && selectedAtMsRef.current === null) {
+        selectedAtMsRef.current = raw.selectedAt.toMillis()
+      }
+      // Interviewer declined mic — show a non-blocking inline notice to the candidate.
+      if (raw.interviewerAudioCaptured === false && preferredRecordingModeRef.current !== 'local') {
+        setInterviewerAudioDeclined(true)
+      }
       if (raw.status === 'replacing') {
         // Interviewer is swapping the case — abort recording (no upload), go back to lobby.
         endSessionInitiatedRef.current = true
@@ -1714,7 +1605,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const prepStep = isLocalSession ? localPrepStep : remotePrepStep
   const prepSteps = isLocalSession
     ? ['Keep this tab open', 'Allow microphone access', 'Continue here']
-    : ['Pick your meeting tab', 'Turn on Share audio', 'Click Share']
+    : ['Starting microphone', 'Allow mic access', 'Recording begins']
   const localPermissionBlocked = isLocalSession && microphonePermissionState === 'denied'
 
   useEffect(() => {
@@ -1901,7 +1792,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       : runningWithoutRecording
       ? 'No audio or transcript is being captured for this run. The case still completes and shows in your dashboard.'
       : recordingState === 'starting'
-      ? (isLocalSession ? `Allow microphone access ${micPrompt()}.` : `Choose the meeting tab and turn on Share audio ${shareAudioPrompt()}.`)
+      ? `Allow microphone access ${micPrompt()}.`
       : recordingState === 'recording'
         ? 'Closing or reloading this tab will lose your recording. Keep it open until the session ends.'
         : recordingState === 'stopping'
@@ -1911,9 +1802,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             : recordingState === 'uploaded'
               ? 'You can move to the dashboard now.'
               : isWaitingForUserStart
-                ? (isLocalSession
-                    ? `When you press the button below, ${BROWSER === 'safari' ? 'Safari' : BROWSER === 'edge' ? 'Edge' : BROWSER === 'firefox' ? 'Firefox' : 'Chrome'} will ask for microphone access.`
-                    : `When you press the button below, ${BROWSER === 'safari' ? 'Safari' : BROWSER === 'edge' ? 'Edge' : BROWSER === 'firefox' ? 'Firefox' : 'Chrome'} will ask you to choose a meeting tab — turn on Share audio.`)
+                ? `When you press the button below, ${BROWSER === 'safari' ? 'Safari' : BROWSER === 'edge' ? 'Edge' : BROWSER === 'firefox' ? 'Firefox' : 'Chrome'} will ask for microphone access.`
                 : recoverableCaptureMessage || 'Use the Allow Recording button below to try again.'
 
   return (
@@ -2765,6 +2654,21 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </div>
 
             <div className="px-6 py-6">
+              {interviewerAudioDeclined && !isLocalSession ? (
+                <div
+                  className="workspace-inline-note alert rounded-xl px-4 py-3 mb-5"
+                  role="status"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-[1px] flex-shrink-0" style={{ color: '#C4A882' }}>
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span className="text-[11px] leading-relaxed text-[#5C4033]/70">
+                    {"Your interviewer's mic wasn't captured. Your side of the conversation will still be transcribed — only your audio will appear in the feedback."}
+                  </span>
+                </div>
+              ) : null}
               <div className="relative">
                 {workspaceToast ? (
                   <div className={`workspace-toast mb-5 ${workspaceToast.tone}`}>

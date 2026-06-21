@@ -26,6 +26,7 @@ import {
   forumReplySchema,
   forumThreadSchema,
   forumVoteSchema,
+  participantRecordingSchema,
   profileSchema,
   sessionSchema,
   type Case,
@@ -34,6 +35,8 @@ import {
   type ForumReply,
   type ForumThread,
   type ForumVote,
+  type ParticipantRecording,
+  type ParticipantRole,
   type Profile,
   type Session,
 } from './schema'
@@ -91,6 +94,20 @@ export const evaluationsCol: CollectionReference<Evaluation> = collection(db, 'e
   converter('evaluations', evaluationSchema),
 )
 export const evaluationDoc = (id: string): DocumentReference<Evaluation> => doc(evaluationsCol, id)
+
+/* -------------------------------------------------------------------------- */
+/* sessions/{lobbyId}/recordings/{role} — dual-mic tracks (remote mode)       */
+/* -------------------------------------------------------------------------- */
+
+export const participantRecordingsCol = (lobbyId: string): CollectionReference<ParticipantRecording> =>
+  collection(db, 'sessions', lobbyId, 'recordings').withConverter(
+    converter('sessions.recordings', participantRecordingSchema),
+  )
+
+export const participantRecordingDoc = (
+  lobbyId: string,
+  role: ParticipantRole,
+): DocumentReference<ParticipantRecording> => doc(participantRecordingsCol(lobbyId), role)
 
 /* -------------------------------------------------------------------------- */
 /* Forum subcollections                                                       */

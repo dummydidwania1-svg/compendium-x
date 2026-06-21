@@ -1,24 +1,26 @@
 /**
  * Firebase Cloud Functions for Compendium X.
  *
- * Currently exports a single Firestore-triggered function that handles
- * long-running transcription out-of-band so the Next.js API doesn't have
- * to hold an HTTP request open for several minutes.
+ * Functions exported:
  *
- * Trigger: `sessions/{sessionId}` write where `recording.transcriptStatus`
- *          transitions to `'pending'`.
+ * 1. `transcribeRecording` — UNCHANGED for local/old sessions.
+ *    Triggers on `sessions/{sessionId}` writes where `recording.transcriptStatus`
+ *    transitions to 'pending'. Writes transcript back to embedded `recording` map.
  *
- * Steps:
- *   1. Skip if there's no audioUrl, no session in scope, or status is
- *      already being handled (idempotency guard against duplicate triggers).
- *   2. Mark `transcriptStatus: 'processing'`.
- *   3. Download audio → upload to Gemini Files API → wait for processing.
- *   4. Call generateContent → strip timestamps → write transcript fields back.
- *   5. On any failure: write `transcriptStatus: 'failed'` with the error.
+ * 2. `transcribeParticipantRecording` — Part 2, dual-mic remote sessions.
+ *    Triggers on `sessions/{sessionId}/recordings/{role}` writes where
+ *    `transcriptStatus` transitions to 'pending'. Refactored from the same
+ *    `runTranscription` core but writes back to the subcollection doc.
+ *    Requests per-turn timing markers from Gemini so the merge function can
+ *    interleave by global offset.
  *
- * No HTTP timeout pressure: this function is configured with 540s (9 min)
- * which is the max for event-triggered functions. Plenty for 30–45 min
- * audio (Gemini Flash typically ~30–90s of processing on those lengths).
+ * 3. `mergeTranscripts` — Part 2.
+ *    Triggers on `sessions/{sessionId}/recordings/{role}` writes when any
+ *    track reaches a terminal transcript state. Checks the sibling track and
+ *    `session.interviewerAudioCaptured`. When both tracks are terminal (or
+ *    when a partial outcome is confirmed), merges into `session.mergedTranscript`.
+ *
+ * 4. `promoteAbandonedSessions` — UNCHANGED (hourly scheduler).
  */
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore'
@@ -30,30 +32,23 @@ import { logger } from 'firebase-functions/v2'
 if (getApps().length === 0) initializeApp()
 const db = getFirestore()
 
-// `GEMINI_API_KEY` — secret value set via `firebase functions:secrets:set
-// GEMINI_API_KEY` before first deploy. Loaded only on cold start of the
-// function instance.
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY')
 const GEMINI_MODEL = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-2.5-flash-lite'
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com'
-const FILE_READY_ATTEMPTS = 90 // 90 × 2s = 3 minutes max wait for Gemini file processing
+const FILE_READY_ATTEMPTS = 90
 const FILE_READY_WAIT_MS = 2000
 const GENERATION_MAX_ATTEMPTS = 3
 
-// WebM/Opus speech at 24 kbps ≈ 3KB/sec. We reject recordings below this
-// threshold because Gemini's audio models reliably hallucinate generic
-// dialogue on very short / silent clips. 150KB ≈ 50 seconds of speech, which
-// is well under a real case session but comfortably above a "test the mic
-// for 5 seconds" recording.
 const MIN_AUDIO_BYTES = 150 * 1024
 
-// If Gemini returns this exact token (or anything obviously too short to be
-// a real interview transcript), we treat it as a failure rather than letting
-// hallucinated filler land in the dashboard. See the strengthened prompt
-// below that explicitly instructs the model to use this signal.
 const INAUDIBLE_TOKEN = 'INAUDIBLE'
 const MIN_TRANSCRIPT_CHARS = 40
+
+// Grace window before declaring a partial transcript when the interviewer
+// track is absent. If the candidate track completes and we haven't heard from
+// the interviewer track within this window, we treat it as candidate-only.
+const MERGE_GRACE_MS = 5 * 60 * 1000 // 5 minutes
 
 type GeminiFile = {
   name?: string
@@ -123,6 +118,29 @@ function stripTimestamps(value: string): string {
     .trim()
 }
 
+/**
+ * Parse per-turn timing markers produced by the dual-mic Gemini prompt.
+ * Format per turn: `[t=30.5]` at the start of the line (seconds from track start).
+ * Returns { cleanText, turnOffsets } where cleanText has all [t=...] stripped.
+ */
+function parseTurnOffsets(raw: string): { cleanText: string; turnOffsets: number[] } {
+  const turnOffsets: number[] = []
+  const lines = raw.split('\n')
+  const cleanLines: string[] = []
+  const MARKER_RE = /^\[t=([\d.]+)\]\s*/
+
+  for (const line of lines) {
+    const match = MARKER_RE.exec(line)
+    if (match) {
+      turnOffsets.push(parseFloat(match[1]))
+      cleanLines.push(line.slice(match[0].length))
+    } else {
+      cleanLines.push(line)
+    }
+  }
+  return { cleanText: cleanLines.join('\n').trim(), turnOffsets }
+}
+
 async function waitForFileReady(fileName: string, apiKey: string): Promise<GeminiFile> {
   const endpoint = `${GEMINI_API_BASE}/v1beta/${fileName}?key=${encodeURIComponent(apiKey)}`
   for (let attempt = 0; attempt < FILE_READY_ATTEMPTS; attempt += 1) {
@@ -153,28 +171,152 @@ async function deleteGeminiFile(fileName: string, apiKey: string): Promise<void>
   }
 }
 
+/**
+ * Core transcription logic, refactored to write to a generic target.
+ *
+ * writeTarget:
+ *   - 'embedded': writes to `sessions/{sessionId}.recording.*`
+ *   - 'subcollection': writes fields directly to the provided trackRef doc,
+ *     and (for completed tracks) stores parsed turnOffsets for the merge step.
+ */
+type WriteTarget =
+  | { kind: 'embedded'; sessionRef: FirebaseFirestore.DocumentReference }
+  | {
+      kind: 'subcollection'
+      trackRef: FirebaseFirestore.DocumentReference
+      sessionRef: FirebaseFirestore.DocumentReference
+      role: 'candidate' | 'interviewer'
+    }
+
 async function runTranscription(args: {
+  target: WriteTarget
   sessionId: string
   audioUrl: string
   requestedMimeType: string
   storagePath: string
   apiKey: string
 }): Promise<void> {
-  const { sessionId, audioUrl, requestedMimeType, storagePath, apiKey } = args
-  const sessionRef = db.collection('sessions').doc(sessionId)
+  const { target, sessionId, audioUrl, requestedMimeType, storagePath, apiKey } = args
 
-  // Mark processing so duplicate triggers don't race us.
-  await sessionRef.set(
-    {
-      recording: {
-        transcriptStatus: 'processing',
-        transcriptRequestedAt: FieldValue.serverTimestamp(),
-        transcriptError: null,
-      },
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  )
+  const markProcessing = async () => {
+    if (target.kind === 'embedded') {
+      await target.sessionRef.set(
+        {
+          recording: {
+            transcriptStatus: 'processing',
+            transcriptRequestedAt: FieldValue.serverTimestamp(),
+            transcriptError: null,
+          },
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+    } else {
+      await target.trackRef.set(
+        {
+          transcriptStatus: 'processing',
+          transcriptRequestedAt: FieldValue.serverTimestamp(),
+          transcriptError: null,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+    }
+  }
+
+  const writeSuccess = async (fields: {
+    transcript: string
+    transcriptPreview: string
+    usageMetadata: unknown
+    finalMimeType: string
+    byteSize: number
+    turnOffsets: number[]
+  }) => {
+    const successFields = {
+      transcriptStatus: 'completed',
+      transcript: fields.transcript,
+      transcriptPreview: fields.transcriptPreview,
+      transcriptCompletedAt: FieldValue.serverTimestamp(),
+      transcriptModel: GEMINI_MODEL,
+      transcriptUsage: fields.usageMetadata,
+      transcriptMimeType: fields.finalMimeType,
+      transcriptByteSize: fields.byteSize,
+      transcriptStoragePath: storagePath,
+      transcriptError: null,
+    }
+    if (target.kind === 'embedded') {
+      await target.sessionRef.set(
+        { recording: successFields, updatedAt: FieldValue.serverTimestamp() },
+        { merge: true },
+      )
+    } else {
+      await target.trackRef.set(
+        {
+          ...successFields,
+          // Store parsed turn offsets for the merge function.
+          transcriptTurnOffsets: fields.turnOffsets,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+    }
+  }
+
+  const writeFailure = async (message: string) => {
+    if (target.kind === 'embedded') {
+      await target.sessionRef.set(
+        {
+          recording: {
+            transcriptStatus: 'failed',
+            transcriptFailedAt: FieldValue.serverTimestamp(),
+            transcriptError: message,
+          },
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+    } else {
+      await target.trackRef.set(
+        {
+          transcriptStatus: 'failed',
+          transcriptFailedAt: FieldValue.serverTimestamp(),
+          transcriptError: message,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+    }
+  }
+
+  await markProcessing()
+
+  // Per-track prompt for dual-mic: label all speech with the known role and
+  // request a timing marker [t=XX.X] at the start of each new turn so the
+  // merge function can interleave both tracks by global offset.
+  // Embedded (single-track) prompt: unchanged from the original.
+  const buildPrompt = () => {
+    if (target.kind === 'embedded') {
+      return [
+        'Transcribe this interview audio verbatim.',
+        'Use speaker labels where possible (for example: Speaker 1, Speaker 2).',
+        'Keep it concise and clean for downstream feedback analysis.',
+        'Do not include any timestamps, timecodes, or bracketed time markers.',
+        'Return only the transcript text.',
+        `If the audio is silent, contains no clear speech, is mostly background noise, or is too short to be a real interview, respond with the single word ${INAUDIBLE_TOKEN} and nothing else.`,
+        'Never invent or hallucinate dialogue. Only transcribe what you can clearly hear.',
+      ].join(' ')
+    }
+    const roleLabel = target.role === 'candidate' ? 'Candidate' : 'Interviewer'
+    return [
+      `You are transcribing the ${target.role}'s audio from a case interview.`,
+      `Label ALL speech in this track as "${roleLabel}:" — do not use any other speaker labels since this is a single-speaker track.`,
+      'Before each new speaker turn, output a timing marker on the same line in the format [t=XX.X] where XX.X is the approximate seconds since the audio started. For example: [t=0.0] Candidate: Hello, welcome to the case.',
+      'Keep it concise and clean for downstream feedback analysis.',
+      'Return only the transcript text with the [t=XX.X] timing markers. Do not include any other timestamps or bracketed time markers.',
+      `If the audio is silent, contains no clear speech, is mostly background noise, or is too short to be a real interview, respond with the single word ${INAUDIBLE_TOKEN} and nothing else.`,
+      'Never invent or hallucinate dialogue. Only transcribe what you can clearly hear.',
+    ].join(' ')
+  }
 
   let uploadedFileName = ''
   try {
@@ -189,16 +331,11 @@ async function runTranscription(args: {
     const byteSize = audioBytes.byteLength
     if (byteSize === 0) throw new Error('Audio artifact is empty.')
     if (byteSize < MIN_AUDIO_BYTES) {
-      // Refuse early — sending too-short audio to Gemini reliably produces
-      // hallucinated dialogue rather than an honest "couldn't transcribe".
       throw new Error(
-        `Recording is too short to transcribe reliably (${Math.round(
-          byteSize / 1024,
-        )} KB; need at least ${MIN_AUDIO_BYTES / 1024} KB). Record for at least ~1 minute.`,
+        `Recording is too short to transcribe reliably (${Math.round(byteSize / 1024)} KB; need at least ${MIN_AUDIO_BYTES / 1024} KB). Record for at least ~1 minute.`,
       )
     }
 
-    // Resumable upload to Gemini Files API.
     const startUploadResponse = await fetch(
       `${GEMINI_API_BASE}/upload/v1beta/files?key=${encodeURIComponent(apiKey)}`,
       {
@@ -237,25 +374,12 @@ async function runTranscription(args: {
     const readyFile = await waitForFileReady(uploadedFile.name, apiKey)
     if (!readyFile.uri) throw new Error('Gemini returned a file without URI.')
 
-    // generateContent with retry-with-backoff for transient 5xx/429.
     const generationRequestBody = JSON.stringify({
       contents: [
         {
           role: 'user',
           parts: [
-            {
-              text: [
-                'Transcribe this interview audio verbatim.',
-                'Use speaker labels where possible (for example: Speaker 1, Speaker 2).',
-                'Keep it concise and clean for downstream feedback analysis.',
-                'Do not include any timestamps, timecodes, or bracketed time markers.',
-                'Return only the transcript text.',
-                // Anti-hallucination: explicitly tell Gemini to refuse on
-                // unclear audio rather than invent plausible-sounding filler.
-                `If the audio is silent, contains no clear speech, is mostly background noise, or is too short to be a real interview, respond with the single word ${INAUDIBLE_TOKEN} and nothing else.`,
-                'Never invent or hallucinate dialogue. Only transcribe what you can clearly hear.',
-              ].join(' '),
-            },
+            { text: buildPrompt() },
             {
               file_data: {
                 mime_type: readyFile.mimeType || sourceMimeType,
@@ -289,21 +413,32 @@ async function runTranscription(args: {
     if (!generationResponse) throw new Error(lastError || 'Gemini request failed.')
     if (!generationResponse.ok) throw new Error(extractGeminiErrorMessage(generationPayload))
 
-    const transcript = stripTimestamps(extractTranscriptText(generationPayload))
-    if (!transcript) throw new Error('Gemini returned an empty transcript.')
+    const rawTranscript = extractTranscriptText(generationPayload)
 
-    // Anti-hallucination: reject the explicit INAUDIBLE refusal token, and
-    // also reject suspiciously short responses (very short = either silence
-    // or a hallucinated filler line we don't want to surface to the user).
-    const normalizedTranscript = transcript.replace(/[^a-z]/gi, '').toUpperCase()
-    if (normalizedTranscript === INAUDIBLE_TOKEN) {
+    const normalizedCheck = rawTranscript.replace(/[^a-z]/gi, '').toUpperCase()
+    if (normalizedCheck === INAUDIBLE_TOKEN) {
       throw new Error(
         'No clear speech detected in the recording. Make sure your mic is unmuted and you speak audibly.',
       )
     }
-    if (transcript.length < MIN_TRANSCRIPT_CHARS) {
+
+    // For subcollection tracks: parse [t=XX.X] timing markers for merge ordering,
+    // then strip them from the displayed transcript text.
+    // For embedded (legacy) tracks: just strip any stray timestamps.
+    let displayTranscript: string
+    let turnOffsets: number[] = []
+    if (target.kind === 'subcollection') {
+      const parsed = parseTurnOffsets(rawTranscript)
+      displayTranscript = stripTimestamps(parsed.cleanText)
+      turnOffsets = parsed.turnOffsets
+    } else {
+      displayTranscript = stripTimestamps(rawTranscript)
+    }
+
+    if (!displayTranscript) throw new Error('Gemini returned an empty transcript.')
+    if (displayTranscript.length < MIN_TRANSCRIPT_CHARS) {
       throw new Error(
-        `Transcript was too short to be a real session (${transcript.length} characters). Re-record with at least ~1 minute of speech.`,
+        `Transcript was too short to be a real session (${displayTranscript.length} characters). Re-record with at least ~1 minute of speech.`,
       )
     }
 
@@ -311,40 +446,32 @@ async function runTranscription(args: {
       (generationPayload as { usageMetadata?: unknown } | null)?.usageMetadata ?? null
     const finalMimeType = readyFile.mimeType || sourceMimeType
 
-    await sessionRef.set(
-      {
-        recording: {
-          transcriptStatus: 'completed',
-          transcript,
-          transcriptPreview: transcript.slice(0, 1000),
-          transcriptCompletedAt: FieldValue.serverTimestamp(),
-          transcriptModel: GEMINI_MODEL,
-          transcriptUsage: usageMetadata,
-          transcriptMimeType: finalMimeType,
-          transcriptByteSize: byteSize,
-          transcriptStoragePath: storagePath,
-          transcriptError: null,
-        },
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    )
+    await writeSuccess({
+      transcript: displayTranscript,
+      transcriptPreview: displayTranscript.slice(0, 1000),
+      usageMetadata,
+      finalMimeType,
+      byteSize,
+      turnOffsets,
+    })
 
-    logger.info('transcript_completed', { sessionId, bytes: byteSize, model: GEMINI_MODEL })
+    logger.info('transcript_completed', {
+      sessionId,
+      kind: target.kind,
+      role: target.kind === 'subcollection' ? target.role : undefined,
+      bytes: byteSize,
+      model: GEMINI_MODEL,
+      turnCount: turnOffsets.length,
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown transcription error.'
-    logger.error('transcript_failed', { sessionId, message })
-    await sessionRef.set(
-      {
-        recording: {
-          transcriptStatus: 'failed',
-          transcriptFailedAt: FieldValue.serverTimestamp(),
-          transcriptError: message,
-        },
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    )
+    logger.error('transcript_failed', {
+      sessionId,
+      kind: target.kind,
+      role: target.kind === 'subcollection' ? target.role : undefined,
+      message,
+    })
+    await writeFailure(message)
   } finally {
     if (uploadedFileName) {
       await deleteGeminiFile(uploadedFileName, apiKey)
@@ -352,37 +479,109 @@ async function runTranscription(args: {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Merge helper                                                                */
+/* -------------------------------------------------------------------------- */
+
+type TrackData = {
+  transcript: string
+  transcriptTurnOffsets?: number[]
+  startOffsetMs?: number
+  transcriptStatus?: string
+}
+
+/**
+ * Interleave two per-track transcripts into one speaker-labeled merged transcript.
+ *
+ * Strategy (option #1 from spec): each track's Gemini output contains per-turn
+ * timing markers [t=XX.X] parsed into `transcriptTurnOffsets` (seconds from
+ * track start). Global position of each turn = startOffsetMs + turnOffset*1000.
+ * We interleave all turns by global position and concatenate.
+ *
+ * If turn offsets are absent (Gemini didn't emit them), fall back to option #2:
+ * interleave at the TRACK granularity using each track's startOffsetMs, placing
+ * the earlier-starting track first and appending the later one after it.
+ * This is documented as approximate in the merge result.
+ */
+function mergeTranscriptTracks(
+  candidate: TrackData | null,
+  interviewer: TrackData | null,
+): string {
+  // Fallback: if only one track, just return it.
+  if (!candidate && !interviewer) return ''
+  if (!candidate) return interviewer!.transcript
+  if (!interviewer) return candidate.transcript
+
+  const candidateOffsets = candidate.transcriptTurnOffsets ?? []
+  const interviewerOffsets = interviewer.transcriptTurnOffsets ?? []
+
+  // Option #1: per-turn interleaving by global ms offset.
+  if (candidateOffsets.length > 0 || interviewerOffsets.length > 0) {
+    const cStart = candidate.startOffsetMs ?? 0
+    const iStart = interviewer.startOffsetMs ?? 0
+
+    // Split each transcript into turns by splitting on newlines that start with a role label.
+    // Gemini outputs one turn per line for this format.
+    const cLines = candidate.transcript.split('\n').filter((l) => l.trim())
+    const iLines = interviewer.transcript.split('\n').filter((l) => l.trim())
+
+    type Turn = { globalMs: number; text: string }
+    const turns: Turn[] = []
+
+    for (let i = 0; i < cLines.length; i++) {
+      const offset = candidateOffsets[i] !== undefined ? candidateOffsets[i] * 1000 : i * 5000
+      turns.push({ globalMs: cStart + offset, text: cLines[i] })
+    }
+    for (let i = 0; i < iLines.length; i++) {
+      const offset = interviewerOffsets[i] !== undefined ? interviewerOffsets[i] * 1000 : i * 5000
+      turns.push({ globalMs: iStart + offset, text: iLines[i] })
+    }
+
+    turns.sort((a, b) => a.globalMs - b.globalMs)
+    return turns.map((t) => t.text).join('\n')
+  }
+
+  // Option #2 fallback: track-level interleaving by startOffsetMs.
+  // Approximation: whoever started earlier goes first, other appended after.
+  const cStart = candidate.startOffsetMs ?? 0
+  const iStart = interviewer.startOffsetMs ?? 0
+  const [first, second] = cStart <= iStart
+    ? [candidate.transcript, interviewer.transcript]
+    : [interviewer.transcript, candidate.transcript]
+  // Note: this is an approximation — turns are not interleaved within each block.
+  return `${first}\n${second}`
+}
+
+/* -------------------------------------------------------------------------- */
+/* Cloud Function 1 — local/old sessions (unchanged)                          */
+/* -------------------------------------------------------------------------- */
+
 /**
  * Fires whenever any session document is created or updated. We only act
  * when `recording.transcriptStatus` transitions to `'pending'` — that's
  * the signal from the Next.js client that an audio upload finished or a
- * retry was requested.
+ * retry was requested. For local sessions and old remote sessions only.
  */
 export const transcribeRecording = onDocumentWritten(
   {
     document: 'sessions/{sessionId}',
     region: 'us-central1',
-    timeoutSeconds: 540, // 9 minutes — max for event-triggered Cloud Functions
+    timeoutSeconds: 540,
     memory: '1GiB',
     secrets: [GEMINI_API_KEY],
-    retry: false, // We handle retries via Firestore status field, not at the function layer.
+    retry: false,
   },
   async (event) => {
     const beforeStatus = event.data?.before?.data()?.recording?.transcriptStatus
     const afterData = event.data?.after?.data()
     const afterStatus = afterData?.recording?.transcriptStatus
 
-    // Only act when the recording subdoc has just transitioned TO 'pending'.
     if (afterStatus !== 'pending') return
-    if (beforeStatus === 'pending') return // duplicate fire — already in flight
-    if (beforeStatus === 'processing') return // a previous run is still working
+    if (beforeStatus === 'pending') return
+    if (beforeStatus === 'processing') return
 
     const recording = afterData?.recording as
-      | {
-          audioUrl?: string
-          mimeType?: string
-          storagePath?: string
-        }
+      | { audioUrl?: string; mimeType?: string; storagePath?: string }
       | undefined
     const audioUrl = recording?.audioUrl
     const storagePath = recording?.storagePath
@@ -395,7 +594,9 @@ export const transcribeRecording = onDocumentWritten(
       return
     }
 
+    const sessionRef = db.collection('sessions').doc(event.params.sessionId)
     await runTranscription({
+      target: { kind: 'embedded', sessionRef },
       sessionId: event.params.sessionId,
       audioUrl,
       requestedMimeType: recording.mimeType ?? '',
@@ -405,19 +606,214 @@ export const transcribeRecording = onDocumentWritten(
   },
 )
 
+/* -------------------------------------------------------------------------- */
+/* Cloud Function 2 — per-track transcription for dual-mic remote sessions    */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Runs every hour. Finds sessions abandoned more than 24 hours ago that
- * haven't yet been promoted to a fallback dashboard entry, creates an
- * unrated evaluation doc so the candidate sees the case in their case log,
- * and marks the session as `fallback_unrated`.
- *
- * The evaluation's `createdAt` is set to `abandonedAt` (the actual session
- * end time) so the case log timestamp reflects when the session happened,
- * not when this function ran.
- *
- * Unrated entries are excluded from score-based analytics; they appear only
- * in the case log with audio/transcript if available.
+ * Fires when a `sessions/{sessionId}/recordings/{role}` doc transitions its
+ * `transcriptStatus` to 'pending'. Runs the same Gemini transcription core
+ * as transcribeRecording but writes back to the subcollection doc and includes
+ * per-turn timing markers in the prompt for the merge step.
  */
+export const transcribeParticipantRecording = onDocumentWritten(
+  {
+    document: 'sessions/{sessionId}/recordings/{role}',
+    region: 'us-central1',
+    timeoutSeconds: 540,
+    memory: '1GiB',
+    secrets: [GEMINI_API_KEY],
+    retry: false,
+  },
+  async (event) => {
+    const beforeStatus = event.data?.before?.data()?.transcriptStatus
+    const afterData = event.data?.after?.data()
+    const afterStatus = afterData?.transcriptStatus
+
+    if (afterStatus !== 'pending') return
+    if (beforeStatus === 'pending') return
+    if (beforeStatus === 'processing') return
+
+    const role = event.params.role as 'candidate' | 'interviewer'
+    if (role !== 'candidate' && role !== 'interviewer') {
+      logger.warn('transcribe_participant_unknown_role', { role })
+      return
+    }
+
+    const audioUrl = afterData?.audioUrl as string | undefined
+    const storagePath = afterData?.storagePath as string | undefined
+    if (!audioUrl || !storagePath) {
+      logger.warn('transcribe_participant_no_audio', {
+        sessionId: event.params.sessionId,
+        role,
+      })
+      return
+    }
+
+    const trackRef = db
+      .collection('sessions')
+      .doc(event.params.sessionId)
+      .collection('recordings')
+      .doc(role)
+    const sessionRef = db.collection('sessions').doc(event.params.sessionId)
+
+    await runTranscription({
+      target: { kind: 'subcollection', trackRef, sessionRef, role },
+      sessionId: event.params.sessionId,
+      audioUrl,
+      requestedMimeType: (afterData?.mimeType as string | undefined) ?? '',
+      storagePath,
+      apiKey: GEMINI_API_KEY.value(),
+    })
+  },
+)
+
+/* -------------------------------------------------------------------------- */
+/* Cloud Function 3 — merge transcripts after per-track completion            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Fires on every write to `sessions/{sessionId}/recordings/{role}`.
+ * Attempts to merge candidate + interviewer transcripts into one
+ * `session.mergedTranscript` once both tracks reach a terminal state.
+ *
+ * Terminal states: 'completed' | 'failed'.
+ * Partial outcome: candidate completed + interviewer absent/declined.
+ *
+ * Idempotency: guarded by `mergedTranscriptStatus: 'processing'` written
+ * before the merge begins. Checks `before`→`after` to avoid re-running
+ * on writes that aren't terminal-state transitions.
+ */
+export const mergeTranscripts = onDocumentWritten(
+  {
+    document: 'sessions/{sessionId}/recordings/{role}',
+    region: 'us-central1',
+    timeoutSeconds: 120,
+    memory: '256MiB',
+    secrets: [],
+    retry: false,
+  },
+  async (event) => {
+    const afterStatus = event.data?.after?.data()?.transcriptStatus as string | undefined
+    const beforeStatus = event.data?.before?.data()?.transcriptStatus as string | undefined
+
+    // Only act when this write transitions to a terminal state.
+    const terminal = (s: string | undefined) => s === 'completed' || s === 'failed'
+    if (!terminal(afterStatus)) return
+    if (terminal(beforeStatus)) return // already was terminal — don't re-merge
+
+    const sessionId = event.params.sessionId
+    const sessionRef = db.collection('sessions').doc(sessionId)
+
+    // Idempotency: grab the session doc and bail if already merged/processing.
+    const sessionSnap = await sessionRef.get()
+    if (!sessionSnap.exists) return
+    const sessionData = sessionSnap.data() ?? {}
+    const existingMergeStatus = sessionData.mergedTranscriptStatus as string | undefined
+    if (existingMergeStatus === 'completed' || existingMergeStatus === 'processing') return
+
+    // Read both track docs.
+    const recordingsCol = sessionRef.collection('recordings')
+    const [candidateSnap, interviewerSnap] = await Promise.all([
+      recordingsCol.doc('candidate').get(),
+      recordingsCol.doc('interviewer').get(),
+    ])
+
+    const candidateData = candidateSnap.exists ? (candidateSnap.data() as TrackData) : null
+    const interviewerData = interviewerSnap.exists ? (interviewerSnap.data() as TrackData) : null
+
+    const candidateStatus = candidateData?.transcriptStatus
+    const interviewerStatus = interviewerData?.transcriptStatus
+    const interviewerDeclined = sessionData.interviewerAudioCaptured === false
+
+    // Determine if we have a complete picture yet.
+    const candidateDone = terminal(candidateStatus as string | undefined)
+    const interviewerKnown =
+      terminal(interviewerStatus as string | undefined) ||
+      interviewerDeclined ||
+      // If the interviewer track doc doesn't exist and the interviewer explicitly
+      // declined, we can proceed with candidate-only.
+      (!interviewerSnap.exists && interviewerDeclined)
+
+    // Also allow proceeding if we're past the grace window after the candidate track
+    // completed and still no interviewer track.
+    const candidateCompletedAt = (candidateData as { transcriptCompletedAt?: { toMillis: () => number } } | null)
+      ?.transcriptCompletedAt?.toMillis()
+    const pastGraceWindow =
+      candidateDone &&
+      !interviewerSnap.exists &&
+      candidateCompletedAt &&
+      Date.now() - candidateCompletedAt > MERGE_GRACE_MS
+
+    if (!candidateDone) return // wait for the candidate track (required)
+    if (!interviewerKnown && !pastGraceWindow) return // wait for interviewer
+
+    // Mark processing to prevent concurrent runs.
+    await sessionRef.set(
+      { mergedTranscriptStatus: 'processing', updatedAt: FieldValue.serverTimestamp() },
+      { merge: true },
+    )
+
+    try {
+      const hasInterviewerTrack =
+        interviewerSnap.exists && interviewerStatus === 'completed'
+      const candidateCompleted = candidateStatus === 'completed'
+
+      if (!candidateCompleted && !hasInterviewerTrack) {
+        // Both failed — nothing usable.
+        await sessionRef.set(
+          {
+            mergedTranscriptStatus: 'failed',
+            mergedTranscriptError: 'Both recording tracks failed to transcribe.',
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        )
+        return
+      }
+
+      const merged = mergeTranscriptTracks(
+        candidateCompleted ? (candidateData as TrackData) : null,
+        hasInterviewerTrack ? (interviewerData as TrackData) : null,
+      )
+
+      const isPartial = !candidateCompleted || !hasInterviewerTrack
+      await sessionRef.set(
+        {
+          mergedTranscript: merged,
+          mergedTranscriptStatus: isPartial ? 'partial' : 'completed',
+          mergedTranscriptCompletedAt: FieldValue.serverTimestamp(),
+          mergedTranscriptError: null,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+
+      logger.info('merge_completed', {
+        sessionId,
+        isPartial,
+        hasCandidateTrack: candidateCompleted,
+        hasInterviewerTrack,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown merge error.'
+      logger.error('merge_failed', { sessionId, message })
+      await sessionRef.set(
+        {
+          mergedTranscriptStatus: 'failed',
+          mergedTranscriptError: message,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+    }
+  },
+)
+
+/* -------------------------------------------------------------------------- */
+/* promoteAbandonedSessions — unchanged                                       */
+/* -------------------------------------------------------------------------- */
+
 export const promoteAbandonedSessions = onSchedule(
   {
     schedule: 'every 1 hours',
@@ -429,7 +825,6 @@ export const promoteAbandonedSessions = onSchedule(
     const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000
     const cutoff = Timestamp.fromMillis(Date.now() - TWENTY_FOUR_HOURS_MS)
 
-    // Query sessions that are abandoned, older than 24h, and not yet promoted.
     const snapshot = await db
       .collection('sessions')
       .where('status', '==', 'abandoned')
@@ -447,7 +842,6 @@ export const promoteAbandonedSessions = onSchedule(
       const sessionId = sessionDoc.id
       const data = sessionDoc.data()
 
-      // Skip if already promoted (idempotency guard).
       if (data.status === 'fallback_unrated') continue
 
       const candidateId = typeof data.candidateId === 'string' ? data.candidateId : null
@@ -457,21 +851,17 @@ export const promoteAbandonedSessions = onSchedule(
         continue
       }
 
-      // Check no evaluation already exists for this lobby (e.g. interviewer
-      // submitted after candidate left but before the 24h window closed).
       const existingEval = await db
         .collection('evaluations')
         .where('lobbyId', '==', sessionId)
         .limit(1)
         .get()
       if (!existingEval.empty) {
-        // Interviewer rated it — just mark session completed normally.
         await sessionDoc.ref.set({ status: 'fallback_unrated', updatedAt: FieldValue.serverTimestamp() }, { merge: true })
         logger.info('fallback_promote: eval already exists, marking session', { sessionId })
         continue
       }
 
-      // Pull case metadata for denormalized fields on the evaluation doc.
       let caseTitle = 'Untitled Case'
       let caseType: string | null = null
       let industry: string | null = null
@@ -488,8 +878,6 @@ export const promoteAbandonedSessions = onSchedule(
         logger.warn('fallback_promote: could not fetch case metadata', { sessionId, caseId, err })
       }
 
-      // Use abandonedAt as the evaluation timestamp so the case log shows
-      // the actual session time, not the time this function ran.
       const sessionTimestamp = data.abandonedAt instanceof Timestamp
         ? data.abandonedAt
         : FieldValue.serverTimestamp()
@@ -507,7 +895,6 @@ export const promoteAbandonedSessions = onSchedule(
         candidateEmail: typeof data.candidateEmail === 'string' ? data.candidateEmail : null,
         interviewerId: null,
         interviewerEmail: null,
-        // All scores null — this entry is unrated.
         structureScore: null,
         understandingScore: null,
         deliveryScore: null,
@@ -536,6 +923,4 @@ export const promoteAbandonedSessions = onSchedule(
   },
 )
 
-// Suppress "unused" warnings for the imported `Timestamp` if a type
-// reference goes away after edits; it's commonly handy on this surface.
 export type _TimestampShape = Timestamp

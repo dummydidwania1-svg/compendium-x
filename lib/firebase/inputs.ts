@@ -20,6 +20,7 @@ const caseId = z.string().min(1).max(128)
 const sessionMode = z.enum(['remote', 'local'])
 const stopReason = z.string().min(1).max(64)
 const score = z.number().int().min(1).max(5)
+const participantRole = z.enum(['candidate', 'interviewer'])
 
 /* -------------------------------------------------------------------------- */
 /* POST /api/sessions — candidate creates / refreshes their session           */
@@ -46,6 +47,16 @@ export type SelectCaseInput = z.infer<typeof selectCaseInput>
 /* POST /api/sessions/[lobbyId]/recording                                     */
 /* -------------------------------------------------------------------------- */
 
+// Shared dual-mic fields — optional so old callers (local mode) don't break.
+const dualMicFields = {
+  /** 'candidate' or 'interviewer'. Omit for local sessions (embedded recording). */
+  role: participantRole.optional(),
+  /** Ms elapsed between session.selectedAt and recording start. */
+  startOffsetMs: z.number().int().optional(),
+  /** Device's ms reading of selectedAt used as anchor (for skew debugging). */
+  anchorSelectedAtMs: z.number().int().optional(),
+}
+
 const recordingUploadedInput = z.object({
   status: z.literal('uploaded'),
   mode: sessionMode,
@@ -57,6 +68,7 @@ const recordingUploadedInput = z.object({
   startedAtMs: z.number().int().nonnegative(),
   stoppedAtMs: z.number().int().nonnegative(),
   stopReason,
+  ...dualMicFields,
 })
 
 const recordingFailedInput = z.object({
@@ -65,6 +77,7 @@ const recordingFailedInput = z.object({
   stoppedAtMs: z.number().int().nonnegative(),
   stopReason,
   error: z.string().min(1).max(2000),
+  ...dualMicFields,
 })
 
 export const recordingInput = z.discriminatedUnion('status', [

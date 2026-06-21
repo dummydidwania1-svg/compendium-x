@@ -23,12 +23,19 @@ const presenceInput = z.object({
   active: z.boolean(),
   /** Only meaningful for the candidate role — whether recording is currently live. */
   recording: z.boolean().optional(),
+  /**
+   * Only meaningful for the interviewer role. When explicitly set to `false`,
+   * merges `interviewerAudioCaptured: false` onto the session doc, telling the
+   * candidate that only their side will appear in the merged transcript.
+   * Omit (or set true) when audio is being captured normally.
+   */
+  interviewerAudioCaptured: z.boolean().optional(),
 })
 
 export const POST = authenticatedRoute<{ lobbyId: string }>(
   '/api/sessions/[lobbyId]/presence',
   async (request, caller, { lobbyId }) => {
-    const { role, active, recording } = await parseBody(request, presenceInput)
+    const { role, active, recording, interviewerAudioCaptured } = await parseBody(request, presenceInput)
     const ref = adminDb.collection('sessions').doc(lobbyId)
 
     await adminDb.runTransaction(async (tx) => {
@@ -59,16 +66,20 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         if (data.interviewerId && data.interviewerId !== caller.uid) {
           throw new TransitionError(403, 'not_interviewer', 'Caller is not the session interviewer.')
         }
-        tx.set(
-          ref,
-          {
-            interviewerPresence: {
-              active,
-              lastSeenAt: FieldValue.serverTimestamp(),
-            },
+        const interviewerUpdate: Record<string, unknown> = {
+          interviewerPresence: {
+            active,
+            lastSeenAt: FieldValue.serverTimestamp(),
           },
-          { merge: true },
-        )
+        }
+        // §3b: when the interviewer explicitly signals they won't be recording,
+        // merge interviewerAudioCaptured:false onto the session doc so the
+        // candidate sees the "only your side will be in the transcript" notice
+        // and the Cloud Function produces a partial (candidate-only) transcript.
+        if (interviewerAudioCaptured === false) {
+          interviewerUpdate.interviewerAudioCaptured = false
+        }
+        tx.set(ref, interviewerUpdate, { merge: true })
       }
     })
 

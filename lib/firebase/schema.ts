@@ -137,6 +137,25 @@ export const sessionRecordingSchema = z
   .loose()
 export type SessionRecording = z.infer<typeof sessionRecordingSchema>
 
+/**
+ * Per-participant recording track stored in `sessions/{id}/recordings/{role}`.
+ * Remote mode only — local sessions keep using the embedded `recording` field.
+ * Extends the embedded shape with role, timing anchor, and merge fields.
+ */
+export const participantRole = z.enum(['candidate', 'interviewer'])
+export type ParticipantRole = z.infer<typeof participantRole>
+
+export const participantRecordingSchema = sessionRecordingSchema.extend({
+  role: participantRole,
+  /** Ms elapsed between session.selectedAt and this track's MediaRecorder start. */
+  startOffsetMs: z.number().optional(),
+  /** Device's ms reading of selectedAt used as the anchor (for skew debugging). */
+  anchorSelectedAtMs: z.number().optional(),
+  /** Parsed per-turn timing offsets (seconds from track start) extracted from Gemini output. */
+  transcriptTurnOffsets: z.array(z.number()).optional(),
+}).loose()
+export type ParticipantRecording = z.infer<typeof participantRecordingSchema>
+
 /** Presence subdoc written by each participant via /presence heartbeat (remote mode). */
 export const participantPresenceSchema = z
   .object({
@@ -175,6 +194,16 @@ export const sessionSchema = z
     // The other side reads these via onSnapshot to detect disconnection.
     candidatePresence: candidatePresenceSchema.optional(),
     interviewerPresence: participantPresenceSchema.optional(),
+
+    // Dual-mic merged transcript (remote mode only, Part 2).
+    // Produced by the merge Cloud Function after both per-track transcripts complete.
+    // Falls back to recording.transcript for local/old sessions.
+    mergedTranscript: z.string().optional(),
+    mergedTranscriptStatus: z.enum(['pending', 'processing', 'completed', 'failed', 'partial']).optional(),
+    mergedTranscriptCompletedAt: timestamp.optional(),
+    mergedTranscriptError: optionalString,
+    /** false when the interviewer explicitly declined the mic (best-effort capture). */
+    interviewerAudioCaptured: z.boolean().optional(),
   })
   .loose()
 export type Session = z.infer<typeof sessionSchema>
