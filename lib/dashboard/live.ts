@@ -35,6 +35,7 @@ export type DashboardCaseEntry = {
   transcriptPreview: string | null
   transcriptStatus: string | null
   transcriptError: string | null
+  transcriptReason: string | null
   audioUrl: string | null
   workspaceImageUrls: string[]
   hasTranscript: boolean
@@ -59,6 +60,7 @@ export type DashboardSessionMeta = {
   transcriptPreview: string | null
   transcriptStatus: string | null
   transcriptError: string | null
+  transcriptReason: string | null
   audioUrl: string | null
 }
 
@@ -156,6 +158,7 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     transcriptPreview,
     transcriptStatus,
     transcriptError,
+    transcriptReason: asString(value?.mergedTranscriptReason),
     // Local sessions: embedded recording.audioUrl
     // Remote sessions: denormalized candidateAudioUrl written by the recording route
     audioUrl: asString(source.audioUrl) ?? asString(value?.candidateAudioUrl),
@@ -196,6 +199,7 @@ export function mapDashboardEntry(
     transcriptPreview,
     transcriptStatus: sessionMeta?.transcriptStatus ?? null,
     transcriptError: sessionMeta?.transcriptError ?? null,
+    transcriptReason: sessionMeta?.transcriptReason ?? null,
     audioUrl: sessionMeta?.audioUrl ?? null,
     workspaceImageUrls,
     hasTranscript: Boolean(transcript || transcriptPreview),

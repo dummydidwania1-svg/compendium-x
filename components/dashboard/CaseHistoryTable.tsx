@@ -76,6 +76,7 @@ const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void
   const transcriptText = stripTranscriptTimestamps(entry.transcript || entry.transcriptPreview || '');
   const transcriptStatus: string | null = entry.transcriptStatus ?? null;
   const transcriptError: string | null = entry.transcriptError ?? null;
+  const transcriptReason: string | null = entry.transcriptReason ?? null;
   const lobbyId: string | null = entry.lobbyId ?? null;
 
   const handleRetryTranscript = async () => {
@@ -159,9 +160,11 @@ const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs text-[#5C4033]/70 italic">
                   {transcriptText
-                    ? transcriptStatus === 'partial'
-                      ? 'Transcript available — interviewer audio wasn\'t captured, so this includes your audio only.'
-                      : 'Transcript available.'
+                    ? transcriptReason === 'interviewer_interrupted'
+                      ? 'Transcript available — the interviewer left mid-session; their audio is partial up to the point they disconnected.'
+                      : transcriptStatus === 'partial'
+                        ? 'Transcript available — interviewer audio wasn\'t captured, so this includes your audio only.'
+                        : 'Transcript available.'
                     : 'Transcript metadata is available.'}
                 </p>
                 {transcriptText ? (

@@ -672,14 +672,38 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   const candidateCompletedAt = (
     candidateData as { transcriptCompletedAt?: { toMillis: () => number } } | null
   )?.transcriptCompletedAt?.toMillis()
+
+  // 'recording' means a periodic flush wrote the doc but no final/beacon ever arrived.
+  // Treat it like absent for the grace-window check so a stuck session still merges.
+  const interviewerStuckInRecording =
+    interviewerSnap.exists &&
+    !terminal(interviewerStatus as string | undefined) &&
+    interviewerStatus !== 'pending' &&
+    interviewerStatus !== 'processing'
+
   const pastGraceWindow =
     candidateDone &&
-    !interviewerSnap.exists &&
+    (!interviewerSnap.exists || interviewerStuckInRecording) &&
     candidateCompletedAt !== undefined &&
     Date.now() - candidateCompletedAt > MERGE_GRACE_MS
 
   if (!candidateDone) return
   if (!interviewerKnown && !pastGraceWindow) return
+
+  // Safety net: if the interviewer track is stuck in 'recording' (beacon never fired),
+  // upgrade it to 'pending' and return — transcription will fire, then mergeTranscripts
+  // will call evaluateAndMerge again once the track reaches a terminal state.
+  if (interviewerStuckInRecording && pastGraceWindow) {
+    await recordingsCol.doc('interviewer').set(
+      { transcriptStatus: 'pending', interviewerInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true },
+    )
+    await sessionRef.set(
+      { interviewerInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true },
+    )
+    return
+  }
 
   await sessionRef.set(
     { mergedTranscriptStatus: 'processing', ...audioUrlBackfill, updatedAt: FieldValue.serverTimestamp() },
@@ -689,6 +713,7 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   try {
     const hasInterviewerTrack = interviewerSnap.exists && interviewerStatus === 'completed'
     const candidateCompleted = candidateStatus === 'completed'
+    const interviewerInterrupted = sessionData.interviewerInterrupted === true
 
     if (!candidateCompleted && !hasInterviewerTrack) {
       await sessionRef.set(
@@ -707,13 +732,20 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
       hasInterviewerTrack ? (interviewerData as TrackData) : null,
     )
 
-    const isPartial = !candidateCompleted || !hasInterviewerTrack
+    // If interrupted, mark partial regardless of track completion and prepend a note.
+    const isPartial = !candidateCompleted || !hasInterviewerTrack || interviewerInterrupted
+    const finalMerged =
+      interviewerInterrupted && hasInterviewerTrack && merged
+        ? '[Note: the interviewer left mid-session; their audio is partial up to the point they disconnected.]\n\n' + merged
+        : merged
+
     await sessionRef.set(
       {
-        mergedTranscript: merged,
+        mergedTranscript: finalMerged,
         mergedTranscriptStatus: isPartial ? 'partial' : 'completed',
         mergedTranscriptCompletedAt: FieldValue.serverTimestamp(),
         mergedTranscriptError: null,
+        mergedTranscriptReason: interviewerInterrupted ? 'interviewer_interrupted' : null,
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },
