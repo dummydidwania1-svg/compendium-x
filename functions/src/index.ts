@@ -21,6 +21,10 @@
  *    when a partial outcome is confirmed), merges into `session.mergedTranscript`.
  *
  * 4. `promoteAbandonedSessions` — UNCHANGED (hourly scheduler).
+ *
+ * 5. `finalizePendingMerges` — FIX 1c, 30-minute sweep for sessions where the
+ *    interviewer never recorded and never explicitly declined. Calls evaluateAndMerge
+ *    once the grace window (MERGE_GRACE_MS) has elapsed past candidateTranscriptCompletedAt.
  */
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore'
@@ -259,6 +263,19 @@ async function runTranscription(args: {
         },
         { merge: true },
       )
+      // Denormalize candidate completion onto the session doc so the scheduled
+      // sweep (finalizePendingMerges) can query sessions where the candidate
+      // transcription completed but the merge hasn't run yet (FIX 1c).
+      if (target.role === 'candidate') {
+        await target.sessionRef.set(
+          {
+            candidateTranscriptStatus: 'completed',
+            candidateTranscriptCompletedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        )
+      }
     }
   }
 
@@ -553,6 +570,119 @@ function mergeTranscriptTracks(
 }
 
 /* -------------------------------------------------------------------------- */
+/* evaluateAndMerge — shared merge decision (FIX 1a)                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Core merge-decision function called from multiple trigger paths:
+ *  - mergeTranscripts (track-doc write trigger)
+ *  - transcribeRecording (session-doc trigger, for interviewerAudioCaptured signal)
+ *  - finalizePendingMerges (scheduled sweep)
+ *
+ * Idempotency: 'processing' and 'completed' statuses block re-entry.
+ * 'partial' does NOT block re-entry so a late interviewer track can upgrade it.
+ */
+async function evaluateAndMerge(sessionId: string): Promise<void> {
+  const sessionRef = db.collection('sessions').doc(sessionId)
+
+  const sessionSnap = await sessionRef.get()
+  if (!sessionSnap.exists) return
+  const sessionData = sessionSnap.data() ?? {}
+  const existingMergeStatus = sessionData.mergedTranscriptStatus as string | undefined
+  if (existingMergeStatus === 'completed' || existingMergeStatus === 'processing') return
+
+  const recordingsCol = sessionRef.collection('recordings')
+  const [candidateSnap, interviewerSnap] = await Promise.all([
+    recordingsCol.doc('candidate').get(),
+    recordingsCol.doc('interviewer').get(),
+  ])
+
+  const candidateData = candidateSnap.exists ? (candidateSnap.data() as TrackData) : null
+  const interviewerData = interviewerSnap.exists ? (interviewerSnap.data() as TrackData) : null
+
+  const candidateStatus = candidateData?.transcriptStatus
+  const interviewerStatus = interviewerData?.transcriptStatus
+  const interviewerDeclined = sessionData.interviewerAudioCaptured === false
+
+  const terminal = (s: string | undefined) => s === 'completed' || s === 'failed'
+
+  const candidateDone = terminal(candidateStatus as string | undefined)
+  const interviewerKnown =
+    terminal(interviewerStatus as string | undefined) ||
+    interviewerDeclined ||
+    (!interviewerSnap.exists && interviewerDeclined)
+
+  const candidateCompletedAt = (
+    candidateData as { transcriptCompletedAt?: { toMillis: () => number } } | null
+  )?.transcriptCompletedAt?.toMillis()
+  const pastGraceWindow =
+    candidateDone &&
+    !interviewerSnap.exists &&
+    candidateCompletedAt !== undefined &&
+    Date.now() - candidateCompletedAt > MERGE_GRACE_MS
+
+  if (!candidateDone) return
+  if (!interviewerKnown && !pastGraceWindow) return
+
+  await sessionRef.set(
+    { mergedTranscriptStatus: 'processing', updatedAt: FieldValue.serverTimestamp() },
+    { merge: true },
+  )
+
+  try {
+    const hasInterviewerTrack = interviewerSnap.exists && interviewerStatus === 'completed'
+    const candidateCompleted = candidateStatus === 'completed'
+
+    if (!candidateCompleted && !hasInterviewerTrack) {
+      await sessionRef.set(
+        {
+          mergedTranscriptStatus: 'failed',
+          mergedTranscriptError: 'Both recording tracks failed to transcribe.',
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+      return
+    }
+
+    const merged = mergeTranscriptTracks(
+      candidateCompleted ? (candidateData as TrackData) : null,
+      hasInterviewerTrack ? (interviewerData as TrackData) : null,
+    )
+
+    const isPartial = !candidateCompleted || !hasInterviewerTrack
+    await sessionRef.set(
+      {
+        mergedTranscript: merged,
+        mergedTranscriptStatus: isPartial ? 'partial' : 'completed',
+        mergedTranscriptCompletedAt: FieldValue.serverTimestamp(),
+        mergedTranscriptError: null,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    )
+
+    logger.info('merge_completed', {
+      sessionId,
+      isPartial,
+      hasCandidateTrack: candidateCompleted,
+      hasInterviewerTrack,
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown merge error.'
+    logger.error('merge_failed', { sessionId, message })
+    await sessionRef.set(
+      {
+        mergedTranscriptStatus: 'failed',
+        mergedTranscriptError: message,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    )
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Cloud Function 1 — local/old sessions (unchanged)                          */
 /* -------------------------------------------------------------------------- */
 
@@ -572,8 +702,22 @@ export const transcribeRecording = onDocumentWritten(
     retry: false,
   },
   async (event) => {
-    const beforeStatus = event.data?.before?.data()?.recording?.transcriptStatus
+    const beforeData = event.data?.before?.data()
     const afterData = event.data?.after?.data()
+
+    // 1b: When interviewerAudioCaptured flips to false (decline signal written by
+    // the presence route), immediately re-evaluate the merge so the candidate-only
+    // partial transcript is produced without waiting for the next track write.
+    // The interviewerAudioCaptured field lives on the session doc, not the
+    // recordings subcollection, so this is the only trigger that sees it.
+    const beforeCaptured = beforeData?.interviewerAudioCaptured
+    const afterCaptured = afterData?.interviewerAudioCaptured
+    if (beforeCaptured !== afterCaptured && afterCaptured === false) {
+      await evaluateAndMerge(event.params.sessionId)
+    }
+
+    // Original path: local/old-session transcription triggered by pending status.
+    const beforeStatus = beforeData?.recording?.transcriptStatus
     const afterStatus = afterData?.recording?.transcriptStatus
 
     if (afterStatus !== 'pending') return
@@ -702,111 +846,7 @@ export const mergeTranscripts = onDocumentWritten(
     if (!terminal(afterStatus)) return
     if (terminal(beforeStatus)) return // already was terminal — don't re-merge
 
-    const sessionId = event.params.sessionId
-    const sessionRef = db.collection('sessions').doc(sessionId)
-
-    // Idempotency: grab the session doc and bail if already merged/processing.
-    const sessionSnap = await sessionRef.get()
-    if (!sessionSnap.exists) return
-    const sessionData = sessionSnap.data() ?? {}
-    const existingMergeStatus = sessionData.mergedTranscriptStatus as string | undefined
-    if (existingMergeStatus === 'completed' || existingMergeStatus === 'processing') return
-
-    // Read both track docs.
-    const recordingsCol = sessionRef.collection('recordings')
-    const [candidateSnap, interviewerSnap] = await Promise.all([
-      recordingsCol.doc('candidate').get(),
-      recordingsCol.doc('interviewer').get(),
-    ])
-
-    const candidateData = candidateSnap.exists ? (candidateSnap.data() as TrackData) : null
-    const interviewerData = interviewerSnap.exists ? (interviewerSnap.data() as TrackData) : null
-
-    const candidateStatus = candidateData?.transcriptStatus
-    const interviewerStatus = interviewerData?.transcriptStatus
-    const interviewerDeclined = sessionData.interviewerAudioCaptured === false
-
-    // Determine if we have a complete picture yet.
-    const candidateDone = terminal(candidateStatus as string | undefined)
-    const interviewerKnown =
-      terminal(interviewerStatus as string | undefined) ||
-      interviewerDeclined ||
-      // If the interviewer track doc doesn't exist and the interviewer explicitly
-      // declined, we can proceed with candidate-only.
-      (!interviewerSnap.exists && interviewerDeclined)
-
-    // Also allow proceeding if we're past the grace window after the candidate track
-    // completed and still no interviewer track.
-    const candidateCompletedAt = (candidateData as { transcriptCompletedAt?: { toMillis: () => number } } | null)
-      ?.transcriptCompletedAt?.toMillis()
-    const pastGraceWindow =
-      candidateDone &&
-      !interviewerSnap.exists &&
-      candidateCompletedAt &&
-      Date.now() - candidateCompletedAt > MERGE_GRACE_MS
-
-    if (!candidateDone) return // wait for the candidate track (required)
-    if (!interviewerKnown && !pastGraceWindow) return // wait for interviewer
-
-    // Mark processing to prevent concurrent runs.
-    await sessionRef.set(
-      { mergedTranscriptStatus: 'processing', updatedAt: FieldValue.serverTimestamp() },
-      { merge: true },
-    )
-
-    try {
-      const hasInterviewerTrack =
-        interviewerSnap.exists && interviewerStatus === 'completed'
-      const candidateCompleted = candidateStatus === 'completed'
-
-      if (!candidateCompleted && !hasInterviewerTrack) {
-        // Both failed — nothing usable.
-        await sessionRef.set(
-          {
-            mergedTranscriptStatus: 'failed',
-            mergedTranscriptError: 'Both recording tracks failed to transcribe.',
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        )
-        return
-      }
-
-      const merged = mergeTranscriptTracks(
-        candidateCompleted ? (candidateData as TrackData) : null,
-        hasInterviewerTrack ? (interviewerData as TrackData) : null,
-      )
-
-      const isPartial = !candidateCompleted || !hasInterviewerTrack
-      await sessionRef.set(
-        {
-          mergedTranscript: merged,
-          mergedTranscriptStatus: isPartial ? 'partial' : 'completed',
-          mergedTranscriptCompletedAt: FieldValue.serverTimestamp(),
-          mergedTranscriptError: null,
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      )
-
-      logger.info('merge_completed', {
-        sessionId,
-        isPartial,
-        hasCandidateTrack: candidateCompleted,
-        hasInterviewerTrack,
-      })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown merge error.'
-      logger.error('merge_failed', { sessionId, message })
-      await sessionRef.set(
-        {
-          mergedTranscriptStatus: 'failed',
-          mergedTranscriptError: message,
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      )
-    }
+    await evaluateAndMerge(event.params.sessionId)
   },
 )
 
@@ -920,6 +960,62 @@ export const promoteAbandonedSessions = onSchedule(
       await batch.commit()
       logger.info('fallback_promote: created unrated eval', { sessionId, evaluationId: evalRef.id })
     }
+  },
+)
+
+/* -------------------------------------------------------------------------- */
+/* finalizePendingMerges — scheduled grace-window sweep (FIX 1c)              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Runs every 30 minutes to catch sessions where the interviewer never recorded
+ * and never explicitly declined — meaning no realtime trigger would ever re-fire
+ * the merge after the grace window elapses.
+ *
+ * Relies on `candidateTranscriptStatus` / `candidateTranscriptCompletedAt` being
+ * denormalized onto the session doc when the candidate track completes (see
+ * writeSuccess in runTranscription). Sessions where the interviewer's decline
+ * signal already arrived are handled immediately by 1b (transcribeRecording), so
+ * this sweep is a safety net for the silent no-show case.
+ */
+export const finalizePendingMerges = onSchedule(
+  {
+    schedule: 'every 30 minutes',
+    region: 'us-central1',
+    timeoutSeconds: 120,
+    memory: '256MiB',
+  },
+  async () => {
+    const snapshot = await db
+      .collection('sessions')
+      .where('candidateTranscriptStatus', '==', 'completed')
+      .get()
+
+    if (snapshot.empty) {
+      logger.info('finalize_pending: no candidate-completed sessions')
+      return
+    }
+
+    let evaluated = 0
+    for (const sessionDoc of snapshot.docs) {
+      const data = sessionDoc.data()
+      const mergedStatus = data.mergedTranscriptStatus as string | undefined
+      if (mergedStatus === 'completed' || mergedStatus === 'processing') continue
+
+      const interviewerDeclined = data.interviewerAudioCaptured === false
+      const completedAtMs = (
+        data.candidateTranscriptCompletedAt as { toMillis?: () => number } | null
+      )?.toMillis?.()
+      const pastGrace =
+        completedAtMs !== undefined && Date.now() - completedAtMs > MERGE_GRACE_MS
+
+      if (!interviewerDeclined && !pastGrace) continue
+
+      evaluated++
+      await evaluateAndMerge(sessionDoc.id)
+    }
+
+    logger.info(`finalize_pending: evaluated ${evaluated} session(s)`)
   },
 )
 

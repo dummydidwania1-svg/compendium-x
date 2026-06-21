@@ -15,6 +15,14 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "abandonedAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "candidateTranscriptStatus", "order": "ASCENDING" },
+        { "fieldPath": "mergedTranscriptStatus", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
