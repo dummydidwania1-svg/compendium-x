@@ -7939,178 +7939,983 @@
     ],
     "framework": "Candidate: Sure. I want to begin by understanding our client better. Where are we currently operating and what is our objective out of this new venture?\nInterviewer: Our client currently has Panjim-Vasco Ferry, Port Blair-Havelock Ferry and Jorhat-Majuli Ferry. We would like you to assess the financial attractiveness of the Chennai-Port Blair Ferry in terms of expected revenue from Indian tourists. Assume that all ferry services to Port Blair depart from Chennai.\nCandidate: Interesting. So, our client has experience in this business. I would like to now understand the proposed ferry and the market better. What kind of ferry do we have in mind: Luxury/Economy? How long is the journey? Do we have competitors on this route?\nInterviewer: Our cruise will be luxurious. The journey is about 60 hours long and we have a few players in the market.\nCandidate: Understood. To analyse the revenue, I would like to calculate the market size and market share with the following steps:\n1) Estimate the number of people who travel\n2) Estimate the number of people who would go to Port Blair\n3) Estimate the number of people who would travel by ferry\n4) Estimate the share of the above that would choose our service\n_(Step 1: Estimate the number of people who travel for recreational purposes at least once in two years)_\nA good place to start is India's population. We can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. Next, we can slice the urban population according to different income levels:\n[VIS:0]\nCan we move forward with the above estimation on the basis of income segmentation?\nInterviewer: Sure.\nCandidate: Total number of families that go on a trip every year = 35 million\nAssumption: Average number of trips per year per family = 1\nTotal number of trips in a year = 35 million\nWe can say about 10% of these would be international\n~ Total number of domestic trips = 31.5 million ≈ 32 million (approx.)\n_(Step 2: Estimate the number of families that would go to Port Blair)_\nWe can assume that there are about 20 popular tourist destinations in India with an equal probability of being chosen. Hence, number of family trips made to Port Blair = 32 million/20 = 1.6 million\n_(Step 3: Estimate the number of families that would travel by ferry)_\nHere, I would like to know the price of ferry tickets and the price of an airline ticket.\nInterviewer: Sure, ferry prices are Rs. 8000 per ticket. We as well as our competitors are charging the same price. An airline ticket costs around Rs. 4000.\nCandidate: Thank you. We can further analyse this by segmenting families based on the mode of transportation. Since flights are cheaper and faster, most people, especially those belonging to the middle class will opt for this. About 30% would prefer a ferry given the luxurious and leisurely experience.\n[VIS:1]\n_(Step 4: Estimate the share of the above that would choose our service)_\nI would now like to benchmark our cruise with those of our competitors.\nInterviewer: We have a well established brand name unlike our competitors and in addition to that the service that we provide is superior to that of our competitors. Assume we will be able to capture 40% of the market.\nCandidate: ~ Number of families that travel by our cruise = 500,000 * 40% = 200,000 families. Expected revenue = 2,00,000*4* 8,000 = 6,400,000,000 = Rs. 6.4 billion. Keeping the cost in mind, our client can make decisions based on this revenue figure.\nInterviewer: Yes, indeed, thank you for your time."
   },
-{
-  "id": 57,
-  "docId": "case-57",
-  "title": "Schindler's Fit",
-  "industry": "Electronics",
-  "difficulty": "Medium",
-  "case_type": "Unconventional",
-  "company": "BCG",
-  "round": "Manager",
-  "prompt": "Schindler, a European giant, has recently merged with Voltas, the previous market leader, which is now left with only 2% market share. Decide on a post-merger branding strategy for the newly incorporated company from the following options:\n1) Air India-Vistara model: complete acquisition by Air India, and only its name continues in the market.\n2) Vodafone Idea model: both brands merge their names into the new company, Vodafone Idea.\n3) Tata-JLR model: Tata, Jaguar, and Land Rover have their own cars, but all operate under the same parent company.",
-  "frameworkTree": {
-    "nodes": {
-      "branding-strategy": { "id": "branding-strategy", "label": "Post-Merger Branding Strategy", "tone": "root", "children": ["clarifying-brief", "qualitative-evaluation", "profitability-analysis"] },
-      "clarifying-brief": { "id": "clarifying-brief", "label": "Clarifying the Brief", "tone": "branch", "children": ["obj", "products", "footprint", "constraints"] },
-      "obj": { "id": "obj", "label": "Objective: Revenue + Profit", "tone": "support", "children": [] },
-      "products": { "id": "products", "label": "Products: Identical", "tone": "support", "children": [] },
-      "footprint": { "id": "footprint", "label": "Footprint: T1 vs T3", "tone": "support", "children": [] },
-      "constraints": { "id": "constraints", "label": "Constraints: None", "tone": "support", "children": [] },
-      "qualitative-evaluation": { "id": "qualitative-evaluation", "label": "Qualitative Evaluation", "tone": "branch", "children": ["air-india-vistara", "vodafone-idea", "tata-jlr"] },
-      "air-india-vistara": { "id": "air-india-vistara", "label": "Air India-Vistara: Absorb", "tone": "support", "children": ["aiv-verdict"] },
-      "aiv-verdict": { "id": "aiv-verdict", "label": "Ruled Out: neither dominant", "tone": "leaf", "children": [] },
-      "vodafone-idea": { "id": "vodafone-idea", "label": "Vodafone Idea: Merge Names", "tone": "support", "children": ["vi-verdict"] },
-      "vi-verdict": { "id": "vi-verdict", "label": "Ruled Out: confusion + dilution", "tone": "leaf", "children": [] },
-      "tata-jlr": { "id": "tata-jlr", "label": "Tata-JLR: Separate Brands", "tone": "branch", "children": ["tj-verdict"] },
-      "tj-verdict": { "id": "tj-verdict", "label": "Selected: distinct segments (T1 vs T3)", "tone": "leaf", "children": [] },
-      "profitability-analysis": { "id": "profitability-analysis", "label": "Profitability Analysis", "tone": "branch", "children": ["model-1", "model-2", "model-3"] },
-      "model-1": { "id": "model-1", "label": "Model 1: Schindler Only", "tone": "support", "children": ["m1-out"] },
-      "m1-out": { "id": "m1-out", "label": "Revenue limited, Cost mid-range", "tone": "leaf", "children": [] },
-      "model-2": { "id": "model-2", "label": "Model 2: Merged Brand", "tone": "support", "children": ["m2-out"] },
-      "m2-out": { "id": "m2-out", "label": "Revenue lowest, Cost highest", "tone": "leaf", "children": [] },
-      "model-3": { "id": "model-3", "label": "Model 3: Separate Brands", "tone": "branch", "children": ["m3-out"] },
-      "m3-out": { "id": "m3-out", "label": "Revenue highest, Most profitable", "tone": "leaf", "children": [] }
+  {
+    "id": 57,
+    "docId": "case-57",
+    "title": "Schindler's Fit",
+    "industry": "Electronics",
+    "difficulty": "Medium",
+    "case_type": "Unconventional",
+    "company": "BCG",
+    "round": "Manager",
+    "prompt": "Schindler, a European giant, has recently merged with Voltas, the previous market leader, which is now left with only 2% market share. Decide on a post-merger branding strategy for the newly incorporated company from the following options:\n1) Air India-Vistara model: complete acquisition by Air India, and only its name continues in the market.\n2) Vodafone Idea model: both brands merge their names into the new company, Vodafone Idea.\n3) Tata-JLR model: Tata, Jaguar, and Land Rover have their own cars, but all operate under the same parent company.",
+    "frameworkTree": {
+      "nodes": {
+        "branding-strategy": {
+          "id": "branding-strategy",
+          "label": "Post-Merger Branding Strategy",
+          "tone": "root",
+          "children": [
+            "clarifying-brief",
+            "qualitative-evaluation",
+            "profitability-analysis"
+          ]
+        },
+        "clarifying-brief": {
+          "id": "clarifying-brief",
+          "label": "Clarifying the Brief",
+          "tone": "branch",
+          "children": [
+            "obj",
+            "products",
+            "footprint",
+            "constraints"
+          ]
+        },
+        "obj": {
+          "id": "obj",
+          "label": "Objective: Revenue + Profit",
+          "tone": "support",
+          "children": []
+        },
+        "products": {
+          "id": "products",
+          "label": "Products: Identical",
+          "tone": "support",
+          "children": []
+        },
+        "footprint": {
+          "id": "footprint",
+          "label": "Footprint: T1 vs T3",
+          "tone": "support",
+          "children": []
+        },
+        "constraints": {
+          "id": "constraints",
+          "label": "Constraints: None",
+          "tone": "support",
+          "children": []
+        },
+        "qualitative-evaluation": {
+          "id": "qualitative-evaluation",
+          "label": "Qualitative Evaluation",
+          "tone": "branch",
+          "children": [
+            "air-india-vistara",
+            "vodafone-idea",
+            "tata-jlr"
+          ]
+        },
+        "air-india-vistara": {
+          "id": "air-india-vistara",
+          "label": "Air India-Vistara: Absorb",
+          "tone": "support",
+          "children": [
+            "aiv-verdict"
+          ]
+        },
+        "aiv-verdict": {
+          "id": "aiv-verdict",
+          "label": "Ruled Out: neither dominant",
+          "tone": "leaf",
+          "children": []
+        },
+        "vodafone-idea": {
+          "id": "vodafone-idea",
+          "label": "Vodafone Idea: Merge Names",
+          "tone": "support",
+          "children": [
+            "vi-verdict"
+          ]
+        },
+        "vi-verdict": {
+          "id": "vi-verdict",
+          "label": "Ruled Out: confusion + dilution",
+          "tone": "leaf",
+          "children": []
+        },
+        "tata-jlr": {
+          "id": "tata-jlr",
+          "label": "Tata-JLR: Separate Brands",
+          "tone": "branch",
+          "children": [
+            "tj-verdict"
+          ]
+        },
+        "tj-verdict": {
+          "id": "tj-verdict",
+          "label": "Selected: distinct segments (T1 vs T3)",
+          "tone": "leaf",
+          "children": []
+        },
+        "profitability-analysis": {
+          "id": "profitability-analysis",
+          "label": "Profitability Analysis",
+          "tone": "branch",
+          "children": [
+            "model-1",
+            "model-2",
+            "model-3"
+          ]
+        },
+        "model-1": {
+          "id": "model-1",
+          "label": "Model 1: Schindler Only",
+          "tone": "support",
+          "children": [
+            "m1-out"
+          ]
+        },
+        "m1-out": {
+          "id": "m1-out",
+          "label": "Revenue limited, Cost mid-range",
+          "tone": "leaf",
+          "children": []
+        },
+        "model-2": {
+          "id": "model-2",
+          "label": "Model 2: Merged Brand",
+          "tone": "support",
+          "children": [
+            "m2-out"
+          ]
+        },
+        "m2-out": {
+          "id": "m2-out",
+          "label": "Revenue lowest, Cost highest",
+          "tone": "leaf",
+          "children": []
+        },
+        "model-3": {
+          "id": "model-3",
+          "label": "Model 3: Separate Brands",
+          "tone": "branch",
+          "children": [
+            "m3-out"
+          ]
+        },
+        "m3-out": {
+          "id": "m3-out",
+          "label": "Revenue highest, Most profitable",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "branding-strategy",
+        "qualitative-evaluation",
+        "tata-jlr",
+        "profitability-analysis",
+        "model-3"
+      ],
+      "defaultFocusedId": "m3-out",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Branding objective",
+            "Product differences",
+            "Regional or segment dominance",
+            "Financial or time constraints"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Separate brands only when segments differ",
+            "Compare each model on revenue vs cost"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Splitting market by city tier",
+            "Applying a diversification lens",
+            "Spotting premium-dilution risk"
+          ]
+        }
+      ]
     },
-    "defaultExpanded": ["branding-strategy", "qualitative-evaluation", "tata-jlr", "profitability-analysis", "model-3"],
-    "defaultFocusedId": "m3-out",
-    "notes": [
-      {
-        "title": "Questions",
-        "items": [
-          "Branding objective",
-          "Product differences",
-          "Regional or segment dominance",
-          "Financial or time constraints"
-        ]
-      },
-      {
-        "title": "Keep In Mind",
-        "items": [
-          "Separate brands only when segments differ",
-          "Compare each model on revenue vs cost"
-        ]
-      },
-      {
-        "title": "Brownie Points",
-        "items": [
-          "Splitting market by city tier",
-          "Applying a diversification lens",
-          "Spotting premium-dilution risk"
-        ]
-      }
-    ]
+    "framework": "Candidate: Thank you for the case. Before I dive in, I'd like to ask a few questions to understand the problem statement better.\nInterviewer: Sure, please go ahead.\nCandidate: What is our objective with this branding strategy? Are we trying to maximise revenue, expand reach, or maximise profits?\nInterviewer: We are looking to maximise both revenue and profitability.\nCandidate: Understood. Are there any product differences or core competencies that set the two brands apart?\nInterviewer: For this case, assume that the products sold by both brands are identical.\nCandidate: Got it. In India, brands usually target specific regions or consumer segments. For example, Blinkit has a stronger presence in northern India, while Zepto has greater penetration in western India. Does the merged company show any regional dominance in terms of its customer base?\nInterviewer: Great question. Schindler primarily operates in Tier-1 (T1) cities through outlets such as Vijay Sales, Croma, and Reliance Mart, owing to its premium brand perception. Voltas, on the other hand, operates mainly in Tier-3 (T3) cities.\nCandidate: That distinction is helpful. Are there any financial or time constraints I should keep in mind?\nInterviewer: None.\nCandidate: Perfect. I'll approach this in two parts. First, I'll lay out my initial hypothesis on which of the three models is likely to work best. Then I'll test it by analysing each model on its revenues and branding costs to see which one is most profitable.\nInterviewer: Yes, go ahead.\nCandidate: Let me start with the qualitative evaluation of the three models. Starting with the Air India-Vistara model: here, Air India had a substantially larger market share and brand recognition in India, so it could fully absorb Vistara and continue under its own name. That logic does not hold for us. Schindler is a new brand that has just entered India, and Voltas is left with only a 2% market share. Neither brand is dominant enough to absorb the other, so I would strike off this first model.\nInterviewer: Fair point. Continue.\nCandidate: Next, the Vodafone Idea model, where both names are merged into one. In my opinion this is not the best fit either. Schindler carries a premium perception while Voltas carries a non-premium perception, and the two operate in different markets. If we merge them, it creates confusion in the minds of customers. The upper class will no longer see Schindler as a luxurious product once the Voltas name is attached to it, so the premium positioning of Schindler gets diluted. At the same time, we still won't be able to charge a premium from the middle class because that market is price-sensitive.\nInterviewer: So why does the third option avoid that problem?\nCandidate: Because the third model, the Tata-JLR model, keeps the brands separate under a common parent. The reason Tata and JLR operate separately is that they cater to different market segments. Jaguar and Land Rover serve the rich, while Tata sells cars like the Tiago or Nano that are tailor-made for the lower and middle classes. We have a very similar situation with Schindler and Voltas, where one is premium and T1-focused and the other is mass-market and T3-focused. So operating separately under the same parent company is the best strategy here.\nInterviewer: I really appreciate your approach. Now move on to the profitability analysis for these three cases. For simplicity, consider only branding costs.\nCandidate: Perfect, let me go case by case. In the first model, where Schindler becomes the sole brand and Voltas is discontinued, the revenue potential is limited. The focus would shift entirely to the T1 cities, letting go of all the revenue that could be earned from the T3 cities. The cost would sit in the middle range, since only one brand needs to be marketed, but it has to be marketed effectively because Schindler has only just entered the Indian market.\nIn the second model, the merged brand, revenues would likely be the lowest, because the new company is diluted across both T1 and T3 cities. The middle class would find the new product expensive and might switch to other alternatives in the market, while premium consumers may hesitate to pay a higher price for a brand now associated with a mass-market perception. The cost, on the other hand, would be the highest, because the company would need to invest heavily in repositioning and in resolving the brand confusion in the market.\nIn the third model, where both brands operate separately, revenues would likely be the highest, because both brands play independently in their respective markets. We also avoid keeping all our eggs in one basket. The cost would still be high, since both brands have to be marketed separately, which is the main drawback of this model.\nConsidering both revenue potential and branding costs together, the third model, the Tata-JLR approach where both brands operate independently under a common parent company, is the one most likely to maximise profitability.\nInterviewer: We are thinking on the same lines. Good work on the approach. We can end the case here.\n\nSchindler-Voltas Branding Strategy Framework & Recommendations\nPOST-MERGER BRANDING STRATEGY FOR A SCHINDLER-VOLTAS MERGER\nClarifying Questions: Objective of the branding strategy (revenue, reach, or profit) Product differences and core competencies of each brand Regional or segment dominance of the merged customer base Financial or time constraints\nBrownie Points: Splitting the market by city tier (T1 premium vs T3 mass) Applying a diversification lens, not keeping all eggs in one basket Spotting the premium-dilution risk in the merged-name option\nKeep In Mind: Separate brands only when segments differ Compare each model on revenue vs cost\nRECOMMENDATIONS: Adopt the Tata-JLR model. Operate Schindler and Voltas as separate brands under one common parent company. This protects Schindler's premium positioning in the T1 cities, retains Voltas's reach in the T3 cities, and across both revenue and branding cost is the most profitable of the three options."
   },
-  "framework": "Candidate: Thank you for the case. Before I dive in, I'd like to ask a few questions to understand the problem statement better.\nInterviewer: Sure, please go ahead.\nCandidate: What is our objective with this branding strategy? Are we trying to maximise revenue, expand reach, or maximise profits?\nInterviewer: We are looking to maximise both revenue and profitability.\nCandidate: Understood. Are there any product differences or core competencies that set the two brands apart?\nInterviewer: For this case, assume that the products sold by both brands are identical.\nCandidate: Got it. In India, brands usually target specific regions or consumer segments. For example, Blinkit has a stronger presence in northern India, while Zepto has greater penetration in western India. Does the merged company show any regional dominance in terms of its customer base?\nInterviewer: Great question. Schindler primarily operates in Tier-1 (T1) cities through outlets such as Vijay Sales, Croma, and Reliance Mart, owing to its premium brand perception. Voltas, on the other hand, operates mainly in Tier-3 (T3) cities.\nCandidate: That distinction is helpful. Are there any financial or time constraints I should keep in mind?\nInterviewer: None.\nCandidate: Perfect. I'll approach this in two parts. First, I'll lay out my initial hypothesis on which of the three models is likely to work best. Then I'll test it by analysing each model on its revenues and branding costs to see which one is most profitable.\nInterviewer: Yes, go ahead.\nCandidate: Let me start with the qualitative evaluation of the three models. Starting with the Air India-Vistara model: here, Air India had a substantially larger market share and brand recognition in India, so it could fully absorb Vistara and continue under its own name. That logic does not hold for us. Schindler is a new brand that has just entered India, and Voltas is left with only a 2% market share. Neither brand is dominant enough to absorb the other, so I would strike off this first model.\nInterviewer: Fair point. Continue.\nCandidate: Next, the Vodafone Idea model, where both names are merged into one. In my opinion this is not the best fit either. Schindler carries a premium perception while Voltas carries a non-premium perception, and the two operate in different markets. If we merge them, it creates confusion in the minds of customers. The upper class will no longer see Schindler as a luxurious product once the Voltas name is attached to it, so the premium positioning of Schindler gets diluted. At the same time, we still won't be able to charge a premium from the middle class because that market is price-sensitive.\nInterviewer: So why does the third option avoid that problem?\nCandidate: Because the third model, the Tata-JLR model, keeps the brands separate under a common parent. The reason Tata and JLR operate separately is that they cater to different market segments. Jaguar and Land Rover serve the rich, while Tata sells cars like the Tiago or Nano that are tailor-made for the lower and middle classes. We have a very similar situation with Schindler and Voltas, where one is premium and T1-focused and the other is mass-market and T3-focused. So operating separately under the same parent company is the best strategy here.\nInterviewer: I really appreciate your approach. Now move on to the profitability analysis for these three cases. For simplicity, consider only branding costs.\nCandidate: Perfect, let me go case by case. In the first model, where Schindler becomes the sole brand and Voltas is discontinued, the revenue potential is limited. The focus would shift entirely to the T1 cities, letting go of all the revenue that could be earned from the T3 cities. The cost would sit in the middle range, since only one brand needs to be marketed, but it has to be marketed effectively because Schindler has only just entered the Indian market.\nIn the second model, the merged brand, revenues would likely be the lowest, because the new company is diluted across both T1 and T3 cities. The middle class would find the new product expensive and might switch to other alternatives in the market, while premium consumers may hesitate to pay a higher price for a brand now associated with a mass-market perception. The cost, on the other hand, would be the highest, because the company would need to invest heavily in repositioning and in resolving the brand confusion in the market.\nIn the third model, where both brands operate separately, revenues would likely be the highest, because both brands play independently in their respective markets. We also avoid keeping all our eggs in one basket. The cost would still be high, since both brands have to be marketed separately, which is the main drawback of this model.\nConsidering both revenue potential and branding costs together, the third model, the Tata-JLR approach where both brands operate independently under a common parent company, is the one most likely to maximise profitability.\nInterviewer: We are thinking on the same lines. Good work on the approach. We can end the case here.\n\nSchindler-Voltas Branding Strategy Framework & Recommendations\nPOST-MERGER BRANDING STRATEGY FOR A SCHINDLER-VOLTAS MERGER\nClarifying Questions: Objective of the branding strategy (revenue, reach, or profit) Product differences and core competencies of each brand Regional or segment dominance of the merged customer base Financial or time constraints\nBrownie Points: Splitting the market by city tier (T1 premium vs T3 mass) Applying a diversification lens, not keeping all eggs in one basket Spotting the premium-dilution risk in the merged-name option\nKeep In Mind: Separate brands only when segments differ Compare each model on revenue vs cost\nRECOMMENDATIONS: Adopt the Tata-JLR model. Operate Schindler and Voltas as separate brands under one common parent company. This protects Schindler's premium positioning in the T1 cities, retains Voltas's reach in the T3 cities, and across both revenue and branding cost is the most profitable of the three options."
-},
-{
-  "id": 58,
-  "docId": "case-58",
-  "title": "Power to the People",
-  "industry": "Automotive",
-  "difficulty": "Hard",
-  "case_type": "Unconventional",
-  "company": "Kearney",
-  "round": "Partner",
-  "prompt": "Our client is the Government of India, specifically the Ministry of Commerce. They want us to develop a strategy for the indigenization of electric vehicle (EV) battery manufacturing. Currently, EV batteries are largely imported, and the goal is to set up a domestic, end-to-end value chain so that EV batteries are manufactured within the country.",
-  "frameworkTree": {
-    "nodes": {
-      "ev-strategy": { "id": "ev-strategy", "label": "EV Battery Indigenisation Strategy", "tone": "root", "children": ["financial-feasibility", "operational-feasibility", "risk-ecosystem"] },
-      "financial-feasibility": { "id": "financial-feasibility", "label": "Financial Feasibility", "tone": "branch", "children": ["revenue-per-unit", "variable-cost-per-unit", "capex"] },
-      "revenue-per-unit": { "id": "revenue-per-unit", "label": "Revenue Per Unit", "tone": "leaf", "children": [] },
-      "variable-cost-per-unit": { "id": "variable-cost-per-unit", "label": "Variable Cost Per Unit", "tone": "leaf", "children": [] },
-      "capex": { "id": "capex", "label": "CAPEX (Capital Expenditure)", "tone": "branch", "children": ["human-capital", "physical-capital", "misc-costs"] },
-      "human-capital": { "id": "human-capital", "label": "Human Capital Costs", "tone": "leaf", "children": [] },
-      "physical-capital": { "id": "physical-capital", "label": "Physical Capital Costs", "tone": "branch", "children": ["land-infra", "plant-machinery", "ecosystem-enablers"] },
-      "land-infra": { "id": "land-infra", "label": "Land & Infrastructure Costs", "tone": "leaf", "children": [] },
-      "plant-machinery": { "id": "plant-machinery", "label": "Plant & Machinery Costs", "tone": "leaf", "children": [] },
-      "ecosystem-enablers": { "id": "ecosystem-enablers", "label": "Ecosystem Enablers' Costs", "tone": "leaf", "children": [] },
-      "misc-costs": { "id": "misc-costs", "label": "Miscellaneous Costs", "tone": "leaf", "children": [] },
-      "operational-feasibility": { "id": "operational-feasibility", "label": "Operational Feasibility", "tone": "branch", "children": ["raw-material", "tech-manufacturing", "distribution"] },
-      "raw-material": { "id": "raw-material", "label": "Raw Material Procurement", "tone": "branch", "children": ["domestic-mining", "chemical-recycling"] },
-      "domestic-mining": { "id": "domestic-mining", "label": "Domestic Mining", "tone": "leaf", "children": [] },
-      "chemical-recycling": { "id": "chemical-recycling", "label": "Chemical Recycling (circularity)", "tone": "leaf", "children": [] },
-      "tech-manufacturing": { "id": "tech-manufacturing", "label": "Technology & Manufacturing", "tone": "branch", "children": ["rnd", "testing", "production-storage"] },
-      "rnd": { "id": "rnd", "label": "R&D and Technology / IP", "tone": "leaf", "children": [] },
-      "testing": { "id": "testing", "label": "Testing", "tone": "branch", "children": ["early-stage", "late-stage"] },
-      "early-stage": { "id": "early-stage", "label": "Early-Stage Testing", "tone": "leaf", "children": [] },
-      "late-stage": { "id": "late-stage", "label": "Late-Stage Testing", "tone": "leaf", "children": [] },
-      "production-storage": { "id": "production-storage", "label": "Production & Storage", "tone": "leaf", "children": [] },
-      "distribution": { "id": "distribution", "label": "Distribution & Reverse Logistics", "tone": "leaf", "children": [] },
-      "risk-ecosystem": { "id": "risk-ecosystem", "label": "Risk Ecosystem", "tone": "branch", "children": [] }
+  {
+    "id": 58,
+    "docId": "case-58",
+    "title": "Power to the People",
+    "industry": "Automotive",
+    "difficulty": "Hard",
+    "case_type": "Unconventional",
+    "company": "Kearney",
+    "round": "Partner",
+    "prompt": "Our client is the Government of India, specifically the Ministry of Commerce. They want us to develop a strategy for the indigenization of electric vehicle (EV) battery manufacturing. Currently, EV batteries are largely imported, and the goal is to set up a domestic, end-to-end value chain so that EV batteries are manufactured within the country.",
+    "frameworkTree": {
+      "nodes": {
+        "ev-strategy": {
+          "id": "ev-strategy",
+          "label": "EV Battery Indigenisation Strategy",
+          "tone": "root",
+          "children": [
+            "financial-feasibility",
+            "operational-feasibility",
+            "risk-ecosystem"
+          ]
+        },
+        "financial-feasibility": {
+          "id": "financial-feasibility",
+          "label": "Financial Feasibility",
+          "tone": "branch",
+          "children": [
+            "revenue-per-unit",
+            "variable-cost-per-unit",
+            "capex"
+          ]
+        },
+        "revenue-per-unit": {
+          "id": "revenue-per-unit",
+          "label": "Revenue Per Unit",
+          "tone": "leaf",
+          "children": []
+        },
+        "variable-cost-per-unit": {
+          "id": "variable-cost-per-unit",
+          "label": "Variable Cost Per Unit",
+          "tone": "leaf",
+          "children": []
+        },
+        "capex": {
+          "id": "capex",
+          "label": "CAPEX (Capital Expenditure)",
+          "tone": "branch",
+          "children": [
+            "human-capital",
+            "physical-capital",
+            "misc-costs"
+          ]
+        },
+        "human-capital": {
+          "id": "human-capital",
+          "label": "Human Capital Costs",
+          "tone": "leaf",
+          "children": []
+        },
+        "physical-capital": {
+          "id": "physical-capital",
+          "label": "Physical Capital Costs",
+          "tone": "branch",
+          "children": [
+            "land-infra",
+            "plant-machinery",
+            "ecosystem-enablers"
+          ]
+        },
+        "land-infra": {
+          "id": "land-infra",
+          "label": "Land & Infrastructure Costs",
+          "tone": "leaf",
+          "children": []
+        },
+        "plant-machinery": {
+          "id": "plant-machinery",
+          "label": "Plant & Machinery Costs",
+          "tone": "leaf",
+          "children": []
+        },
+        "ecosystem-enablers": {
+          "id": "ecosystem-enablers",
+          "label": "Ecosystem Enablers' Costs",
+          "tone": "leaf",
+          "children": []
+        },
+        "misc-costs": {
+          "id": "misc-costs",
+          "label": "Miscellaneous Costs",
+          "tone": "leaf",
+          "children": []
+        },
+        "operational-feasibility": {
+          "id": "operational-feasibility",
+          "label": "Operational Feasibility",
+          "tone": "branch",
+          "children": [
+            "raw-material",
+            "tech-manufacturing",
+            "distribution"
+          ]
+        },
+        "raw-material": {
+          "id": "raw-material",
+          "label": "Raw Material Procurement",
+          "tone": "branch",
+          "children": [
+            "domestic-mining",
+            "chemical-recycling"
+          ]
+        },
+        "domestic-mining": {
+          "id": "domestic-mining",
+          "label": "Domestic Mining",
+          "tone": "leaf",
+          "children": []
+        },
+        "chemical-recycling": {
+          "id": "chemical-recycling",
+          "label": "Chemical Recycling (circularity)",
+          "tone": "leaf",
+          "children": []
+        },
+        "tech-manufacturing": {
+          "id": "tech-manufacturing",
+          "label": "Technology & Manufacturing",
+          "tone": "branch",
+          "children": [
+            "rnd",
+            "testing",
+            "production-storage"
+          ]
+        },
+        "rnd": {
+          "id": "rnd",
+          "label": "R&D and Technology / IP",
+          "tone": "leaf",
+          "children": []
+        },
+        "testing": {
+          "id": "testing",
+          "label": "Testing",
+          "tone": "branch",
+          "children": [
+            "early-stage",
+            "late-stage"
+          ]
+        },
+        "early-stage": {
+          "id": "early-stage",
+          "label": "Early-Stage Testing",
+          "tone": "leaf",
+          "children": []
+        },
+        "late-stage": {
+          "id": "late-stage",
+          "label": "Late-Stage Testing",
+          "tone": "leaf",
+          "children": []
+        },
+        "production-storage": {
+          "id": "production-storage",
+          "label": "Production & Storage",
+          "tone": "leaf",
+          "children": []
+        },
+        "distribution": {
+          "id": "distribution",
+          "label": "Distribution & Reverse Logistics",
+          "tone": "leaf",
+          "children": []
+        },
+        "risk-ecosystem": {
+          "id": "risk-ecosystem",
+          "label": "Risk Ecosystem",
+          "tone": "branch",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "ev-strategy",
+        "financial-feasibility",
+        "capex",
+        "physical-capital",
+        "operational-feasibility",
+        "raw-material",
+        "tech-manufacturing",
+        "testing"
+      ],
+      "defaultFocusedId": "ev-strategy",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Rationale for indigenization",
+            "Time or budget constraints",
+            "Client landscape and players"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Deliverable is a MECE value chain",
+            "Keep deeper detail ready for drill-downs"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Sequential, gated approach",
+            "Adding recycling and circularity",
+            "Including reverse logistics and compliance"
+          ]
+        }
+      ]
     },
-    "defaultExpanded": ["ev-strategy", "financial-feasibility", "capex", "physical-capital", "operational-feasibility", "raw-material", "tech-manufacturing", "testing"],
-    "defaultFocusedId": "ev-strategy",
-    "notes": [
-      {
-        "title": "Questions",
-        "items": [
-          "Rationale for indigenization",
-          "Time or budget constraints",
-          "Client landscape and players"
-        ]
-      },
-      {
-        "title": "Keep In Mind",
-        "items": [
-          "Deliverable is a MECE value chain",
-          "Keep deeper detail ready for drill-downs"
-        ]
-      },
-      {
-        "title": "Brownie Points",
-        "items": [
-          "Sequential, gated approach",
-          "Adding recycling and circularity",
-          "Including reverse logistics and compliance"
-        ]
-      }
-    ]
+    "framework": "Candidate: Thanks for the case. Before I dive in, I'd like to note a few clarifying questions across three areas: the problem and its objectives, the client context, and a high-level view of the EV battery industry. Starting with the objective, what is the rationale behind this initiative? My hypothesis is that, with the growing EV ecosystem, the government wants batteries produced domestically rather than imported, to promote the Make in India initiative and to capture greater economic value in the long term.\nInterviewer: That's largely the motive, and there's nothing else you need to consider there for now.\nCandidate: Understood. Are there any specific time or budget constraints we should keep in mind?\nInterviewer: There is a budget aspect that will eventually need discussion, but it is not part of this case. On timelines, the government wants to implement this as soon as possible; for simplicity, assume a timeline of around one year.\nCandidate: And on the client context, how does the current landscape look, and how many players exist in this space?\nInterviewer: That won't be very relevant here. I'd like you to focus on the strategy itself and how you would approach it.\nCandidate: Understood. I'd lay out the strategy as a three-step, sequential approach, where each step builds on the previous one and we proceed only if the previous step is viable. First, financial feasibility: whether domestic manufacturing makes economic sense compared to imports. Second, operational feasibility: whether we can realistically set up a domestic, end-to-end value chain. Third, the policy, compliance, and risk ecosystem: whether there are any regulatory or execution risks that could derail the strategy. Does this approach work, or am I missing anything?\nInterviewer: This is a very exhaustive approach and covers everything relevant. Go ahead.\nCandidate: I'll start with financial feasibility. The objective is to check whether the delta from domestic production is positive compared to importing EV batteries. I'd break it into three components: revenue per unit, variable cost per unit, and capital expenditure (CAPEX). If domestic production generates higher long-term value than imports across these components, that justifies moving to the next step. Moving to operational feasibility, I'd map the entire EV battery value chain from start to end to identify bottlenecks, breaking it into three stages: raw material procurement; manufacturing, testing, and technology; and distribution and reverse logistics. After evaluating each stage, we can judge whether the ecosystem can be built domestically in a reliable and scalable manner.\nInterviewer: This looks quite exhaustive. Walk me through what you would cover within the value chain.\nCandidate: Within raw material procurement, I'd look at two sources: domestic mining of the key raw materials required for EV batteries, and recycling, especially chemical recycling, since EV batteries are well suited to circularity and recycled materials can be reused as inputs. Within technology and manufacturing, three parts: research and development, covering in-house research, technology development, and acquisition of the required intellectual property (IP); testing, including both early-stage testing and late-stage quality and safety testing; and production and storage, covering the actual manufacturing of batteries and appropriate storage conditions after production. Within distribution and reverse logistics, last-mile distribution to original equipment manufacturers (OEMs) and any reverse logistics for defective units or end-of-life batteries.\nInterviewer: Very comprehensive. You mentioned CAPEX under financial feasibility. What would you cover there?\nCandidate: I'd look at CAPEX across three categories: human capital costs, physical capital costs, and miscellaneous costs such as insurance, marketing, and other supporting expenditures.\nInterviewer: Focus on physical capital costs. What would you include?\nCandidate: Within physical capital costs, three key components: land and infrastructure costs; plant and machinery costs; and ecosystem enablers' costs, including licensing, IP-related costs, and environmental compliance costs such as waste management and recycling infrastructure.\nInterviewer: This is very comprehensive and covers exactly the strategy I wanted you to focus on. With this, we can close the case.\n\nEV Battery Indigenisation Framework & Recommendations\nSTRATEGY FOR INDIGENISING EV BATTERY MANUFACTURING FOR THE GOVERNMENT OF INDIA\nClarifying Questions: Rationale for indigenization (why the government wants to pursue it) Any time or budget constraints Current client landscape and number of players\nBrownie Points: Sequential, gated approach where each step proceeds only if the previous one is viable Bringing chemical recycling and circularity into raw material procurement Including reverse logistics for defective and end-of-life batteries and environmental compliance under ecosystem enablers\nKeep In Mind: Deliverable is a MECE value chain Keep deeper detail ready for drill-downs\nRECOMMENDATIONS: [FLAG] No recommendation in source material. This was a structuring case; the interviewer closed it after the framework without asking for a final recommendation."
   },
-  "framework": "Candidate: Thanks for the case. Before I dive in, I'd like to note a few clarifying questions across three areas: the problem and its objectives, the client context, and a high-level view of the EV battery industry. Starting with the objective, what is the rationale behind this initiative? My hypothesis is that, with the growing EV ecosystem, the government wants batteries produced domestically rather than imported, to promote the Make in India initiative and to capture greater economic value in the long term.\nInterviewer: That's largely the motive, and there's nothing else you need to consider there for now.\nCandidate: Understood. Are there any specific time or budget constraints we should keep in mind?\nInterviewer: There is a budget aspect that will eventually need discussion, but it is not part of this case. On timelines, the government wants to implement this as soon as possible; for simplicity, assume a timeline of around one year.\nCandidate: And on the client context, how does the current landscape look, and how many players exist in this space?\nInterviewer: That won't be very relevant here. I'd like you to focus on the strategy itself and how you would approach it.\nCandidate: Understood. I'd lay out the strategy as a three-step, sequential approach, where each step builds on the previous one and we proceed only if the previous step is viable. First, financial feasibility: whether domestic manufacturing makes economic sense compared to imports. Second, operational feasibility: whether we can realistically set up a domestic, end-to-end value chain. Third, the policy, compliance, and risk ecosystem: whether there are any regulatory or execution risks that could derail the strategy. Does this approach work, or am I missing anything?\nInterviewer: This is a very exhaustive approach and covers everything relevant. Go ahead.\nCandidate: I'll start with financial feasibility. The objective is to check whether the delta from domestic production is positive compared to importing EV batteries. I'd break it into three components: revenue per unit, variable cost per unit, and capital expenditure (CAPEX). If domestic production generates higher long-term value than imports across these components, that justifies moving to the next step. Moving to operational feasibility, I'd map the entire EV battery value chain from start to end to identify bottlenecks, breaking it into three stages: raw material procurement; manufacturing, testing, and technology; and distribution and reverse logistics. After evaluating each stage, we can judge whether the ecosystem can be built domestically in a reliable and scalable manner.\nInterviewer: This looks quite exhaustive. Walk me through what you would cover within the value chain.\nCandidate: Within raw material procurement, I'd look at two sources: domestic mining of the key raw materials required for EV batteries, and recycling, especially chemical recycling, since EV batteries are well suited to circularity and recycled materials can be reused as inputs. Within technology and manufacturing, three parts: research and development, covering in-house research, technology development, and acquisition of the required intellectual property (IP); testing, including both early-stage testing and late-stage quality and safety testing; and production and storage, covering the actual manufacturing of batteries and appropriate storage conditions after production. Within distribution and reverse logistics, last-mile distribution to original equipment manufacturers (OEMs) and any reverse logistics for defective units or end-of-life batteries.\nInterviewer: Very comprehensive. You mentioned CAPEX under financial feasibility. What would you cover there?\nCandidate: I'd look at CAPEX across three categories: human capital costs, physical capital costs, and miscellaneous costs such as insurance, marketing, and other supporting expenditures.\nInterviewer: Focus on physical capital costs. What would you include?\nCandidate: Within physical capital costs, three key components: land and infrastructure costs; plant and machinery costs; and ecosystem enablers' costs, including licensing, IP-related costs, and environmental compliance costs such as waste management and recycling infrastructure.\nInterviewer: This is very comprehensive and covers exactly the strategy I wanted you to focus on. With this, we can close the case.\n\nEV Battery Indigenisation Framework & Recommendations\nSTRATEGY FOR INDIGENISING EV BATTERY MANUFACTURING FOR THE GOVERNMENT OF INDIA\nClarifying Questions: Rationale for indigenization (why the government wants to pursue it) Any time or budget constraints Current client landscape and number of players\nBrownie Points: Sequential, gated approach where each step proceeds only if the previous one is viable Bringing chemical recycling and circularity into raw material procurement Including reverse logistics for defective and end-of-life batteries and environmental compliance under ecosystem enablers\nKeep In Mind: Deliverable is a MECE value chain Keep deeper detail ready for drill-downs\nRECOMMENDATIONS: [FLAG] No recommendation in source material. This was a structuring case; the interviewer closed it after the framework without asking for a final recommendation."
-},
-{
-  "id": 59,
-  "docId": "case-59",
-  "title": "Parts and Recreation",
-  "industry": "Automotive",
-  "difficulty": "Medium",
-  "case_type": "Market Growth",
-  "company": "BCG",
-  "round": "Partner",
-  "prompt": "Our client is an automotive Original Equipment Manufacturer (OEM). They have approached BCG to build a growth strategy. Please go ahead.",
-  "frameworkTree": {
-    "nodes": {
-      "double-revenue": { "id": "double-revenue", "label": "Double Spare-Parts Revenue", "tone": "root", "children": ["organic", "inorganic"] },
-      "organic": { "id": "organic", "label": "Organic Growth", "tone": "branch", "children": ["num-cars", "parts-per-car", "price-per-part"] },
-      "inorganic": { "id": "inorganic", "label": "Inorganic Growth", "tone": "support", "children": ["inorganic-out"] },
-      "inorganic-out": { "id": "inorganic-out", "label": "Ruled Out: limited synergy", "tone": "leaf", "children": [] },
-      "num-cars": { "id": "num-cars", "label": "Number of Cars", "tone": "support", "children": ["num-cars-out"] },
-      "num-cars-out": { "id": "num-cars-out", "label": "Out of Scope (parts division)", "tone": "leaf", "children": [] },
-      "parts-per-car": { "id": "parts-per-car", "label": "Spare Parts Per Car", "tone": "branch", "children": ["product-channel", "service-channel"] },
-      "price-per-part": { "id": "price-per-part", "label": "Price Per Part", "tone": "support", "children": [] },
-      "product-channel": { "id": "product-channel", "label": "Product Channel", "tone": "support", "children": [] },
-      "service-channel": { "id": "service-channel", "label": "Service Channel", "tone": "branch", "children": ["d2c", "b2b"] },
-      "d2c": { "id": "d2c", "label": "D2C Channel", "tone": "branch", "children": ["before-purchase", "after-purchase", "price-sensitivity"] },
-      "before-purchase": { "id": "before-purchase", "label": "Before Purchase", "tone": "branch", "children": ["mandatory-fitments", "optional-addons"] },
-      "mandatory-fitments": { "id": "mandatory-fitments", "label": "Mandatory Fitments", "tone": "leaf", "children": [] },
-      "optional-addons": { "id": "optional-addons", "label": "Optional Add-Ons", "tone": "leaf", "children": [] },
-      "after-purchase": { "id": "after-purchase", "label": "After Purchase", "tone": "branch", "children": ["free-service"] },
-      "free-service": { "id": "free-service", "label": "Free First Service", "tone": "leaf", "children": [] },
-      "price-sensitivity": { "id": "price-sensitivity", "label": "Price Sensitivity", "tone": "branch", "children": ["emi-bundling"] },
-      "emi-bundling": { "id": "emi-bundling", "label": "Bundle Into EMI", "tone": "leaf", "children": [] },
-      "b2b": { "id": "b2b", "label": "B2B Channel", "tone": "branch", "children": ["milestone-incentives", "authorized-partner"] },
-      "milestone-incentives": { "id": "milestone-incentives", "label": "Milestone Incentives", "tone": "leaf", "children": [] },
-      "authorized-partner": { "id": "authorized-partner", "label": "Authorized Partner Program", "tone": "leaf", "children": [] }
+  {
+    "id": 59,
+    "docId": "case-59",
+    "title": "Parts and Recreation",
+    "industry": "Automotive",
+    "difficulty": "Medium",
+    "case_type": "Market Growth",
+    "company": "BCG",
+    "round": "Partner",
+    "prompt": "Our client is an automotive Original Equipment Manufacturer (OEM). They have approached BCG to build a growth strategy. Please go ahead.",
+    "frameworkTree": {
+      "nodes": {
+        "double-revenue": {
+          "id": "double-revenue",
+          "label": "Double Spare-Parts Revenue",
+          "tone": "root",
+          "children": [
+            "organic",
+            "inorganic"
+          ]
+        },
+        "organic": {
+          "id": "organic",
+          "label": "Organic Growth",
+          "tone": "branch",
+          "children": [
+            "num-cars",
+            "parts-per-car",
+            "price-per-part"
+          ]
+        },
+        "inorganic": {
+          "id": "inorganic",
+          "label": "Inorganic Growth",
+          "tone": "support",
+          "children": [
+            "inorganic-out"
+          ]
+        },
+        "inorganic-out": {
+          "id": "inorganic-out",
+          "label": "Ruled Out: limited synergy",
+          "tone": "leaf",
+          "children": []
+        },
+        "num-cars": {
+          "id": "num-cars",
+          "label": "Number of Cars",
+          "tone": "support",
+          "children": [
+            "num-cars-out"
+          ]
+        },
+        "num-cars-out": {
+          "id": "num-cars-out",
+          "label": "Out of Scope (parts division)",
+          "tone": "leaf",
+          "children": []
+        },
+        "parts-per-car": {
+          "id": "parts-per-car",
+          "label": "Spare Parts Per Car",
+          "tone": "branch",
+          "children": [
+            "product-channel",
+            "service-channel"
+          ]
+        },
+        "price-per-part": {
+          "id": "price-per-part",
+          "label": "Price Per Part",
+          "tone": "support",
+          "children": []
+        },
+        "product-channel": {
+          "id": "product-channel",
+          "label": "Product Channel",
+          "tone": "support",
+          "children": []
+        },
+        "service-channel": {
+          "id": "service-channel",
+          "label": "Service Channel",
+          "tone": "branch",
+          "children": [
+            "d2c",
+            "b2b"
+          ]
+        },
+        "d2c": {
+          "id": "d2c",
+          "label": "D2C Channel",
+          "tone": "branch",
+          "children": [
+            "before-purchase",
+            "after-purchase",
+            "price-sensitivity"
+          ]
+        },
+        "before-purchase": {
+          "id": "before-purchase",
+          "label": "Before Purchase",
+          "tone": "branch",
+          "children": [
+            "mandatory-fitments",
+            "optional-addons"
+          ]
+        },
+        "mandatory-fitments": {
+          "id": "mandatory-fitments",
+          "label": "Mandatory Fitments",
+          "tone": "leaf",
+          "children": []
+        },
+        "optional-addons": {
+          "id": "optional-addons",
+          "label": "Optional Add-Ons",
+          "tone": "leaf",
+          "children": []
+        },
+        "after-purchase": {
+          "id": "after-purchase",
+          "label": "After Purchase",
+          "tone": "branch",
+          "children": [
+            "free-service"
+          ]
+        },
+        "free-service": {
+          "id": "free-service",
+          "label": "Free First Service",
+          "tone": "leaf",
+          "children": []
+        },
+        "price-sensitivity": {
+          "id": "price-sensitivity",
+          "label": "Price Sensitivity",
+          "tone": "branch",
+          "children": [
+            "emi-bundling"
+          ]
+        },
+        "emi-bundling": {
+          "id": "emi-bundling",
+          "label": "Bundle Into EMI",
+          "tone": "leaf",
+          "children": []
+        },
+        "b2b": {
+          "id": "b2b",
+          "label": "B2B Channel",
+          "tone": "branch",
+          "children": [
+            "milestone-incentives",
+            "authorized-partner"
+          ]
+        },
+        "milestone-incentives": {
+          "id": "milestone-incentives",
+          "label": "Milestone Incentives",
+          "tone": "leaf",
+          "children": []
+        },
+        "authorized-partner": {
+          "id": "authorized-partner",
+          "label": "Authorized Partner Program",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "double-revenue",
+        "organic",
+        "parts-per-car",
+        "service-channel",
+        "d2c",
+        "b2b"
+      ],
+      "defaultFocusedId": "emi-bundling",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "OEM definition",
+            "Channels in play",
+            "Parts fit other cars?",
+            "Top line or bottom line",
+            "Target and time frame"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Grow parts per car, not volume",
+            "Raise value instead of cutting price"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Defining OEM before proceeding",
+            "Bundling service cost into EMI",
+            "Building an authorized-partner program"
+          ]
+        }
+      ]
     },
-    "defaultExpanded": ["double-revenue", "organic", "parts-per-car", "service-channel", "d2c", "b2b"],
-    "defaultFocusedId": "emi-bundling",
-    "notes": [
-      { "title": "Questions", "items": ["OEM definition", "Channels in play", "Parts fit other cars?", "Top line or bottom line", "Target and time frame"] },
-      { "title": "Keep In Mind", "items": ["Grow parts per car, not volume", "Raise value instead of cutting price"] },
-      { "title": "Brownie Points", "items": ["Defining OEM before proceeding", "Bundling service cost into EMI", "Building an authorized-partner program"] }
-    ]
+    "framework": "Interviewer: Let's get started. Our client is an automotive Original Equipment Manufacturer, or OEM. They have approached BCG to build a growth strategy. Please go ahead.\nCandidate: Thank you. Before I structure my approach, I'd like to ask a few clarifying questions. To confirm my understanding, an Original Equipment Manufacturer is a company that produces the actual vehicles along with the parts that go into them. Is that the right way to think about our client?\nInterviewer: That's correct.\nCandidate: I'd also like to know which part of the business we are focusing on. Is it the vehicle manufacturing business as a whole, or one specific division?\nInterviewer: Good question. The client is the spare parts division of an automobile company. That is who has come to us.\nCandidate: Understood. For spare parts, I see two broad ways the business can operate. First, a product channel, where we sell spare parts to retailers who then sell them onward. Second, a service channel, where we fit and service the spare parts ourselves for the customer. Do we run both of these?\nInterviewer: Yes, that's a good observation. We have both a product channel and a service channel.\nCandidate: One more point on the product itself. Can our spare parts be used only in the cars that our own company manufactures, or can they also be fitted in other companies' cars?\nInterviewer: They can only be used on our own cars.\nCandidate: That's helpful. Finally, I'd like to understand the goal. Are we targeting top line or bottom line growth, and what is the target and the time frame?\nInterviewer: We are looking at the top line. The client wants to double its revenue over the next 2 to 3 years.\nCandidate: Got it. To structure this, growth can come from two directions: organic growth and inorganic growth. For a spare parts business, I don't think inorganic growth makes much sense. Since our parts can only be used on our own cars, acquiring another company would add limited value and would take a lot of time to merge and fine tune into our operations. So I'd set inorganic growth aside and focus on organic growth. Does that sound fair?\nInterviewer: Yes, that sounds fair.\nCandidate: For organic growth, I'd break revenue into three levers:\nOrganic Revenue = Number of Cars × Spare Parts per Car × Price per Spare Part\nOne quick check before I go deeper: should we also look at increasing the number of cars sold, since more cars on the road directly increases the demand for spare parts?\nInterviewer: That's a good observation, but the client is only the spare parts division. So let's focus there.\nCandidate: Understood. I'll set the number of cars aside and focus on increasing the number of spare parts sold per car and the price per part. To go deeper, I'd look at our two routes to market separately: the product channel and the service channel.\nInterviewer: Let's start with the service channel.\nCandidate: Sure. In the service channel, customers come to us directly to get their cars serviced, and we fit our own spare parts during that service. I'd split this channel into two routes: a Direct-to-Consumer route, or D2C, where we deal with the end customer, and a Business-to-Business route, or B2B, where we work with other businesses. Let me start with the Direct-to-Consumer route. I'd think about it in two stages: before the customer buys the car, and after they own it. Before the purchase, there are two opportunities. First, mandatory fitments that are built into the car automatically, for example a spare tyre. At the moment of buying the car, an extra 4,000 to 5,000 rupees for these fitments feels small to the customer, so they rarely object. Second, optional add-ons that the customer can choose to include.\nInterviewer: And after the purchase?\nCandidate: After the purchase, I'd offer one free service or one free repair along with the car. Customers usually hesitate to visit the official service centre at first. A free first service brings them in, lets them experience the quality of our work, and makes them far more likely to return to us when a real issue comes up later.\nInterviewer: You keep mentioning a value proposition. What is the biggest pain point that would push a customer towards a local retailer instead of us?\nCandidate: The biggest pain point is price sensitivity. Local retailers are usually cheaper.\nInterviewer: So how would you counter that price sensitivity?\nCandidate: We can't simply undercut the retailers, because we offer a better service and genuine original parts, so our costs are higher. Instead of cutting the price, I'd raise the value proposition. Many customers, especially price sensitive ones, buy their cars on an Equated Monthly Instalment, or EMI. If we can find a way to fold the cost of their servicing and spare parts into their existing EMI, the value proposition improves a lot. For example, if a local retailer charges 5,000 rupees, our service might cost 10,000 rupees. Paid upfront, that gap feels large. But spread across the monthly EMI, it becomes a small increase of perhaps a hundred rupees a month, which makes our higher quality option feel far more affordable.\nInterviewer: Alright. Let's move to the Business-to-Business route within the service channel.\nCandidate: In the Business-to-Business route, the key questions are how we sell to our partners and how we get them to prefer us. I'd set up an incentive and milestone program. We define clear milestones, and partners who reach a certain volume of sales or service earn better terms and advantages. The strongest performers can be recognised as our authorized partners. This works as a win-win. Customers get the trust of seeing an official authorized partner badge, so they are comfortable going there. For the retailer, becoming an authorized partner means more business, because customers of our brand will prefer to come to them. And for us, sales rise as more service and parts flow through this partner network.\nInterviewer: Good. Can you summarise the case for me?\nCandidate: Certainly. Our client is the spare parts division of an automotive OEM that wants to double its revenue in 2 to 3 years. We focused on organic growth and set inorganic growth aside, since our parts only fit our own cars. Within organic growth, we concentrated on selling more spare parts through two channels. In the service channel, on the Direct-to-Consumer side, we capture value before purchase through mandatory fitments and optional add-ons, and after purchase through a free first service that builds trust, supported by EMI bundling to overcome price sensitivity. On the Business-to-Business side, we use a milestone based incentive and authorized partner program to grow sales through our partner network.\nInterviewer: That's a clear summary. We can close the case here.\n\nParts and Recreation Framework & Recommendations\nGROWTH STRATEGY TO DOUBLE REVENUE FOR AN AUTOMOTIVE SPARE PARTS DIVISION\nClarifying Questions: Meaning of OEM Channels in play (product and service) Whether the parts fit other cars Top line or bottom line Target and time frame\nBrownie Points: Defining OEM before proceeding Bundling service cost into the EMI Building a milestone based authorized partner program\nKeep In Mind: Grow parts per car, not volume Raise value instead of cutting price\nRECOMMENDATIONS: [FLAG] No recommendation in source material. This was an open-ended, conversational growth case; the interviewer closed it after the structure and summary without asking for a final recommendation."
   },
-  "framework": "Interviewer: Let's get started. Our client is an automotive Original Equipment Manufacturer, or OEM. They have approached BCG to build a growth strategy. Please go ahead.\nCandidate: Thank you. Before I structure my approach, I'd like to ask a few clarifying questions. To confirm my understanding, an Original Equipment Manufacturer is a company that produces the actual vehicles along with the parts that go into them. Is that the right way to think about our client?\nInterviewer: That's correct.\nCandidate: I'd also like to know which part of the business we are focusing on. Is it the vehicle manufacturing business as a whole, or one specific division?\nInterviewer: Good question. The client is the spare parts division of an automobile company. That is who has come to us.\nCandidate: Understood. For spare parts, I see two broad ways the business can operate. First, a product channel, where we sell spare parts to retailers who then sell them onward. Second, a service channel, where we fit and service the spare parts ourselves for the customer. Do we run both of these?\nInterviewer: Yes, that's a good observation. We have both a product channel and a service channel.\nCandidate: One more point on the product itself. Can our spare parts be used only in the cars that our own company manufactures, or can they also be fitted in other companies' cars?\nInterviewer: They can only be used on our own cars.\nCandidate: That's helpful. Finally, I'd like to understand the goal. Are we targeting top line or bottom line growth, and what is the target and the time frame?\nInterviewer: We are looking at the top line. The client wants to double its revenue over the next 2 to 3 years.\nCandidate: Got it. To structure this, growth can come from two directions: organic growth and inorganic growth. For a spare parts business, I don't think inorganic growth makes much sense. Since our parts can only be used on our own cars, acquiring another company would add limited value and would take a lot of time to merge and fine tune into our operations. So I'd set inorganic growth aside and focus on organic growth. Does that sound fair?\nInterviewer: Yes, that sounds fair.\nCandidate: For organic growth, I'd break revenue into three levers:\nOrganic Revenue = Number of Cars × Spare Parts per Car × Price per Spare Part\nOne quick check before I go deeper: should we also look at increasing the number of cars sold, since more cars on the road directly increases the demand for spare parts?\nInterviewer: That's a good observation, but the client is only the spare parts division. So let's focus there.\nCandidate: Understood. I'll set the number of cars aside and focus on increasing the number of spare parts sold per car and the price per part. To go deeper, I'd look at our two routes to market separately: the product channel and the service channel.\nInterviewer: Let's start with the service channel.\nCandidate: Sure. In the service channel, customers come to us directly to get their cars serviced, and we fit our own spare parts during that service. I'd split this channel into two routes: a Direct-to-Consumer route, or D2C, where we deal with the end customer, and a Business-to-Business route, or B2B, where we work with other businesses. Let me start with the Direct-to-Consumer route. I'd think about it in two stages: before the customer buys the car, and after they own it. Before the purchase, there are two opportunities. First, mandatory fitments that are built into the car automatically, for example a spare tyre. At the moment of buying the car, an extra 4,000 to 5,000 rupees for these fitments feels small to the customer, so they rarely object. Second, optional add-ons that the customer can choose to include.\nInterviewer: And after the purchase?\nCandidate: After the purchase, I'd offer one free service or one free repair along with the car. Customers usually hesitate to visit the official service centre at first. A free first service brings them in, lets them experience the quality of our work, and makes them far more likely to return to us when a real issue comes up later.\nInterviewer: You keep mentioning a value proposition. What is the biggest pain point that would push a customer towards a local retailer instead of us?\nCandidate: The biggest pain point is price sensitivity. Local retailers are usually cheaper.\nInterviewer: So how would you counter that price sensitivity?\nCandidate: We can't simply undercut the retailers, because we offer a better service and genuine original parts, so our costs are higher. Instead of cutting the price, I'd raise the value proposition. Many customers, especially price sensitive ones, buy their cars on an Equated Monthly Instalment, or EMI. If we can find a way to fold the cost of their servicing and spare parts into their existing EMI, the value proposition improves a lot. For example, if a local retailer charges 5,000 rupees, our service might cost 10,000 rupees. Paid upfront, that gap feels large. But spread across the monthly EMI, it becomes a small increase of perhaps a hundred rupees a month, which makes our higher quality option feel far more affordable.\nInterviewer: Alright. Let's move to the Business-to-Business route within the service channel.\nCandidate: In the Business-to-Business route, the key questions are how we sell to our partners and how we get them to prefer us. I'd set up an incentive and milestone program. We define clear milestones, and partners who reach a certain volume of sales or service earn better terms and advantages. The strongest performers can be recognised as our authorized partners. This works as a win-win. Customers get the trust of seeing an official authorized partner badge, so they are comfortable going there. For the retailer, becoming an authorized partner means more business, because customers of our brand will prefer to come to them. And for us, sales rise as more service and parts flow through this partner network.\nInterviewer: Good. Can you summarise the case for me?\nCandidate: Certainly. Our client is the spare parts division of an automotive OEM that wants to double its revenue in 2 to 3 years. We focused on organic growth and set inorganic growth aside, since our parts only fit our own cars. Within organic growth, we concentrated on selling more spare parts through two channels. In the service channel, on the Direct-to-Consumer side, we capture value before purchase through mandatory fitments and optional add-ons, and after purchase through a free first service that builds trust, supported by EMI bundling to overcome price sensitivity. On the Business-to-Business side, we use a milestone based incentive and authorized partner program to grow sales through our partner network.\nInterviewer: That's a clear summary. We can close the case here.\n\nParts and Recreation Framework & Recommendations\nGROWTH STRATEGY TO DOUBLE REVENUE FOR AN AUTOMOTIVE SPARE PARTS DIVISION\nClarifying Questions: Meaning of OEM Channels in play (product and service) Whether the parts fit other cars Top line or bottom line Target and time frame\nBrownie Points: Defining OEM before proceeding Bundling service cost into the EMI Building a milestone based authorized partner program\nKeep In Mind: Grow parts per car, not volume Raise value instead of cutting price\nRECOMMENDATIONS: [FLAG] No recommendation in source material. This was an open-ended, conversational growth case; the interviewer closed it after the structure and summary without asking for a final recommendation."
-}
+  {
+    "id": 60,
+    "docId": "case-60",
+    "title": "Catch Me If You Cab",
+    "industry": "Aviation",
+    "difficulty": "Medium",
+    "case_type": "Pricing",
+    "company": "NA",
+    "round": "NA",
+    "prompt": "An IITM startup founded by Prof. Satya is launching an E-Plane company. The business is to operate flying taxis that transport people from the airport to two to three points across Chennai. Help them figure out the pricing strategy.",
+    "frameworkTree": {
+      "nodes": {
+        "root": {
+          "id": "root",
+          "label": "E-Plane Pricing",
+          "tone": "primary",
+          "children": [
+            "clar",
+            "cost",
+            "customers",
+            "points",
+            "breakeven",
+            "strategy"
+          ]
+        },
+        "clar": {
+          "id": "clar",
+          "label": "Clarifications",
+          "tone": "default",
+          "children": [
+            "clar-biz",
+            "clar-specs",
+            "clar-time",
+            "clar-plan"
+          ]
+        },
+        "clar-biz": {
+          "id": "clar-biz",
+          "label": "Business & Geography",
+          "tone": "leaf",
+          "children": []
+        },
+        "clar-specs": {
+          "id": "clar-specs",
+          "label": "Specs (7 Fleet, 5 Seats, Electric Drone)",
+          "tone": "leaf",
+          "children": []
+        },
+        "clar-time": {
+          "id": "clar-time",
+          "label": "Breakeven (3 Years)",
+          "tone": "leaf",
+          "children": []
+        },
+        "clar-plan": {
+          "id": "clar-plan",
+          "label": "Ops Plan (7 Days, 10 Trips)",
+          "tone": "leaf",
+          "children": []
+        },
+        "cost": {
+          "id": "cost",
+          "label": "Cost Structure",
+          "tone": "default",
+          "children": [
+            "fixed",
+            "variable"
+          ]
+        },
+        "fixed": {
+          "id": "fixed",
+          "label": "Fixed Costs (₹10 Cr)",
+          "tone": "default",
+          "children": [
+            "fixed-rd",
+            "fixed-ppe"
+          ]
+        },
+        "fixed-rd": {
+          "id": "fixed-rd",
+          "label": "R&D (₹4 Cr)",
+          "tone": "leaf",
+          "children": []
+        },
+        "fixed-ppe": {
+          "id": "fixed-ppe",
+          "label": "PPE (Land + Fleet)",
+          "tone": "default",
+          "children": [
+            "ppe-land",
+            "ppe-fleet",
+            "ppe-build"
+          ]
+        },
+        "ppe-land": {
+          "id": "ppe-land",
+          "label": "Land",
+          "tone": "leaf",
+          "children": []
+        },
+        "ppe-fleet": {
+          "id": "ppe-fleet",
+          "label": "Fleet ₹50L × 7 = ₹3.5 Cr",
+          "tone": "leaf",
+          "children": []
+        },
+        "ppe-build": {
+          "id": "ppe-build",
+          "label": "Per-Plane: Car ₹10L + Modules ₹36L (Frame:Rotors:Electrical = 1:3:2) ≈ ₹50L",
+          "tone": "leaf",
+          "children": []
+        },
+        "variable": {
+          "id": "variable",
+          "label": "Variable Costs (₹18 Cr)",
+          "tone": "default",
+          "children": [
+            "var-ops",
+            "var-maint",
+            "var-labour"
+          ]
+        },
+        "var-ops": {
+          "id": "var-ops",
+          "label": "Energy (₹50 L)",
+          "tone": "default",
+          "children": [
+            "var-ops-formula"
+          ]
+        },
+        "var-ops-formula": {
+          "id": "var-ops-formula",
+          "label": "Distance × kWh/km × Variability × ₹/kWh",
+          "tone": "leaf",
+          "children": []
+        },
+        "var-maint": {
+          "id": "var-maint",
+          "label": "Maintenance (₹20 L)",
+          "tone": "leaf",
+          "children": []
+        },
+        "var-labour": {
+          "id": "var-labour",
+          "label": "Labour (₹18 Cr)",
+          "tone": "default",
+          "children": [
+            "lab-skill",
+            "lab-unskill"
+          ]
+        },
+        "lab-skill": {
+          "id": "lab-skill",
+          "label": "Skilled: 30 Eng × ₹20L pa × 3yr = ₹18 Cr",
+          "tone": "leaf",
+          "children": []
+        },
+        "lab-unskill": {
+          "id": "lab-unskill",
+          "label": "Unskilled ≈ 0",
+          "tone": "leaf",
+          "children": []
+        },
+        "customers": {
+          "id": "customers",
+          "label": "Customer Base",
+          "tone": "default",
+          "children": [
+            "cust-seg",
+            "cust-cap",
+            "cust-total"
+          ]
+        },
+        "cust-seg": {
+          "id": "cust-seg",
+          "label": "Wealthy + Tourists + Govt",
+          "tone": "leaf",
+          "children": []
+        },
+        "cust-cap": {
+          "id": "cust-cap",
+          "label": "Capacity 50/Day (10 × 5)",
+          "tone": "leaf",
+          "children": []
+        },
+        "cust-total": {
+          "id": "cust-total",
+          "label": "3-Yr Total ≈ 50,000 (54,750 rounded)",
+          "tone": "highlight",
+          "children": []
+        },
+        "points": {
+          "id": "points",
+          "label": "Points of Operation",
+          "tone": "default",
+          "children": [
+            "pt-access",
+            "pt-density",
+            "pt-climate",
+            "pt-land",
+            "pt-example"
+          ]
+        },
+        "pt-access": {
+          "id": "pt-access",
+          "label": "Long Road Time or Inaccessible",
+          "tone": "leaf",
+          "children": []
+        },
+        "pt-density": {
+          "id": "pt-density",
+          "label": "Premium Segment Density",
+          "tone": "leaf",
+          "children": []
+        },
+        "pt-climate": {
+          "id": "pt-climate",
+          "label": "Climate (Uniform)",
+          "tone": "leaf",
+          "children": []
+        },
+        "pt-land": {
+          "id": "pt-land",
+          "label": "Landing Feasibility (Uniform)",
+          "tone": "leaf",
+          "children": []
+        },
+        "pt-example": {
+          "id": "pt-example",
+          "label": "Marina + Cinema District (Opposite Sides)",
+          "tone": "leaf",
+          "children": []
+        },
+        "breakeven": {
+          "id": "breakeven",
+          "label": "Breakeven Math",
+          "tone": "primary",
+          "children": [
+            "be-total",
+            "be-equation",
+            "be-price"
+          ]
+        },
+        "be-total": {
+          "id": "be-total",
+          "label": "Total Cost = ₹10 Cr + ₹18 Cr = ₹28 Cr",
+          "tone": "leaf",
+          "children": []
+        },
+        "be-equation": {
+          "id": "be-equation",
+          "label": "50,000 × P = ₹28 Cr",
+          "tone": "leaf",
+          "children": []
+        },
+        "be-price": {
+          "id": "be-price",
+          "label": "P = ₹5,600 / Customer",
+          "tone": "highlight",
+          "children": []
+        },
+        "strategy": {
+          "id": "strategy",
+          "label": "Pricing Strategy",
+          "tone": "default",
+          "children": [
+            "str-cost",
+            "str-value",
+            "str-comp",
+            "str-ramp",
+            "str-check"
+          ]
+        },
+        "str-cost": {
+          "id": "str-cost",
+          "label": "Cost-Based (Floor ₹5,600)",
+          "tone": "leaf",
+          "children": []
+        },
+        "str-value": {
+          "id": "str-value",
+          "label": "Value-Based (Time Saved Ceiling)",
+          "tone": "leaf",
+          "children": []
+        },
+        "str-comp": {
+          "id": "str-comp",
+          "label": "Competitor-Based",
+          "tone": "leaf",
+          "children": []
+        },
+        "str-ramp": {
+          "id": "str-ramp",
+          "label": "Start Low, Step Up Yearly",
+          "tone": "leaf",
+          "children": []
+        },
+        "str-check": {
+          "id": "str-check",
+          "label": "Sense-Check With Second Method",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "root",
+        "cost",
+        "fixed",
+        "variable",
+        "breakeven",
+        "strategy"
+      ],
+      "defaultFocusedId": "be-price",
+      "notes": [
+        {
+          "title": "Clarifying Questions",
+          "items": [
+            "Business and geography",
+            "Specs (fleet, capacity, vehicle type)",
+            "Breakeven timeline",
+            "Operation plan (days and trips)"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Cost-based price is the floor, not the final number",
+            "Sense-check pricing approaches against each other"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Naming three pricing methods and choosing by data fit",
+            "Adding a variability factor for climatic and landing conditions",
+            "Selecting points by access difficulty plus premium segment density"
+          ]
+        },
+        {
+          "title": "Recommendations",
+          "items": [
+            "Anchor on the cost-based floor: breakeven price ₹5,600 per customer over 3 years",
+            "Set an upper ceiling using value-based pricing on time saved versus road travel",
+            "Start near the floor for early adoption, then step prices upward year-on-year",
+            "Sense-check the cost-based number with a value-based or competitor-based estimate before locking the launch price"
+          ]
+        }
+      ]
+    },
+    "framework": "Interviewer: Let's get started. An IITM startup founded by Prof. Satya is launching an E-Plane company. The business is to operate flying taxis that transport people from the airport to two to three points across Chennai. Help them figure out the pricing strategy.\n\nCandidate: Before I dive in I'd like to clarify a few things. First, what exactly is the business doing and where does it operate?\n\nInterviewer: The company runs flying taxis from Chennai's main airport to two or three points across the city. The pitch is a premium service that cuts through road traffic.\n\nCandidate: Got it. Could I get the E-Plane specifications next? Fleet size, seating capacity, and the type of vehicle.\n\nInterviewer: Fleet size is 7. Each plane seats 5. The vehicle is an electric drone.\n\nCandidate: And what is the goal of the pricing strategy? Specifically, by when does the company want to break even?\n\nInterviewer: Breakeven target is 3 years.\n\nCandidate: One more clarification. Is there a predetermined operation plan? Days per week, trips per day?\n\nInterviewer: Yes. 7 days a week, 10 trips a day.\n\nCandidate: That gives me what I need. The framework is straightforward. There are two cost components, fixed and variable, and the minimum price I should charge is the price that lets the business recover both within 3 years.\n\nOn the fixed side, two heads:\n1. R&D costs\n2. PPE costs (Property, Plant, Equipment), which split into land and the flight fleet\n\nOn the variable side:\n1. Operations, mainly energy per trip\n2. Repair and maintenance\n3. Labour, both skilled and unskilled\n4. Any miscellaneous costs\n\nDoes this split look reasonable, or would you like me to consider any other cost head?\n\nInterviewer: That split works. Take fixed costs first. Assume R&D is ₹4 crore.\n\nCandidate: Noted. For PPE, fleet cost dominates. The cost of one E-Plane is roughly the cost of an average 5-seater car plus the additional modules needed to make it airborne.\n\nA 5-seater car is around ₹10 lakh. The airborne modules are frame, rotors, and electrical circuitry, in a ratio of 1:3:2:\n- Frame: ₹6 lakh\n- Rotors: ₹18 lakh\n- Electrical circuitry: ₹12 lakh\n- Module total: ₹36 lakh\n\nPer-plane total = ₹10L + ₹36L = ₹46L, which I'll round to **₹50 lakh per plane**.\n\nFleet cost = ₹50L × 7 = **₹3.5 crore**.\n\nAdding land in, total fixed cost lands at around **₹10 crore**.\n\nInterviewer: Take that as the fixed figure. Move to variables.\n\nCandidate: For operations, energy cost per trip uses:\n\nEnergy Cost per Trip = Distance × Avg Energy Consumption per km × Variability Factor × Cost per Unit Energy\n\nI added a variability factor because for a plane, climatic and landing conditions can move energy consumption significantly trip to trip.\n\nInterviewer: How would you select the two or three points the plane operates between?\n\nCandidate: Since docking and refuelling are at the airport, one end of each route is fixed. For the other end, I'd pick places that either take a long time to reach from the airport by road, or are inaccessible by road. That's where this service creates the most time-saved value.\n\nInterviewer: Who are the customers?\n\nCandidate: It's a premium service, so the people willing to pay are from the upper strata. Three segments:\n1. Wealthy residents\n2. Tourists\n3. Government officials\n\nThat last group was your suggestion. Combining these segments with the access-difficulty filter narrows the candidate points to those with high concentration of premium users. For Chennai, Marina is a strong pick on one route, and another route could connect to a cinema district. Preferably the two points are on opposite sides of the city.\n\nInterviewer: Any other selection filters?\n\nCandidate: Two more, both turn out to be neutral here:\n- Climatic conditions across Chennai are largely uniform, so they don't change much across points\n- Landing feasibility is also uniform once we pick reasonable open spaces\n\nBack to the energy build. With distance roughly 15 km (airport to Marina), average consumption around 2.5 kWh per km, and energy cost around ₹20 per kWh, per-trip energy lands at about ₹750. Spread over 3 years of operation, total energy cost works out to approximately **₹50 lakh**.\n\nDoes the per-trip approach look right before I add the rest?\n\nInterviewer: Yes, continue.\n\nCandidate: After energy I'd add:\n1. Repair and maintenance: roughly **₹20 lakh** over 3 years\n2. Labour:\n   - Skilled: 30 engineers × ₹20 lakh per annum = ₹600 lakh per year × 3 years = **₹1,800 lakh = ₹18 crore**\n   - Unskilled: effectively negligible, close to zero\n\nTotal variable cost = ₹50L + ₹20L + ₹1,800L = **₹1,870L ≈ ₹18 crore**.\n\nAdding fixed (₹10 crore) and variable (₹18 crore), total cost over 3 years is **₹28 crore**.\n\nInterviewer: Customer side?\n\nCandidate: With 10 trips per day at 5 seats each, full-occupancy capacity is 50 customers a day. Over 3 years that's 50 × 365 × 3 ≈ 54,750 customer-trips, which I'll round to **50,000** for clean math.\n\nBreakeven equation:\n\n50,000 × P − ₹18 Cr = ₹10 Cr\n50,000 × P = ₹28 Cr\nP = ₹28,00,00,000 ÷ 50,000\n**P = ₹5,600 per customer**\n\nSo ₹5,600 per ticket is the breakeven price floor.\n\nInterviewer: How do you go from there to an actual pricing strategy?\n\nCandidate: ₹5,600 is the cost-based lower ceiling. To set the upper ceiling, I'd switch to value-based pricing and calculate what these customers would be willing to pay for the time saved versus a road trip, since that's the core value of the service. That number sits at the top.\n\nA practical launch strategy is to start near the lower ceiling to attract early customers, then step prices upward each year toward the upper ceiling as adoption builds.\n\nInterviewer: Anything you'd close on?\n\nCandidate: One closing point. Pricing strategy has three methods:\n1. Cost-based\n2. Value-based\n3. Competitor-based\n\nWhich one you use depends on the data available. We used cost-based here because we had the cost build-up. Ideally you sense-check with a second method (value-based on time saved, or competitor-based against premium taxi or helicopter services) to make sure the number is in the same ballpark.\n\nInterviewer: Good. We can wrap there.\n\n\nCATCH ME IF YOU CAB FRAMEWORK & RECOMMENDATIONS\nE-PLANE PRICING STRATEGY FOR CHENNAI AIRPORT FLYING TAXI\n\nClarifying Questions: Business and geography; Specs (fleet, capacity, vehicle type); Breakeven timeline; Operation plan (days and trips)\n\nBrownie Points: Naming three pricing methods and choosing by data fit; Adding a variability factor for climatic and landing conditions; Selecting points by access difficulty plus premium segment density\n\nKeep In Mind: Cost-based price is the floor, not the final number; Sense-check pricing approaches against each other\n\nRECOMMENDATIONS: Anchor on the cost-based floor of ₹5,600 per customer over 3 years. Set an upper ceiling using value-based pricing on the time saved versus road travel. Start near the floor for early adoption, then step prices upward year-on-year toward the ceiling. Sense-check the cost-based number with a value-based or competitor-based estimate before locking the launch price."
+  }
 ]
