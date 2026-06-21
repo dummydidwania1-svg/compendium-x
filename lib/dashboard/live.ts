@@ -137,12 +137,25 @@ export function mapCaseMeta(id: string, value: DocumentData): DashboardCaseMeta 
 export function mapSessionMeta(id: string, value: DocumentData): DashboardSessionMeta {
   const recording = value?.recording
   const source = recording && typeof recording === 'object' ? (recording as Record<string, unknown>) : {}
+
+  // For dual-mic remote sessions the merged transcript lives on the session doc
+  // itself (mergedTranscript / mergedTranscriptStatus), not in the embedded
+  // recording map. Fall back to those fields when the embedded map has nothing.
+  const transcript = asString(source.transcript) ?? asString(value?.mergedTranscript)
+  const transcriptPreview =
+    asString(source.transcriptPreview) ??
+    (transcript ? transcript.slice(0, 1000) : null)
+  const transcriptStatus =
+    asString(source.transcriptStatus) ?? asString(value?.mergedTranscriptStatus)
+  const transcriptError =
+    asString(source.transcriptError) ?? asString(value?.mergedTranscriptError)
+
   return {
     lobbyId: id,
-    transcript: asString(source.transcript),
-    transcriptPreview: asString(source.transcriptPreview),
-    transcriptStatus: asString(source.transcriptStatus),
-    transcriptError: asString(source.transcriptError),
+    transcript,
+    transcriptPreview,
+    transcriptStatus,
+    transcriptError,
     audioUrl: asString(source.audioUrl),
   }
 }
