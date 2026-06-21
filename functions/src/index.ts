@@ -647,6 +647,16 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   const candidateData = candidateSnap.exists ? (candidateSnap.data() as TrackData) : null
   const interviewerData = interviewerSnap.exists ? (interviewerSnap.data() as TrackData) : null
 
+  // Backfill audio URLs from subcollection onto the session doc if missing.
+  // Existing sessions pre-748d1ca only have audioUrl on the subcollection doc.
+  const audioUrlBackfill: Record<string, string> = {}
+  if (!sessionData.candidateAudioUrl && candidateData?.audioUrl) {
+    audioUrlBackfill.candidateAudioUrl = candidateData.audioUrl
+  }
+  if (!sessionData.interviewerAudioUrl && interviewerData?.audioUrl) {
+    audioUrlBackfill.interviewerAudioUrl = interviewerData.audioUrl
+  }
+
   const candidateStatus = candidateData?.transcriptStatus
   const interviewerStatus = interviewerData?.transcriptStatus
   const interviewerDeclined = sessionData.interviewerAudioCaptured === false
@@ -672,7 +682,7 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   if (!interviewerKnown && !pastGraceWindow) return
 
   await sessionRef.set(
-    { mergedTranscriptStatus: 'processing', updatedAt: FieldValue.serverTimestamp() },
+    { mergedTranscriptStatus: 'processing', ...audioUrlBackfill, updatedAt: FieldValue.serverTimestamp() },
     { merge: true },
   )
 
