@@ -643,6 +643,13 @@ export function InterviewerPageInner({
 	const micDeclineCountRef = useRef(0)
 	const micErrorCountRef = useRef(0)
 	const interviewerRecordingStartedRef = useRef(false)
+	const interviewerFlushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+	const flushInFlightRef = useRef(false)
+	const lastInterviewerFlushUrlRef = useRef<string | null>(null)
+	const lastInterviewerFlushPathRef = useRef<string | null>(null)
+	const lastInterviewerFlushMimeTypeRef = useRef<string>('audio/webm')
+	const recordingFinalizedRef = useRef(false)
+	const cachedAuthTokenRef = useRef<string | null>(null)
 	// Consecutive observations of recording:false while active:true (B5 debounce).
 	const candidateRecordingFalseCountRef = useRef(0)
 
@@ -840,6 +847,99 @@ export function InterviewerPageInner({
 		} catch { /* best-effort */ }
 	}, [lobbyId])
 
+	// Re-upload the cumulative interviewer blob every 20 s to a stable storage path.
+	// Because each flush starts at chunk 0, the blob is always fully decodable —
+	// no WebM initialization-segment problem. This bounds worst-case data loss to
+	// ~20 s if the interviewer hard-closes the browser.
+	const INTERVIEWER_FLUSH_MS = 20_000
+
+	const flushInterviewerAudio = useCallback(async ({ final: isFinal }: { final: boolean }) => {
+		if (!isRemoteMode || !lobbyId) return
+		if (flushInFlightRef.current) return  // skip tick if previous upload still in flight
+
+		// Force the current timeslice into ondataavailable before snapshotting
+		const recorder = interviewerRecorderRef.current
+		if (recorder && recorder.state === 'recording') {
+			try {
+				recorder.requestData()
+				await new Promise<void>((r) => setTimeout(r, 80))
+			} catch { /* recorder may have transitioned state — ignore */ }
+		}
+
+		const chunks = interviewerChunksRef.current
+		if (chunks.length === 0) {
+			if (isFinal) {
+				setInterviewerUploadState('not_captured')
+				void signalNoInterviewerAudio()
+			}
+			return
+		}
+
+		const mimeType = recorder?.mimeType || pickInterviewerMimeType() || 'audio/webm'
+		// Always build from ALL chunks — cumulative blob is always decodable from the start
+		const blob = new Blob(chunks, { type: mimeType })
+
+		flushInFlightRef.current = true
+		if (isFinal) setInterviewerUploadState('uploading')
+
+		try {
+			const user = await waitForAuthUser()
+			if (!user) {
+				if (isFinal) {
+					setInterviewerUploadState('not_captured')
+					void signalNoInterviewerAudio()
+				}
+				return
+			}
+
+			await auth.currentUser?.getIdToken(true).catch(() => {})
+			const ext = mimeType.includes('ogg') ? 'ogg' : 'webm'
+			// Stable path — every flush overwrites the same file
+			const storagePath = `session-recordings/${user.uid}/${lobbyId}/interviewer-live.${ext}`
+			const sRef = storageRef(storage, storagePath)
+			await uploadBytes(sRef, blob, { contentType: mimeType })
+			const audioUrl = await getDownloadURL(sRef)
+
+			lastInterviewerFlushUrlRef.current = audioUrl
+			lastInterviewerFlushPathRef.current = storagePath
+			lastInterviewerFlushMimeTypeRef.current = mimeType
+
+			const nowMs = Date.now()
+			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
+				status: 'uploaded',
+				mode: 'remote' as const,
+				startedAtMs: interviewerStartMsRef.current ?? nowMs,
+				stoppedAtMs: nowMs,
+				durationMs: interviewerStartMsRef.current ? nowMs - interviewerStartMsRef.current : null,
+				stopReason: isFinal ? 'session_completed' : 'periodic_flush',
+				storagePath,
+				audioUrl,
+				mimeType,
+				byteSize: blob.size,
+				role: 'interviewer' as const,
+				startOffsetMs: interviewerStartMsRef.current !== null && interviewerSelectedAtMsRef.current !== null
+					? Math.max(0, interviewerStartMsRef.current - interviewerSelectedAtMsRef.current)
+					: undefined,
+				anchorSelectedAtMs: interviewerSelectedAtMsRef.current ?? undefined,
+				live: !isFinal,
+			})
+
+			if (isFinal) setInterviewerUploadState('uploaded')
+
+			// Cache token for the pagehide keepalive beacon
+			auth.currentUser?.getIdToken(false).then((t) => { cachedAuthTokenRef.current = t }).catch(() => {})
+		} catch {
+			if (isFinal) {
+				setInterviewerUploadState('upload_failed')
+				void signalNoInterviewerAudio()
+			}
+			// Non-final flush failure: non-fatal — next tick retries
+		} finally {
+			flushInFlightRef.current = false
+			if (isFinal) interviewerChunksRef.current = []
+		}
+	}, [isRemoteMode, lobbyId, signalNoInterviewerAudio])
+
 	const startInterviewerRecording = useCallback(async () => {
 		if (!isRemoteMode || !lobbyId || previewMode) return
 		try {
@@ -863,6 +963,10 @@ export function InterviewerPageInner({
 			// to salvage; we null the recorder ref so it knows to do that path.
 			recorder.onerror = () => {
 				micErrorCountRef.current += 1
+				if (interviewerFlushTimerRef.current) {
+					clearInterval(interviewerFlushTimerRef.current)
+					interviewerFlushTimerRef.current = null
+				}
 				interviewerRecorderRef.current = null
 				interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
 				interviewerMicStreamRef.current = null
@@ -878,6 +982,10 @@ export function InterviewerPageInner({
 				}
 			}
 			recorder.start(1000)
+			// Periodic cumulative re-upload — bounds worst-case data loss to ~20 s
+			interviewerFlushTimerRef.current = setInterval(() => {
+				void flushInterviewerAudio({ final: false })
+			}, INTERVIEWER_FLUSH_MS)
 		} catch {
 			micDeclineCountRef.current += 1
 			if (micDeclineCountRef.current === 1) {
@@ -889,101 +997,52 @@ export function InterviewerPageInner({
 				void signalNoInterviewerAudio()
 			}
 		}
-	}, [isRemoteMode, lobbyId, previewMode, signalNoInterviewerAudio])
+	}, [isRemoteMode, lobbyId, previewMode, signalNoInterviewerAudio, flushInterviewerAudio])
 
 	const stopInterviewerRecordingAndUpload = useCallback(async () => {
+		if (recordingFinalizedRef.current) return  // pagehide beacon already fired
+		recordingFinalizedRef.current = true
+
+		// Stop the periodic flush timer before touching the recorder
+		if (interviewerFlushTimerRef.current) {
+			clearInterval(interviewerFlushTimerRef.current)
+			interviewerFlushTimerRef.current = null
+		}
+
 		const recorder = interviewerRecorderRef.current
 		interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
 		interviewerMicStreamRef.current = null
 
-		let blob: Blob
 		if (!recorder) {
-			// Recorder was cleared by onerror mid-session or never started.
-			// Try to salvage any chunks already captured before the error.
-			const chunks = interviewerChunksRef.current
-			if (isRemoteMode && chunks.length > 0) {
-				blob = new Blob(chunks, { type: pickInterviewerMimeType() || 'audio/webm' })
-				interviewerChunksRef.current = []
-			} else {
-				if (isRemoteMode) {
-					setInterviewerUploadState('not_captured')
-					void signalNoInterviewerAudio()
-				}
-				return
-			}
-		} else if (recorder.state === 'inactive') {
-			// Recorder stopped unexpectedly — salvage any chunks already collected.
-			interviewerRecorderRef.current = null
-			const chunks = interviewerChunksRef.current
-			blob = chunks.length > 0
-				? new Blob(chunks, { type: recorder.mimeType || pickInterviewerMimeType() || 'audio/webm' })
-				: new Blob([])
-		} else {
-			blob = await new Promise<Blob>((resolve) => {
-				recorder.addEventListener('stop', () => {
-					resolve(new Blob(interviewerChunksRef.current, {
-						type: recorder.mimeType || pickInterviewerMimeType() || 'audio/webm',
-					}))
-				}, { once: true })
-				try { recorder.stop() } catch { resolve(new Blob([])) }
-			})
-			interviewerRecorderRef.current = null
-		}
-
-		if (!blob.size || !lobbyId) {
-			if (isRemoteMode) {
-				setInterviewerUploadState('not_captured')
-				void signalNoInterviewerAudio()
-			}
+			// Recorder was cleared (onerror) or never started — chunks may still exist
+			await flushInterviewerAudio({ final: true })
 			return
 		}
 
-		const user = await waitForAuthUser()
-		if (!user) {
-			if (isRemoteMode) {
-				setInterviewerUploadState('not_captured')
-				void signalNoInterviewerAudio()
-			}
+		if (recorder.state === 'inactive') {
+			interviewerRecorderRef.current = null
+			await flushInterviewerAudio({ final: true })
 			return
 		}
 
-		if (isRemoteMode) setInterviewerUploadState('uploading')
-		try {
-			await auth.currentUser?.getIdToken(true).catch(() => {})
-			const mimeType = blob.type || 'audio/webm'
-			const ext = mimeType.includes('ogg') ? 'ogg' : 'webm'
-			const storagePath = `session-recordings/${user.uid}/${lobbyId}/interviewer-${Date.now()}.${ext}`
-			const sRef = storageRef(storage, storagePath)
-			await uploadBytes(sRef, blob, { contentType: mimeType })
-			const audioUrl = await getDownloadURL(sRef)
-			const nowMs = Date.now()
-			await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
-				status: 'uploaded',
-				mode: 'remote' as const,
-				startedAtMs: interviewerStartMsRef.current,
-				stoppedAtMs: nowMs,
-				durationMs: interviewerStartMsRef.current ? nowMs - interviewerStartMsRef.current : null,
-				stopReason: 'session_completed',
-				storagePath,
-				audioUrl,
-				mimeType,
-				byteSize: blob.size,
-				role: 'interviewer' as const,
-				startOffsetMs: interviewerStartMsRef.current !== null && interviewerSelectedAtMsRef.current !== null
-					? Math.max(0, interviewerStartMsRef.current - interviewerSelectedAtMsRef.current)
-					: undefined,
-				anchorSelectedAtMs: interviewerSelectedAtMsRef.current ?? undefined,
-			})
-			if (isRemoteMode) setInterviewerUploadState('uploaded')
-		} catch {
-			if (isRemoteMode) setInterviewerUploadState('upload_failed')
-			void signalNoInterviewerAudio()
-		}
-	}, [isRemoteMode, lobbyId, signalNoInterviewerAudio])
+		// Active recorder: stop it and wait for all remaining data before the final flush
+		await new Promise<void>((resolve) => {
+			recorder.addEventListener('stop', () => {
+				interviewerRecorderRef.current = null
+				resolve()
+			}, { once: true })
+			try { recorder.stop() } catch { resolve() }
+		})
+
+		await flushInterviewerAudio({ final: true })
+	}, [flushInterviewerAudio])
 
 	// Cleanup recorder on unmount.
 	useEffect(() => {
 		return () => {
+			if (interviewerFlushTimerRef.current) {
+				clearInterval(interviewerFlushTimerRef.current)
+			}
 			try {
 				if (interviewerRecorderRef.current && interviewerRecorderRef.current.state !== 'inactive') {
 					interviewerRecorderRef.current.stop()
