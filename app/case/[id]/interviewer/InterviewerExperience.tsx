@@ -634,6 +634,8 @@ export function InterviewerPageInner({
 	const interviewerSelectedAtMsRef = useRef<number | null>(null)
 	const micDeclineCountRef = useRef(0)
 	const interviewerRecordingStartedRef = useRef(false)
+	// Consecutive observations of recording:false while active:true (B5 debounce).
+	const candidateRecordingFalseCountRef = useRef(0)
 
 	// ── Remote-mode overlays ─────────────────────────────────────────────────────
 	// B5: Candidate's recording window is closed / recording not active.
@@ -728,18 +730,38 @@ export function InterviewerPageInner({
 			}
 
 			// B5: Candidate's recording is no longer active.
-			// candidatePresence.recording:false while session is in_progress means
-			// their capture window was closed. Suppress once session ends.
+			// Debounce: require two consecutive heartbeats with recording:false while
+			// active:true before showing the overlay, so a single transient or
+			// missing-field heartbeat cannot false-fire it. Stale presence (>25s)
+			// shows the overlay immediately — that threshold is already 2.5× the
+			// 10s heartbeat interval.
 			if (status === 'in_progress') {
 				const STALE_MS = 25000
 				const presence = data.candidatePresence as { active?: boolean; recording?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined
 				if (presence?.lastSeenAt) {
 					const age = Date.now() - presence.lastSeenAt.toDate().getTime()
-					const recordingGone = !presence.recording || !presence.active || age > STALE_MS
-					setCandidateRecordingClosed(recordingGone)
+					const isStale = age > STALE_MS
+					const recordingActiveButStopped = presence.active === true && presence.recording === false
+
+					if (isStale || presence.active === false) {
+						// Offline or stale: show overlay immediately.
+						candidateRecordingFalseCountRef.current = 0
+						setCandidateRecordingClosed(true)
+					} else if (recordingActiveButStopped) {
+						// Require two consecutive observations to filter transient glitches.
+						candidateRecordingFalseCountRef.current++
+						if (candidateRecordingFalseCountRef.current >= 2) {
+							setCandidateRecordingClosed(true)
+						}
+					} else {
+						// Recording is active and healthy.
+						candidateRecordingFalseCountRef.current = 0
+						setCandidateRecordingClosed(false)
+					}
 				}
 			} else {
 				// Clear once session leaves in_progress (ended, cancelled, etc.)
+				candidateRecordingFalseCountRef.current = 0
 				setCandidateRecordingClosed(false)
 			}
 		}
