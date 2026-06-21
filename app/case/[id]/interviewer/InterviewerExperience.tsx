@@ -820,11 +820,67 @@ export function InterviewerPageInner({
 			}).catch(() => { /* best-effort */ })
 		}
 
+		// Prime the token cache immediately so it's available if the page closes
+		// before any periodic flush has run.
+		auth.currentUser?.getIdToken(false).then((t) => { cachedAuthTokenRef.current = t }).catch(() => {})
 		sendHeartbeat(true)
-		const interval = setInterval(() => { sendHeartbeat(true) }, 10_000)
+		const interval = setInterval(() => {
+			sendHeartbeat(true)
+			// Keep token fresh for the pagehide beacon (tokens last 1 h; 10 s refresh is fine)
+			auth.currentUser?.getIdToken(false).then((t) => { cachedAuthTokenRef.current = t }).catch(() => {})
+		}, 10_000)
 
-		// Best-effort inactive signal on page close.
-		const onPageHide = () => { sendHeartbeat(false) }
+		// On page close: mark presence inactive and, if recording is still live,
+		// fire a keepalive beacon to finalize the last-flushed interviewer audio.
+		// fetch+keepalive is used (not sendBeacon) so we can include the auth header.
+		const onPageHide = () => {
+			sendHeartbeat(false)
+
+			if (!isRemoteMode || recordingFinalizedRef.current || !lobbyId || !cachedAuthTokenRef.current) return
+
+			const nowMs = Date.now()
+			if (lastInterviewerFlushUrlRef.current && lastInterviewerFlushPathRef.current) {
+				// At least one periodic flush succeeded — finalize that audio as interrupted
+				fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${cachedAuthTokenRef.current}`,
+					},
+					body: JSON.stringify({
+						status: 'uploaded',
+						mode: 'remote',
+						role: 'interviewer',
+						live: false,
+						interrupted: true,
+						storagePath: lastInterviewerFlushPathRef.current,
+						audioUrl: lastInterviewerFlushUrlRef.current,
+						mimeType: lastInterviewerFlushMimeTypeRef.current,
+						byteSize: 0,
+						startedAtMs: interviewerStartMsRef.current ?? nowMs,
+						stoppedAtMs: nowMs,
+						durationMs: interviewerStartMsRef.current ? nowMs - interviewerStartMsRef.current : null,
+						stopReason: 'page_hide',
+						startOffsetMs: interviewerStartMsRef.current !== null && interviewerSelectedAtMsRef.current !== null
+							? Math.max(0, interviewerStartMsRef.current - interviewerSelectedAtMsRef.current)
+							: undefined,
+						anchorSelectedAtMs: interviewerSelectedAtMsRef.current ?? undefined,
+					}),
+					keepalive: true,
+				}).catch(() => {})
+			} else if (interviewerRecordingStartedRef.current) {
+				// Recording started but no flush ever succeeded — signal no audio via presence
+				fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${cachedAuthTokenRef.current}`,
+					},
+					body: JSON.stringify({ role: 'interviewer', active: true, interviewerAudioCaptured: false }),
+					keepalive: true,
+				}).catch(() => {})
+			}
+		}
 		window.addEventListener('pagehide', onPageHide)
 
 		return () => {
