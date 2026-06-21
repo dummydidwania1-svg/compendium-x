@@ -853,6 +853,18 @@ export function InterviewerPageInner({
 			recorder.ondataavailable = (e) => {
 				if (e.data.size > 0) interviewerChunksRef.current.push(e.data)
 			}
+			// If the recorder stops unexpectedly mid-session (mic disconnected,
+			// browser error, device switch), show the permission banner again so
+			// the interviewer knows their audio dropped and can retry.
+			recorder.onerror = () => {
+				interviewerRecorderRef.current = null
+				interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
+				interviewerMicStreamRef.current = null
+				if (currentViewRef.current !== 'success') {
+					micDeclineCountRef.current = 0
+					setInterviewerMicBannerVisible(true)
+				}
+			}
 			recorder.start(1000)
 		} catch {
 			micDeclineCountRef.current += 1
