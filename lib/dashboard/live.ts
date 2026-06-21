@@ -156,7 +156,9 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     transcriptPreview,
     transcriptStatus,
     transcriptError,
-    audioUrl: asString(source.audioUrl),
+    // Local sessions: embedded recording.audioUrl
+    // Remote sessions: denormalized candidateAudioUrl written by the recording route
+    audioUrl: asString(source.audioUrl) ?? asString(value?.candidateAudioUrl),
   }
 }
 

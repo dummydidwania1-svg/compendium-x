@@ -129,20 +129,32 @@ function stripTimestamps(value: string): string {
  */
 function parseTurnOffsets(raw: string): { cleanText: string; turnOffsets: number[] } {
   const turnOffsets: number[] = []
-  const lines = raw.split('\n')
   const cleanLines: string[] = []
   const MARKER_RE = /^\[t=([\d.]+)\]\s*/
 
-  for (const line of lines) {
+  for (const line of raw.split('\n')) {
     const match = MARKER_RE.exec(line)
     if (match) {
+      // New turn: record its offset and start a fresh clean line.
       turnOffsets.push(parseFloat(match[1]))
-      cleanLines.push(line.slice(match[0].length))
+      cleanLines.push(line.slice(match[0].length).trim())
     } else {
-      cleanLines.push(line)
+      const trimmed = line.trim()
+      if (trimmed) {
+        // Continuation of the previous turn (Gemini wrapped a long line).
+        // Append to the last clean line so the offset count stays in sync.
+        if (cleanLines.length > 0) {
+          cleanLines[cleanLines.length - 1] += ' ' + trimmed
+        } else {
+          // No prior turn yet — treat as the opening line (offset unknown, use 0).
+          turnOffsets.push(0)
+          cleanLines.push(trimmed)
+        }
+      }
+      // Blank lines: skip entirely — they don't represent new turns.
     }
   }
-  return { cleanText: cleanLines.join('\n').trim(), turnOffsets }
+  return { cleanText: cleanLines.join('\n'), turnOffsets }
 }
 
 async function waitForFileReady(fileName: string, apiKey: string): Promise<GeminiFile> {

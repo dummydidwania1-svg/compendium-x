@@ -122,12 +122,16 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
           .collection('recordings')
           .doc(role)
         tx.set(trackRef, { ...trackData, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
-        // For the candidate upload, stamp mergedTranscriptStatus:'pending' on the
-        // session doc so the dashboard shows "Generating transcript..." immediately
-        // instead of "No transcript recorded" until the Cloud Function runs.
+        // For candidate uploads, denormalize fields onto the session doc so the
+        // dashboard can read them without querying the subcollection:
+        //   candidateAudioUrl → dashboard audio player
+        //   mergedTranscriptStatus:'pending' → show "Generating…" immediately
         const sessionUpdate: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() }
-        if (role === 'candidate' && body.status === 'uploaded' && !data.mergedTranscriptStatus) {
-          sessionUpdate.mergedTranscriptStatus = 'pending'
+        if (role === 'candidate' && body.status === 'uploaded') {
+          sessionUpdate.candidateAudioUrl = body.audioUrl
+          if (!data.mergedTranscriptStatus) {
+            sessionUpdate.mergedTranscriptStatus = 'pending'
+          }
         }
         tx.set(sessionRef, sessionUpdate, { merge: true })
       } else {
