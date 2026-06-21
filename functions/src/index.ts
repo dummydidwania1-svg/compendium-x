@@ -122,39 +122,33 @@ function stripTimestamps(value: string): string {
     .trim()
 }
 
+type Turn = { offsetMs: number | null; text: string }
+
 /**
  * Parse per-turn timing markers produced by the dual-mic Gemini prompt.
- * Format per turn: `[t=30.5]` at the start of the line (seconds from track start).
- * Returns { cleanText, turnOffsets } where cleanText has all [t=...] stripped.
+ * Format: `[t=30.5]` at the start of a line (seconds from track start).
+ * Returns structured turns (offsetMs null when no marker present) and cleanText.
  */
-function parseTurnOffsets(raw: string): { cleanText: string; turnOffsets: number[] } {
-  const turnOffsets: number[] = []
-  const cleanLines: string[] = []
+function parseTurnOffsets(raw: string): { turns: Turn[]; cleanText: string } {
+  const turns: Turn[] = []
   const MARKER_RE = /^\[t=([\d.]+)\]\s*/
 
   for (const line of raw.split('\n')) {
     const match = MARKER_RE.exec(line)
     if (match) {
-      // New turn: record its offset and start a fresh clean line.
-      turnOffsets.push(parseFloat(match[1]))
-      cleanLines.push(line.slice(match[0].length).trim())
+      turns.push({ offsetMs: parseFloat(match[1]) * 1000, text: line.slice(match[0].length).trim() })
     } else {
       const trimmed = line.trim()
       if (trimmed) {
-        // Continuation of the previous turn (Gemini wrapped a long line).
-        // Append to the last clean line so the offset count stays in sync.
-        if (cleanLines.length > 0) {
-          cleanLines[cleanLines.length - 1] += ' ' + trimmed
+        if (turns.length > 0) {
+          turns[turns.length - 1].text += ' ' + trimmed
         } else {
-          // No prior turn yet — treat as the opening line (offset unknown, use 0).
-          turnOffsets.push(0)
-          cleanLines.push(trimmed)
+          turns.push({ offsetMs: null, text: trimmed })
         }
       }
-      // Blank lines: skip entirely — they don't represent new turns.
     }
   }
-  return { cleanText: cleanLines.join('\n'), turnOffsets }
+  return { turns, cleanText: turns.map((t) => t.text).join('\n') }
 }
 
 async function waitForFileReady(fileName: string, apiKey: string): Promise<GeminiFile> {
@@ -246,7 +240,7 @@ async function runTranscription(args: {
     usageMetadata: unknown
     finalMimeType: string
     byteSize: number
-    turnOffsets: number[]
+    turns: Turn[]
   }) => {
     const successFields = {
       transcriptStatus: 'completed',
@@ -269,8 +263,10 @@ async function runTranscription(args: {
       await target.trackRef.set(
         {
           ...successFields,
-          // Store parsed turn offsets for the merge function.
-          transcriptTurnOffsets: fields.turnOffsets,
+          // Structured turns for the merge function (text + offsetMs, never desyncs).
+          transcriptTurns: fields.turns,
+          // Parallel offsets array kept for backward-compat readers (seconds).
+          transcriptTurnOffsets: fields.turns.map((t) => (t.offsetMs ?? 0) / 1000),
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true },
@@ -455,11 +451,11 @@ async function runTranscription(args: {
     // then strip them from the displayed transcript text.
     // For embedded (legacy) tracks: just strip any stray timestamps.
     let displayTranscript: string
-    let turnOffsets: number[] = []
+    let turns: Turn[] = []
     if (target.kind === 'subcollection') {
       const parsed = parseTurnOffsets(rawTranscript)
       displayTranscript = stripTimestamps(parsed.cleanText)
-      turnOffsets = parsed.turnOffsets
+      turns = parsed.turns
     } else {
       displayTranscript = stripTimestamps(rawTranscript)
     }
@@ -481,7 +477,7 @@ async function runTranscription(args: {
       usageMetadata,
       finalMimeType,
       byteSize,
-      turnOffsets,
+      turns,
     })
 
     logger.info('transcript_completed', {
@@ -490,7 +486,7 @@ async function runTranscription(args: {
       role: target.kind === 'subcollection' ? target.role : undefined,
       bytes: byteSize,
       model: GEMINI_MODEL,
-      turnCount: turnOffsets.length,
+      turnCount: turns.length,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown transcription error.'
@@ -514,21 +510,26 @@ async function runTranscription(args: {
 
 type TrackData = {
   transcript: string
+  transcriptTurns?: Turn[]
   transcriptTurnOffsets?: number[]
   startOffsetMs?: number
   transcriptStatus?: string
+  audioUrl?: string
 }
 
 /**
- * Interleave two per-track transcripts into one speaker-labeled merged transcript.
+ * Interleave two per-track transcripts into one merged transcript using structured
+ * turns and partial-marker interpolation.
  *
- * Option #1 (per-turn): used only when BOTH tracks have a turn-offset count that
- * exactly matches their line count. Mixing real offsets with synthetic fallback
- * values (i*5000) from mismatched counts would produce silently wrong ordering,
- * so mismatched tracks fall through to option #2 instead.
+ * Priority for turn data (most to least structured):
+ *   1. transcriptTurns (new format — text + offsetMs, no desync risk)
+ *   2. transcriptTurnOffsets + matching line count (748d1ca-era parallel arrays)
+ *   3. raw transcript lines with no timing (all offsetMs treated as null)
  *
- * Option #2 (track-level): interleave at track granularity using startOffsetMs —
- * the earlier-starting track goes first. Approximate but always correct ordering.
+ * Turns with offsetMs=null are interpolated between their nearest marked neighbours
+ * within the same track, so sparse markers degrade gracefully rather than forcing
+ * a whole-block fallback. Only when a track has zero turns at all does it fall back
+ * to the raw transcript string.
  */
 function mergeTranscriptTracks(
   candidate: TrackData | null,
@@ -538,45 +539,81 @@ function mergeTranscriptTracks(
   if (!candidate) return interviewer!.transcript
   if (!interviewer) return candidate.transcript
 
-  const cLines = candidate.transcript.split('\n').filter((l) => l.trim())
-  const iLines = interviewer.transcript.split('\n').filter((l) => l.trim())
+  type PositionedTurn = { globalMs: number; seqKey: number; text: string }
 
-  const candidateOffsets = candidate.transcriptTurnOffsets ?? []
-  const interviewerOffsets = interviewer.transcriptTurnOffsets ?? []
+  function buildPositioned(track: TrackData, trackStart: number, seqBase: number): PositionedTurn[] {
+    // Resolve the best available turn representation.
+    let turns: Array<{ offsetMs: number | null; text: string }>
 
-  // Only use per-turn offsets when counts match — a mismatch means Gemini dropped
-  // some markers and mixing real+synthetic offsets would scramble the sort.
-  const cUsable = candidateOffsets.length === cLines.length && cLines.length > 0
-  const iUsable = interviewerOffsets.length === iLines.length && iLines.length > 0
-
-  if (cUsable && iUsable) {
-    // Option #1: per-turn interleaving by global ms offset.
-    const cStart = Math.max(0, candidate.startOffsetMs ?? 0)
-    const iStart = Math.max(0, interviewer.startOffsetMs ?? 0)
-
-    type Turn = { globalMs: number; text: string }
-    const turns: Turn[] = []
-
-    for (let i = 0; i < cLines.length; i++) {
-      turns.push({ globalMs: Math.max(0, cStart + candidateOffsets[i] * 1000), text: cLines[i] })
-    }
-    for (let i = 0; i < iLines.length; i++) {
-      turns.push({ globalMs: Math.max(0, iStart + interviewerOffsets[i] * 1000), text: iLines[i] })
+    if (track.transcriptTurns && track.transcriptTurns.length > 0) {
+      turns = track.transcriptTurns
+    } else if (track.transcriptTurnOffsets) {
+      const lines = track.transcript.split('\n').filter((l) => l.trim())
+      const offsets = track.transcriptTurnOffsets
+      if (lines.length === offsets.length && lines.length > 0) {
+        turns = lines.map((text, i) => ({ offsetMs: offsets[i] * 1000, text }))
+      } else {
+        turns = lines.map((text) => ({ offsetMs: null, text }))
+      }
+    } else {
+      turns = track.transcript.split('\n').filter((l) => l.trim()).map((text) => ({ offsetMs: null, text }))
     }
 
-    turns.sort((a, b) => a.globalMs - b.globalMs)
-    return turns.map((t) => t.text).join('\n')
+    if (turns.length === 0) return []
+
+    // First pass: assign globalMs to marker-bearing turns.
+    const tentative: (number | null)[] = turns.map((t) =>
+      t.offsetMs !== null ? Math.max(0, trackStart + t.offsetMs) : null,
+    )
+
+    // Second pass: interpolate null positions between known neighbours.
+    for (let i = 0; i < turns.length; i++) {
+      if (tentative[i] !== null) continue
+
+      let prevMs = trackStart
+      let prevIdx = -1
+      for (let p = i - 1; p >= 0; p--) {
+        if (tentative[p] !== null) { prevMs = tentative[p]!; prevIdx = p; break }
+      }
+
+      let nextMs: number | null = null
+      let nextIdx = turns.length
+      for (let n = i + 1; n < turns.length; n++) {
+        if (tentative[n] !== null) { nextMs = tentative[n]!; nextIdx = n; break }
+      }
+
+      if (nextMs !== null) {
+        const steps = nextIdx - prevIdx
+        tentative[i] = prevMs + ((nextMs - prevMs) * (i - prevIdx)) / steps
+      } else {
+        // No following marker: place 1 ms per position after last known point.
+        tentative[i] = prevMs + (i - prevIdx) * 1
+      }
+    }
+
+    return turns.map((t, i) => ({
+      globalMs: tentative[i] as number,
+      // seqKey preserves within-track order on ties; candidate uses 0..N-1,
+      // interviewer uses 1_000_000..1_000_000+M-1 (non-overlapping ranges).
+      seqKey: seqBase + i,
+      text: t.text,
+    }))
   }
 
-  // Option #2: track-level interleaving by startOffsetMs.
-  // Used when marker counts mismatch or are absent. Approximation — turns within
-  // each block are not interleaved, but ordering between the two blocks is correct.
   const cStart = Math.max(0, candidate.startOffsetMs ?? 0)
   const iStart = Math.max(0, interviewer.startOffsetMs ?? 0)
-  const [first, second] = cStart <= iStart
-    ? [candidate.transcript, interviewer.transcript]
-    : [interviewer.transcript, candidate.transcript]
-  return `${first}\n${second}`
+
+  const cTurns = buildPositioned(candidate, cStart, 0)
+  const iTurns = buildPositioned(interviewer, iStart, 1_000_000)
+
+  if (cTurns.length === 0 && iTurns.length === 0) return ''
+  if (cTurns.length === 0) return interviewer.transcript
+  if (iTurns.length === 0) return candidate.transcript
+
+  const all = [...cTurns, ...iTurns]
+  all.sort((a, b) => (a.globalMs !== b.globalMs ? a.globalMs - b.globalMs : a.seqKey - b.seqKey))
+
+  return all.map((t) => t.text).join('\n')
 }
 
 /* -------------------------------------------------------------------------- */
