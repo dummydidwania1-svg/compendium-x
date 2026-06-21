@@ -341,17 +341,19 @@ function BankingOnYouMetaField({
 }) {
 	const labelClass =
 		tone === 'dark'
-			? 'bg-[#6e4b2b] text-[#f7f0e6]'
+			? 'bg-[#3b240d] text-[#e4dacf]'
 			: tone === 'mid'
-				? 'bg-[#ab8d6a] text-[#f7f0e6]'
-				: 'bg-[#dcd0c3] text-[#171311]'
+				? 'bg-[#83684d] text-[#e4dacf]'
+				: 'bg-[#c8bcb1] text-[#50423d]'
+
+	const valueBg = tone === 'dark' ? 'bg-[#e8e0d7]' : 'bg-[#e4dacf]'
 
 	return (
 		<div className="space-y-2">
 			<div className={`px-3 py-2.5 text-center text-[11px] font-black uppercase tracking-[0.12em] ${labelClass}`}>
 				{label}
 			</div>
-			<div className="bg-[#f2eade] px-3 py-4 text-center text-[17px] uppercase leading-none tracking-[0.03em] text-[#211a16]">
+			<div className={`${valueBg} px-3 py-4 text-center text-[17px] uppercase leading-none tracking-[0.03em] text-[#211a16]`}>
 				{value}
 			</div>
 		</div>
@@ -371,19 +373,19 @@ function BankingOnYouDifficulty({
 		<div className="pt-1" title={label}>
 			<div className="flex items-end justify-between gap-3 px-1">
 				{[
-					{ height: 'h-10', fill: 'bg-[#6d5b56]' },
-					{ height: 'h-[3.65rem]', fill: 'bg-[#6f5437]' },
-					{ height: 'h-[5.5rem]', fill: 'bg-[#f2eade]' },
+					{ height: 'h-10', fill: 'bg-[#50423d]' },
+					{ height: 'h-[3.65rem]', fill: 'bg-[#50423d]' },
+					{ height: 'h-[5.5rem]', fill: 'bg-[#50423d]' },
 				].map((bar, index) => (
 					<div
 						key={`difficulty-${index + 1}`}
-						className={`w-full border-[3px] border-[#665143] ${bar.height} ${
+						className={`w-full border-[3px] border-[#50423d] ${bar.height} ${
 							active > index ? bar.fill : 'bg-transparent'
 						}`}
 					/>
 				))}
 			</div>
-			<div className="mt-4 bg-[#dcd0c3] px-3 py-2.5 text-center text-[11px] font-black uppercase tracking-[0.12em] text-[#171311]">
+			<div className="mt-4 bg-[#e4dacf] px-3 py-2.5 text-center text-[11px] font-black uppercase tracking-[0.12em] text-[#50423d]">
 				Difficulty
 			</div>
 		</div>

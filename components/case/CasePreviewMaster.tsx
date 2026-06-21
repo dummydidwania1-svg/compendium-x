@@ -1351,7 +1351,13 @@ function InactiveDrilldownOverlay({
   } | null>(null)
   const pinnedRef = useRef(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hoverEl = useRef<Element | null>(null)
   const cancelClose = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null } }
+  const cancelHover = () => {
+    if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null }
+    if (hoverEl.current) { hoverEl.current.classList.remove('cpm-drill-hover'); hoverEl.current = null }
+  }
   const scheduleClose = () => { if (pinnedRef.current) return; cancelClose(); closeTimer.current = setTimeout(() => setActive(null), 160) }
   const closeNow = () => { pinnedRef.current = false; cancelClose(); setActive(null) }
   const isDrillable = (id: string | null | undefined): id is string =>
@@ -1376,16 +1382,37 @@ function InactiveDrilldownOverlay({
     if (sessionStorage.getItem('cpm-drill-seen')) document.documentElement.classList.add('cpm-drill-seen')
   } catch {}
 }, [])
+  useEffect(() => {
+    const styleId = 'cpm-drill-discovery-css'
+    if (document.getElementById(styleId)) return
+    const style = document.createElement('style')
+    style.id = styleId
+    style.textContent = `
+      [data-node-id].cpm-drill-hover {
+        box-shadow: 0 0 0 2.5px rgba(131,104,77,0.55), 0 0 14px rgba(131,104,77,0.2) !important;
+        transition: box-shadow 100ms ease;
+      }
+    `
+    document.head.appendChild(style)
+  }, [])
 useEffect(() => {
   const host = hostRef.current
   if (!host) return
   const onOver = (e: Event) => {
       const t = (e.target as HTMLElement)?.closest('[data-node-id]')
-      if (t && isDrillable(t.getAttribute('data-node-id'))) openEl(t, false)
+      if (t && isDrillable(t.getAttribute('data-node-id'))) {
+        if (hoverEl.current !== t) {
+          cancelHover()
+          hoverEl.current = t
+          t.classList.add('cpm-drill-hover')
+          hoverTimer.current = setTimeout(() => { cancelHover(); openEl(t, false) }, 800)
+        }
+      }
     }
     const onOut = (e: Event) => {
       const to = (e as MouseEvent).relatedTarget as HTMLElement | null
       if (to && (to.closest('[data-cpm-overlay]') || to.closest('[data-node-id]'))) return
+      cancelHover()
       scheduleClose()
     }
     const onDrill = (e: Event) => {
@@ -1412,6 +1439,7 @@ useEffect(() => {
       host.removeEventListener('cpm-drill', onDrill as EventListener)
       document.removeEventListener('click', onDocClick)
       window.removeEventListener('keydown', onKey)
+      cancelHover()
     }
   }, [hostRef, defaultPath])
   useEffect(() => {
@@ -3722,11 +3750,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
     />
 
     {(() => {
-      const HEADER: Record<string, { bg: string; fg: string }> = {
-        'CASE TYPE': { bg: '#2E1B0A', fg: 'rgba(255,255,255,0.85)' },
-        'COMPANY':   { bg: '#C5AF95', fg: '#3B2F2F' },
-        'ROUND':     { bg: '#CBBDA8', fg: '#3B2F2F' },
-        'INDUSTRY':  { bg: '#7A5530', fg: 'rgba(255,255,255,0.85)' },
+      const HEADER: Record<string, { bg: string; fg: string; bottomBg: string }> = {
+        'CASE TYPE': { bg: '#3b240d', fg: '#e4dacf', bottomBg: 'rgba(255,248,240,0.9)' },
+        'COMPANY':   { bg: '#c5af95', fg: '#50423d', bottomBg: 'rgba(255,248,240,0.9)' },
+        'ROUND':     { bg: '#c5af95', fg: '#50423d', bottomBg: 'rgba(255,248,240,0.9)' },
+        'INDUSTRY':  { bg: '#83684d', fg: '#e4dacf', bottomBg: 'rgba(255,248,240,0.9)' },
       }
       return [
         { label: 'CASE TYPE', value: caseTypeLabel },
@@ -3734,7 +3762,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
         ...(roundLabel !== 'Round Not Specified' ? [{ label: 'ROUND', value: roundLabel }] : []),
         { label: 'INDUSTRY', value: industryLabel },
       ].map((item, idx) => {
-        const h = HEADER[item.label] ?? { bg: '#3B2F2F', fg: 'rgba(255,255,255,0.85)' }
+        const h = HEADER[item.label] ?? { bg: '#3B2F2F', fg: '#e4dacf', bottomBg: 'rgba(255,248,240,0.9)' }
         return (
           <div
             key={item.label}
@@ -3742,9 +3770,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
             style={{ animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
           >
             <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: h.bg }}>
-              <p className="text-[11px] uppercase tracking-[0.2em] font-semibold leading-none" style={{ color: h.fg }}>{item.label}</p>
+              <p className="text-[13px] uppercase tracking-[0.2em] font-bold leading-none" style={{ color: h.fg }}>{item.label}</p>
             </div>
-            <div className="flex flex-1 items-center justify-center border border-[rgba(61,90,53,0.12)] px-2 py-1.5" style={{ background: 'rgba(255,248,240,0.90)' }}>
+            <div className="flex flex-1 items-center justify-center border border-[rgba(61,90,53,0.12)] px-2 py-1.5" style={{ background: h.bottomBg }}>
               <p className="text-[20px] font-medium text-[#3B2F2F] tracking-tight text-center leading-tight" style={{ fontFamily: "'Newsreader', serif" }}>
                 {item.value}
               </p>
@@ -3759,12 +3787,12 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
       className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
       style={{ animation: 'cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both', zIndex: 1 }}
     >
-      <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: '#C5AF95' }}>
-        <p className="text-[11px] uppercase tracking-[0.2em] font-semibold leading-none text-[#3B2F2F]">Difficulty</p>
+      <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: '#c5af95' }}>
+        <p className="text-[13px] uppercase tracking-[0.2em] font-bold leading-none text-[#50423d]">Difficulty</p>
       </div>
-      <div className="flex flex-1 items-end justify-center gap-2.5 border border-[rgba(61,90,53,0.12)] px-2 pb-2 pt-1.5" style={{ background: 'rgba(255,248,240,0.90)' }}>
+      <div className="flex flex-1 items-end justify-center gap-2.5 border border-[rgba(61,90,53,0.12)] px-2 pb-2 pt-1.5" style={{ background: 'rgba(255,248,240,0.9)' }}>
         {([22, 34, 48] as const).map((h, idx) => (
-          <div key={idx} className="w-7 transition-all duration-500" style={{ height: `${h}px`, backgroundColor: idx + 1 <= difficultyLevel ? '#3B2F2F' : 'transparent', border: idx + 1 <= difficultyLevel ? 'none' : '1.5px solid #3B2F2F' }} />
+          <div key={idx} className="w-7 transition-all duration-500" style={{ height: `${h}px`, backgroundColor: idx + 1 <= difficultyLevel ? '#50423d' : 'transparent', border: idx + 1 <= difficultyLevel ? 'none' : '1.5px solid #50423d' }} />
         ))}
       </div>
     </div>
@@ -4653,11 +4681,11 @@ export function CaseInterviewerMaster({
                     <div className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{ height: 'calc(100vh - 168px)' }}>
                       <div className="pointer-events-none absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)', animation: 'cpm-sidebar-glow 14s ease-in-out infinite' }} />
                       {(() => {
-                        const HEADER: Record<string, { bg: string; fg: string }> = {
-                          'CASE TYPE': { bg: '#2E1B0A', fg: 'rgba(255,255,255,0.85)' },
-                          'COMPANY':   { bg: '#C5AF95', fg: '#3B2F2F' },
-                          'ROUND':     { bg: '#CBBDA8', fg: '#3B2F2F' },
-                          'INDUSTRY':  { bg: '#7A5530', fg: 'rgba(255,255,255,0.85)' },
+                        const HEADER: Record<string, { bg: string; fg: string; bottomBg: string }> = {
+                          'CASE TYPE': { bg: '#3b240d', fg: '#e4dacf', bottomBg: 'rgba(255,248,240,0.9)' },
+                          'COMPANY':   { bg: '#c5af95', fg: '#50423d', bottomBg: 'rgba(255,248,240,0.9)' },
+                          'ROUND':     { bg: '#c5af95', fg: '#50423d', bottomBg: 'rgba(255,248,240,0.9)' },
+                          'INDUSTRY':  { bg: '#83684d', fg: '#e4dacf', bottomBg: 'rgba(255,248,240,0.9)' },
                         }
                         return [
                           { label: 'CASE TYPE', value: caseTypeLabel },
@@ -4665,14 +4693,14 @@ export function CaseInterviewerMaster({
                           ...(roundLabel   !== 'Round Not Specified'  ? [{ label: 'ROUND',    value: roundLabel   }] : []),
                           { label: 'INDUSTRY', value: industryLabel },
                         ].map((item, idx) => {
-                          const h = HEADER[item.label] ?? { bg: '#3B2F2F', fg: 'rgba(255,255,255,0.85)' }
+                          const h = HEADER[item.label] ?? { bg: '#3B2F2F', fg: '#e4dacf', bottomBg: 'rgba(255,248,240,0.9)' }
                           return (
                             <div key={item.label} className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
                               style={{ animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}>
                               <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: h.bg }}>
-                                <p className="text-[11px] uppercase tracking-[0.2em] font-semibold leading-none" style={{ color: h.fg }}>{item.label}</p>
+                                <p className="text-[13px] uppercase tracking-[0.2em] font-bold leading-none" style={{ color: h.fg }}>{item.label}</p>
                               </div>
-                              <div className="flex flex-1 items-center justify-center border border-[rgba(61,90,53,0.12)] px-2 py-1.5" style={{ background: 'rgba(255,248,240,0.90)' }}>
+                              <div className="flex flex-1 items-center justify-center border border-[rgba(61,90,53,0.12)] px-2 py-1.5" style={{ background: h.bottomBg }}>
                                 <p className="text-[20px] font-medium text-[#3B2F2F] tracking-tight text-center leading-tight" style={{ fontFamily: "'Newsreader', serif" }}>{item.value}</p>
                               </div>
                             </div>
@@ -4681,11 +4709,11 @@ export function CaseInterviewerMaster({
                       })()}
                       <div className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
                         style={{ animation: 'cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both', zIndex: 1 }}>
-                        <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: '#C5AF95' }}>
-                          <p className="text-[11px] uppercase tracking-[0.2em] font-semibold leading-none text-[#3B2F2F]">Difficulty</p>
+                        <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: '#e4dacf' }}>
+                          <p className="text-[13px] uppercase tracking-[0.2em] font-bold leading-none text-[#50423d]">Difficulty</p>
                         </div>
-                        <div className="flex flex-1 items-end justify-center gap-2.5 border border-[rgba(61,90,53,0.12)] px-2 pb-2 pt-1.5" style={{ background: 'rgba(255,248,240,0.90)' }}>
-                          {([22, 34, 48] as const).map((h, idx) => <div key={idx} className="w-7 transition-all duration-500" style={{ height: `${h}px`, backgroundColor: idx + 1 <= difficultyLevel ? '#3B2F2F' : 'transparent', border: idx + 1 <= difficultyLevel ? 'none' : '1.5px solid #3B2F2F' }} />)}
+                        <div className="flex flex-1 items-end justify-center gap-2.5 border border-[rgba(61,90,53,0.12)] px-2 pb-2 pt-1.5" style={{ background: '#e4dacf' }}>
+                          {([22, 34, 48] as const).map((h, idx) => <div key={idx} className="w-7 transition-all duration-500" style={{ height: `${h}px`, backgroundColor: idx + 1 <= difficultyLevel ? '#50423d' : 'transparent', border: idx + 1 <= difficultyLevel ? 'none' : '1.5px solid #50423d' }} />)}
                         </div>
                       </div>
                     </div>
