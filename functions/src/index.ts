@@ -510,62 +510,60 @@ type TrackData = {
 /**
  * Interleave two per-track transcripts into one speaker-labeled merged transcript.
  *
- * Strategy (option #1 from spec): each track's Gemini output contains per-turn
- * timing markers [t=XX.X] parsed into `transcriptTurnOffsets` (seconds from
- * track start). Global position of each turn = startOffsetMs + turnOffset*1000.
- * We interleave all turns by global position and concatenate.
+ * Option #1 (per-turn): used only when BOTH tracks have a turn-offset count that
+ * exactly matches their line count. Mixing real offsets with synthetic fallback
+ * values (i*5000) from mismatched counts would produce silently wrong ordering,
+ * so mismatched tracks fall through to option #2 instead.
  *
- * If turn offsets are absent (Gemini didn't emit them), fall back to option #2:
- * interleave at the TRACK granularity using each track's startOffsetMs, placing
- * the earlier-starting track first and appending the later one after it.
- * This is documented as approximate in the merge result.
+ * Option #2 (track-level): interleave at track granularity using startOffsetMs —
+ * the earlier-starting track goes first. Approximate but always correct ordering.
  */
 function mergeTranscriptTracks(
   candidate: TrackData | null,
   interviewer: TrackData | null,
 ): string {
-  // Fallback: if only one track, just return it.
   if (!candidate && !interviewer) return ''
   if (!candidate) return interviewer!.transcript
   if (!interviewer) return candidate.transcript
 
+  const cLines = candidate.transcript.split('\n').filter((l) => l.trim())
+  const iLines = interviewer.transcript.split('\n').filter((l) => l.trim())
+
   const candidateOffsets = candidate.transcriptTurnOffsets ?? []
   const interviewerOffsets = interviewer.transcriptTurnOffsets ?? []
 
-  // Option #1: per-turn interleaving by global ms offset.
-  if (candidateOffsets.length > 0 || interviewerOffsets.length > 0) {
-    const cStart = candidate.startOffsetMs ?? 0
-    const iStart = interviewer.startOffsetMs ?? 0
+  // Only use per-turn offsets when counts match — a mismatch means Gemini dropped
+  // some markers and mixing real+synthetic offsets would scramble the sort.
+  const cUsable = candidateOffsets.length === cLines.length && cLines.length > 0
+  const iUsable = interviewerOffsets.length === iLines.length && iLines.length > 0
 
-    // Split each transcript into turns by splitting on newlines that start with a role label.
-    // Gemini outputs one turn per line for this format.
-    const cLines = candidate.transcript.split('\n').filter((l) => l.trim())
-    const iLines = interviewer.transcript.split('\n').filter((l) => l.trim())
+  if (cUsable && iUsable) {
+    // Option #1: per-turn interleaving by global ms offset.
+    const cStart = Math.max(0, candidate.startOffsetMs ?? 0)
+    const iStart = Math.max(0, interviewer.startOffsetMs ?? 0)
 
     type Turn = { globalMs: number; text: string }
     const turns: Turn[] = []
 
     for (let i = 0; i < cLines.length; i++) {
-      const offset = candidateOffsets[i] !== undefined ? candidateOffsets[i] * 1000 : i * 5000
-      turns.push({ globalMs: cStart + offset, text: cLines[i] })
+      turns.push({ globalMs: Math.max(0, cStart + candidateOffsets[i] * 1000), text: cLines[i] })
     }
     for (let i = 0; i < iLines.length; i++) {
-      const offset = interviewerOffsets[i] !== undefined ? interviewerOffsets[i] * 1000 : i * 5000
-      turns.push({ globalMs: iStart + offset, text: iLines[i] })
+      turns.push({ globalMs: Math.max(0, iStart + interviewerOffsets[i] * 1000), text: iLines[i] })
     }
 
     turns.sort((a, b) => a.globalMs - b.globalMs)
     return turns.map((t) => t.text).join('\n')
   }
 
-  // Option #2 fallback: track-level interleaving by startOffsetMs.
-  // Approximation: whoever started earlier goes first, other appended after.
-  const cStart = candidate.startOffsetMs ?? 0
-  const iStart = interviewer.startOffsetMs ?? 0
+  // Option #2: track-level interleaving by startOffsetMs.
+  // Used when marker counts mismatch or are absent. Approximation — turns within
+  // each block are not interleaved, but ordering between the two blocks is correct.
+  const cStart = Math.max(0, candidate.startOffsetMs ?? 0)
+  const iStart = Math.max(0, interviewer.startOffsetMs ?? 0)
   const [first, second] = cStart <= iStart
     ? [candidate.transcript, interviewer.transcript]
     : [interviewer.transcript, candidate.transcript]
-  // Note: this is an approximation — turns are not interleaved within each block.
   return `${first}\n${second}`
 }
 
