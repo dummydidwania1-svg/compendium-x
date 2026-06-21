@@ -617,6 +617,12 @@ export function InterviewerPageInner({
 	// until the session ends — once feedback is submitted (currentView 'success')
 	// the recording has stopped/uploaded, so the guard turns off.
 	const isLocalMode = (searchParams.get('sessionMode') ?? searchParams.get('mode') ?? 'local') === 'local'
+
+	// Upload state for the interviewer's mic recording (remote mode only).
+	// Shown in the success view so the interviewer knows to wait before closing.
+	const [interviewerUploadState, setInterviewerUploadState] = useState<
+		'idle' | 'uploading' | 'uploaded' | 'upload_failed' | 'not_captured'
+	>('idle')
 	// Remote mode: candidate and interviewer are on separate devices, separate browsers.
 	// No localStorage sharing — all cross-device coordination goes through Firestore.
 	const isRemoteMode = !isLocalMode
@@ -863,26 +869,56 @@ export function InterviewerPageInner({
 
 	const stopInterviewerRecordingAndUpload = useCallback(async () => {
 		const recorder = interviewerRecorderRef.current
-		if (!recorder || recorder.state === 'inactive') {
-			interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
-			interviewerMicStreamRef.current = null
-			return
-		}
-		const blob = await new Promise<Blob>((resolve) => {
-			recorder.addEventListener('stop', () => {
-				resolve(new Blob(interviewerChunksRef.current, {
-					type: recorder.mimeType || pickInterviewerMimeType() || 'audio/webm',
-				}))
-			}, { once: true })
-			try { recorder.stop() } catch { resolve(new Blob([])) }
-		})
-		interviewerRecorderRef.current = null
 		interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
 		interviewerMicStreamRef.current = null
 
-		if (!blob.size || !lobbyId) return
+		if (!recorder) {
+			// Recording never started (mic denied or not in remote mode).
+			if (isRemoteMode) {
+				setInterviewerUploadState('not_captured')
+				void signalNoInterviewerAudio()
+			}
+			return
+		}
+
+		let blob: Blob
+		if (recorder.state === 'inactive') {
+			// Recorder stopped unexpectedly — salvage any chunks already collected.
+			interviewerRecorderRef.current = null
+			const chunks = interviewerChunksRef.current
+			blob = chunks.length > 0
+				? new Blob(chunks, { type: recorder.mimeType || pickInterviewerMimeType() || 'audio/webm' })
+				: new Blob([])
+		} else {
+			blob = await new Promise<Blob>((resolve) => {
+				recorder.addEventListener('stop', () => {
+					resolve(new Blob(interviewerChunksRef.current, {
+						type: recorder.mimeType || pickInterviewerMimeType() || 'audio/webm',
+					}))
+				}, { once: true })
+				try { recorder.stop() } catch { resolve(new Blob([])) }
+			})
+			interviewerRecorderRef.current = null
+		}
+
+		if (!blob.size || !lobbyId) {
+			if (isRemoteMode) {
+				setInterviewerUploadState('not_captured')
+				void signalNoInterviewerAudio()
+			}
+			return
+		}
+
 		const user = await waitForAuthUser()
-		if (!user) return
+		if (!user) {
+			if (isRemoteMode) {
+				setInterviewerUploadState('not_captured')
+				void signalNoInterviewerAudio()
+			}
+			return
+		}
+
+		if (isRemoteMode) setInterviewerUploadState('uploading')
 		try {
 			await auth.currentUser?.getIdToken(true).catch(() => {})
 			const mimeType = blob.type || 'audio/webm'
@@ -909,11 +945,12 @@ export function InterviewerPageInner({
 					: undefined,
 				anchorSelectedAtMs: interviewerSelectedAtMsRef.current ?? undefined,
 			})
+			if (isRemoteMode) setInterviewerUploadState('uploaded')
 		} catch {
-			// Best-effort: upload failure produces a partial (candidate-only) transcript.
+			if (isRemoteMode) setInterviewerUploadState('upload_failed')
 			void signalNoInterviewerAudio()
 		}
-	}, [lobbyId, signalNoInterviewerAudio])
+	}, [isRemoteMode, lobbyId, signalNoInterviewerAudio])
 
 	// Cleanup recorder on unmount.
 	useEffect(() => {
@@ -1979,6 +2016,23 @@ if (previewMode && !forcePreview) {
 	if (previewMode) return null
 
 	if (currentView === 'success') {
+		const uploadDone =
+			!isRemoteMode ||
+			interviewerUploadState === 'uploaded' ||
+			interviewerUploadState === 'upload_failed' ||
+			interviewerUploadState === 'not_captured' ||
+			interviewerUploadState === 'idle'
+		const uploadStatusMessage =
+			interviewerUploadState === 'uploading'
+				? 'Uploading your recording—please keep this tab open for a moment.'
+				: interviewerUploadState === 'uploaded'
+					? 'Your recording uploaded successfully. The transcript will be ready in your dashboard shortly.'
+					: interviewerUploadState === 'upload_failed'
+						? 'Your recording couldn’t be uploaded. Only the candidate’s audio will be available in the transcript.'
+						: interviewerUploadState === 'not_captured'
+							? 'Your microphone wasn’t captured during this session. Only the candidate’s audio will be available in the transcript.'
+							: null
+
 		return (
 			<div
 				className="relative flex min-h-screen flex-col items-center justify-center bg-[#fff8f0] p-4 text-center antialiased"
@@ -1999,14 +2053,37 @@ if (previewMode && !forcePreview) {
 						Thank you
 					</h2>
 					<p className="mt-3 text-[13px] leading-relaxed text-[#5c4033]/68">
-						Feedback submitted successfully. You can close this tab now.
+						Feedback submitted successfully.{' '}
+						{uploadDone ? 'You can close this tab now.' : null}
 					</p>
+
+					{/* Remote-mode upload status */}
+					{isRemoteMode && uploadStatusMessage && (
+						<div className={`mt-4 rounded-xl border px-4 py-3 text-left text-[12px] leading-relaxed ${
+							interviewerUploadState === 'uploading'
+								? 'border-[#3D5A35]/20 bg-[rgba(174,208,161,0.12)] text-[#3D5A35]'
+								: interviewerUploadState === 'uploaded'
+									? 'border-[#3D5A35]/20 bg-[rgba(174,208,161,0.12)] text-[#3D5A35]'
+									: 'border-[#b48a57]/22 bg-[rgba(180,138,87,0.07)] text-[#5c4033]/78'
+						}`}>
+							{interviewerUploadState === 'uploading' && (
+								<span className="mb-1.5 flex items-center gap-2 font-semibold">
+									<svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+										<path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round" />
+									</svg>
+									Uploading recording&hellip;
+								</span>
+							)}
+							{uploadStatusMessage}
+						</div>
+					)}
+
 					<button
 						onClick={closeOrExit}
 						className="mt-8 w-full rounded-full bg-[#3D5A35] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-[#34502d]"
 						style={{ boxShadow: '0 6px 16px rgba(61,90,53,0.18), inset 0 1px 0 rgba(255,255,255,0.18)' }}
 					>
-						Close Window
+						{interviewerUploadState === 'uploading' ? 'Please wait…' : 'Close Window'}
 					</button>
 				</div>
 			</div>

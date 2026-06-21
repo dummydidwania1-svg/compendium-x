@@ -158,7 +158,11 @@ const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void
             <div className="rounded-lg border border-[#CFC2B1] bg-[#EEE6DA] p-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs text-[#5C4033]/70 italic">
-                  {transcriptText ? 'Transcript available.' : 'Transcript metadata is available.'}
+                  {transcriptText
+                    ? transcriptStatus === 'partial'
+                      ? 'Transcript available — interviewer audio wasn\'t captured, so this includes your audio only.'
+                      : 'Transcript available.'
+                    : 'Transcript metadata is available.'}
                 </p>
                 {transcriptText ? (
                   <button

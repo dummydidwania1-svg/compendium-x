@@ -122,8 +122,14 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
           .collection('recordings')
           .doc(role)
         tx.set(trackRef, { ...trackData, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
-        // Touch the session doc's updatedAt so the merge trigger can fire.
-        tx.set(sessionRef, { updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+        // For the candidate upload, stamp mergedTranscriptStatus:'pending' on the
+        // session doc so the dashboard shows "Generating transcript..." immediately
+        // instead of "No transcript recorded" until the Cloud Function runs.
+        const sessionUpdate: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() }
+        if (role === 'candidate' && body.status === 'uploaded' && !data.mergedTranscriptStatus) {
+          sessionUpdate.mergedTranscriptStatus = 'pending'
+        }
+        tx.set(sessionRef, sessionUpdate, { merge: true })
       } else {
         // Legacy path: embedded recording map (local sessions, old clients).
         tx.set(
