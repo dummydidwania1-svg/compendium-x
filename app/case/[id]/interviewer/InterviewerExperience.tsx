@@ -641,6 +641,7 @@ export function InterviewerPageInner({
 	const interviewerStartMsRef = useRef<number | null>(null)
 	const interviewerSelectedAtMsRef = useRef<number | null>(null)
 	const micDeclineCountRef = useRef(0)
+	const micErrorCountRef = useRef(0)
 	const interviewerRecordingStartedRef = useRef(false)
 	// Consecutive observations of recording:false while active:true (B5 debounce).
 	const candidateRecordingFalseCountRef = useRef(0)
@@ -856,13 +857,22 @@ export function InterviewerPageInner({
 				if (e.data.size > 0) interviewerChunksRef.current.push(e.data)
 			}
 			// If the recorder stops unexpectedly mid-session (mic disconnected,
-			// browser error, device switch), show the permission banner again so
-			// the interviewer knows their audio dropped and can retry.
+			// browser error, device switch), offer a retry up to once. After 2
+			// hardware errors, degrade to candidate-only. Chunks captured so far
+			// are preserved in interviewerChunksRef for stopInterviewerRecordingAndUpload
+			// to salvage; we null the recorder ref so it knows to do that path.
 			recorder.onerror = () => {
+				micErrorCountRef.current += 1
 				interviewerRecorderRef.current = null
 				interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
 				interviewerMicStreamRef.current = null
-				if (currentViewRef.current !== 'success') {
+				if (currentViewRef.current === 'success') return
+				if (micErrorCountRef.current >= 2) {
+					// Repeated hardware failure: degrade to candidate-only.
+					// Captured chunks (if any) will be uploaded by stopInterviewerRecordingAndUpload.
+					void signalNoInterviewerAudio()
+				} else {
+					// First hardware error: offer one retry.
 					micDeclineCountRef.current = 0
 					setInterviewerMicBannerVisible(true)
 				}
@@ -886,17 +896,22 @@ export function InterviewerPageInner({
 		interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
 		interviewerMicStreamRef.current = null
 
-		if (!recorder) {
-			// Recording never started (mic denied or not in remote mode).
-			if (isRemoteMode) {
-				setInterviewerUploadState('not_captured')
-				void signalNoInterviewerAudio()
-			}
-			return
-		}
-
 		let blob: Blob
-		if (recorder.state === 'inactive') {
+		if (!recorder) {
+			// Recorder was cleared by onerror mid-session or never started.
+			// Try to salvage any chunks already captured before the error.
+			const chunks = interviewerChunksRef.current
+			if (isRemoteMode && chunks.length > 0) {
+				blob = new Blob(chunks, { type: pickInterviewerMimeType() || 'audio/webm' })
+				interviewerChunksRef.current = []
+			} else {
+				if (isRemoteMode) {
+					setInterviewerUploadState('not_captured')
+					void signalNoInterviewerAudio()
+				}
+				return
+			}
+		} else if (recorder.state === 'inactive') {
 			// Recorder stopped unexpectedly — salvage any chunks already collected.
 			interviewerRecorderRef.current = null
 			const chunks = interviewerChunksRef.current
