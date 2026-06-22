@@ -1365,17 +1365,19 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
     const interval = setInterval(() => {
       const host = window as PopupHost
-      const win = host.__compendiumInterviewerWindow
+      let win = host.__compendiumInterviewerWindow
       if (!win) {
-        // Reference missing — could be a hard refresh. Try to reclaim via named window.
-        const named = window.open('', '_blank')
-        if (named && !named.closed) {
-          host.__compendiumInterviewerWindow = named
-          named.blur()
-          window.focus()
+        // Reference missing — this happens when the interviewer reopened THIS
+        // candidate tab from their own window. In that case window.opener is the
+        // interviewer window, so adopt it instead of spawning a blank popup.
+        const opener = window.opener as Window | null
+        if (opener && !opener.closed) {
+          host.__compendiumInterviewerWindow = opener
+          win = opener
           setInterviewerWindowClosed(false)
+        } else {
+          return
         }
-        return
       }
       if (win.closed) {
         if (!endSessionInitiatedRef.current) setInterviewerWindowClosed(true)

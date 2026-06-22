@@ -14,7 +14,7 @@ import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
 import PlatformLoader from '@/components/PlatformLoader'
 import { slugifyCase } from '@/lib/slug'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
-import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS } from '@/lib/session/candidateTab'
+import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 
 
@@ -1421,7 +1421,7 @@ export function InterviewerPageInner({
 	useEffect(() => {
 		if (!isLocalMode || !lobbyId || previewMode || currentView === 'success') return
 		const interval = setInterval(() => {
-			if (sessionEndedForLobby(lobbyId)) {
+			if (sessionEndedForLobby(lobbyId) || isCandidateClosedDismissed(lobbyId)) {
 				setCandidateTabClosed(false)
 				return
 			}
@@ -1721,7 +1721,7 @@ if (previewMode && !forcePreview) {
 				)}
 
 				{/* Candidate tab closed (split-screen) */}
-				{candidateTabClosed && !micGuardShowing && (
+				{candidateTabClosed && !micGuardShowing && lobbyId && (
 					<LobbyOverlay
 						type="warning"
 						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><line x1="2" y1="2" x2="22" y2="22"/></svg>}
@@ -1730,11 +1730,14 @@ if (previewMode && !forcePreview) {
 						actionLabel="Reopen candidate tab"
 						onAction={() => {
 							const url = candidateTabUrlRef.current ?? `/lobby/${lobbyId}?mode=local`
-							window.open(url, '_blank')
+							openCandidateTab(lobbyId, url)
 							setCandidateTabClosed(false)
 						}}
 						secondaryActionLabel="Continue without recording"
-						onSecondaryAction={() => setCandidateTabClosed(false)}
+						onSecondaryAction={() => {
+							dismissCandidateClosedForSession(lobbyId)
+							setCandidateTabClosed(false)
+						}}
 						onDismiss={() => setCandidateTabClosed(false)}
 					/>
 				)}

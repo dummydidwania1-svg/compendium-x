@@ -17,7 +17,7 @@ import PlatformLoader from '@/components/PlatformLoader'
 import CursorGlow from '@/components/CursorGlow'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
-import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS } from '@/lib/session/candidateTab'
+import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 
 
 function normalizeCaseType(raw: string | null): string | null {
@@ -282,7 +282,7 @@ const clearAllFilters = () => {
   useEffect(() => {
     if (!selectionMode || !lobbyId || sessionMode !== 'local') return
     const interval = setInterval(() => {
-      if (sessionEndedForLobby(lobbyId)) {
+      if (sessionEndedForLobby(lobbyId) || isCandidateClosedDismissed(lobbyId)) {
         setCandidateTabClosed(false)
         return
       }
@@ -795,7 +795,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
         />
       ) : null}
 
-      {candidateTabClosed && !micGuardShowing ? (
+      {candidateTabClosed && !micGuardShowing && lobbyId ? (
         <LobbyOverlay
           key="candidate-tab-closed"
           type="warning"
@@ -805,11 +805,14 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
           actionLabel="Reopen candidate tab"
           onAction={() => {
             const url = candidateTabUrlRef.current ?? `/lobby/${lobbyId}?mode=local`
-            window.open(url, '_blank')
+            openCandidateTab(lobbyId, url)
             setCandidateTabClosed(false)
           }}
           secondaryActionLabel="Continue without recording"
-          onSecondaryAction={() => setCandidateTabClosed(false)}
+          onSecondaryAction={() => {
+            dismissCandidateClosedForSession(lobbyId)
+            setCandidateTabClosed(false)
+          }}
           onDismiss={() => setCandidateTabClosed(false)}
         />
       ) : null}

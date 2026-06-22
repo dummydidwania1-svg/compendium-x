@@ -12,7 +12,7 @@ import PlatformLoader from '@/components/PlatformLoader'
 import { signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
-import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS } from '@/lib/session/candidateTab'
+import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 type SessionState = {
@@ -125,7 +125,16 @@ function CandidateLobby({
     const interval = setInterval(() => {
       if (cancelInitiatedRef.current) return
       const host = window as PopupWindowHost
-      const win = host.__compendiumInterviewerWindow
+      let win = host.__compendiumInterviewerWindow
+      // If we have no reference but the interviewer reopened this candidate tab,
+      // window.opener is the interviewer window — adopt it so the two connect.
+      if (!win) {
+        const opener = window.opener as Window | null
+        if (opener && !opener.closed) {
+          host.__compendiumInterviewerWindow = opener
+          win = opener
+        }
+      }
       if (win && win.closed) {
         setPopupWindowClosed(true)
       } else if (!win || !win.closed) {
@@ -926,7 +935,7 @@ function InterviewerLobby({
   useEffect(() => {
     if (!isLocalMode) return
     const interval = setInterval(() => {
-      if (sessionEndedForLobby(lobbyId)) {
+      if (sessionEndedForLobby(lobbyId) || isCandidateClosedDismissed(lobbyId)) {
         setCandidateTabClosed(false)
         return
       }
@@ -1332,11 +1341,14 @@ function InterviewerLobby({
           actionLabel="Reopen candidate tab"
           onAction={() => {
             const url = candidateTabUrlRef.current ?? `/lobby/${lobbyId}?mode=local`
-            window.open(url, '_blank')
+            openCandidateTab(lobbyId, url)
             setCandidateTabClosed(false)
           }}
           secondaryActionLabel="Continue without recording"
-          onSecondaryAction={() => setCandidateTabClosed(false)}
+          onSecondaryAction={() => {
+            dismissCandidateClosedForSession(lobbyId)
+            setCandidateTabClosed(false)
+          }}
           onDismiss={() => setCandidateTabClosed(false)}
         />
       )}

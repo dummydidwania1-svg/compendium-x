@@ -14,7 +14,7 @@ export const CANDIDATE_TAB_KEY = 'compendium-candidate-tab'
 const SESSION_ENDED_KEY = 'compendium-session-ended'
 
 /** Heartbeat is considered stale (tab gone) once older than this. */
-export const CANDIDATE_TAB_STALE_MS = 4000
+export const CANDIDATE_TAB_STALE_MS = 2500
 
 export type CandidateTabBeat = {
   lobbyId: string
@@ -58,5 +58,41 @@ export function writeCandidateBeat(lobbyId: string): void {
       url: window.location.href,
       ts: Date.now(),
     } satisfies CandidateTabBeat))
+  } catch { /* quota */ }
+}
+
+/** Stable window name for the candidate tab so the interviewer can re-target the
+ *  same window instead of spawning a fresh one each time. */
+export function candidateWindowName(lobbyId: string): string {
+  return `compendium-candidate-${lobbyId}`
+}
+
+/**
+ * Interviewer-side: open (or focus) the candidate tab. Using a named window
+ * means a second call re-targets the existing tab rather than stacking up new
+ * ones. The opened tab gets window.opener pointing back at the interviewer, so
+ * the candidate can reconnect to this exact interviewer window.
+ */
+export function openCandidateTab(lobbyId: string, url: string): void {
+  try {
+    const win = window.open(url, candidateWindowName(lobbyId))
+    win?.focus()
+  } catch { /* popup blocked */ }
+}
+
+const DISMISSED_KEY_PREFIX = 'compendium-candidate-closed-dismissed-'
+
+/** "Continue without recording" was chosen for this lobby — don't nag again. */
+export function isCandidateClosedDismissed(lobbyId: string): boolean {
+  try {
+    return sessionStorage.getItem(DISMISSED_KEY_PREFIX + lobbyId) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function dismissCandidateClosedForSession(lobbyId: string): void {
+  try {
+    sessionStorage.setItem(DISMISSED_KEY_PREFIX + lobbyId, '1')
   } catch { /* quota */ }
 }
