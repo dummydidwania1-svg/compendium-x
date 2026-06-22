@@ -1045,6 +1045,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       parseAndHandleEnded(localStorage.getItem('compendium-session-ended'))
 
       if (sessionRef) {
+        // Guard: if the session is already terminal on mount (e.g. user navigated
+        // back via back-button or pasted a stale URL), redirect immediately.
+        const existingSnap = await getDoc(sessionRef)
+        if (existingSnap.exists()) {
+          const existingData = existingSnap.data() as SessionState
+          if (existingData.status === 'completed' || existingData.status === 'abandoned') {
+            router.replace('/practice')
+            return
+          }
+        }
+
         const startPolling = () => {
           if (pollTimer) return
           pollTimer = setInterval(async () => {

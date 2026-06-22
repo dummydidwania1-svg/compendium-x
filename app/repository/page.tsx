@@ -313,7 +313,9 @@ const clearAllFilters = () => {
       // Non-fatal — navigate away regardless so the session isn't left dangling.
     }
     localStorage.setItem('compendium-session-cancelled', JSON.stringify({ lobbyId, ts: Date.now() }))
-    router.replace('/practice')
+    // Match the interviewer experience cancel behaviour: go back to the
+    // interviewer lobby so they can start fresh (same as handleCancelSession).
+    router.replace(`/lobby/${encodeURIComponent(lobbyId)}?role=interviewer&mode=${sessionMode}`)
   }
 
   // Interviewers arriving in select-mode (via shared invite link) may not be
