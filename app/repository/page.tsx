@@ -17,6 +17,7 @@ import PlatformLoader from '@/components/PlatformLoader'
 import CursorGlow from '@/components/CursorGlow'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
+import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS } from '@/lib/session/candidateTab'
 
 
 function normalizeCaseType(raw: string | null): string | null {
@@ -276,28 +277,25 @@ const clearAllFilters = () => {
   // compendium-session-start before navigating here, so this check is no longer needed.
 
   // Poll every 1s for the candidate heartbeat (local split-screen only).
-  // A heartbeat older than 4s after we've seen the tab alive = it closed.
+  // A heartbeat older than the stale threshold, after we've seen the tab
+  // alive, means it closed unexpectedly.
   useEffect(() => {
     if (!selectionMode || !lobbyId || sessionMode !== 'local') return
     const interval = setInterval(() => {
-      if (localStorage.getItem('compendium-session-ended')) {
+      if (sessionEndedForLobby(lobbyId)) {
         setCandidateTabClosed(false)
         return
       }
-      const raw = localStorage.getItem('compendium-candidate-tab')
-      if (!raw) return
-      try {
-        const data = JSON.parse(raw)
-        if (data?.lobbyId !== lobbyId) return
-        if (data?.url) candidateTabUrlRef.current = data.url
-        const age = Date.now() - (data.ts ?? 0)
-        if (age < 4000) {
-          candidateWasAliveRef.current = true
-          setCandidateTabClosed(false)
-        } else if (candidateWasAliveRef.current) {
-          setCandidateTabClosed(true)
-        }
-      } catch { /* ignore */ }
+      const beat = readCandidateBeat(lobbyId)
+      if (!beat) return
+      if (beat.url) candidateTabUrlRef.current = beat.url
+      const age = Date.now() - beat.ts
+      if (age < CANDIDATE_TAB_STALE_MS) {
+        candidateWasAliveRef.current = true
+        setCandidateTabClosed(false)
+      } else if (candidateWasAliveRef.current) {
+        setCandidateTabClosed(true)
+      }
     }, 1000)
     return () => clearInterval(interval)
   }, [selectionMode, lobbyId, sessionMode])

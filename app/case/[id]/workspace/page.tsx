@@ -13,6 +13,7 @@ import { apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { releaseDisplayMedia } from '@/lib/permissions/displayMedia'
+import { writeCandidateBeat } from '@/lib/session/candidateTab'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
@@ -1346,18 +1347,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // Suppressed once session-ended is written (upload phase started).
   useEffect(() => {
     if (!lobbyId || requestedMode !== 'local') return
-    const beat = () => {
-      if (localStorage.getItem('compendium-session-ended')) return
-      try {
-        localStorage.setItem('compendium-candidate-tab', JSON.stringify({
-          lobbyId,
-          url: window.location.href,
-          ts: Date.now(),
-        }))
-      } catch { /* quota */ }
-    }
-    beat()
-    const interval = setInterval(beat, 1000)
+    writeCandidateBeat(lobbyId)
+    const interval = setInterval(() => writeCandidateBeat(lobbyId), 1000)
     return () => clearInterval(interval)
   // lobbyId and requestedMode are stable for the page lifetime
   // eslint-disable-next-line react-hooks/exhaustive-deps
