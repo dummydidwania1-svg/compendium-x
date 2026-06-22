@@ -2091,19 +2091,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
               <span className="text-[#3D5A35]">X</span>
             </div>
           </div>
-          {/* F17 — nav access: dashboard link in header so the candidate can
-              navigate out of the workspace without needing the browser's
-              address bar. Gated to completed state so it doesn't distract
-              during an active session. */}
-          {feedbackSubmitted ? (
-            <Link
-              href="/"
-              style={{ fontFamily: "'Work Sans', sans-serif", color: '#3D5A35' }}
-              className="text-[11px] tracking-[0.18em] uppercase font-medium hover:opacity-75 transition-opacity"
-            >
-              Dashboard
-            </Link>
-          ) : null}
         </div>
       </header>
 
