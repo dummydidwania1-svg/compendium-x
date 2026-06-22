@@ -30,7 +30,7 @@ const Footer = (_props: FooterProps) => (
             style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }}
             className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all"
           >
-            Collaborators
+            Acknowledgements
           </Link>
           <Link
             href="/privacy-policy"
