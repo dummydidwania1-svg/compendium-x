@@ -1339,6 +1339,37 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [recordingState, recordingConsentDeclined, completionPending, feedbackSubmitted])
 
 
+  // Signal to the interviewer popup that this candidate tab is alive.
+  // Written on mount and cleared (active:false) on pagehide. The interviewer
+  // pages poll this key every 2s to detect an unexpected candidate tab close.
+  // Suppressed once session-ended is written (upload phase started).
+  useEffect(() => {
+    if (!lobbyId || requestedMode !== 'local') return
+    const write = (active: boolean) => {
+      const ended = localStorage.getItem('compendium-session-ended')
+      if (ended) return
+      try {
+        localStorage.setItem('compendium-candidate-tab', JSON.stringify({
+          lobbyId,
+          active,
+          url: window.location.href,
+          ts: Date.now(),
+        }))
+      } catch { /* quota */ }
+    }
+    write(true)
+    const onPagehide = () => write(false)
+    window.addEventListener('pagehide', onPagehide)
+    return () => {
+      window.removeEventListener('pagehide', onPagehide)
+      // On clean unmount (SPA navigation within the session) re-signal active
+      // so the URL stays current. The new route's effect will overwrite immediately.
+      write(true)
+    }
+  // lobbyId and requestedMode are stable for the page lifetime
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lobbyId, requestedMode])
+
   // Poll every 2s to detect if the interviewer popup was closed.
   // The lobby stores the popup reference on window.__compendiumInterviewerWindow
   // before router.replace fires. Since Next.js client-side navigation does NOT

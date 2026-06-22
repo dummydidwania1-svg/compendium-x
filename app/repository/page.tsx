@@ -208,6 +208,8 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
   const closeAttemptRef = useRef(false)
   const [micGuardShowing, setMicGuardShowing] = useState(false)
   const [showReplaceBackGuard, setShowReplaceBackGuard] = useState(false)
+  const [candidateTabClosed, setCandidateTabClosed] = useState(false)
+  const candidateTabUrlRef = useRef<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   // Track which case destinations we've already asked Next.js to prefetch
@@ -271,6 +273,25 @@ const clearAllFilters = () => {
 
   // liveSessionOverlayInfo trigger removed — the replace-case flow now clears
   // compendium-session-start before navigating here, so this check is no longer needed.
+
+  // Poll every 2s for candidate tab closure (local split-screen only).
+  useEffect(() => {
+    if (!selectionMode || !lobbyId || sessionMode !== 'local') return
+    const interval = setInterval(() => {
+      const ended = localStorage.getItem('compendium-session-ended')
+      if (ended) { setCandidateTabClosed(false); return }
+      const raw = localStorage.getItem('compendium-candidate-tab')
+      if (!raw) return
+      try {
+        const data = JSON.parse(raw)
+        if (data?.lobbyId !== lobbyId) return
+        if (data?.url) candidateTabUrlRef.current = data.url
+        const isRecent = Date.now() - (data.ts ?? 0) < 30000
+        setCandidateTabClosed(data.active === false && isRecent)
+      } catch { /* ignore */ }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [selectionMode, lobbyId, sessionMode])
 
   // Back-button guard for replace-case flow. Pushes a dummy history entry so
   // pressing back shows our overlay instead of navigating away blindly.
@@ -764,6 +785,25 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
           secondaryActionLabel="Cancel session"
           onSecondaryAction={() => { setShowReplaceBackGuard(false); void handleCancelSessionFromRepo() }}
           onDismiss={() => setShowReplaceBackGuard(false)}
+        />
+      ) : null}
+
+      {candidateTabClosed && !micGuardShowing ? (
+        <LobbyOverlay
+          key="candidate-tab-closed"
+          type="warning"
+          icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><line x1="2" y1="2" x2="22" y2="22"/></svg>}
+          title="Candidate tab closed"
+          body="No recording is happening right now. Reopen their tab to start capturing audio again, or carry on without it."
+          actionLabel="Reopen candidate tab"
+          onAction={() => {
+            const url = candidateTabUrlRef.current ?? `/lobby/${lobbyId}?mode=local`
+            window.open(url, '_blank')
+            setCandidateTabClosed(false)
+          }}
+          secondaryActionLabel="Continue without recording"
+          onSecondaryAction={() => setCandidateTabClosed(false)}
+          onDismiss={() => setCandidateTabClosed(false)}
         />
       ) : null}
 

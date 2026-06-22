@@ -904,6 +904,27 @@ function InterviewerLobby({
   const closeAttemptRef = useRef(false)
   const isLocalMode = requestedSessionMode === 'local'
   const [micGuardShowing, setMicGuardShowing] = useState(false)
+  const [candidateTabClosed, setCandidateTabClosed] = useState(false)
+  const candidateTabUrlRef = useRef<string | null>(null)
+
+  // Poll every 2s to detect if the candidate workspace tab closed unexpectedly.
+  useEffect(() => {
+    if (!isLocalMode) return
+    const interval = setInterval(() => {
+      const ended = localStorage.getItem('compendium-session-ended')
+      if (ended) { setCandidateTabClosed(false); return }
+      const raw = localStorage.getItem('compendium-candidate-tab')
+      if (!raw) return
+      try {
+        const data = JSON.parse(raw)
+        if (data?.lobbyId !== lobbyId) return
+        if (data?.url) candidateTabUrlRef.current = data.url
+        const isRecent = Date.now() - (data.ts ?? 0) < 30000
+        setCandidateTabClosed(data.active === false && isRecent)
+      } catch { /* ignore */ }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isLocalMode, lobbyId])
 
   useEffect(() => {
     let armed = false
@@ -1281,6 +1302,24 @@ function InterviewerLobby({
           body="Your candidate is waiting. If you close now, the session won't start."
           autoDismissMs={7000}
           onDismiss={() => setShowCloseWarning(false)}
+        />
+      )}
+
+      {candidateTabClosed && !micGuardShowing && (
+        <LobbyOverlay
+          type="warning"
+          icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><line x1="2" y1="2" x2="22" y2="22"/></svg>}
+          title="Candidate tab closed"
+          body="No recording is happening right now. Reopen their tab to start capturing audio again, or carry on without it."
+          actionLabel="Reopen candidate tab"
+          onAction={() => {
+            const url = candidateTabUrlRef.current ?? `/lobby/${lobbyId}?mode=local`
+            window.open(url, '_blank')
+            setCandidateTabClosed(false)
+          }}
+          secondaryActionLabel="Continue without recording"
+          onSecondaryAction={() => setCandidateTabClosed(false)}
+          onDismiss={() => setCandidateTabClosed(false)}
         />
       )}
 
