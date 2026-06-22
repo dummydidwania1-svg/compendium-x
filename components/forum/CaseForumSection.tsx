@@ -513,20 +513,14 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
 function EmptyState() {
   return (
     <div className="f-rise flex flex-col items-center gap-3 py-6">
-      <div className="relative flex items-end justify-center" style={{ width: 48, height: 36 }}>
-        {/* quill pen */}
+      <div className="flex items-center justify-center">
         <svg
-          viewBox="0 0 24 24" fill="none"
-          className="absolute bottom-2 left-1/2 h-[22px] w-[22px] -translate-x-1/2 text-[#3D5A35]/30"
-          style={{ animation: 'forum-quill-float 3s ease-in-out infinite', transformOrigin: 'center bottom' }}
+          width="28" height="28" viewBox="0 0 24 24" fill="none"
+          stroke="#3D5A35" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+          style={{ animation: 'forum-quill-float 3s ease-in-out infinite', opacity: 0.45 }}
         >
-          <path d="M20 3C14 5 8 10 6 20l3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M6 20c1-3 3-5 5-6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-          <path d="M9 17l1.5 1.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.5"/>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
-        {/* writing line */}
-        <div className="absolute bottom-0 left-1/2 h-px -translate-x-1/2 rounded-full bg-[#3D5A35]/20"
-          style={{ animation: 'forum-quill-line 2.4s cubic-bezier(0.4,0,0.6,1) 0.4s infinite' }} />
       </div>
       <p className="text-[12px] text-[#5C4033]/38 tracking-wide"
         style={{ animation: 'forum-empty-breathe 3.5s ease-in-out infinite' }}>

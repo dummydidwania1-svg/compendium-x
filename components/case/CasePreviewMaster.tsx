@@ -692,7 +692,7 @@ function walkthroughSpacingClass(block: WalkthroughBlock, previous?: Walkthrough
  */
 
 function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview'): boolean {
-  const threshold = mode === 'interviewer' ? 7 : 8
+  const threshold = 9
 
   // Build the DEFAULT-VISIBLE set: green path expanded, inactive subtrees collapsed
   const defaultPath = pathTo(DEFAULT_FOCUSED_ID)
@@ -1136,12 +1136,33 @@ function DesktopChart({
   const labelFs = 12.25
   const labelMinH = 54
 
-  const edges = useMemo(() => {
+  const edgeRenderData = useMemo(() => {
+    const LMH = 54
+    const halfH = (id: string) => Math.round(LMH / 2 + Math.max(0, estNodeLines(id) - 2) * 9)
     const vs = new Set(visibleIds)
-    return visibleIds.flatMap(pid =>
-      NODES[pid].children.filter(c => vs.has(c)).map(c => ({ pid, cid: c }))
+    const raw = visibleIds.flatMap(pid =>
+      (NODES[pid]?.children ?? []).filter(c => vs.has(c)).map(cid => ({ pid, cid }))
     )
-  }, [visibleIds])
+    // Pass 1: per-parent busY using the tallest child's top so all siblings share one elbow level
+    const acc = new Map<string, { sY: number; minEY: number }>()
+    raw.forEach(({ pid, cid }) => {
+      const pp = positions.get(pid), cp = positions.get(cid)
+      if (!pp || !cp) return
+      const sY = pp.y + halfH(pid), eY = cp.y - halfH(cid)
+      const cur = acc.get(pid)
+      acc.set(pid, cur ? { sY: cur.sY, minEY: Math.min(cur.minEY, eY) } : { sY, minEY: eY })
+    })
+    const busY = new Map<string, number>()
+    acc.forEach(({ sY, minEY }, pid) => busY.set(pid, Math.round(sY + (minEY - sY) / 2)))
+    // Pass 2: build render data with consistent mY per parent
+    return raw.map(({ pid, cid }) => {
+      const pp = positions.get(pid), cp = positions.get(cid)
+      if (!pp || !cp) return null
+      const sY = pp.y + halfH(pid), eY = cp.y - halfH(cid)
+      const mY = busY.get(pid) ?? Math.round(sY + (eY - sY) / 2)
+      return { pid, cid, px: pp.x, cx: cp.x, sY, eY, mY }
+    })
+  }, [visibleIds, positions])
 
   const depthStagger = useMemo(() => {
     const map = new Map<string, number>()
@@ -1161,17 +1182,15 @@ function DesktopChart({
       <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${metrics.h}px`, transform: chartScale < 1 ? `scale(${chartScale})` : undefined, transformOrigin: 'top center' }}>
 
         <svg className="absolute inset-0 h-full w-full overflow-visible z-10" viewBox={`0 0 ${cW} ${metrics.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-          {edges.map(({ pid, cid }) => {
-            const pp = positions.get(pid), cp = positions.get(cid)
-            if (!pp || !cp) return null
+          {edgeRenderData.map((edge) => {
+            if (!edge) return null
+            const { pid, cid, px, cx, sY, eY, mY } = edge
             const childDepth = nodeDepth(cid)
             const edgeRevealed = childDepth <= revealDepth
             const stagger = (depthStagger.get(cid) ?? 0) * 40
-            const halfH = (id: string) => Math.round(labelMinH / 2 + Math.max(0, estNodeLines(id) - 2) * 9)
-const sY = pp.y + halfH(pid), eY = cp.y - halfH(cid), mY = sY + (eY - sY) / 2
             return (
-              <path key={`${pid}-${cid}-${edgeAnimKey}`} 
-  d={`M ${Math.round(pp.x)} ${Math.round(sY)} V ${Math.round(mY)} H ${Math.round(cp.x)} V ${Math.round(eY)}`}
+              <path key={`${pid}-${cid}-${edgeAnimKey}-${mY}`}
+  d={`M ${Math.round(px)} ${Math.round(sY)} V ${Math.round(mY)} H ${Math.round(cx)} V ${Math.round(eY)}`}
   fill="none" stroke="#8B6B5A" strokeWidth="2" strokeLinecap="round"
   shapeRendering="crispEdges"
   pathLength={1}
@@ -4646,96 +4665,48 @@ export function CaseInterviewerMaster({
             </div>
 
             {/* Hero */}
-            <section className="relative z-10 pb-3 pt-2">
+            <section className="relative z-10 pb-4 pt-2">
               <h1 className="-ml-[2px] font-light leading-[1.02] tracking-tight text-[#453a2a]"
                 style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '4.2rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
                 {caseData.title.trim()}
               </h1>
+              {/* Metadata byline */}
+              <p className="mt-2 text-[13px] text-[#5C4033]/55 tracking-wide" style={{ animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.18s both' }}>
+                {[
+                  caseTypeLabel,
+                  `${industryLabel} Industry`,
+                  difficultyLabel,
+                  ...(companyLabel !== 'Client Not Specified' ? [companyLabel] : []),
+                  ...(roundLabel   !== 'Round Not Specified'  ? [roundLabel]   : []),
+                ].join('  •  ')}
+              </p>
             </section>
-
-            {/* Step indicator */}
-            <div>
-              <StepIndicator steps={STEPS} activeStep={activeStep} onStepClick={handleStepClick} />
-            </div>
 
             {/* Walkthrough */}
             <section ref={walkthroughRef2} className="relative z-10 pt-6">
-              <div className="mb-6 flex flex-wrap gap-2.5 lg:hidden">
+              <p className="mb-6 text-[12px] text-[#5C4033]/55 tracking-wide lg:hidden">
                 {[
-                  { label: 'Type', value: caseTypeLabel },
-                  { label: 'Industry', value: industryLabel },
-                  { label: 'Level', value: difficultyLabel },
-                  ...(companyLabel !== 'Client Not Specified' ? [{ label: 'Company', value: companyLabel }] : []),
-                  ...(roundLabel !== 'Round Not Specified'   ? [{ label: 'Round',   value: roundLabel }]   : []),
-                ].map(t => (
-                  <div key={t.label} className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#5C4033]/50">{t.label}</span>
-                    <span className="rounded-md border border-[#5C4033]/12 bg-[#D9D0C4]/25 px-2.5 py-[3px] text-[10px] font-medium text-[#5C4033]/70">{t.value}</span>
-                  </div>
-                ))}
-              </div>
+                  caseTypeLabel,
+                  `${industryLabel} Industry`,
+                  difficultyLabel,
+                  ...(companyLabel !== 'Client Not Specified' ? [companyLabel] : []),
+                  ...(roundLabel   !== 'Round Not Specified'  ? [roundLabel]   : []),
+                ].join('  •  ')}
+              </p>
 
               <div className="hidden rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] lg:block">
-                <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">
-                  <aside className="hidden lg:block">
-                    <div className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{ height: 'calc(100vh - 168px)' }}>
-                      <div className="pointer-events-none absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(61,90,53,0.07) 0%, rgba(61,90,53,0.02) 50%, transparent 80%)', animation: 'cpm-sidebar-glow 14s ease-in-out infinite' }} />
-                      {(() => {
-                        const HEADER: Record<string, { bg: string; fg: string; bottomBg: string }> = {
-                          'CASE TYPE': { bg: '#3b240d', fg: '#e4dacf', bottomBg: 'rgba(255,248,240,0.9)' },
-                          'COMPANY':   { bg: '#c5af95', fg: '#50423d', bottomBg: 'rgba(255,248,240,0.9)' },
-                          'ROUND':     { bg: '#c5af95', fg: '#50423d', bottomBg: 'rgba(255,248,240,0.9)' },
-                          'INDUSTRY':  { bg: '#83684d', fg: '#e4dacf', bottomBg: 'rgba(255,248,240,0.9)' },
-                        }
-                        return [
-                          { label: 'CASE TYPE', value: caseTypeLabel },
-                          ...(companyLabel !== 'Client Not Specified' ? [{ label: 'COMPANY',  value: companyLabel }] : []),
-                          ...(roundLabel   !== 'Round Not Specified'  ? [{ label: 'ROUND',    value: roundLabel   }] : []),
-                          { label: 'INDUSTRY', value: industryLabel },
-                        ].map((item, idx) => {
-                          const h = HEADER[item.label] ?? { bg: '#3B2F2F', fg: '#e4dacf', bottomBg: 'rgba(255,248,240,0.9)' }
-                          return (
-                            <div key={item.label} className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
-                              style={{ animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}>
-                              <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: h.bg }}>
-                                <p className="text-[13px] uppercase tracking-[0.2em] font-bold leading-none" style={{ color: h.fg }}>{item.label}</p>
-                              </div>
-                              <div className="flex flex-1 items-center justify-center border border-[rgba(61,90,53,0.12)] px-2 py-1.5" style={{ background: h.bottomBg }}>
-                                <p className="text-[20px] font-medium text-[#3B2F2F] tracking-tight text-center leading-tight" style={{ fontFamily: "'Newsreader', serif" }}>{item.value}</p>
-                              </div>
-                            </div>
-                          )
-                        })
-                      })()}
-                      <div className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
-                        style={{ animation: 'cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both', zIndex: 1 }}>
-                        <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: '#e4dacf' }}>
-                          <p className="text-[13px] uppercase tracking-[0.2em] font-bold leading-none text-[#50423d]">Difficulty</p>
-                        </div>
-                        <div className="flex flex-1 items-end justify-center gap-2.5 border border-[rgba(61,90,53,0.12)] px-2 pb-2 pt-1.5" style={{ background: '#e4dacf' }}>
-                          {([22, 34, 48] as const).map((h, idx) => <div key={idx} className="w-7 transition-all duration-500" style={{ height: `${h}px`, backgroundColor: idx + 1 <= difficultyLevel ? '#50423d' : 'transparent', border: idx + 1 <= difficultyLevel ? 'none' : '1.5px solid #50423d' }} />)}
-                        </div>
+                <div className="custom-scrollbar relative px-7 py-6">
+                  <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 120px)', height: '120px', marginBottom: '-120px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)' }} />
+                  <div>
+                    {blocks.map((block, index) => (
+                      <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
+                        <Reveal>
+                          {block.kind === 'vis-inline'
+                            ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableInline vis={v as VisTable} /> : null })()
+                            : <WalkthroughBlockView block={block} />}
+                        </Reveal>
                       </div>
-                    </div>
-                  </aside>
-                  <div className="relative min-w-0">
-                    <div className="absolute left-0 top-0 hidden h-full w-px lg:block">
-                      <div className="sticky top-[128px] w-full" style={{ height: 'calc(100vh - 168px)', background: 'linear-gradient(180deg, transparent 0%, rgba(92,64,51,0.14) 12%, rgba(92,64,51,0.14) 88%, transparent 100%)' }} />
-                    </div>
-                    <div className="custom-scrollbar relative pl-7 pr-5 py-6">
-                      <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 120px)', height: '120px', marginBottom: '-120px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)' }} />
-                      <div>
-                        {blocks.map((block, index) => (
-                          <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
-                            <Reveal>
-                              {block.kind === 'vis-inline'
-                                ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableInline vis={v as VisTable} /> : null })()
-                                : <WalkthroughBlockView block={block} />}
-                            </Reveal>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -4758,15 +4729,9 @@ export function CaseInterviewerMaster({
             <section ref={drilldownRef2} className="relative z-10 mt-12">
               <div className="hidden lg:block">
                 <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
-                  <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">
-                    <aside className="hidden lg:block h-full">
-                      <SyncedNotesSidebar notes={NOTES}  />
-                    </aside>
+                  <div>
                     <div className="relative min-w-0">
-                      <div className="absolute left-0 top-0 hidden h-full w-px lg:block">
-                        <div className="sticky top-[128px] w-full" style={{ height: 'calc(100vh - 168px)', background: 'linear-gradient(180deg, transparent 0%, rgba(92,64,51,0.14) 12%, rgba(92,64,51,0.14) 88%, transparent 100%)' }} />
-                      </div>
-                      <div className={`relative flex flex-col pl-7 pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : hasTree ? ' pt-6' : ' pt-1'}${recommendations.length === 0 && hasTree ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
+                      <div className={`relative flex flex-col px-7 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : hasTree ? ' pt-6' : ' pt-1'}${recommendations.length === 0 && hasTree ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
                         {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
@@ -4922,6 +4887,29 @@ export function CaseInterviewerMaster({
                         )}
 
 
+                        {/* Notes — brownie points + questions below recommendations */}
+                        {NOTES.length > 0 && (
+                          <div className="mt-10 hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(NOTES.length, 3)}, 1fr)` }}>
+                            {NOTES.map((n, idx) => (
+                              <div
+                                key={n.title}
+                                className="rounded-[4px] border border-[rgba(61,90,53,0.10)] bg-[rgba(255,248,240,0.80)] px-3 py-3 transition-all duration-300 hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
+                                style={{ animation: `cpm-sidebar-card-in 0.45s cubic-bezier(0.22,1,0.36,1) ${idx * 80}ms both` }}
+                              >
+                                <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 text-center pb-2 shrink-0">{n.title}</p>
+                                <ul>
+                                  {n.items.map(item => (
+                                    <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
+                                      <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                                      <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         {/* Sentinel for bottom-border visibility detection */}
                         <div ref={drilldownBottomRef2} className="h-px w-full" />
                       </div>
@@ -5031,62 +5019,70 @@ export function CaseInterviewerMaster({
 
           {/* ── Right panel: notes + ratings + end case ── */}
           <aside
-            className="hidden lg:flex flex-col gap-5 flex-shrink-0 pt-10 pb-10"
+            className="hidden lg:flex flex-col flex-shrink-0"
             style={{
               width: '280px',
               position: 'sticky',
               top: '70px',
               height: 'calc(100vh - 70px)',
-              overflowY: 'auto',
               paddingLeft: '20px',
+              paddingTop: '16px',
+              paddingBottom: '16px',
             }}
           >
-            {/* Notes */}
-            <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <span className="h-[5px] w-[5px] rounded-full bg-[#3D5A35]" style={{ animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Interviewer Notes</p>
+            {/* Scrollable content */}
+            <div className="flex flex-col gap-3 flex-1 overflow-y-auto min-h-0">
+              <p className="text-center text-[11px]" style={{ color: '#3D5A35', textShadow: '0 0 10px rgba(61,90,53,0.6), 0 0 24px rgba(61,90,53,0.25)', letterSpacing: '0.01em' }}>
+                Please pair with verbal feedback
+              </p>
+
+              {/* Notes */}
+              <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="h-[5px] w-[5px] rounded-full bg-[#3D5A35]" style={{ animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Interviewer Notes</p>
+                </div>
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Record observations..."
+                  className="w-full resize-none rounded-[12px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#3D5A35]/30 focus:outline-none focus:ring-1 focus:ring-[#3D5A35]/20 transition-all"
+                  style={{ height: '160px', fontFamily: "'Work Sans', sans-serif" }}
+                />
               </div>
-              <textarea
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Record observations..."
-                className="w-full resize-none rounded-[12px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#3D5A35]/30 focus:outline-none focus:ring-1 focus:ring-[#3D5A35]/20 transition-all"
-                style={{ height: '120px', fontFamily: "'Work Sans', sans-serif" }}
-              />
+
+              {/* Ratings */}
+              <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Live Evaluation</p>
+                {EVAL_CRITERIA.map(c => {
+                  const score = scores[c.id]
+                  return (
+                    <div key={c.id} className="rounded-[12px] border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.6)] px-3 py-2 flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-medium text-[#3B2F2F]">{c.label}</span>
+                        <span className="rounded-full border border-[#5C4033]/15 bg-[rgba(255,248,240,0.9)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5C4033]/60">
+                          {score > 0 ? `${score}/5` : 'NR'}
+                        </span>
+                      </div>
+                      <input
+                        type="range" min="0" max="5" step="1" value={score}
+                        onChange={e => setScores({ ...scores, [c.id]: parseInt(e.target.value, 10) })}
+                        className="w-full cursor-pointer appearance-none rounded-full accent-[#3D5A35]"
+                        style={{ height: '5px', background: `linear-gradient(to right, #3D5A35 ${score * 20}%, rgba(92,64,51,0.15) ${score * 20}%)` }}
+                      />
+                      <div className="flex justify-between text-[8px] font-semibold uppercase tracking-[0.1em] text-[#5C4033]/35">
+                        <span>NR</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
 
-            {/* Ratings */}
-            <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-4 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Live Evaluation</p>
-              {EVAL_CRITERIA.map(c => {
-                const score = scores[c.id]
-                return (
-                  <div key={c.id} className="rounded-[12px] border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.6)] px-3 py-2.5 flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[12px] font-medium text-[#3B2F2F]">{c.label}</span>
-                      <span className="rounded-full border border-[#5C4033]/15 bg-[rgba(255,248,240,0.9)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5C4033]/60">
-                        {score > 0 ? `${score}/5` : 'NR'}
-                      </span>
-                    </div>
-                    <input
-                      type="range" min="0" max="5" step="1" value={score}
-                      onChange={e => setScores({ ...scores, [c.id]: parseInt(e.target.value, 10) })}
-                      className="w-full cursor-pointer appearance-none rounded-full accent-[#3D5A35]"
-                      style={{ height: '5px', background: `linear-gradient(to right, #3D5A35 ${score * 20}%, rgba(92,64,51,0.15) ${score * 20}%)` }}
-                    />
-                    <div className="flex justify-between text-[8px] font-semibold uppercase tracking-[0.1em] text-[#5C4033]/35">
-                      <span>NR</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* End case */}
+            {/* End case — always visible at bottom */}
             <button
               onClick={onEndCase}
-              className="w-full rounded-2xl border border-[#3D5A35]/20 bg-[#3D5A35] py-3.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#f0f5ee] transition-all hover:bg-[#2e4428] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.35)]"
+              className="mt-3 w-full flex-shrink-0 rounded-2xl border border-[#3D5A35]/20 bg-[#3D5A35] py-3.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#f0f5ee] transition-all hover:bg-[#2e4428] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.35)]"
             >
               End Case & Evaluate →
             </button>
