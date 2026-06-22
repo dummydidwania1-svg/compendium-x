@@ -1437,9 +1437,9 @@ export default function LobbyPage() {
         setTimeout(() => router.replace(workspaceRoute(data.caseId!, data.sessionMode)), 600)
         return
       }
-      if (data.status === 'completed' || data.status === 'abandoned') {
+      if (data.status === 'completed') {
         disarmWaitingNudge()
-        router.replace('/practice')
+        router.replace('/dashboard')
         return
       }
       if (data.status === 'waiting') {
@@ -1476,7 +1476,7 @@ export default function LobbyPage() {
       try {
         const data = JSON.parse(raw)
         if (data?.lobbyId === lobbyId) {
-          router.replace('/practice')
+          router.replace('/dashboard')
         }
       } catch {
         // Ignore malformed localStorage payloads.
@@ -1530,8 +1530,8 @@ export default function LobbyPage() {
             router.replace(workspaceRoute(existingData.caseId, existingData.sessionMode))
             return
           }
-          if (existingData.status === 'completed' || existingData.status === 'abandoned') {
-            router.replace('/practice')
+          if (existingData.status === 'completed') {
+            router.replace('/dashboard')
             return
           }
           // Check 24h expiry on waiting sessions — if expired, block and

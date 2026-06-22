@@ -590,9 +590,6 @@ export function InterviewerPageInner({
 	const [loadError, setLoadError] = useState('')
 	const [reloadTick, setReloadTick] = useState(0)
 	const [resolvedCaseId, setResolvedCaseId] = useState<string | null>(null)
-	// True while we are checking whether the session is already terminal.
-	// Keeps PlatformLoader showing so no case content flashes before the redirect.
-	const [sessionChecking, setSessionChecking] = useState(() => !!lobbyId && !previewMode)
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const previewMode = forcePreview || searchParams.get('preview') === '1'
@@ -694,32 +691,6 @@ export function InterviewerPageInner({
 			// Storage quota exceeded — non-fatal.
 		}
 	}, [draftKey, scores, notes, currentView])
-
-	// ── Session terminal guard ───────────────────────────────────────────────────
-	// Check session status before rendering any case content. PlatformLoader
-	// stays up (sessionChecking=true) until we know the session is still live.
-	// This prevents the case page from flashing when a stale URL is pasted or
-	// the back button is pressed after a session has ended.
-	useEffect(() => {
-		if (!lobbyId || previewMode) return
-		let active = true
-		void getDoc(sessionDoc(lobbyId)).then((snap) => {
-			if (!active) return
-			if (snap.exists()) {
-				const status = (snap.data() as Record<string, unknown>).status as string | undefined
-				if (status === 'completed' || status === 'abandoned') {
-					router.replace('/practice')
-					return
-				}
-			}
-			setSessionChecking(false)
-		}).catch(() => {
-			if (active) setSessionChecking(false)
-		})
-		return () => { active = false }
-	// lobbyId and previewMode are stable for the page lifetime
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [lobbyId, previewMode])
 
 	// ── Remote mode: session doc subscription (mechanism #2) ────────────────────
 	// In remote mode there is no shared localStorage, so the interviewer must
@@ -1611,7 +1582,7 @@ useEffect(() => {
 		setSubmitting(false)
 	}
 
-	if (loading || sessionChecking) return <PlatformLoader message="Getting your case ready" />
+	if (loading) return <PlatformLoader message="Getting your case ready" />
 
 	if (loadError) {
 		return (
