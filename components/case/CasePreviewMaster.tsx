@@ -1785,7 +1785,8 @@ function CompactFooter() {
           <div className="flex flex-wrap gap-x-10 gap-y-3 md:gap-x-12">
             {[
               { href: '/', label: 'Home' },
-              { href: '/about', label: 'About Us' },
+              { href: '/our-story', label: 'About Us' },
+              { href: '/collaborators', label: 'Acknowledgements' },
               { href: '/privacy-policy', label: 'Privacy Policy' },
             ].map(({ href, label }) => (
               <Link key={href} href={href} style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
