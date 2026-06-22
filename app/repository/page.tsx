@@ -207,6 +207,7 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
   const [showCloseWarning, setShowCloseWarning] = useState(false)
   const closeAttemptRef = useRef(false)
   const [micGuardShowing, setMicGuardShowing] = useState(false)
+  const [showReplaceBackGuard, setShowReplaceBackGuard] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   // Track which case destinations we've already asked Next.js to prefetch
@@ -217,6 +218,9 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
   const lobbyId = searchParams.get('lobby')
   const sessionMode = searchParams.get('sessionMode') === 'local' ? 'local' : 'remote'
   const caseError = searchParams.get('caseError')
+  const prevCaseId = searchParams.get('prevCaseId') ?? ''
+  const prevCaseName = searchParams.get('prevCaseName') ?? ''
+  const isReplaceMode = selectionMode && !!lobbyId && !!prevCaseId
 
 
   const showSectionBands = typeFilter.length !== 1;
@@ -267,6 +271,50 @@ const clearAllFilters = () => {
 
   // liveSessionOverlayInfo trigger removed — the replace-case flow now clears
   // compendium-session-start before navigating here, so this check is no longer needed.
+
+  // Back-button guard for replace-case flow. Pushes a dummy history entry so
+  // pressing back shows our overlay instead of navigating away blindly.
+  useEffect(() => {
+    if (!isReplaceMode) return
+    history.pushState({ replaceGuard: true }, '', window.location.href)
+    const onPopstate = () => {
+      history.pushState({ replaceGuard: true }, '', window.location.href)
+      setShowReplaceBackGuard(true)
+    }
+    window.addEventListener('popstate', onPopstate)
+    return () => window.removeEventListener('popstate', onPopstate)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReplaceMode])
+
+  const handleResumePreviousSession = async () => {
+    if (!lobbyId) return
+    try {
+      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/select-case`, {
+        caseId: prevCaseId,
+        sessionMode,
+        caseName: prevCaseName,
+      })
+      localStorage.setItem('compendium-session-start', JSON.stringify({
+        lobbyId, caseId: prevCaseId, caseName: prevCaseName, mode: sessionMode,
+      }))
+      router.replace(
+        `/case/${prevCaseId}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`
+      )
+    } catch {
+      // Non-fatal — let the overlay stay open so the interviewer can retry.
+    }
+  }
+
+  const handleCancelSessionFromRepo = async () => {
+    if (!lobbyId) return
+    try {
+      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/cancel`, {})
+    } catch {
+      // Non-fatal — navigate away regardless so the session isn't left dangling.
+    }
+    localStorage.setItem('compendium-session-cancelled', JSON.stringify({ lobbyId, ts: Date.now() }))
+    router.replace('/practice')
+  }
 
   // Interviewers arriving in select-mode (via shared invite link) may not be
   // signed in. Silently provision an anonymous Firebase user so the /api
@@ -699,6 +747,21 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
           body="Your candidate is waiting. Close this and they'll be stuck on the loading screen."
           autoDismissMs={7000}
           onDismiss={() => setShowCloseWarning(false)}
+        />
+      ) : null}
+
+      {showReplaceBackGuard && isReplaceMode && !micGuardShowing ? (
+        <LobbyOverlay
+          key="replace-back-guard"
+          type="warning"
+          icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>}
+          title="Going back?"
+          body={`Jump back into "${prevCaseName}", or pull the plug on this one.`}
+          actionLabel="Resume last session"
+          onAction={() => { setShowReplaceBackGuard(false); void handleResumePreviousSession() }}
+          secondaryActionLabel="Cancel session"
+          onSecondaryAction={() => { setShowReplaceBackGuard(false); void handleCancelSessionFromRepo() }}
+          onDismiss={() => setShowReplaceBackGuard(false)}
         />
       ) : null}
 

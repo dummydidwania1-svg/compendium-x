@@ -8568,354 +8568,262 @@
     "framework": "Interviewer: Let's get started. Our client is an automotive Original Equipment Manufacturer, or OEM. They have approached BCG to build a growth strategy. Please go ahead.\nCandidate: Thank you. Before I structure my approach, I'd like to ask a few clarifying questions. To confirm my understanding, an Original Equipment Manufacturer is a company that produces the actual vehicles along with the parts that go into them. Is that the right way to think about our client?\nInterviewer: That's correct.\nCandidate: I'd also like to know which part of the business we are focusing on. Is it the vehicle manufacturing business as a whole, or one specific division?\nInterviewer: Good question. The client is the spare parts division of an automobile company. That is who has come to us.\nCandidate: Understood. For spare parts, I see two broad ways the business can operate. First, a product channel, where we sell spare parts to retailers who then sell them onward. Second, a service channel, where we fit and service the spare parts ourselves for the customer. Do we run both of these?\nInterviewer: Yes, that's a good observation. We have both a product channel and a service channel.\nCandidate: One more point on the product itself. Can our spare parts be used only in the cars that our own company manufactures, or can they also be fitted in other companies' cars?\nInterviewer: They can only be used on our own cars.\nCandidate: That's helpful. Finally, I'd like to understand the goal. Are we targeting top line or bottom line growth, and what is the target and the time frame?\nInterviewer: We are looking at the top line. The client wants to double its revenue over the next 2 to 3 years.\nCandidate: Got it. To structure this, growth can come from two directions: organic growth and inorganic growth. For a spare parts business, I don't think inorganic growth makes much sense. Since our parts can only be used on our own cars, acquiring another company would add limited value and would take a lot of time to merge and fine tune into our operations. So I'd set inorganic growth aside and focus on organic growth. Does that sound fair?\nInterviewer: Yes, that sounds fair.\nCandidate: For organic growth, I'd break revenue into three levers:\nOrganic Revenue = Number of Cars × Spare Parts per Car × Price per Spare Part\nOne quick check before I go deeper: should we also look at increasing the number of cars sold, since more cars on the road directly increases the demand for spare parts?\nInterviewer: That's a good observation, but the client is only the spare parts division. So let's focus there.\nCandidate: Understood. I'll set the number of cars aside and focus on increasing the number of spare parts sold per car and the price per part. To go deeper, I'd look at our two routes to market separately: the product channel and the service channel.\nInterviewer: Let's start with the service channel.\nCandidate: Sure. In the service channel, customers come to us directly to get their cars serviced, and we fit our own spare parts during that service. I'd split this channel into two routes: a Direct-to-Consumer route, or D2C, where we deal with the end customer, and a Business-to-Business route, or B2B, where we work with other businesses. Let me start with the Direct-to-Consumer route. I'd think about it in two stages: before the customer buys the car, and after they own it. Before the purchase, there are two opportunities. First, mandatory fitments that are built into the car automatically, for example a spare tyre. At the moment of buying the car, an extra 4,000 to 5,000 rupees for these fitments feels small to the customer, so they rarely object. Second, optional add-ons that the customer can choose to include.\nInterviewer: And after the purchase?\nCandidate: After the purchase, I'd offer one free service or one free repair along with the car. Customers usually hesitate to visit the official service centre at first. A free first service brings them in, lets them experience the quality of our work, and makes them far more likely to return to us when a real issue comes up later.\nInterviewer: You keep mentioning a value proposition. What is the biggest pain point that would push a customer towards a local retailer instead of us?\nCandidate: The biggest pain point is price sensitivity. Local retailers are usually cheaper.\nInterviewer: So how would you counter that price sensitivity?\nCandidate: We can't simply undercut the retailers, because we offer a better service and genuine original parts, so our costs are higher. Instead of cutting the price, I'd raise the value proposition. Many customers, especially price sensitive ones, buy their cars on an Equated Monthly Instalment, or EMI. If we can find a way to fold the cost of their servicing and spare parts into their existing EMI, the value proposition improves a lot. For example, if a local retailer charges 5,000 rupees, our service might cost 10,000 rupees. Paid upfront, that gap feels large. But spread across the monthly EMI, it becomes a small increase of perhaps a hundred rupees a month, which makes our higher quality option feel far more affordable.\nInterviewer: Alright. Let's move to the Business-to-Business route within the service channel.\nCandidate: In the Business-to-Business route, the key questions are how we sell to our partners and how we get them to prefer us. I'd set up an incentive and milestone program. We define clear milestones, and partners who reach a certain volume of sales or service earn better terms and advantages. The strongest performers can be recognised as our authorized partners. This works as a win-win. Customers get the trust of seeing an official authorized partner badge, so they are comfortable going there. For the retailer, becoming an authorized partner means more business, because customers of our brand will prefer to come to them. And for us, sales rise as more service and parts flow through this partner network.\nInterviewer: Good. Can you summarise the case for me?\nCandidate: Certainly. Our client is the spare parts division of an automotive OEM that wants to double its revenue in 2 to 3 years. We focused on organic growth and set inorganic growth aside, since our parts only fit our own cars. Within organic growth, we concentrated on selling more spare parts through two channels. In the service channel, on the Direct-to-Consumer side, we capture value before purchase through mandatory fitments and optional add-ons, and after purchase through a free first service that builds trust, supported by EMI bundling to overcome price sensitivity. On the Business-to-Business side, we use a milestone based incentive and authorized partner program to grow sales through our partner network.\nInterviewer: That's a clear summary. We can close the case here.\n\nParts and Recreation Framework & Recommendations\nGROWTH STRATEGY TO DOUBLE REVENUE FOR AN AUTOMOTIVE SPARE PARTS DIVISION\nClarifying Questions: Meaning of OEM Channels in play (product and service) Whether the parts fit other cars Top line or bottom line Target and time frame\nBrownie Points: Defining OEM before proceeding Bundling service cost into the EMI Building a milestone based authorized partner program\nKeep In Mind: Grow parts per car, not volume Raise value instead of cutting price\nRECOMMENDATIONS: [FLAG] No recommendation in source material. This was an open-ended, conversational growth case; the interviewer closed it after the structure and summary without asking for a final recommendation."
   },
   {
-    "id": 60,
-    "docId": "case-60",
-    "title": "Catch Me If You Cab",
-    "industry": "Aviation",
-    "difficulty": "Medium",
-    "case_type": "Pricing",
-    "company": "NA",
-    "round": "NA",
-    "prompt": "An IITM startup founded by Prof. Satya is launching an E-Plane company. The business is to operate flying taxis that transport people from the airport to two to three points across Chennai. Help them figure out the pricing strategy.",
-    "frameworkTree": {
-      "nodes": {
-        "root": {
-          "id": "root",
-          "label": "E-Plane Pricing",
-          "tone": "primary",
-          "children": [
-            "clar",
-            "cost",
-            "customers",
-            "points",
-            "breakeven",
-            "strategy"
-          ]
-        },
-        "clar": {
-          "id": "clar",
-          "label": "Clarifications",
-          "tone": "default",
-          "children": [
-            "clar-biz",
-            "clar-specs",
-            "clar-time",
-            "clar-plan"
-          ]
-        },
-        "clar-biz": {
-          "id": "clar-biz",
-          "label": "Business & Geography",
-          "tone": "leaf",
-          "children": []
-        },
-        "clar-specs": {
-          "id": "clar-specs",
-          "label": "Specs (7 Fleet, 5 Seats, Electric Drone)",
-          "tone": "leaf",
-          "children": []
-        },
-        "clar-time": {
-          "id": "clar-time",
-          "label": "Breakeven (3 Years)",
-          "tone": "leaf",
-          "children": []
-        },
-        "clar-plan": {
-          "id": "clar-plan",
-          "label": "Ops Plan (7 Days, 10 Trips)",
-          "tone": "leaf",
-          "children": []
-        },
-        "cost": {
-          "id": "cost",
-          "label": "Cost Structure",
-          "tone": "default",
-          "children": [
-            "fixed",
-            "variable"
-          ]
-        },
-        "fixed": {
-          "id": "fixed",
-          "label": "Fixed Costs (₹10 Cr)",
-          "tone": "default",
-          "children": [
-            "fixed-rd",
-            "fixed-ppe"
-          ]
-        },
-        "fixed-rd": {
-          "id": "fixed-rd",
-          "label": "R&D (₹4 Cr)",
-          "tone": "leaf",
-          "children": []
-        },
-        "fixed-ppe": {
-          "id": "fixed-ppe",
-          "label": "PPE (Land + Fleet)",
-          "tone": "default",
-          "children": [
-            "ppe-land",
-            "ppe-fleet",
-            "ppe-build"
-          ]
-        },
-        "ppe-land": {
-          "id": "ppe-land",
-          "label": "Land",
-          "tone": "leaf",
-          "children": []
-        },
-        "ppe-fleet": {
-          "id": "ppe-fleet",
-          "label": "Fleet ₹50L × 7 = ₹3.5 Cr",
-          "tone": "leaf",
-          "children": []
-        },
-        "ppe-build": {
-          "id": "ppe-build",
-          "label": "Per-Plane: Car ₹10L + Modules ₹36L (Frame:Rotors:Electrical = 1:3:2) ≈ ₹50L",
-          "tone": "leaf",
-          "children": []
-        },
-        "variable": {
-          "id": "variable",
-          "label": "Variable Costs (₹18 Cr)",
-          "tone": "default",
-          "children": [
-            "var-ops",
-            "var-maint",
-            "var-labour"
-          ]
-        },
-        "var-ops": {
-          "id": "var-ops",
-          "label": "Energy (₹50 L)",
-          "tone": "default",
-          "children": [
-            "var-ops-formula"
-          ]
-        },
-        "var-ops-formula": {
-          "id": "var-ops-formula",
-          "label": "Distance × kWh/km × Variability × ₹/kWh",
-          "tone": "leaf",
-          "children": []
-        },
-        "var-maint": {
-          "id": "var-maint",
-          "label": "Maintenance (₹20 L)",
-          "tone": "leaf",
-          "children": []
-        },
-        "var-labour": {
-          "id": "var-labour",
-          "label": "Labour (₹18 Cr)",
-          "tone": "default",
-          "children": [
-            "lab-skill",
-            "lab-unskill"
-          ]
-        },
-        "lab-skill": {
-          "id": "lab-skill",
-          "label": "Skilled: 30 Eng × ₹20L pa × 3yr = ₹18 Cr",
-          "tone": "leaf",
-          "children": []
-        },
-        "lab-unskill": {
-          "id": "lab-unskill",
-          "label": "Unskilled ≈ 0",
-          "tone": "leaf",
-          "children": []
-        },
-        "customers": {
-          "id": "customers",
-          "label": "Customer Base",
-          "tone": "default",
-          "children": [
-            "cust-seg",
-            "cust-cap",
-            "cust-total"
-          ]
-        },
-        "cust-seg": {
-          "id": "cust-seg",
-          "label": "Wealthy + Tourists + Govt",
-          "tone": "leaf",
-          "children": []
-        },
-        "cust-cap": {
-          "id": "cust-cap",
-          "label": "Capacity 50/Day (10 × 5)",
-          "tone": "leaf",
-          "children": []
-        },
-        "cust-total": {
-          "id": "cust-total",
-          "label": "3-Yr Total ≈ 50,000 (54,750 rounded)",
-          "tone": "highlight",
-          "children": []
-        },
-        "points": {
-          "id": "points",
-          "label": "Points of Operation",
-          "tone": "default",
-          "children": [
-            "pt-access",
-            "pt-density",
-            "pt-climate",
-            "pt-land",
-            "pt-example"
-          ]
-        },
-        "pt-access": {
-          "id": "pt-access",
-          "label": "Long Road Time or Inaccessible",
-          "tone": "leaf",
-          "children": []
-        },
-        "pt-density": {
-          "id": "pt-density",
-          "label": "Premium Segment Density",
-          "tone": "leaf",
-          "children": []
-        },
-        "pt-climate": {
-          "id": "pt-climate",
-          "label": "Climate (Uniform)",
-          "tone": "leaf",
-          "children": []
-        },
-        "pt-land": {
-          "id": "pt-land",
-          "label": "Landing Feasibility (Uniform)",
-          "tone": "leaf",
-          "children": []
-        },
-        "pt-example": {
-          "id": "pt-example",
-          "label": "Marina + Cinema District (Opposite Sides)",
-          "tone": "leaf",
-          "children": []
-        },
-        "breakeven": {
-          "id": "breakeven",
-          "label": "Breakeven Math",
-          "tone": "primary",
-          "children": [
-            "be-total",
-            "be-equation",
-            "be-price"
-          ]
-        },
-        "be-total": {
-          "id": "be-total",
-          "label": "Total Cost = ₹10 Cr + ₹18 Cr = ₹28 Cr",
-          "tone": "leaf",
-          "children": []
-        },
-        "be-equation": {
-          "id": "be-equation",
-          "label": "50,000 × P = ₹28 Cr",
-          "tone": "leaf",
-          "children": []
-        },
-        "be-price": {
-          "id": "be-price",
-          "label": "P = ₹5,600 / Customer",
-          "tone": "highlight",
-          "children": []
-        },
-        "strategy": {
-          "id": "strategy",
-          "label": "Pricing Strategy",
-          "tone": "default",
-          "children": [
-            "str-cost",
-            "str-value",
-            "str-comp",
-            "str-ramp",
-            "str-check"
-          ]
-        },
-        "str-cost": {
-          "id": "str-cost",
-          "label": "Cost-Based (Floor ₹5,600)",
-          "tone": "leaf",
-          "children": []
-        },
-        "str-value": {
-          "id": "str-value",
-          "label": "Value-Based (Time Saved Ceiling)",
-          "tone": "leaf",
-          "children": []
-        },
-        "str-comp": {
-          "id": "str-comp",
-          "label": "Competitor-Based",
-          "tone": "leaf",
-          "children": []
-        },
-        "str-ramp": {
-          "id": "str-ramp",
-          "label": "Start Low, Step Up Yearly",
-          "tone": "leaf",
-          "children": []
-        },
-        "str-check": {
-          "id": "str-check",
-          "label": "Sense-Check With Second Method",
-          "tone": "leaf",
-          "children": []
-        }
-      },
-      "defaultExpanded": [
-        "root",
-        "cost",
-        "fixed",
-        "variable",
-        "breakeven",
-        "strategy"
-      ],
-      "defaultFocusedId": "be-price",
-      "notes": [
-        {
-          "title": "Clarifying Questions",
-          "items": [
-            "Business and geography",
-            "Specs (fleet, capacity, vehicle type)",
-            "Breakeven timeline",
-            "Operation plan (days and trips)"
-          ]
-        },
-        {
-          "title": "Keep In Mind",
-          "items": [
-            "Cost-based price is the floor, not the final number",
-            "Sense-check pricing approaches against each other"
-          ]
-        },
-        {
-          "title": "Brownie Points",
-          "items": [
-            "Naming three pricing methods and choosing by data fit",
-            "Adding a variability factor for climatic and landing conditions",
-            "Selecting points by access difficulty plus premium segment density"
-          ]
-        },
-        {
-          "title": "Recommendations",
-          "items": [
-            "Anchor on the cost-based floor: breakeven price ₹5,600 per customer over 3 years",
-            "Set an upper ceiling using value-based pricing on time saved versus road travel",
-            "Start near the floor for early adoption, then step prices upward year-on-year",
-            "Sense-check the cost-based number with a value-based or competitor-based estimate before locking the launch price"
-          ]
-        }
-      ]
+  "id": 60,
+  "docId": "case-60",
+  "title": "Dry Hard",
+  "industry": "Appliances",
+  "difficulty": "Easy",
+  "case_type": "Profitability",
+  "company": "L.E.K Consulting",
+  "round": "[FLAG]",
+  "prompt": "Your client is a washing machine manufacturer that has witnessed a steady decline in revenues. Diagnose the problem and give your recommendations.",
+  "frameworkTree": {
+    "nodes": {
+      "decline-root": { "id": "decline-root", "label": "Revenue Decline 20%", "tone": "root", "children": ["units", "price"] },
+      "units": { "id": "units", "label": "Units Sold (Down)", "tone": "branch", "children": ["prod-cap", "distribution", "consumer-pull"] },
+      "price": { "id": "price", "label": "Price Per Unit", "tone": "support", "children": ["price-out"] },
+      "price-out": { "id": "price-out", "label": "Price Steady", "tone": "leaf", "children": [] },
+      "prod-cap": { "id": "prod-cap", "label": "Production Capacity", "tone": "support", "children": ["prod-cap-out"] },
+      "prod-cap-out": { "id": "prod-cap-out", "label": "Capacity Steady", "tone": "leaf", "children": [] },
+      "distribution": { "id": "distribution", "label": "Distribution", "tone": "support", "children": ["dist-out"] },
+      "dist-out": { "id": "dist-out", "label": "Distribution Steady", "tone": "leaf", "children": [] },
+      "consumer-pull": { "id": "consumer-pull", "label": "Consumer Pull (Driver)", "tone": "branch", "children": ["quality", "marketing", "externalities"] },
+      "quality": { "id": "quality", "label": "Quality", "tone": "branch", "children": ["features", "after-sale", "maintenance", "water-cycle"] },
+      "features": { "id": "features", "label": "Size & Load Type", "tone": "leaf", "children": [] },
+      "after-sale": { "id": "after-sale", "label": "After-Sale Steady", "tone": "leaf", "children": [] },
+      "maintenance": { "id": "maintenance", "label": "Maintenance Steady", "tone": "leaf", "children": [] },
+      "water-cycle": { "id": "water-cycle", "label": "Water Per Cycle (High)", "tone": "leaf", "children": [] },
+      "marketing": { "id": "marketing", "label": "Marketing", "tone": "support", "children": ["mkt-out"] },
+      "mkt-out": { "id": "mkt-out", "label": "Marketing Steady", "tone": "leaf", "children": [] },
+      "externalities": { "id": "externalities", "label": "Externalities", "tone": "branch", "children": ["drought"] },
+      "drought": { "id": "drought", "label": "Drought (Root Cause)", "tone": "leaf", "children": [] }
     },
-    "framework": "Interviewer: Let's get started. An IITM startup founded by Prof. Satya is launching an E-Plane company. The business is to operate flying taxis that transport people from the airport to two to three points across Chennai. Help them figure out the pricing strategy.\n\nCandidate: Before I dive in I'd like to clarify a few things. First, what exactly is the business doing and where does it operate?\n\nInterviewer: The company runs flying taxis from Chennai's main airport to two or three points across the city. The pitch is a premium service that cuts through road traffic.\n\nCandidate: Got it. Could I get the E-Plane specifications next? Fleet size, seating capacity, and the type of vehicle.\n\nInterviewer: Fleet size is 7. Each plane seats 5. The vehicle is an electric drone.\n\nCandidate: And what is the goal of the pricing strategy? Specifically, by when does the company want to break even?\n\nInterviewer: Breakeven target is 3 years.\n\nCandidate: One more clarification. Is there a predetermined operation plan? Days per week, trips per day?\n\nInterviewer: Yes. 7 days a week, 10 trips a day.\n\nCandidate: That gives me what I need. The framework is straightforward. There are two cost components, fixed and variable, and the minimum price I should charge is the price that lets the business recover both within 3 years.\n\nOn the fixed side, two heads:\n1. R&D costs\n2. PPE costs (Property, Plant, Equipment), which split into land and the flight fleet\n\nOn the variable side:\n1. Operations, mainly energy per trip\n2. Repair and maintenance\n3. Labour, both skilled and unskilled\n4. Any miscellaneous costs\n\nDoes this split look reasonable, or would you like me to consider any other cost head?\n\nInterviewer: That split works. Take fixed costs first. Assume R&D is ₹4 crore.\n\nCandidate: Noted. For PPE, fleet cost dominates. The cost of one E-Plane is roughly the cost of an average 5-seater car plus the additional modules needed to make it airborne.\n\nA 5-seater car is around ₹10 lakh. The airborne modules are frame, rotors, and electrical circuitry, in a ratio of 1:3:2:\n- Frame: ₹6 lakh\n- Rotors: ₹18 lakh\n- Electrical circuitry: ₹12 lakh\n- Module total: ₹36 lakh\n\nPer-plane total = ₹10L + ₹36L = ₹46L, which I'll round to **₹50 lakh per plane**.\n\nFleet cost = ₹50L × 7 = **₹3.5 crore**.\n\nAdding land in, total fixed cost lands at around **₹10 crore**.\n\nInterviewer: Take that as the fixed figure. Move to variables.\n\nCandidate: For operations, energy cost per trip uses:\n\nEnergy Cost per Trip = Distance × Avg Energy Consumption per km × Variability Factor × Cost per Unit Energy\n\nI added a variability factor because for a plane, climatic and landing conditions can move energy consumption significantly trip to trip.\n\nInterviewer: How would you select the two or three points the plane operates between?\n\nCandidate: Since docking and refuelling are at the airport, one end of each route is fixed. For the other end, I'd pick places that either take a long time to reach from the airport by road, or are inaccessible by road. That's where this service creates the most time-saved value.\n\nInterviewer: Who are the customers?\n\nCandidate: It's a premium service, so the people willing to pay are from the upper strata. Three segments:\n1. Wealthy residents\n2. Tourists\n3. Government officials\n\nThat last group was your suggestion. Combining these segments with the access-difficulty filter narrows the candidate points to those with high concentration of premium users. For Chennai, Marina is a strong pick on one route, and another route could connect to a cinema district. Preferably the two points are on opposite sides of the city.\n\nInterviewer: Any other selection filters?\n\nCandidate: Two more, both turn out to be neutral here:\n- Climatic conditions across Chennai are largely uniform, so they don't change much across points\n- Landing feasibility is also uniform once we pick reasonable open spaces\n\nBack to the energy build. With distance roughly 15 km (airport to Marina), average consumption around 2.5 kWh per km, and energy cost around ₹20 per kWh, per-trip energy lands at about ₹750. Spread over 3 years of operation, total energy cost works out to approximately **₹50 lakh**.\n\nDoes the per-trip approach look right before I add the rest?\n\nInterviewer: Yes, continue.\n\nCandidate: After energy I'd add:\n1. Repair and maintenance: roughly **₹20 lakh** over 3 years\n2. Labour:\n   - Skilled: 30 engineers × ₹20 lakh per annum = ₹600 lakh per year × 3 years = **₹1,800 lakh = ₹18 crore**\n   - Unskilled: effectively negligible, close to zero\n\nTotal variable cost = ₹50L + ₹20L + ₹1,800L = **₹1,870L ≈ ₹18 crore**.\n\nAdding fixed (₹10 crore) and variable (₹18 crore), total cost over 3 years is **₹28 crore**.\n\nInterviewer: Customer side?\n\nCandidate: With 10 trips per day at 5 seats each, full-occupancy capacity is 50 customers a day. Over 3 years that's 50 × 365 × 3 ≈ 54,750 customer-trips, which I'll round to **50,000** for clean math.\n\nBreakeven equation:\n\n50,000 × P − ₹18 Cr = ₹10 Cr\n50,000 × P = ₹28 Cr\nP = ₹28,00,00,000 ÷ 50,000\n**P = ₹5,600 per customer**\n\nSo ₹5,600 per ticket is the breakeven price floor.\n\nInterviewer: How do you go from there to an actual pricing strategy?\n\nCandidate: ₹5,600 is the cost-based lower ceiling. To set the upper ceiling, I'd switch to value-based pricing and calculate what these customers would be willing to pay for the time saved versus a road trip, since that's the core value of the service. That number sits at the top.\n\nA practical launch strategy is to start near the lower ceiling to attract early customers, then step prices upward each year toward the upper ceiling as adoption builds.\n\nInterviewer: Anything you'd close on?\n\nCandidate: One closing point. Pricing strategy has three methods:\n1. Cost-based\n2. Value-based\n3. Competitor-based\n\nWhich one you use depends on the data available. We used cost-based here because we had the cost build-up. Ideally you sense-check with a second method (value-based on time saved, or competitor-based against premium taxi or helicopter services) to make sure the number is in the same ballpark.\n\nInterviewer: Good. We can wrap there.\n\n\nCATCH ME IF YOU CAB FRAMEWORK & RECOMMENDATIONS\nE-PLANE PRICING STRATEGY FOR CHENNAI AIRPORT FLYING TAXI\n\nClarifying Questions: Business and geography; Specs (fleet, capacity, vehicle type); Breakeven timeline; Operation plan (days and trips)\n\nBrownie Points: Naming three pricing methods and choosing by data fit; Adding a variability factor for climatic and landing conditions; Selecting points by access difficulty plus premium segment density\n\nKeep In Mind: Cost-based price is the floor, not the final number; Sense-check pricing approaches against each other\n\nRECOMMENDATIONS: Anchor on the cost-based floor of ₹5,600 per customer over 3 years. Set an upper ceiling using value-based pricing on the time saved versus road travel. Start near the floor for early adoption, then step prices upward year-on-year toward the ceiling. Sense-check the cost-based number with a value-based or competitor-based estimate before locking the launch price."
-  }
+    "defaultExpanded": ["decline-root", "units", "consumer-pull", "quality", "externalities"],
+    "defaultFocusedId": "drought",
+    "notes": [
+      { "title": "Questions", "items": ["Value chain stage", "Market structure", "Top-load vs front-load"] },
+      { "title": "Keep In Mind", "items": ["Explore external and internal factors", "Match product features to local utility costs"] },
+      { "title": "Brownie Points", "items": ["Clarifying competitor product differences", "Reframing the drought into a marketing message"] }
+    ]
+  },
+  "framework": "Interviewer: Your client is a washing machine manufacturer that has witnessed a steady decline in revenues. Diagnose the problem and give your recommendations.\nCandidate: Sure. Before I lay out my approach, I would like to ask a few preliminary questions.\nInterviewer: Certainly, go ahead.\nCandidate: To start, which stage of the value chain is the company involved in? And what has been the quantum of this decline, and over what period?\nInterviewer: The client is solely involved in the manufacturing of washing machines. The company has witnessed a 20% decline in revenues over the past 1 year.\nCandidate: Got it. Should I look only at the revenue side, or has the client also seen any change in costs?\nInterviewer: There has been no change in costs. Just focus on revenues.\nCandidate: Understood. I would break revenue into two levers:\nRevenue = Number of Units Sold × Price per Unit\nHave we seen a recent change in either of these?\nInterviewer: The number of units sold has gone down. There has been no change in the price.\nCandidate: I will further subdivide the factors affecting the number of units sold into three categories: production capacity, distribution, and consumer pull. Have we seen any recent change in the production capacity of the company?\nInterviewer: Not really.\nCandidate: And has there been any recent change in the distribution of our washing machines?\nInterviewer: No.\nCandidate: That leaves consumer pull as the likely driver. Should I proceed with that?\nInterviewer: Yes, go ahead with consumer pull.\nCandidate: For the drop in consumer pull, I see three possible reasons: quality, marketing, and externalities. Am I missing any major factor?\nInterviewer: No, you can proceed.\nCandidate: Before I examine each one, could you tell me what the market competition looks like?\nInterviewer: The market is fragmented, with multiple competitors each holding roughly 15% market share, including our client.\nCandidate: Got it. Is our washing machine different in quality from the competitors'?\nInterviewer: Yes.\nCandidate: I would break quality into four sub-factors: features, after-sale services, maintenance cost, and power requirements. Is any of these different from the competitors'?\nInterviewer: Our client's washing machine is smaller in size than the competitors', and is a top-load model, unlike most competitors who have a front-load model. Maintenance cost and after-sale services are the same.\nCandidate: My knowledge of washing machine models is limited. Could you elaborate on the difference between top-load and front-load?\nInterviewer: A top-load model generally requires more water per cycle than a front-load model.\nCandidate: Understood. Moving on, has there been any recent change in the client's marketing strategies?\nInterviewer: Nothing as such.\nCandidate: Finally, have there been any recent externalities that may have hit consumer pull?\nInterviewer: Yes. The nearby region has been struck by drought in the last year.\nCandidate: That ties everything together. Our washing machine is smaller in size, so it can wash fewer clothes at once and requires more cycles than the competitors'. On top of that, since the region has been hit by drought, water is scarce and more expensive. So running our machine costs the customer more water and more money than running a front-load competitor's machine, which is why consumer pull has dropped.\nInterviewer: You've identified the problem correctly. What corrective action do you recommend?\nCandidate: One quick check before I give my recommendations: is it feasible for the client to change the size and type of the washing machine without much expenditure?\nInterviewer: That change is likely to be very expensive.\nCandidate: Alright. Can I take a couple of minutes to put my recommendations together?\nInterviewer: Sure.\nCandidate: I would split my recommendations into short-term and long-term.\nShort-term:\n1) Reduce the price of the washing machines and offer attractive discounts to customers, until the effects of the drought ease off and water availability improves. This will bring down the cost of running our machine and help regain lost sales in the interim.\n2) Issue advertisements showing how the water used in the washing machine can be re-used in daily household chores, to mitigate the loss of sales caused by the drought.\nLong-term:\n1) Improve the company's goodwill in the market by making donations and providing supplies to areas affected by the drought, alongside other Corporate Social Responsibility (CSR) initiatives.\nI think employing these actions can help in improving the company's revenues.\nInterviewer: Sounds great. We can close the case here.\n\nDry Hard Framework & Recommendations\nDIAGNOSING A 20% REVENUE DROP AT A WASHING MACHINE MANUFACTURER\nClarifying Questions: Value chain stage Market structure Top-load vs front-load\nBrownie Points: Clarifying competitor product differences Reframing the drought into a marketing message\nKeep In Mind: Explore external and internal factors Match product features to local utility costs\nRECOMMENDATIONS: Short-term: 1) Reduce prices and offer discounts until drought eases and water availability improves. 2) Run advertisements showing how washing machine water can be re-used in household chores to mitigate sales loss. Long-term: 1) Improve company goodwill through donations and supplies to drought-affected areas and other CSR initiatives.\n"
+},
+  {
+  "id": 61,
+  "docId": "case-61",
+  "title": "Net Worth",
+  "industry": "Policy",
+  "difficulty": "Hard",
+  "case_type": "Unconventional",
+  "company": "Dalberg",
+  "round": "[FLAG]",
+  "prompt": "Your client is the Prime Minister's Office (PMO). You are advising the ministry on a vision-setting and economic planning exercise. The brief is to identify sectors where the government should double down on economic policy, with three primary objectives in mind: GDP, private sector investment, and employment. The government has already identified a few sectors and would like your help in confirming whether those choices are prudent.",
+  "frameworkTree": {
+    "nodes": {
+      "root": { "id": "root", "label": "15-Year Sector Policy", "tone": "root", "children": ["approach", "shortlist", "kpis", "guesstimate", "recommendations"] },
+      "approach": { "id": "approach", "label": "Approach", "tone": "branch", "children": ["map-economy", "parameters"] },
+      "map-economy": { "id": "map-economy", "label": "Map Economy", "tone": "branch", "children": ["primary", "secondary", "tertiary"] },
+      "primary": { "id": "primary", "label": "Primary Sector", "tone": "leaf", "children": [] },
+      "secondary": { "id": "secondary", "label": "Secondary Sector", "tone": "leaf", "children": [] },
+      "tertiary": { "id": "tertiary", "label": "Tertiary Sector", "tone": "leaf", "children": [] },
+      "parameters": { "id": "parameters", "label": "Three Parameters", "tone": "branch", "children": ["trends", "growth", "sustainability"] },
+      "trends": { "id": "trends", "label": "Current Trends", "tone": "leaf", "children": [] },
+      "growth": { "id": "growth", "label": "Growth Potential", "tone": "leaf", "children": [] },
+      "sustainability": { "id": "sustainability", "label": "Sustainability (15-Yr)", "tone": "leaf", "children": [] },
+      "shortlist": { "id": "shortlist", "label": "Government Shortlist", "tone": "branch", "children": ["shortlist-primary", "shortlist-secondary", "shortlist-tertiary"] },
+      "shortlist-primary": { "id": "shortlist-primary", "label": "Primary: Coffee, Fruits, Fisheries", "tone": "leaf", "children": [] },
+      "shortlist-secondary": { "id": "shortlist-secondary", "label": "Secondary: Food Processing", "tone": "leaf", "children": [] },
+      "shortlist-tertiary": { "id": "shortlist-tertiary", "label": "Tertiary: Tourism, BPO/KPO", "tone": "leaf", "children": [] },
+      "kpis": { "id": "kpis", "label": "KPIs by Objective", "tone": "branch", "children": ["kpi-gdp", "kpi-investment", "kpi-employment", "fisheries-selected"] },
+      "kpi-gdp": { "id": "kpi-gdp", "label": "GDP: Contribution + Growth", "tone": "leaf", "children": [] },
+      "kpi-investment": { "id": "kpi-investment", "label": "Investment: FDI, FII, Startups", "tone": "leaf", "children": [] },
+      "kpi-employment": { "id": "kpi-employment", "label": "Employment: Trends + Risk", "tone": "leaf", "children": [] },
+      "fisheries-selected": { "id": "fisheries-selected", "label": "Selected: Fisheries", "tone": "leaf", "children": [] },
+      "guesstimate": { "id": "guesstimate", "label": "Guesstimate: # Fishes", "tone": "branch", "children": ["supply-side", "marine-only", "geometry", "density-bands", "total"] },
+      "supply-side": { "id": "supply-side", "label": "Supply Side Chosen", "tone": "leaf", "children": [] },
+      "marine-only": { "id": "marine-only", "label": "Marine Only", "tone": "leaf", "children": [] },
+      "geometry": { "id": "geometry", "label": "Geometry", "tone": "branch", "children": ["land-area", "outer-square", "marine-area"] },
+      "land-area": { "id": "land-area", "label": "Land = 200 km²", "tone": "leaf", "children": [] },
+      "outer-square": { "id": "outer-square", "label": "Outer Side = 30 km", "tone": "leaf", "children": [] },
+      "marine-area": { "id": "marine-area", "label": "Marine = 700 km²", "tone": "leaf", "children": [] },
+      "density-bands": { "id": "density-bands", "label": "Density Bands", "tone": "branch", "children": ["band-medium", "band-high", "band-low"] },
+      "band-medium": { "id": "band-medium", "label": "Medium: 25 km² (1,000 kg)", "tone": "leaf", "children": [] },
+      "band-high": { "id": "band-high", "label": "High: 400 km² (1,500 kg)", "tone": "leaf", "children": [] },
+      "band-low": { "id": "band-low", "label": "Low: 275 km² (500 kg)", "tone": "leaf", "children": [] },
+      "total": { "id": "total", "label": "Total = 7,62,500 kg/month", "tone": "leaf", "children": [] },
+      "recommendations": { "id": "recommendations", "label": "Recommendations", "tone": "branch", "children": ["rec-stock", "rec-productivity"] },
+      "rec-stock": { "id": "rec-stock", "label": "Increase Fish Stock", "tone": "branch", "children": ["rec-partnerships", "rec-treaties", "rec-aquaculture"] },
+      "rec-partnerships": { "id": "rec-partnerships", "label": "Neighbour Partnerships", "tone": "leaf", "children": [] },
+      "rec-treaties": { "id": "rec-treaties", "label": "International Treaties", "tone": "leaf", "children": [] },
+      "rec-aquaculture": { "id": "rec-aquaculture", "label": "Aquaculture / Aquaponics", "tone": "leaf", "children": [] },
+      "rec-productivity": { "id": "rec-productivity", "label": "Increase Productivity", "tone": "branch", "children": ["rec-tech", "rec-cooperatives"] },
+      "rec-tech": { "id": "rec-tech", "label": "Modern Technology", "tone": "leaf", "children": [] },
+      "rec-cooperatives": { "id": "rec-cooperatives", "label": "Cooperatives", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["root", "approach", "guesstimate", "geometry", "density-bands", "recommendations"],
+    "defaultFocusedId": "total",
+    "notes": [
+      { "title": "Questions", "items": ["Quantitative targets per objective", "Budget or regulatory constraints"] },
+      { "title": "Keep In Mind", "items": ["Tie every metric directly to a stated objective", "Long horizon elevates sustainability as a separate lens"] },
+      { "title": "Brownie Points", "items": ["Citing twelve nautical miles for territorial waters", "Choosing supply-side because exports matter on an island", "Applying agricultural consolidation to fisheries"] }
+    ]
+  },
+  "framework": "Interviewer: Your client is the Prime Minister's Office (PMO). You are advising the ministry on a vision-setting and economic planning exercise. The brief is to identify sectors where the government should double down on economic policy, with three primary objectives in mind: GDP, private sector investment, and employment. The government has already identified a few sectors and would like your help in confirming whether those choices are prudent. Please go ahead.\nCandidate: Thank you. Before I lay out my approach, I have a few clarifying questions.\nCandidate: What is the time period we are looking at for this policy?\nInterviewer: Fifteen years.\nCandidate: Are there any quantitative targets in mind for the three objectives?\nInterviewer: Not really.\nCandidate: Are there any budget constraints or regulatory limitations?\nInterviewer: No, none. Treat the budget as unrestricted.\nCandidate: You also mentioned a few pre-identified sectors. Could you share those along with the rationale?\nInterviewer: We will come to that in the latter part of the case. For now, walk me through how you would approach identifying the right sectors.\nCandidate: Sure. I will map the economy first, then describe how I would shortlist against the three objectives. I would split the economy into three categories: Primary (agriculture and non-agriculture), Secondary (manufacturing and non-manufacturing), and Tertiary (IT-based and non-IT-based services). I would then assess each sector against three parameters: 1) Current trends, 2) Growth potential over the fifteen-year horizon, and 3) Sustainability — how likely the sector is to remain relevant fifteen years out (kept separate from growth potential because a sector that could be displaced by Artificial Intelligence or automation would score poorly here even if its growth potential looks strong today). I would walk each sector across the three objectives using these parameters, and shortlist the ones that score consistently.\nInterviewer: That works. Here are the sectors we have shortlisted so far: Primary — coffee, fruits (oranges and coconuts), fisheries; Secondary — food processing; Tertiary — tourism, Business Process Outsourcing / Knowledge Process Outsourcing (BPO/KPO).\nCandidate: Got it.\nInterviewer: Based on this list of seven or eight sectors, how would you narrow it down to two or three? What Key Performance Indicators (KPIs) would you use?\nCandidate: Let me list the metrics first: Compound Annual Growth Rate (CAGR) of the sector, employment percentage it accounts for, private sector investment flowing in, startup growth percentage (a leading indicator of investment), a risk or sustainability score, and comparables — sectors in other countries at a similar economic stage in the past and the growth trajectories they followed.\nInterviewer: This feels quite cluttered. Remember, you are presenting to a political audience. Simplify it.\nCandidate: Fair point. Let me re-organise the metrics directly against the three objectives. GDP: contribution to GDP, GDP growth rate. Private sector investment: Foreign Direct Investment (FDI), Foreign Institutional Investment (FII), startup growth percentage. Employment: current employment trends, and the risk of human labour being displaced as technology and capital become more abundant in the sector.\nInterviewer: That works. Running these metrics, we have drilled down to fisheries as the sector to focus on. It is currently highly underdeveloped and has substantial scope for further growth.\nInterviewer: I would now like you to perform a guesstimate: estimate the market size of the fisheries sector in this country. One clarification — the country is not India. It is an island nation in Southeast Asia.\nCandidate: Understood. Market size of fisheries can be approximated as number of fishes × average price per fish.\nInterviewer: For this exercise, restrict yourself to the number of fishes. Pricing is not what we are testing.\nCandidate: Got it. Two broad approaches: demand-side (fishes consumed within the country) or supply-side (fishes harvested or cultivated). The demand-side approach assumes no fish is exported, which is unlikely for an island economy, so I would lean towards supply side.\nInterviewer: Agreed. Exports are meaningful here, so demand side is too restrictive. Go with supply side.\nCandidate: Before I dive in, how are fishes typically caught in this country? Labour-intensive or capital-intensive? Any advanced technology in use?\nInterviewer: No advanced technology. Fishing is largely traditional, through hand and net by local fishermen.\nCandidate: That helps. Three possible bottlenecks could constrain the supply side: 1) fishermen, 2) total stock of fishes available, and 3) distributors moving the catch onward.\nInterviewer: Focus on the fishes angle. Assume all fishes within the country's territory can be cultivated, so you are estimating the total potential stock irrespective of fishermen, boats, or distributors.\nCandidate: Understood. I would first split the country's water bodies into inland and marine.\nInterviewer: Assume no fishes in inland water bodies. Focus only on marine.\nCandidate: Sure. To estimate the marine area, I would need the country's size and shape.\nInterviewer: Land area is 200 km².\nCandidate: Two simplifying assumptions: the country is roughly a square island (a 200 km² square gives a side of approximately 14 km), and the ocean surrounds the island on all four sides with fishing possible on all four coasts. One important constraint: a country's fishing rights typically extend only up to its domestic territorial waters, which under international convention is around twelve nautical miles from the coast. Beyond that, fishing requires separate permissions.\nInterviewer: Sharp insight. For this case, assume the cultivable marine zone extends 8 km from each coastline.\nCandidate: Got it. The outer boundary of the cultivable zone is then a larger square with a side of 14 + 8 + 8 = 30 km. Outer area = 900 km². Subtracting the land area of 200 km², the cultivable marine zone works out to 700 km².\nInterviewer: Good. Within this 700 km², fish density is not uniform. How would you think about it?\nCandidate: My hypothesis: density is higher closer to the coast (reef and shallow-water habitats) and falls as you move further into the open ocean.\nInterviewer: Directionally yes, though the order is slightly different. Moving outward from the coast: Medium-density band — 25 km² (first stretch from coast); High-density band — 400 km² (next stretch, most of the catch); Low-density band — 275 km² (outermost stretch). The three together cover the full 700 km².\nCandidate: Got it. I will need a yield assumption for each band.\nInterviewer: Take the low-density band as 500 kg of fish per km² per month. Use a 2x multiple for medium and 3x for high.\nCandidate: So medium = 1,000 kg per km² per month and high = 1,500 kg per km² per month. Working through each band: Low: 275 × 500 = 1,37,500 kg/month. Medium: 25 × 1,000 = 25,000 kg/month. High: 400 × 1,500 = 6,00,000 kg/month. Total potential fish harvest = 7,62,500 kg per month.\nInterviewer: Good. That gives us the size of the prize. One final question: what would you recommend to increase the potential of the fisheries sector in this country?\nCandidate: I would split the recommendations into two categories: ways to increase the total number of fishes available, and ways to increase the productivity of catching what we already have access to.\nTo increase the number of fishes available: 1) Partner with friendly neighbouring countries to cultivate in their waters under a shared arrangement. 2) Pursue international approvals or treaties that allow our fleet to fish in selected international waters. 3) Invest in artificial aquaculture and aquaponics farms on land, which decouple supply from the natural marine boundary entirely.\nTo increase productivity and efficiency: 1) Introduce better technology, machinery, and modern fishing methods to replace the hand-and-net approach. 2) Group individual fishermen into cooperatives or larger fishing units (analogy: consolidating fragmented agricultural plots — scale unlocks shared investment in machinery and technology that an individual fisherman or small boat cannot afford alone).\nInterviewer: That covers it well. We can close the case here.\n\nNet Worth Framework & Recommendations\nSECTOR IDENTIFICATION FOR 15-YEAR POLICY (PMO ADVISORY)\nClarifying Questions: Quantitative targets per objective Budget or regulatory constraints\nBrownie Points: Citing twelve nautical miles for territorial waters Choosing supply-side because exports matter on an island Applying agricultural consolidation to fisheries\nKeep In Mind: Tie every metric directly to a stated objective Long horizon elevates sustainability as a separate lens\nRECOMMENDATIONS: Increase fish stock: 1) Partner with neighbouring countries to cultivate in their waters. 2) Pursue international treaties to fish in international waters. 3) Invest in land-based aquaculture and aquaponics farms. Increase productivity: 1) Introduce modern technology, machinery, and fishing methods. 2) Group individual fishermen into cooperatives or larger units.\n"
+},
+  {
+  "id": 62,
+  "docId": "case-62",
+  "title": "Pound for Pound",
+  "industry": "Pharmaceuticals/Healthcare",
+  "difficulty": "Hard",
+  "case_type": "Market Entry + Pricing",
+  "company": "McKinsey & Co.",
+  "round": "[FLAG]",
+  "prompt": "Novo Nordisk has launched a product called Wegovy, which is used to accelerate weight loss. An Indian pharmaceutical company wants to venture into this space and has developed a drug similar to Novo Nordisk's. They want to understand the likely size of the market. The candidate must estimate both the price and the market size, given the drug is launched across urban centres in India, is not recommended for people with cardiac issues or seniors above 60, and has no major side effects.",
+  "frameworkTree": {
+    "nodes": [
+      { "id": "root", "label": "Wegovy-Style Drug Market Sizing", "tone": "primary", "children": ["clarifications", "funnel", "buyers", "pricing", "dosage", "market-size"] },
+      { "id": "clarifications", "label": "Clarifications", "tone": "default", "children": ["clarify-units", "clarify-eligibility", "clarify-geo", "clarify-side-effects"] },
+      { "id": "clarify-units", "label": "Units or Monetary", "tone": "leaf" },
+      { "id": "clarify-eligibility", "label": "No Cardiac, Age 20-60", "tone": "leaf" },
+      { "id": "clarify-geo", "label": "All Urban Centres", "tone": "leaf" },
+      { "id": "clarify-side-effects", "label": "No Major Side Effects", "tone": "leaf" },
+      { "id": "funnel", "label": "Population Funnel", "tone": "primary", "children": ["pop-india", "pop-urban", "income-filter", "age-filter"] },
+      { "id": "pop-india", "label": "India: 140 crore", "tone": "leaf" },
+      { "id": "pop-urban", "label": "Urban: 60 crore", "tone": "leaf" },
+      { "id": "income-filter", "label": "Income Filter", "tone": "default", "children": ["income-keep", "income-result"] },
+      { "id": "income-keep", "label": "UMC + Rich = 50%", "tone": "leaf" },
+      { "id": "income-result", "label": "= 30 crore", "tone": "highlight" },
+      { "id": "age-filter", "label": "Age Filter (20-60)", "tone": "default", "children": ["age-band", "age-result"] },
+      { "id": "age-band", "label": "70% in band", "tone": "leaf" },
+      { "id": "age-result", "label": "= 21 crore eligible", "tone": "highlight" },
+      { "id": "buyers", "label": "Buyer Segments", "tone": "primary", "children": ["buyer-cosmetic", "buyer-obesity", "buyer-total"] },
+      { "id": "buyer-cosmetic", "label": "Cosmetic (5%): 1.05 crore", "tone": "leaf" },
+      { "id": "buyer-obesity", "label": "Obesity (20%): 4.2 crore", "tone": "leaf" },
+      { "id": "buyer-total", "label": "Demand Pool: 5.25 crore", "tone": "highlight" },
+      { "id": "pricing", "label": "Pricing Approaches", "tone": "primary", "children": ["price-competitor", "price-cost", "price-value"] },
+      { "id": "price-competitor", "label": "Competitor (Wegovy benchmark)", "tone": "leaf" },
+      { "id": "price-cost", "label": "Cost-Plus (Lower Bound)", "tone": "leaf" },
+      { "id": "price-value", "label": "Value-Based (Upper Bound)", "tone": "leaf" },
+      { "id": "dosage", "label": "Dosage & Treatment", "tone": "default", "children": ["dose-cosmetic", "dose-obesity", "dose-no-repeat", "dose-lifestyle"] },
+      { "id": "dose-cosmetic", "label": "Cosmetic: 3 mo × ₹50k", "tone": "leaf" },
+      { "id": "dose-obesity", "label": "Obesity: 12 mo × ₹50k", "tone": "leaf" },
+      { "id": "dose-no-repeat", "label": "No Repeat Cycle", "tone": "leaf" },
+      { "id": "dose-lifestyle", "label": "Lifestyle Maintenance Needed", "tone": "leaf" },
+      { "id": "market-size", "label": "Market Size in Rupees", "tone": "primary", "children": ["afford-filter", "rupee-cosmetic", "rupee-obesity", "rupee-total"] },
+      { "id": "afford-filter", "label": "Affordability Filter: 20%", "tone": "leaf" },
+      { "id": "rupee-cosmetic", "label": "Cosmetic: 21 lakh × ₹1.5 lakh = ₹31,500 cr", "tone": "leaf" },
+      { "id": "rupee-obesity", "label": "Obesity: 84 lakh × ₹6 lakh = ₹5,04,000 cr", "tone": "leaf" },
+      { "id": "rupee-total", "label": "Total: ≈ ₹5.35 lakh crore", "tone": "highlight" }
+    ],
+    "defaultExpanded": ["root", "funnel", "buyers", "pricing", "market-size"],
+    "defaultFocusedId": "rupee-total",
+    "notes": [
+      { "title": "Clarifying Questions", "items": ["Units versus monetary market sizing", "Eligibility exclusions (cardiac and age)", "Geographic scope (urban versus pan-India)", "Side effects affecting adoption"] },
+      { "title": "Keep In Mind", "items": ["Affordability is the binding adoption constraint", "Cosmetic and medical journeys differ structurally"] },
+      { "title": "Brownie Points", "items": ["Proposing three pricing approaches with explicit bounds", "Asking about relapse and lifestyle maintenance", "Differentiating cosmetic versus medically obese segments"] },
+      { "title": "Recommendations", "items": ["Anchor pricing on Novo Nordisk's Wegovy and validate with cost-plus and value-based bounds", "Target the obesity segment for volume and the cosmetic segment for premium positioning", "Run sensitivity tests on the affordability assumption before committing capacity"] }
+    ]
+  },
+  "framework": "Interviewer: I have a situation for you. Novo Nordisk has launched a product called Wegovy, which is used to accelerate weight loss. An Indian pharmaceutical company wants to venture into this space and has developed a drug similar to Novo Nordisk's. They want to understand the likely size of the market. Candidate: Before I begin, I would like to clarify a few things. Are we estimating the market size in terms of the number of units, or in monetary terms? Interviewer: We currently do not have information on the price. That is something we would like you to estimate as well, so you will have to estimate both the price and the market size. Candidate: Understood. Since this is a weight-loss drug, I would like to understand which segments of the population are eligible for the drug and which segments it may not be suited for. Interviewer: The drug is not recommended for people with cardiac issues. Candidate: Got it. Are there any age restrictions as well? Interviewer: Yes. You can assume the drug is not recommended for seniors above the age of 60. Candidate: Would it also be fair to assume a lower age cap of 20 years, since children and adolescents may not typically opt for such medication? Interviewer: That sounds reasonable. Let's proceed. Candidate: One more clarification: are we launching this drug in a specific city, or across urban centres in India? Interviewer: Across all urban centres. Candidate: And are there any side effects associated with the drug that may affect adoption? Interviewer: No, you can assume there are no major side effects. Candidate: Great. Let me walk you through my approach. When estimating the market size, I would like to focus specifically on the number of people who would realistically purchase the drug, rather than those who may only be interested in it. Candidate: I will start with the population of India, which I will assume to be 140 crore. Next, I will split this into rural and urban segments, since the drug is only being launched in urban centres. Initially, I would assume the urban population to be roughly 40 crore. Interviewer: Let's take the urban population as 60 crore instead. Candidate: Sure, I will proceed with 60 crore. Candidate: Next, I will apply an income filter, since affordability will be an important factor for a drug like this. Splitting the urban population into four income segments: Lower income 20%, Lower Middle Class 30%, Upper Middle Class 30%, Rich 20%. Given the likely cost of such treatment, I will focus only on the UMC and Rich segments and exclude the rest. That gives us 50% of the urban population, or roughly 30 crore people. Candidate: Next, I will apply an age filter: less than 20 years 25%, above 60 years 5%, target band 20 to 60 years 70%. Applying 70% to the 30 crore gives approximately 21 crore individuals in the eligible age group. Candidate: Now I would like to estimate which segments within this population would actually consider purchasing the drug. Broadly, I see two categories of potential buyers: 1) Health-conscious individuals interested in fitness or cosmetic weight loss. 2) People who are obese or suffering from health conditions related to high weight. Does this two-category split sound reasonable, or would you like me to consider any other buyer profile? Interviewer: That split works well. Go ahead and size each of them. Candidate: Thank you. For the first category, I will assume around 5% of individuals are highly health-conscious. Applied to the 21 crore eligible base, that gives roughly 1.05 crore people as the cosmetic demand pool. For the second category, I will assume roughly 1 in 5 Indians are obese (20%), giving 4.2 crore people as the medical demand pool. Total demand pool approximately 5.25 crore people. Candidate: I believe we should move to pricing, because the actual buyers will depend heavily on affordability. Interviewer: Yes, we can move on to pricing. Candidate: I would like to determine a price range using three approaches: 1) Competitor-based pricing benchmarked against Novo Nordisk's Wegovy. 2) Cost-based pricing (manufacturing cost plus margin) for the lower bound. 3) Value-based pricing based on willingness to pay for substitutes like gym memberships, supplements, diet programs, for the upper bound. Interviewer: Focus specifically on competitor-based pricing. How would you approach that? Candidate: To benchmark, I would like to understand dosage and treatment length. Interviewer: For fitness or cosmetic weight loss, the treatment lasts about 3 months at roughly Rs 50,000 per month. For obesity cases, the treatment is about one year. Candidate: I also wanted to clarify whether there are relapse cases. Interviewer: No, they do not need to repeat the drug cycle, but lifestyle maintenance is required to prevent relapse. Candidate: To close the estimation, I will apply an affordability filter of 20% on the 5.25 crore demand pool, giving 1.05 crore actual buyers: 21 lakh cosmetic buyers (3 months x Rs 50,000 = Rs 1.5 lakh per person) and 84 lakh obesity buyers (12 months x Rs 50,000 = Rs 6 lakh per person). Sizing in rupees: cosmetic segment 21 lakh x Rs 1.5 lakh = Rs 31,500 crore; obesity segment 84 lakh x Rs 6 lakh = Rs 5,04,000 crore. Total addressable market approximately Rs 5,35,500 crore, or about Rs 5.35 lakh crore (roughly $64 billion). The obesity segment dominates because the treatment duration is four times longer. Interviewer: Makes sense. That was a comprehensive analysis. We can end the case here. Pound for Pound Framework & Recommendations MARKET SIZING FOR WEGOVY-STYLE DRUG (INDIAN PHARMA ENTRY) Clarifying Questions: Units versus monetary market sizing Eligibility exclusions (cardiac and age) Geographic scope (urban versus pan-India) Side effects affecting adoption Brownie Points: Proposing three pricing approaches with explicit bounds Asking about relapse and lifestyle maintenance Differentiating cosmetic versus medically obese segments Keep In Mind: Affordability is the binding adoption constraint Cosmetic and medical journeys differ structurally RECOMMENDATIONS: 1) Anchor pricing on Novo Nordisk's Wegovy and validate with cost-plus and value-based bounds. 2) Target the obesity segment for volume and the cosmetic segment for premium positioning. 3) Run sensitivity tests on the affordability assumption before committing capacity."
+},
+{
+  "id": 63,
+  "docId": "case-63",
+  "title": "Up In The Air",
+  "industry": "Aviation",
+  "difficulty": "Hard",
+  "case_type": "Pricing",
+  "company": "BCG",
+  "round": "Buddy",
+  "prompt": "An IITM startup founded by Prof. Satya is launching an E-Plane company. The business is to operate flying taxis that transport people from the airport to two to three points across Chennai. Help them figure out the pricing strategy.",
+  "frameworkTree": {
+    "nodes": {
+      "root": { "id": "root", "label": "E-Plane Pricing", "tone": "primary", "children": ["clar", "cost", "customers", "points", "breakeven", "strategy"] },
+
+      "clar": { "id": "clar", "label": "Clarifications", "tone": "default", "children": ["clar-biz", "clar-specs", "clar-time", "clar-plan"] },
+      "clar-biz": { "id": "clar-biz", "label": "Business and Geography", "tone": "leaf", "children": [] },
+      "clar-specs": { "id": "clar-specs", "label": "Specs: 7 planes, 5 seats, electric drone", "tone": "leaf", "children": [] },
+      "clar-time": { "id": "clar-time", "label": "Breakeven Timeline: 3 years", "tone": "leaf", "children": [] },
+      "clar-plan": { "id": "clar-plan", "label": "Operation Plan: 7 days, 10 trips per day", "tone": "leaf", "children": [] },
+
+      "cost": { "id": "cost", "label": "Cost Structure", "tone": "default", "children": ["fixed", "variable"] },
+
+      "fixed": { "id": "fixed", "label": "Fixed Costs: 10 crore rupees", "tone": "default", "children": ["fixed-rd", "fixed-ppe"] },
+      "fixed-rd": { "id": "fixed-rd", "label": "R and D: 4 crore rupees", "tone": "leaf", "children": [] },
+      "fixed-ppe": { "id": "fixed-ppe", "label": "PPE: Land plus Fleet", "tone": "default", "children": ["ppe-land", "ppe-modules", "ppe-build", "ppe-fleet"] },
+      "ppe-land": { "id": "ppe-land", "label": "Land Cost (included in 10 crore)", "tone": "leaf", "children": [] },
+      "ppe-modules": { "id": "ppe-modules", "label": "Modules in ratio 1:3:2 = 6 lakh + 18 lakh + 12 lakh = 36 lakh rupees", "tone": "leaf", "children": [] },
+      "ppe-build": { "id": "ppe-build", "label": "Per Plane = 10 lakh (car) + 36 lakh (modules) = 46 lakh ≈ 50 lakh rupees", "tone": "leaf", "children": [] },
+      "ppe-fleet": { "id": "ppe-fleet", "label": "Fleet Cost = 50 lakh * 7 = 3.5 crore rupees", "tone": "highlight", "children": [] },
+
+      "variable": { "id": "variable", "label": "Variable Costs: 18 crore rupees", "tone": "default", "children": ["var-ops", "var-maint", "var-labour"] },
+      "var-ops": { "id": "var-ops", "label": "Energy Cost: 50 lakh over 3 years", "tone": "default", "children": ["var-ops-formula", "var-ops-calc"] },
+      "var-ops-formula": { "id": "var-ops-formula", "label": "Energy = Distance * Consumption per km * Variability * Cost per kWh", "tone": "leaf", "children": [] },
+      "var-ops-calc": { "id": "var-ops-calc", "label": "Per trip = 15 km * 2.5 kWh/km * 20 rupees/kWh ≈ 750 rupees", "tone": "leaf", "children": [] },
+      "var-maint": { "id": "var-maint", "label": "Repair and Maintenance: 20 lakh over 3 years", "tone": "leaf", "children": [] },
+      "var-labour": { "id": "var-labour", "label": "Labour Cost: 18 crore rupees", "tone": "default", "children": ["lab-skill", "lab-unskill"] },
+      "lab-skill": { "id": "lab-skill", "label": "Skilled = 30 engineers * 20 lakh per year * 3 years = 18 crore rupees", "tone": "leaf", "children": [] },
+      "lab-unskill": { "id": "lab-unskill", "label": "Unskilled ≈ 0", "tone": "leaf", "children": [] },
+
+      "customers": { "id": "customers", "label": "Customer Base", "tone": "default", "children": ["cust-seg", "cust-cap", "cust-total"] },
+      "cust-seg": { "id": "cust-seg", "label": "Segments: wealthy residents, tourists, government officials", "tone": "leaf", "children": [] },
+      "cust-cap": { "id": "cust-cap", "label": "Daily Capacity = 10 trips * 5 seats = 50 customers per day", "tone": "leaf", "children": [] },
+      "cust-total": { "id": "cust-total", "label": "Total = 50 * 365 * 3 = 54,750 ≈ 50,000 customer-trips", "tone": "highlight", "children": [] },
+
+      "points": { "id": "points", "label": "Points of Operation", "tone": "default", "children": ["pt-access", "pt-density", "pt-climate", "pt-land", "pt-example"] },
+      "pt-access": { "id": "pt-access", "label": "Long road time or inaccessible by road", "tone": "leaf", "children": [] },
+      "pt-density": { "id": "pt-density", "label": "High premium segment density", "tone": "leaf", "children": [] },
+      "pt-climate": { "id": "pt-climate", "label": "Climate uniform across Chennai", "tone": "leaf", "children": [] },
+      "pt-land": { "id": "pt-land", "label": "Landing feasibility uniform", "tone": "leaf", "children": [] },
+      "pt-example": { "id": "pt-example", "label": "Marina + cinema district, opposite sides of city", "tone": "leaf", "children": [] },
+
+      "breakeven": { "id": "breakeven", "label": "Breakeven Math", "tone": "primary", "children": ["be-total", "be-equation", "be-price"] },
+      "be-total": { "id": "be-total", "label": "Total Cost = 10 crore (fixed) + 18 crore (variable) = 28 crore rupees", "tone": "leaf", "children": [] },
+      "be-equation": { "id": "be-equation", "label": "Breakeven: 50,000 * P = 28 crore rupees", "tone": "leaf", "children": [] },
+      "be-price": { "id": "be-price", "label": "P = 28 crore / 50,000 = 5,600 rupees per customer", "tone": "highlight", "children": [] },
+
+      "strategy": { "id": "strategy", "label": "Pricing Strategy", "tone": "primary", "children": ["str-floor", "str-benchmark", "str-value", "str-ladder"] },
+      "str-floor": { "id": "str-floor", "label": "Cost-Based Floor: 5,600 rupees", "tone": "leaf", "children": [] },
+      "str-benchmark": { "id": "str-benchmark", "label": "Cab Benchmark", "tone": "default", "children": ["str-cab-fare", "str-time-saved"] },
+      "str-cab-fare": { "id": "str-cab-fare", "label": "Cab: 600 rupees, 90 minutes, 15 km, airport to Marina", "tone": "leaf", "children": [] },
+      "str-time-saved": { "id": "str-time-saved", "label": "Time Saved = 90 - 10 = 80 minutes per trip", "tone": "highlight", "children": [] },
+      "str-value": { "id": "str-value", "label": "Value-Based Ceiling", "tone": "default", "children": ["str-val-m1", "str-val-m2"] },
+      "str-val-m1": { "id": "str-val-m1", "label": "Method 1: 600 * 9 = 5,400 rupees (cab fare scaled by time multiple)", "tone": "leaf", "children": [] },
+      "str-val-m2": { "id": "str-val-m2", "label": "Method 2: Per-Minute Customer Value", "tone": "default", "children": ["str-val-m2-rate", "str-val-m2-trip"] },
+      "str-val-m2-rate": { "id": "str-val-m2-rate", "label": "Per Minute Value = 5,00,000 / 8,000 = 62.5 rupees per minute", "tone": "leaf", "children": [] },
+      "str-val-m2-trip": { "id": "str-val-m2-trip", "label": "Trip Value = 80 * 62.5 = 5,000 rupees per trip", "tone": "leaf", "children": [] },
+      "str-ladder": { "id": "str-ladder", "label": "3-Year Ladder: Year 1 5,000 → Year 2 5,400 → Year 3 5,600 rupees", "tone": "highlight", "children": [] }
+    },
+    "defaultExpanded": ["root", "cost", "fixed", "variable", "breakeven", "strategy", "str-benchmark", "str-value", "str-val-m2"],
+    "defaultFocusedId": "str-ladder",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "Business and geography",
+          "Specs (fleet, capacity, vehicle type)",
+          "Breakeven timeline",
+          "Operation plan (days and trips)"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "Cost-based price is the floor, not the final number",
+          "Use a real competing alternative to value the time saved"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Two-method value-based sense-check anchored on a cab benchmark",
+          "Variability factor for climatic and landing conditions",
+          "Selecting points by access difficulty plus premium segment density"
+        ]
+      }
+    ]
+  },
+  "framework": "Candidate: Before I dive in I'd like to clarify a few things. First, can I confirm what the business does and where it operates?\n\nInterviewer: Sure. The company runs flying taxis between Chennai's main airport and two or three points across the city. Think of it as a premium service for people who want to skip road traffic.\n\nCandidate: Got it. Next, the specifications of the E-Plane. Fleet size, seating capacity, and the type of vehicle.\n\nInterviewer: We have a fleet of 7 planes. Each one seats 5 passengers, and the vehicle is essentially an electric drone.\n\nCandidate: Understood. And the goal of the pricing strategy. By when does the company want to break even?\n\nInterviewer: In 3 years. That's the horizon we're working with.\n\nCandidate: Last clarification. Is there a predetermined operation plan? Days per week, and number of trips per day?\n\nInterviewer: Yes, the team has locked that in. 7 days a week, 10 trips a day.\n\nCandidate: That gives me what I need. The approach here is straightforward. There are two cost components, fixed and variable, and the minimum price to charge is the one that lets the business recover both within 3 years.\n\nOn the fixed side, two heads:\n1. Research and Development costs\n2. PPE costs, which means Property, Plant, and Equipment, splitting into land and the flight fleet\n\nOn the variable side:\n1. Operations, mainly energy per trip\n2. Repair and maintenance\n3. Labour, both skilled and unskilled\n4. Any miscellaneous costs\n\nDoes this split look reasonable, or should I consider any other cost head?\n\nInterviewer: That covers it. Start with fixed costs. You can take R&D cost as 4 crore rupees.\n\nCandidate: Noted. For PPE, fleet cost dominates. Let me build up the cost of one E-Plane first. I'd think of it as the cost of an average 5-seater car plus the modules needed to make it airborne.\n\nA 5-seater car is around 10 lakh rupees. The airborne modules are frame, rotors, and electrical circuitry, in a ratio of 1:3:2.\n\n1. Frame: 6 lakh rupees\n2. Rotors: 18 lakh rupees\n3. Electrical circuitry: 12 lakh rupees\n4. Module total: 36 lakh rupees\n\nThus, cost per plane that comes to 10 lakh plus 36 lakh, which is 46 lakh rupees. I'll round to 50 lakh per plane.\n\nFleet Cost = 50 lakh * 7 = 3.5 crore rupees\n\nAdding land into the PPE bucket, total fixed cost lands at around 10 crore rupees.\n\nInterviewer: Take that as the fixed figure. Walk me through variables.\n\nCandidate: For operations, energy cost per trip uses the following formula:\n\nEnergy Cost per Trip = Distance * Consumption per km * Variability Factor * Cost per Unit Energy\n\nI added a variability factor because for a plane, climatic and landing conditions can move energy consumption significantly trip to trip.\n\nInterviewer: How would you pick the two or three points the plane operates between?\n\nCandidate: Since docking and refuelling happen at the airport, one end of each route is fixed. For the other end, I'd select places that either take a long time to reach from the airport by road, or are inaccessible by road. That's where this service creates the most time-saved value.\n\nInterviewer: Who's actually willing to pay for that?\n\nCandidate: It's a premium service, so the customers will mostly come from the upper strata. Two segments stand out: wealthy residents and tourists.\n\nInterviewer: I'd add government officials to that list. They often need fast point-to-point movement and have budgets that cover it.\n\nCandidate: That's a good addition. So we have three segments: wealthy residents, tourists, and government officials. Combining these with the access-difficulty filter narrows the potential locations to places with a high concentration of premium users. For Chennai, Marina Beach would work on one route, and a cinema district could anchor another. Ideally the two points sit on opposite sides of the city.\n\nInterviewer: Any other filters before you move on?\n\nCandidate: Two more, both turn out to be neutral here:\n\n1. Climatic conditions across Chennai are largely uniform, so they don't change much across points\n2. Landing feasibility is also uniform once we pick reasonable open spaces\n\nBack to the energy build. With distance roughly 15 kilometres from the airport to Marina, average consumption around 2.5 kilowatt-hours per kilometre, and energy cost around 20 rupees per kilowatt-hour, per-trip energy lands at about 750 rupees. Spread over 3 years of operation, total energy cost works out to approximately 50 lakh rupees.\n\nDoes the per-trip approach look right before I add the rest?\n\nInterviewer: Yes, continue.\n\nCandidate: After energy I'd add:\n\n1. Repair and maintenance, roughly 20 lakh rupees over 3 years\n2. Labour, both skilled and unskilled:\n   - Skilled: 30 engineers, at 20 lakh rupees per annum each, over 3 years, which is 18 crore rupees\n   - Unskilled: effectively negligible, close to zero\n\nTotal variable cost is 50 lakh + 20 lakh + 18 crore, which is approximately 18 crore rupees.\n\nAdding fixed costs calculated earlier (10 crore) and variable cost (18 crore), total cost over 3 years is 28 crore rupees.\n\nInterviewer: Now, what about customer side?\n\nCandidate: With 10 trips per day at 5 seats each, full-occupancy capacity is 50 customers a day. Over 3 years that's 50 multiplied by 365 multiplied by 3, which equals 54,750 customer-trips. I'll round to 50,000 for clean math.\n\nBreakeven equation:\n\n50,000 * Price = 28 crore rupees\n\n^ Price = 28,00,00,000 / 50,000 = 5,600 rupees per customer\n\nThat's the cost-based price floor.\n\nInterviewer: How do you go from there to an actual pricing strategy?\n\nCandidate: 5,600 is the lower ceiling, the cost-based floor. To set the upper ceiling I'll value-base the price, using the existing cab service as a benchmark.\n\nA cab from the airport to Marina costs 600 rupees for one person over 15 kilometres, and takes roughly 90 minutes in traffic. The e-plane covers the same route in about 10 minutes.\n\nTime saved per trip = 90 - 10 = 80 minutes\n\nI'll value that saved time using two methods.\n\na) Method 1: Cab fare scaled by time multiple. The e-plane is 9 times faster than a cab (90 minutes divided by 10 minutes). Scaling the cab fare by the same factor:\n\n600 * 9 = 5,400 rupees per trip\n\nb) Method 2: Per-minute value of the customer's time. The idea is to price the trip at what the customer's own time is worth across the 80 minutes saved:\n\nStep 1: Monthly income: A premium customer earns roughly 5 lakh rupees per month.\n\nStep 2: Productive minutes per month: Assume the customer is productive for about 8,000 minutes per month, which works out to roughly 133 hours.\n\nStep 3: Per-minute value of time:\n\n^ Per Minute Value = 5,00,000 / 8,000 = 62.5 rupees per minute\n\nStep 4: Value of the 80 minutes saved per trip:\n\nTrip Value = 80 * 62.5 = 5,000 rupees per trip\n\nSo I now have three anchor numbers:\n\n1. 5,000 rupees, low value-based estimate (Method 2)\n2. 5,400 rupees, high value-based estimate (Method 1)\n3. 5,600 rupees, cost-based breakeven floor\n\nInterviewer: How does that translate into the actual launch strategy?\n\nCandidate: I'd structure it as a 3-year ladder:\n\n1. Year 1: 5,000 rupees, starting at the low value-based estimate to drive early adoption\n2. Year 2: 5,400 rupees, stepping up to the high value-based estimate as the customer base matures\n3. Year 3: 5,600 rupees, reaching the cost-based floor and breaking even by year 3\n\nThis way the business attracts customers at a believable price point in year 1, captures full willingness to pay by year 2, and reaches breakeven by year 3.\n\nInterviewer: Solid. Let's wrap there.\n\n\nCATCH ME IF YOU CAB FRAMEWORK & RECOMMENDATIONS\nE-PLANE PRICING STRATEGY FOR CHENNAI AIRPORT FLYING TAXI\n\nClarifying Questions: Business and geography; Specs (fleet, capacity, vehicle type); Breakeven timeline; Operation plan (days and trips)\n\nBrownie Points: Two-method value-based sense-check anchored on a cab benchmark; Variability factor for climatic and landing conditions; Selecting points by access difficulty plus premium segment density\n\nKeep In Mind: Cost-based price is the floor, not the final number; Use a real competing alternative to value the time saved"
+}
 ]

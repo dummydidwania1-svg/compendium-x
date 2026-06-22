@@ -1371,7 +1371,11 @@ export function InterviewerPageInner({
 		// the "Session still going" overlay when the interviewer arrives to pick a new case.
 		localStorage.removeItem('compendium-session-start')
 		const sessionMode = searchParams.get('sessionMode') ?? 'local'
-		router.replace(`/repository?mode=select&lobby=${lobbyId}&sessionMode=${sessionMode}`)
+		router.replace(
+			`/repository?mode=select&lobby=${lobbyId}&sessionMode=${sessionMode}` +
+			`&prevCaseId=${encodeURIComponent(resolvedCaseId ?? '')}` +
+			`&prevCaseName=${encodeURIComponent(caseData?.title ?? '')}`,
+		)
 	}
 
 	// ── Cancel session handler ───────────────────────────────────────────────────
