@@ -26,6 +26,13 @@ const Footer = (_props: FooterProps) => (
             About Us
           </Link>
           <Link
+            href="/collaborators"
+            style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }}
+            className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all"
+          >
+            Collaborators
+          </Link>
+          <Link
             href="/privacy-policy"
             style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }}
             className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all"
