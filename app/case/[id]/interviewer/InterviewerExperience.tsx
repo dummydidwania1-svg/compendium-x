@@ -616,6 +616,7 @@ export function InterviewerPageInner({
 	// ── Candidate tab closed detection (split-screen only) ──────────────────────
 	const [candidateTabClosed, setCandidateTabClosed] = useState(false)
 	const candidateTabUrlRef = useRef<string | null>(null)
+	const candidateWasAliveRef = useRef(false)
 
 	// ── Mic-blocked guard (split-screen shares the candidate's mic permission) ──
 	// The interviewer doesn't record, but blocking mic here breaks the candidate's
@@ -1413,22 +1414,30 @@ export function InterviewerPageInner({
 		history.pushState({ backGuard: true }, '', window.location.href)
 	}, [lobbyId, previewMode])
 
-	// ── Candidate tab closed poll (split-screen only) ───────────────────────────
+	// ── Candidate tab heartbeat poll (split-screen only) ────────────────────────
+	// Heartbeat older than 4s after we've seen the tab alive = it closed.
 	useEffect(() => {
 		if (!isLocalMode || !lobbyId || previewMode || currentView === 'success') return
 		const interval = setInterval(() => {
-			const ended = localStorage.getItem('compendium-session-ended')
-			if (ended) { setCandidateTabClosed(false); return }
+			if (localStorage.getItem('compendium-session-ended')) {
+				setCandidateTabClosed(false)
+				return
+			}
 			const raw = localStorage.getItem('compendium-candidate-tab')
 			if (!raw) return
 			try {
 				const data = JSON.parse(raw)
 				if (data?.lobbyId !== lobbyId) return
 				if (data?.url) candidateTabUrlRef.current = data.url
-				const isRecent = Date.now() - (data.ts ?? 0) < 30000
-				setCandidateTabClosed(data.active === false && isRecent)
+				const age = Date.now() - (data.ts ?? 0)
+				if (age < 4000) {
+					candidateWasAliveRef.current = true
+					setCandidateTabClosed(false)
+				} else if (candidateWasAliveRef.current) {
+					setCandidateTabClosed(true)
+				}
 			} catch { /* ignore */ }
-		}, 2000)
+		}, 1000)
 		return () => clearInterval(interval)
 	}, [isLocalMode, lobbyId, previewMode, currentView])
 

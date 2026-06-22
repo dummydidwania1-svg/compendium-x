@@ -210,6 +210,7 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
   const [showReplaceBackGuard, setShowReplaceBackGuard] = useState(false)
   const [candidateTabClosed, setCandidateTabClosed] = useState(false)
   const candidateTabUrlRef = useRef<string | null>(null)
+  const candidateWasAliveRef = useRef(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   // Track which case destinations we've already asked Next.js to prefetch
@@ -274,22 +275,30 @@ const clearAllFilters = () => {
   // liveSessionOverlayInfo trigger removed — the replace-case flow now clears
   // compendium-session-start before navigating here, so this check is no longer needed.
 
-  // Poll every 2s for candidate tab closure (local split-screen only).
+  // Poll every 1s for the candidate heartbeat (local split-screen only).
+  // A heartbeat older than 4s after we've seen the tab alive = it closed.
   useEffect(() => {
     if (!selectionMode || !lobbyId || sessionMode !== 'local') return
     const interval = setInterval(() => {
-      const ended = localStorage.getItem('compendium-session-ended')
-      if (ended) { setCandidateTabClosed(false); return }
+      if (localStorage.getItem('compendium-session-ended')) {
+        setCandidateTabClosed(false)
+        return
+      }
       const raw = localStorage.getItem('compendium-candidate-tab')
       if (!raw) return
       try {
         const data = JSON.parse(raw)
         if (data?.lobbyId !== lobbyId) return
         if (data?.url) candidateTabUrlRef.current = data.url
-        const isRecent = Date.now() - (data.ts ?? 0) < 30000
-        setCandidateTabClosed(data.active === false && isRecent)
+        const age = Date.now() - (data.ts ?? 0)
+        if (age < 4000) {
+          candidateWasAliveRef.current = true
+          setCandidateTabClosed(false)
+        } else if (candidateWasAliveRef.current) {
+          setCandidateTabClosed(true)
+        }
       } catch { /* ignore */ }
-    }, 2000)
+    }, 1000)
     return () => clearInterval(interval)
   }, [selectionMode, lobbyId, sessionMode])
 

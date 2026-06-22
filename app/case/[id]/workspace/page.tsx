@@ -1339,33 +1339,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [recordingState, recordingConsentDeclined, completionPending, feedbackSubmitted])
 
 
-  // Signal to the interviewer popup that this candidate tab is alive.
-  // Written on mount and cleared (active:false) on pagehide. The interviewer
-  // pages poll this key every 2s to detect an unexpected candidate tab close.
+  // Heartbeat so the interviewer pages know this candidate tab is alive.
+  // pagehide/beforeunload writes from a closing tab are unreliable (Chrome
+  // tears the tab down before flushing), so instead we write a fresh timestamp
+  // every 1s. The interviewer side treats a stale heartbeat (>4s) as "tab gone".
   // Suppressed once session-ended is written (upload phase started).
   useEffect(() => {
     if (!lobbyId || requestedMode !== 'local') return
-    const write = (active: boolean) => {
-      const ended = localStorage.getItem('compendium-session-ended')
-      if (ended) return
+    const beat = () => {
+      if (localStorage.getItem('compendium-session-ended')) return
       try {
         localStorage.setItem('compendium-candidate-tab', JSON.stringify({
           lobbyId,
-          active,
           url: window.location.href,
           ts: Date.now(),
         }))
       } catch { /* quota */ }
     }
-    write(true)
-    const onPagehide = () => write(false)
-    window.addEventListener('pagehide', onPagehide)
-    return () => {
-      window.removeEventListener('pagehide', onPagehide)
-      // On clean unmount (SPA navigation within the session) re-signal active
-      // so the URL stays current. The new route's effect will overwrite immediately.
-      write(true)
-    }
+    beat()
+    const interval = setInterval(beat, 1000)
+    return () => clearInterval(interval)
   // lobbyId and requestedMode are stable for the page lifetime
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lobbyId, requestedMode])
