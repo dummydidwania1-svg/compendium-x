@@ -824,7 +824,7 @@ function layoutVertical(
 }
 
 function VerticalChart({
-  visibleIds, expandedIds, focusedId, onSelect, onToggle, revealDepth, edgeAnimKey,
+  visibleIds, expandedIds, focusedId, onSelect, onToggle, revealDepth, edgeAnimKey, multiActive = false, tree,
 }: {
   visibleIds: string[]
   expandedIds: Set<string>
@@ -833,7 +833,10 @@ function VerticalChart({
   onToggle: (id: string) => void
   revealDepth: number
   edgeAnimKey: number
+  multiActive?: boolean
+  tree?: FrameworkTree
 }) {
+  if (tree) loadTree(tree)
   const outerRef = useRef<HTMLDivElement>(null)
   const [cW, setCW] = useState(0)
   const [cWReady, setCWReady] = useState(false)
@@ -966,9 +969,12 @@ function VerticalChart({
           const isExp = expandedIds.has(id)
           const isSelected = focusedId === id
           const isDefaultPath = defaultPath.includes(id)
+          const hasChildren = (NODES[id]?.children.length ?? 0) > 0
+          const isDrilledParent = expandedIds.has(id) && hasChildren
+          const isActive = multiActive ? isDrilledParent : isDefaultPath
           const hasCh = node.children.length > 0
 
-          const cls = isDefaultPath
+          const cls = isActive
             ? 'border-[#5C4033] bg-[#5C4033] text-[#f5f0ea] shadow-[0_8px_20px_-10px_rgba(92,64,51,0.30)]'
             : isSelected
               ? 'border-[#C4A882]/50 bg-[rgba(255,248,240,0.96)] text-[#4f4335] shadow-[0_0_0_1px_rgba(196,168,130,0.2)]'
@@ -1043,9 +1049,9 @@ function VerticalChart({
                   <button
                     type="button"
                     data-node-button
-                    onClick={e => { e.stopPropagation(); if (!isDefaultPath && hasCh) { e.currentTarget.dispatchEvent(new CustomEvent('cpm-drill', { bubbles: true, detail: { id } })) } else { onToggle(id) } }}
+                    onClick={e => { e.stopPropagation(); if (!multiActive && !isDefaultPath && hasCh) { e.currentTarget.dispatchEvent(new CustomEvent('cpm-drill', { bubbles: true, detail: { id } })) } else { onToggle(id) } }}
                     className="absolute transition-all duration-300 hover:scale-110 z-30 opacity-70 hover:opacity-100"
-                    data-node-id={id} data-cpm-drill={!isDefaultPath && hasCh ? 'true' : undefined} style={chevronStyle}
+                    data-node-id={id} data-cpm-drill={!multiActive && !isDefaultPath && hasCh ? 'true' : undefined} style={chevronStyle}
                     aria-label={`${isExp ? 'Collapse' : 'Expand'} ${node.label}`}
                   >
                     <ChevronChip expanded={isExp} />
@@ -1066,7 +1072,7 @@ function VerticalChart({
    ═══════════════════════════════════════════════════════════ */
 
 function DesktopChart({
-  visibleIds, expandedIds, focusedId, onSelect, onToggle, revealDepth, edgeAnimKey,
+  visibleIds, expandedIds, focusedId, onSelect, onToggle, revealDepth, edgeAnimKey, multiActive = false, tree,
 }: {
   visibleIds: string[]
   expandedIds: Set<string>
@@ -1075,7 +1081,10 @@ function DesktopChart({
   onToggle: (id: string) => void
   revealDepth: number
   edgeAnimKey: number
+  multiActive?: boolean
+  tree?: FrameworkTree
 }) {
+  if (tree) loadTree(tree)
   const outerRef = useRef<HTMLDivElement>(null)
   const [cW, setCW] = useState(980)
   const [cWReady, setCWReady] = useState(false)
@@ -1239,10 +1248,13 @@ function DesktopChart({
           const isExp = expandedIds.has(id)
           const isSelected = focusedId === id
           const isDefaultPath = defaultPath.includes(id)
+          const hasChildren = (NODES[id]?.children.length ?? 0) > 0
+          const isDrilledParent = expandedIds.has(id) && hasChildren
+          const isActive = multiActive ? isDrilledParent : isDefaultPath
           const hasCh = node.children.length > 0
           const nw = nodeWidths.get(id) ?? estNodeW(id)
           const lw = hasCh ? nw - 18 : nw
-          const cls = isDefaultPath
+          const cls = isActive
   ? 'border-[#5C4033] bg-[#5C4033] text-[#f5f0ea] shadow-[0_16px_30px_-26px_rgba(92,64,51,0.30)]'
   : isSelected
     ? 'border-[#C4A882]/50 bg-[rgba(255,248,240,0.96)] text-[#4f4335] shadow-[0_0_0_1px_rgba(196,168,130,0.2),0_0_20px_-10px_rgba(196,168,130,0.18)]'
@@ -1258,7 +1270,7 @@ function DesktopChart({
   {node.label}
 </button>
                 {hasCh && (
-                  <button type="button" data-node-button data-node-id={id} data-cpm-drill={!isDefaultPath && hasCh ? 'true' : undefined} onClick={e => { e.stopPropagation(); if (!isDefaultPath && hasCh) { e.currentTarget.dispatchEvent(new CustomEvent('cpm-drill', { bubbles: true, detail: { id } })) } else { onToggle(id) } }} className="absolute left-full ml-1.5 transition-all duration-300 hover:scale-105"
+                  <button type="button" data-node-button data-node-id={id} data-cpm-drill={!multiActive && !isDefaultPath && hasCh ? 'true' : undefined} onClick={e => { e.stopPropagation(); if (!multiActive && !isDefaultPath && hasCh) { e.currentTarget.dispatchEvent(new CustomEvent('cpm-drill', { bubbles: true, detail: { id } })) } else { onToggle(id) } }} className="absolute left-full ml-1.5 transition-all duration-300 hover:scale-105"
                     aria-label={`${isExp ? 'Collapse' : 'Expand'} ${node.label}`}>
                     <ChevronChip expanded={isExp} />
                   </button>
@@ -3016,20 +3028,22 @@ function loadTree(tree: FrameworkTree) {
    notes sidebar.
    ═══════════════════════════════════════════════════════════ */
 
-function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?: string }) {
+export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hideHeader = false, noScroll = false, forceVertical = false }: { tree: FrameworkTree; label?: string; multiActive?: boolean; hideHeader?: boolean; noScroll?: boolean; forceVertical?: boolean }) {
   // Swap globals so all layout utilities operate on this tree
   loadTree(tree)
 
   const maxTreeDepth = ROOT_ID ? Math.max(...Object.keys(NODES).map(nodeDepth), 0) : 0
-  const useVerticalLayout = shouldUseVerticalLayout('preview')
+  const useVerticalLayout = forceVertical || shouldUseVerticalLayout('preview')
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+    if (multiActive) return new Set(tree.defaultExpanded)
     const dp = pathTo(tree.defaultFocusedId)
     return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
   })
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
+    if (multiActive) return new Set(tree.defaultExpanded)
     const dp = pathTo(tree.defaultFocusedId)
     return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
   })
@@ -3085,7 +3099,7 @@ function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?
     loadTree(tree)
     setFocusedId(id)
     const node = NODES[id]
-    if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && node?.children.length) return
+    if (!multiActive && !pathTo(DEFAULT_FOCUSED_ID).includes(id) && node?.children.length) return
     startChartTransition(() => {
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
@@ -3108,7 +3122,7 @@ function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?
   const handleToggle = (id: string) => {
     loadTree(tree)
     const node = NODES[id]; if (!node?.children.length) return
-    if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
+    if (!multiActive && !pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
     startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
@@ -3118,10 +3132,12 @@ function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?
           if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
         } else {
           next.add(id)
-          const parent = PARENTS[id]
-          if (parent) NODES[parent].children.forEach(sib => {
-            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
-          })
+          if (!multiActive) {
+            const parent = PARENTS[id]
+            if (parent) NODES[parent].children.forEach(sib => {
+              if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+            })
+          }
         }
         return next
       })
@@ -3132,7 +3148,7 @@ function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?
   const handleMobileSelect = (id: string) => {
     loadTree(tree)
     setMobileFocId(id)
-    if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return
+    if (!multiActive && !pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return
     setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
@@ -3143,7 +3159,7 @@ function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?
   const handleMobileToggle = (id: string) => {
     loadTree(tree)
     const node = NODES[id]; if (!node?.children.length) return
-    if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
+    if (!multiActive && !pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
     setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree)
@@ -3152,10 +3168,12 @@ function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?
         if (pathTo(mobileFocId).includes(id)) setMobileFocId(id)
       } else {
         next.add(id)
-        const parent = PARENTS[id]
-        if (parent) NODES[parent].children.forEach(sib => {
-          if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
-        })
+        if (!multiActive) {
+          const parent = PARENTS[id]
+          if (parent) NODES[parent].children.forEach(sib => {
+            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+          })
+        }
       }
       return next
     })
@@ -3172,13 +3190,17 @@ function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?
   return (
     <>
       {/* Thin divider with label */}
-      <div className="mt-10 mb-6 flex items-center gap-4">
-        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">
-          {label ?? 'Additional Framework'}
-        </span>
-        <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-      </div>
+      {!hideHeader ? (
+        <div className="mt-10 mb-6 flex items-center gap-4">
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">
+            {label ?? 'Additional Framework'}
+          </span>
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+        </div>
+      ) : (
+        <div className="mt-6" />
+      )}
 
       {/* Chart — desktop */}
       <div className="hidden lg:block">
@@ -3193,9 +3215,9 @@ function AdditionalFrameworkPanel({ tree, label }: { tree: FrameworkTree; label?
             }}
           >
             {useVerticalLayout ? (
-              <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+              <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} multiActive={multiActive} tree={tree} />
             ) : (
-              <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+              <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} multiActive={multiActive} tree={tree} />
             )}
           </div>
         )}

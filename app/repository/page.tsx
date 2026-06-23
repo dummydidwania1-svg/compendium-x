@@ -146,6 +146,22 @@ function DifficultyDots({ level }: { level: string | null }) {
 
 const SEARCH_DEMOS = ['bcg easy', 'fmcg revenue', 'market entry', 'guesstimate hard']
 
+const PREFERRED_TYPE_ORDER = [
+  'Profitability', 'Market Entry', 'Growth',
+  'Pricing', 'Unconventional', 'Guesstimate',
+]
+
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
+
+const frameworkSlug = (type: string) =>
+  type.toLowerCase().trim().replace(/\s+/g, '-')
+
+const FRAMEWORK_CHIPS = PREFERRED_TYPE_ORDER.map((label) => ({
+  label,
+  slug: frameworkSlug(label),
+  href: `/repository/frameworks/${frameworkSlug(label)}`,
+}))
+
 function useTypewriter(words: string[], active: boolean) {
   const [text, setText] = useState('')
   const [wordIdx, setWordIdx] = useState(0)
@@ -176,6 +192,28 @@ function SearchPlaceholder({ words }: { words: string[] }) {
       <span className="font-mono text-[12px] text-[#3D5A35]">{typed}</span>
       <span className="repo-caret font-mono text-[12px] text-[#3D5A35]">|</span>
     </div>
+  )
+}
+
+function FrameworkChips({ activeSlug }: { activeSlug: string | null }) {
+  return (
+    <nav
+      aria-label="Browse case frameworks"
+      className="repo-chiprow"
+      data-has-active={activeSlug ? 'true' : undefined}
+    >
+      {FRAMEWORK_CHIPS.map((chip, i) => (
+        <Link
+          key={chip.slug}
+          href={chip.href}
+          data-active={activeSlug === chip.slug ? 'true' : undefined}
+          data-fw={i}
+          className="repo-chip"
+        >
+          <span className="repo-chip-label">{chip.label}</span>
+        </Link>
+      ))}
+    </nav>
   )
 }
 
@@ -211,6 +249,8 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
   const [micGuardShowing, setMicGuardShowing] = useState(false)
   const [showReplaceBackGuard, setShowReplaceBackGuard] = useState(false)
   const [candidateTabClosed, setCandidateTabClosed] = useState(false)
+  const [activeFramework, setActiveFramework] = useState<string | null>(null)
+  const [stuck, setStuck] = useState(false)
   const candidateTabUrlRef = useRef<string | null>(null)
   const candidateWasAliveRef = useRef(false)
   const router = useRouter()
@@ -453,16 +493,7 @@ subtype:
     fetchCases()
   }, [])
 
-  // Preferred display order; anything not listed still gets its own real
-// section (sorted after), so no case is ever dumped into "Other".
-const PREFERRED_TYPE_ORDER = [
-  'Profitability', 'Market Entry', 'Growth',
-  'Pricing', 'Unconventional', 'Guesstimate',
-]
-
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
-
-const orderTypes = (types: string[]) =>
+  const orderTypes = (types: string[]) =>
   [...types].sort((a, b) => {
     const ia = PREFERRED_TYPE_ORDER.findIndex((t) => t.toLowerCase() === a.toLowerCase())
     const ib = PREFERRED_TYPE_ORDER.findIndex((t) => t.toLowerCase() === b.toLowerCase())
@@ -569,6 +600,52 @@ const grouped = useMemo(() => {
     .filter((g) => g.items.length > 0)
     .map((g, i) => ({ ...g, letter: ROMAN[i] ?? String(i + 1) }))
 }, [filteredCases, typeOptions, showSectionBands])
+
+  // Scroll-spy: highlight the framework chip whose case section is in view.
+  // Must come after `grouped` declaration since it depends on it.
+  useEffect(() => {
+    if (!grouped || grouped.length === 0) {
+      setActiveFramework(null)
+      return
+    }
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>('.repo-fw-section[data-framework]')
+    )
+    if (sections.length === 0) {
+      setActiveFramework(null)
+      return
+    }
+    const ratios = new Map<string, number>()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const slug = (entry.target as HTMLElement).dataset.framework
+          if (!slug) continue
+          ratios.set(slug, entry.isIntersecting ? entry.intersectionRatio : 0)
+        }
+        let best: string | null = null
+        let bestRatio = 0
+        ratios.forEach((r, slug) => {
+          if (r > bestRatio) { bestRatio = r; best = slug }
+        })
+        setActiveFramework(bestRatio > 0 ? best : null)
+      },
+      {
+        rootMargin: '-210px 0px -55% 0px',
+        threshold: [0, 0.15, 0.35, 0.6, 1],
+      }
+    )
+    sections.forEach((s) => observer.observe(s))
+    return () => observer.disconnect()
+  }, [grouped])
+
+  useEffect(() => {
+    if (selectionMode) return
+    const onScroll = () => setStuck(window.scrollY > 40)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [selectionMode])
 
   // On row hover (or focus) ask Next.js to download the destination page
   // bundle so click → navigation feels closer to instant. We mirror the
@@ -872,7 +949,31 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
   border: 1px solid rgba(92,64,51,0.08);
   box-shadow: 0 1px 2px rgba(59,47,47,0.02), 0 18px 40px rgba(59,47,47,0.04);
 }
-.repo-table-toolbar { position: relative; }
+/* Toolbar - sticky layer B (search + filters, inside the container) */
+.repo-table-toolbar {
+  position: sticky;
+  top: 118px;
+  z-index: 41;
+  background: transparent;
+  transition: background 320ms cubic-bezier(0.22,1,0.36,1);
+}
+[data-stuck='true'] .repo-table-toolbar {
+  background: #fff8f0;
+}
+[data-stuck='true'] .repo-table-toolbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -18px;
+  height: 18px;
+  pointer-events: none;
+  background: linear-gradient(180deg, #fff8f0 0%, rgba(255,248,240,0) 100%);
+  z-index: 1;
+}
+@media (max-width: 760px) {
+  .repo-table-toolbar { top: 106px; }
+}
 .repo-table-head { background: transparent; }
 
 .repo-filter-pop {
@@ -986,6 +1087,259 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
   .repo-rise, .repo-section, .repo-hints { animation: none; }
   .repo-table-row:hover .repo-title { transform: none; }
 }
+
+/* ===== Unified frozen header block (chips + toolbar) ===== */
+.repo-chiprail {
+  position: sticky;
+  top: 70px;
+  z-index: 42;
+  margin: 0;
+  padding: 14px 20px 12px;
+  background: transparent;
+  transition: background 320ms cubic-bezier(0.22,1,0.36,1);
+}
+@media (min-width: 768px) {
+  .repo-chiprail { padding-left: 28px; padding-right: 28px; }
+}
+[data-stuck='true'] .repo-chiprail {
+  background: #fff8f0;
+}
+
+/* ===== Hint: "Know your frameworks" - canopies the right end of the chip row ===== */
+.repo-coachmark {
+  position: absolute;
+  top: -28px;
+  right: 20px;
+  z-index: 44;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  font-family: 'Newsreader', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.015em;
+  color: rgba(92,64,51,0.58);
+  text-shadow: 0 1px 0 rgba(255,252,247,0.9);
+  opacity: 0;
+  transform: translateY(6px) rotate(-1.2deg);
+  transform-origin: right bottom;
+  animation: repo-coachmark-life 5s cubic-bezier(0.22,1,0.36,1) 650ms forwards;
+}
+@media (min-width: 768px) {
+  .repo-coachmark { right: 28px; }
+}
+.repo-coachmark::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: -4px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg,
+    rgba(92,64,51,0) 0%,
+    rgba(150,116,86,0.42) 30%,
+    rgba(196,168,130,0.6) 60%,
+    rgba(196,168,130,0) 100%);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: repo-coachmark-underline 5s cubic-bezier(0.22,1,0.36,1) 650ms forwards;
+}
+.repo-coachmark::before {
+  content: '';
+  position: absolute;
+  right: 14px;
+  bottom: -10px;
+  width: 1px;
+  height: 6px;
+  background: linear-gradient(180deg, rgba(92,64,51,0.32), rgba(92,64,51,0));
+  opacity: 0;
+  animation: repo-coachmark-tick 5s ease 650ms forwards;
+}
+@keyframes repo-coachmark-life {
+  0%   { opacity: 0; transform: translateY(6px) rotate(-1.2deg); filter: blur(1px); }
+  16%  { opacity: 1; transform: translateY(0)   rotate(-1.2deg); filter: blur(0); }
+  72%  { opacity: 1; transform: translateY(0)   rotate(-1.2deg); filter: blur(0); }
+  100% { opacity: 0; transform: translateY(-5px) rotate(-1.2deg); filter: blur(1px); }
+}
+@keyframes repo-coachmark-underline {
+  0%   { transform: scaleX(0); opacity: 0; }
+  20%  { transform: scaleX(1); opacity: 1; }
+  72%  { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(0.92); opacity: 0; transform-origin: right center; }
+}
+@keyframes repo-coachmark-tick {
+  0%   { opacity: 0; }
+  20%  { opacity: 1; }
+  72%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .repo-coachmark,
+  .repo-coachmark::after,
+  .repo-coachmark::before { animation: repo-coachmark-fade 5s linear 650ms forwards; }
+}
+@keyframes repo-coachmark-fade {
+  0%   { opacity: 0; }
+  16%  { opacity: 1; }
+  72%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (max-width: 900px) {
+  .repo-coachmark { display: none; }
+}
+
+.repo-chiprow {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  padding: 2px;
+}
+.repo-chiprow::-webkit-scrollbar { display: none; }
+
+.repo-chip {
+  position: relative;
+  overflow: hidden;
+  flex: 1 1 0;
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg,
+    rgba(255,250,243,0.9) 0%, rgba(252,245,236,0.78) 52%, rgba(250,242,232,0.85) 100%);
+  border: 1px solid rgba(92,64,51,0.08);
+  color: rgba(69,58,42,0.78);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 420ms cubic-bezier(0.22,1,0.36,1),
+    border-color 420ms cubic-bezier(0.22,1,0.36,1),
+    color 420ms cubic-bezier(0.22,1,0.36,1),
+    box-shadow 420ms cubic-bezier(0.22,1,0.36,1),
+    transform 420ms cubic-bezier(0.22,1,0.36,1);
+}
+
+/* Per-framework subtle differentiation */
+.repo-chip[data-fw='0'] {
+  background: linear-gradient(135deg, rgba(255,251,244,0.92), rgba(250,243,233,0.8));
+  box-shadow: 0 2px 10px rgba(196,168,130,0.07);
+}
+.repo-chip[data-fw='1'] {
+  background: linear-gradient(120deg, rgba(255,250,242,0.92), rgba(248,242,234,0.8));
+  box-shadow: 0 2px 10px rgba(61,90,53,0.06);
+}
+.repo-chip[data-fw='2'] {
+  background: linear-gradient(150deg, rgba(255,251,245,0.92), rgba(249,243,235,0.8));
+  box-shadow: 0 2px 10px rgba(196,168,130,0.08);
+}
+.repo-chip[data-fw='3'] {
+  background: linear-gradient(110deg, rgba(255,250,243,0.92), rgba(250,243,234,0.8));
+  box-shadow: 0 2px 10px rgba(92,64,51,0.05);
+}
+.repo-chip[data-fw='4'] {
+  background: linear-gradient(160deg, rgba(255,251,244,0.92), rgba(248,242,233,0.8));
+  box-shadow: 0 2px 10px rgba(61,90,53,0.07);
+}
+.repo-chip[data-fw='5'] {
+  background: linear-gradient(130deg, rgba(255,250,242,0.92), rgba(250,242,232,0.8));
+  box-shadow: 0 2px 10px rgba(196,168,130,0.06);
+}
+.repo-chip-label { position: relative; z-index: 1; line-height: 1; }
+
+.repo-chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 35%, rgba(255,252,247,0.55) 50%, transparent 65%);
+  background-size: 220% 100%;
+  background-position: 200% 0;
+  opacity: 0;
+  transition: opacity 420ms ease;
+}
+
+.repo-chip:hover {
+  background: linear-gradient(135deg,
+    rgba(253,247,239,0.85) 0%, rgba(250,243,234,0.72) 50%, rgba(248,240,230,0.8) 100%);
+  border-color: rgba(92,64,51,0.16);
+  color: #5C4033;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(92,64,51,0.07);
+}
+.repo-chip:hover::before {
+  opacity: 1;
+  animation: repo-shimmer 1.6s cubic-bezier(0.22,1,0.36,1);
+}
+
+.repo-chip:focus-visible {
+  outline: none;
+  border-color: rgba(92,64,51,0.22);
+  box-shadow: 0 0 0 3px rgba(255,248,240,0.9), 0 0 0 4px rgba(92,64,51,0.12);
+}
+
+/* When one chip is active, dim all chips softly (warm recede, never dark) */
+.repo-chiprow[data-has-active='true'] .repo-chip {
+  opacity: 0.55;
+  background: linear-gradient(135deg,
+    rgba(250,243,233,0.5) 0%, rgba(247,239,228,0.4) 100%);
+  border-color: rgba(92,64,51,0.06);
+  color: rgba(69,58,42,0.6);
+  transition:
+    opacity 360ms cubic-bezier(0.22,1,0.36,1),
+    background 360ms cubic-bezier(0.22,1,0.36,1),
+    border-color 360ms cubic-bezier(0.22,1,0.36,1),
+    color 360ms cubic-bezier(0.22,1,0.36,1);
+}
+
+/* Restore the active chip to full strength */
+.repo-chiprow[data-has-active='true'] .repo-chip[data-active='true'] {
+  opacity: 1;
+  background: radial-gradient(110% 130% at 50% 45%,
+    rgba(255,250,242,0.98) 0%,
+    rgba(253,247,238,0.95) 50%,
+    rgba(250,243,233,0.94) 100%);
+  border-color: rgba(92,64,51,0.18);
+  color: #3a2f25;
+  box-shadow: inset 0 0 0 1px rgba(255,252,247,0.7);
+}
+
+/* Lift dimmed chips on hover so the row stays interactive */
+.repo-chiprow[data-has-active='true'] .repo-chip:hover {
+  opacity: 0.9;
+}
+
+/* Slow contained cream sheen on the active chip for subtle life */
+.repo-chiprow[data-has-active='true'] .repo-chip[data-active='true']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 38%, rgba(255,253,248,0.5) 50%, transparent 62%);
+  background-size: 220% 100%;
+  opacity: 1;
+  animation: repo-shimmer 5s ease-in-out infinite;
+}
+
+@media (max-width: 760px) {
+  .repo-chiprow { gap: 8px; }
+  .repo-chip { flex: 0 0 auto; font-size: 11.5px; padding: 11px 15px; }
+}
       `}</style>
 
       {selectionMode ? (
@@ -1027,10 +1381,10 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
             : 'pb-12 pt-[90px]'
         }`}
       >
-        <section className="mx-auto w-full max-w-[1320px] pb-16">
+        <section data-stuck={stuck ? 'true' : undefined} className="mx-auto w-full max-w-[1320px] pb-16">
 
           {/* Header */}
-          <div className="mb-7 max-w-[760px]">
+          <div className="mb-12 max-w-[760px]">
             <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 pl-[2px]">
               <span className="text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">
                 Repository
@@ -1061,13 +1415,20 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
             </p>
           </div>
 
+          {/* Framework chips - standalone, above the case table container */}
+          {!selectionMode && !loading && (
+            <div className="repo-chiprail">
+              <FrameworkChips activeSlug={activeFramework} />
+              <span className="repo-coachmark" aria-hidden="true">Know your frameworks</span>
+            </div>
+          )}
+
           {offlineBanner && (
             <div className="mb-5 flex items-center gap-3 rounded-xl border border-[#3D5A35]/12 bg-[rgba(255,248,240,0.9)] px-5 py-3 text-[12px] text-[#5C4033]/60">
               <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-[#3D5A35]/40" />
               Showing cached library. Connect to refresh.
             </div>
           )}
-
 
           {/* Case Table */}
           <div className="repo-table-surface relative z-10 rounded-[30px]">
@@ -1156,7 +1517,12 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
 <div className="hidden md:block">
 {grouped
   ? grouped.map((g, gi) => (
-      <div key={g.type}>
+      <div
+        key={g.type}
+        id={`fw-${frameworkSlug(g.type)}`}
+        data-framework={frameworkSlug(g.type)}
+        className="repo-fw-section"
+      >
         <SectionBand letter={g.letter} type={g.type} isFirst={gi === 0} />
         {g.items.map((caseItem, i) => <CaseRow key={caseItem.id} caseItem={caseItem} index={i} />)}
       </div>
@@ -1168,7 +1534,12 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
 <div className="md:hidden">
 {grouped
   ? grouped.map((g, gi) => (
-      <div key={g.type}>
+      <div
+        key={g.type}
+        id={`fw-${frameworkSlug(g.type)}`}
+        data-framework={frameworkSlug(g.type)}
+        className="repo-fw-section"
+      >
         <SectionBand letter={g.letter} type={g.type} isFirst={gi === 0} />
         {g.items.map((caseItem, i) => <CaseCard key={caseItem.id} caseItem={caseItem} index={i} />)}
       </div>

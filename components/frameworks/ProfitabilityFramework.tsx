@@ -1,217 +1,106 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import Footer from '@/components/dashboard/Footer'
-
-/* ─── Tree renderer — exact visual parity with CasePreviewMaster ─── */
-
-const T_GREEN    = '#3D5A35'
-const T_MUTED_BG = 'rgba(255,248,240,1)'
-const T_MUTED_BD = 'rgba(92,64,51,0.32)'
-const T_MUTED_TX = '#7A5C4A'
-const T_EDGE     = 'rgba(92,64,51,0.30)'
-const T_FONT     = "'Work Sans', sans-serif"
-const T_FS       = 13
-const T_PX       = 18
-const T_PY       = 12
-const T_LH       = T_FS * 1.4
-const T_H_GAP    = 60
-const T_V_GAP    = 42
-const T_PAD      = 32
-const T_CW       = T_FS * 0.54
-const T_MIN_W    = 130
-
-type TNode = { label: string; children: string[] }
-type TDef  = { nodes: Record<string, TNode>; rootId: string }
-
-/* Wraps label into lines — explicit \n creates hard breaks */
-function wrapLabel(label: string, innerW: number): string[] {
-  const cpl = Math.max(4, Math.floor(innerW / T_CW))
-  const result: string[] = []
-  for (const seg of label.split('\n')) {
-    const words = seg.split(' ')
-    let cur = ''
-    for (const w of words) {
-      if (cur && cur.length + 1 + w.length > cpl) { result.push(cur); cur = w }
-      else { cur = cur ? `${cur} ${w}` : w }
-    }
-    if (cur) result.push(cur)
-  }
-  return result.length ? result : ['']
-}
-
-/* Natural node size: uses large inner to honour explicit \n without extra wrapping */
-function rawSize(label: string): { w: number; h: number } {
-  const ls = wrapLabel(label, 999)
-  const textW = Math.max(...ls.map(l => l.length * T_CW))
-  return {
-    w: Math.max(T_MIN_W, textW + T_PX * 2),
-    h: Math.max(44, ls.length * T_LH + T_PY * 2),
-  }
-}
-
-/* Layout with tier-uniform node dimensions */
-function computeLayout(tree: TDef) {
-  const { nodes, rootId } = tree
-
-  const tiers = new Map<string, number>()
-  function assignTier(id: string, t: number) {
-    tiers.set(id, t)
-    ;(nodes[id]?.children ?? []).forEach(ch => assignTier(ch, t + 1))
-  }
-  assignTier(rootId, 0)
-
-  const tierDims = new Map<number, { w: number; h: number }>()
-  tiers.forEach((t, id) => {
-    const { w, h } = rawSize(nodes[id]?.label ?? '')
-    const prev = tierDims.get(t) ?? { w: 0, h: 0 }
-    tierDims.set(t, { w: Math.max(prev.w, w), h: Math.max(prev.h, h) })
-  })
-
-  function dims(id: string) {
-    return tierDims.get(tiers.get(id) ?? 0) ?? { w: T_MIN_W, h: 44 }
-  }
-
-  function sw(id: string): number {
-    const { w } = dims(id)
-    const ch = nodes[id]?.children ?? []
-    if (!ch.length) return w
-    return Math.max(w, ch.reduce((s, c, i) => s + sw(c) + (i ? T_H_GAP : 0), 0))
-  }
-
-  const pos = new Map<string, { x: number; y: number; w: number; h: number }>()
-  function place(id: string, cx: number, cy: number) {
-    const { w, h } = dims(id)
-    pos.set(id, { x: cx, y: cy, w, h })
-    const ch = nodes[id]?.children ?? []
-    if (!ch.length) return
-    const total = ch.reduce((s, c, i) => s + sw(c) + (i ? T_H_GAP : 0), 0)
-    let lx = cx - total / 2
-    for (const c of ch) {
-      const csw = sw(c)
-      const { h: chH } = dims(c)
-      place(c, lx + csw / 2, cy + h / 2 + T_V_GAP + chH / 2)
-      lx += csw + T_H_GAP
-    }
-  }
-  place(rootId, 0, 0)
-  return { pos, tiers }
-}
-
-function StaticTree({ tree }: { tree: TDef }) {
-  const { pos, tiers } = computeLayout(tree)
-
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-  pos.forEach(n => {
-    minX = Math.min(minX, n.x - n.w / 2); minY = Math.min(minY, n.y - n.h / 2)
-    maxX = Math.max(maxX, n.x + n.w / 2); maxY = Math.max(maxY, n.y + n.h / 2)
-  })
-  const svgW = maxX - minX + T_PAD * 2
-  const svgH = maxY - minY + T_PAD * 2
-  const ox   = T_PAD - minX
-  const oy   = T_PAD - minY
-
-  function renderNode(id: string) {
-    const n = pos.get(id)
-    const def = tree.nodes[id]
-    if (!n || !def) return null
-    const tier   = tiers.get(id) ?? 0
-    const active = tier <= 1
-    const x = n.x + ox, y = n.y + oy
-    const hw = n.w / 2, hh = n.h / 2
-    const fill   = active ? T_GREEN   : T_MUTED_BG
-    const stroke = active ? T_GREEN   : T_MUTED_BD
-    const tc     = active ? '#f0f5ee' : T_MUTED_TX
-    const fw     = active ? 500       : 400
-    const ls     = wrapLabel(def.label, n.w - T_PX * 2)
-    const totalH = ls.length * T_LH
-    const startY = y - totalH / 2 + T_LH * 0.85
-    return (
-      <g key={id}>
-        <rect x={x - hw} y={y - hh} width={n.w} height={n.h} rx={4}
-          fill={fill} stroke={stroke} strokeWidth={active ? 1.5 : 1} />
-        {ls.map((l, i) => (
-          <text key={i} x={x} y={startY + i * T_LH}
-            textAnchor="middle" fontSize={T_FS} fontFamily={T_FONT}
-            fontWeight={fw} fill={tc}>{l}</text>
-        ))}
-      </g>
-    )
-  }
-
-  function renderEdges() {
-    const out: React.ReactNode[] = []
-    Object.keys(tree.nodes).forEach(pid => {
-      const p = pos.get(pid); if (!p) return
-      ;(tree.nodes[pid].children ?? []).forEach(cid => {
-        const c = pos.get(cid); if (!c) return
-        const pTier  = tiers.get(pid) ?? 0
-        const cTier  = tiers.get(cid) ?? 0
-        const active = pTier <= 1 && cTier <= 1
-        const x1 = p.x + ox, y1 = p.y + oy + p.h / 2
-        const x2 = c.x + ox, y2 = c.y + oy - c.h / 2
-        const my = (y1 + y2) / 2
-        out.push(
-          <g key={`${pid}-${cid}`}>
-            <path
-              d={`M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`}
-              fill="none"
-              stroke={active ? T_GREEN : T_EDGE}
-              strokeWidth={active ? 1.5 : 1}
-              strokeDasharray={active ? undefined : '3 2'}
-            />
-            <polygon
-              points={`${x2},${y2} ${x2 - 4},${y2 - 7} ${x2 + 4},${y2 - 7}`}
-              fill={active ? T_GREEN : T_EDGE}
-            />
-          </g>
-        )
-      })
-    })
-    return out
-  }
-
-  return (
-    <div style={{ width: '100%', overflowX: 'auto' }}>
-      <svg viewBox={`0 0 ${svgW} ${svgH}`} width="100%"
-        style={{ maxWidth: svgW, display: 'block', margin: '0 auto' }}>
-        {renderEdges()}
-        {Object.keys(tree.nodes).map(renderNode)}
-      </svg>
-    </div>
-  )
-}
+import { AdditionalFrameworkPanel, type FrameworkTree } from '@/components/case/CasePreviewMaster'
 
 /* ─── Tree data ─── */
 
-const PROFIT_TREE: TDef = {
-  rootId: 'profit',
+const PROFIT_TREE_FW: FrameworkTree = {
   nodes: {
-    profit:  { label: 'Profit',  children: ['revenue', 'cost'] },
-    revenue: { label: 'Revenue', children: [] },
-    cost:    { label: 'Cost',    children: [] },
+    profit:  { id: 'profit',  label: 'Profit',  tone: 'root',   children: ['revenue', 'cost'] },
+    revenue: { id: 'revenue', label: 'Revenue', tone: 'branch', children: [] },
+    cost:    { id: 'cost',    label: 'Cost',    tone: 'branch', children: [] },
   },
+  defaultExpanded: ['profit'],
+  defaultFocusedId: 'profit',
+  notes: [],
 }
 
-const REVENUE_TREE: TDef = {
-  rootId: 'revenue',
+const REVENUE_TREE_FW: FrameworkTree = {
   nodes: {
-    revenue: { label: 'Revenue',            children: ['units', 'price'] },
-    units:   { label: 'No. of\nUnits Sold', children: [] },
-    price:   { label: 'Price /\nUnit',       children: [] },
+    revenue:       { id: 'revenue',       label: 'Revenue',            tone: 'root',   children: ['units', 'price'] },
+    units:         { id: 'units',         label: 'No. of\nUnits Sold', tone: 'branch', children: ['rProduction', 'rDistribution', 'rDemand'] },
+    price:         { id: 'price',         label: 'Price / Unit',       tone: 'branch', children: [] },
+    rProduction:   { id: 'rProduction',   label: 'Production',         tone: 'leaf',   children: [] },
+    rDistribution: { id: 'rDistribution', label: 'Distribution',       tone: 'leaf',   children: [] },
+    rDemand:       { id: 'rDemand',       label: 'Demand',             tone: 'leaf',   children: [] },
   },
+  defaultExpanded: ['revenue', 'units'],
+  defaultFocusedId: 'revenue',
+  notes: [],
 }
 
-const COST_TREE: TDef = {
-  rootId: 'cost',
+const COST_TREE_FW: FrameworkTree = {
   nodes: {
-    cost:       { label: 'Cost',                    children: ['numUnits', 'costPerUnit'] },
-    numUnits:   { label: 'No. of\nUnits',           children: [] },
-    costPerUnit:{ label: 'Cost /\nUnit',            children: ['fixed', 'variable'] },
-    fixed:      { label: 'Fixed Cost\n/ Unit',      children: [] },
-    variable:   { label: 'Variable Cost\n/ Unit',   children: [] },
+    cost:        { id: 'cost',        label: 'Cost',                 tone: 'root',   children: ['numUnits', 'costPerUnit'] },
+    numUnits:    { id: 'numUnits',    label: 'No. of\nUnits',        tone: 'branch', children: [] },
+    costPerUnit: { id: 'costPerUnit', label: 'Cost / Unit',          tone: 'branch', children: ['fixed', 'variable'] },
+    fixed:       { id: 'fixed',       label: 'Fixed Cost\n/ Unit',   tone: 'leaf',   children: [] },
+    variable:    { id: 'variable',    label: 'Variable Cost\n/ Unit', tone: 'leaf',   children: [] },
   },
+  defaultExpanded: ['cost', 'costPerUnit'],
+  defaultFocusedId: 'cost',
+  notes: [],
+}
+
+const PRODUCTION_TREE_FW: FrameworkTree = {
+  nodes: {
+    production: { id: 'production', label: 'Production',       tone: 'root', children: ['mfgUnits', 'unitCap', 'capUsed', 'defects'] },
+    mfgUnits:   { id: 'mfgUnits',   label: 'No. of mfg.\nunits', tone: 'leaf', children: [] },
+    unitCap:    { id: 'unitCap',    label: 'Capacity per\nunit',  tone: 'leaf', children: [] },
+    capUsed:    { id: 'capUsed',    label: 'Capacity\nutilised',  tone: 'leaf', children: [] },
+    defects:    { id: 'defects',    label: 'Defect\nrate',        tone: 'leaf', children: [] },
+  },
+  defaultExpanded: ['production'],
+  defaultFocusedId: 'production',
+  notes: [],
+}
+
+const DISTRIBUTION_TREE_FW: FrameworkTree = {
+  nodes: {
+    distribution: { id: 'distribution', label: 'Distribution',        tone: 'root', children: ['numDist', 'soldPerDist'] },
+    numDist:      { id: 'numDist',      label: 'No. of\ndistributors', tone: 'leaf', children: [] },
+    soldPerDist:  { id: 'soldPerDist',  label: 'Sold per\ndistributor', tone: 'leaf', children: [] },
+  },
+  defaultExpanded: ['distribution'],
+  defaultFocusedId: 'distribution',
+  notes: [],
+}
+
+const FIXED_COST_TREE_FW: FrameworkTree = {
+  nodes: {
+    fixed:         { id: 'fixed',         label: 'Fixed Cost\n/ Unit', tone: 'root', children: ['land', 'building', 'salariesFixed', 'equipment', 'furniture', 'machinery', 'warehouses', 'fixedCharges'] },
+    land:          { id: 'land',          label: 'Land',               tone: 'leaf', children: [] },
+    building:      { id: 'building',      label: 'Building',           tone: 'leaf', children: [] },
+    salariesFixed: { id: 'salariesFixed', label: 'Salary',             tone: 'leaf', children: [] },
+    equipment:     { id: 'equipment',     label: 'Equipment',          tone: 'leaf', children: [] },
+    furniture:     { id: 'furniture',     label: 'Furniture',          tone: 'leaf', children: [] },
+    machinery:     { id: 'machinery',     label: 'Machinery',          tone: 'leaf', children: [] },
+    warehouses:    { id: 'warehouses',    label: 'Warehouses',         tone: 'leaf', children: [] },
+    fixedCharges:  { id: 'fixedCharges',  label: 'Fixed\ncharges',     tone: 'leaf', children: [] },
+  },
+  defaultExpanded: ['fixed'],
+  defaultFocusedId: 'fixed',
+  notes: [],
+}
+
+const VARIABLE_COST_TREE_FW: FrameworkTree = {
+  nodes: {
+    variable:       { id: 'variable',       label: 'Variable Cost\n/ Unit', tone: 'root', children: ['rawMaterial', 'transportation', 'processing', 'packaging', 'storage', 'distributionV', 'marketingV', 'afterSales'] },
+    rawMaterial:    { id: 'rawMaterial',    label: 'Raw material',          tone: 'leaf', children: [] },
+    transportation: { id: 'transportation', label: 'Transportation',         tone: 'leaf', children: [] },
+    processing:     { id: 'processing',     label: 'Processing',             tone: 'leaf', children: [] },
+    packaging:      { id: 'packaging',      label: 'Packaging',              tone: 'leaf', children: [] },
+    storage:        { id: 'storage',        label: 'Storage',                tone: 'leaf', children: [] },
+    distributionV:  { id: 'distributionV',  label: 'Distribution',           tone: 'leaf', children: [] },
+    marketingV:     { id: 'marketingV',     label: 'Marketing',              tone: 'leaf', children: [] },
+    afterSales:     { id: 'afterSales',     label: 'After-sales',            tone: 'leaf', children: [] },
+  },
+  defaultExpanded: ['variable'],
+  defaultFocusedId: 'variable',
+  notes: [],
 }
 
 /* ─── Section nav ─── */
@@ -233,316 +122,192 @@ const PAGE_CSS = `
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
-  .pf-root *::selection { background: rgba(61,90,53,.15); color: #3b2f2f; }
+  .pf-root *::selection { background: rgba(92,64,51,.15); color: #3b2f2f; }
 
   /* Reveal */
   .pf-reveal {
     opacity: 0;
-    transform: translateY(22px);
-    transition: opacity .85s cubic-bezier(.22,1,.36,1),
-                transform .85s cubic-bezier(.22,1,.36,1);
+    transform: translateY(36px) scale(.985);
+    filter: blur(8px);
+    transition: opacity 1.15s cubic-bezier(.16,1,.3,1),
+                transform 1.15s cubic-bezier(.16,1,.3,1),
+                filter .9s ease;
+    will-change: opacity, transform, filter;
   }
-  .pf-reveal.visible { opacity: 1; transform: translateY(0); }
+  .pf-reveal.visible { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  @media (prefers-reduced-motion: reduce) {
+    .pf-reveal { transition: none; opacity: 1; transform: none; filter: none; }
+  }
 
   /* Layout */
-  .pf-wrap { max-width: 1100px; margin: 0 auto; padding: 0 60px; }
+  .pf-wrap { max-width: 1320px; margin: 0 auto; padding: 0 60px; }
   @media (max-width: 768px) { .pf-wrap { padding: 0 28px; } }
   @media (max-width: 480px) { .pf-wrap { padding: 0 20px; } }
 
-  /* Back button */
-  .pf-back {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 96px 60px 0;
-  }
-  @media (max-width: 768px) { .pf-back { padding: 82px 28px 0; } }
-  .pf-back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .22em;
-    color: #3D5A35;
-    text-decoration: none;
-    transition: opacity .18s;
-  }
-  .pf-back-link:hover { opacity: .65; }
+  /* Back-link bar -- match case-preview pages (top-left of screen, ~24px below navbar) */
+  .pf-crumb-bar { max-width: 1480px; margin: 0 auto; padding: 94px 16px 0; }
+  @media (min-width: 1024px) { .pf-crumb-bar { padding: 94px 24px 0; } }
 
   /* Hero */
-  .pf-hero {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 22px 60px 60px;
+  .pf-hero { max-width: 1320px; margin: 0 auto; padding: 28px 60px 24px; text-align: center; }
+  @media (max-width: 768px) { .pf-hero { padding: 22px 28px 20px; } }
+
+  /* Breadcrumb */
+  .pf-back-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .2em; color: #5C4033; text-decoration: none;
+    opacity: .7; transition: opacity .18s;
   }
-  @media (max-width: 768px) { .pf-hero { padding: 18px 28px 48px; } }
+  .pf-back-link:hover { opacity: 1; }
 
   .pf-eyebrow {
-    display: block;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .3em;
-    color: rgba(61,90,53,.48);
-    margin-bottom: 14px;
+    display: block; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .3em;
+    color: rgba(92,64,51,.48); margin-bottom: 14px;
   }
   .pf-headline {
     font-family: 'Newsreader', serif;
-    font-size: clamp(40px, 6vw, 72px);
-    font-weight: 300;
-    line-height: 1.0;
-    letter-spacing: -.025em;
-    color: #453a2a;
-    margin-bottom: 20px;
-  }
-  .pf-lead {
-    font-size: 15px;
-    line-height: 1.8;
-    color: rgba(90,79,67,.8);
-    max-width: 460px;
+    font-size: clamp(40px, 6vw, 72px); font-weight: 300;
+    line-height: 1.0; letter-spacing: -.025em; color: #453a2a; margin-bottom: 20px;
   }
 
   /* Sections */
-  .pf-section {
-    border-top: 1px solid rgba(61,90,53,.1);
-    padding: 68px 0;
+  .pf-section { position: relative; padding: 132px 0; scroll-margin-top: 90px; }
+  .pf-section:first-of-type { padding-top: 28px; }
+  .pf-section::before {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: min(640px, 80%); height: 1px;
+    background: linear-gradient(to right, transparent 0%, rgba(92,64,51,.18) 25%, rgba(92,64,51,.28) 50%, rgba(92,64,51,.18) 75%, transparent 100%);
   }
+  .pf-section::after {
+    content: ''; position: absolute; top: -3px; left: 50%; transform: translateX(-50%) rotate(45deg);
+    width: 5px; height: 5px; background: #5C4033; opacity: .55;
+  }
+  .pf-section:first-of-type::before,
+  .pf-section:first-of-type::after { display: none; }
 
   .pf-section-ey {
-    display: block;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .3em;
-    color: rgba(61,90,53,.45);
-    margin-bottom: 10px;
+    display: block; font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .3em; color: rgba(92,64,51,.45); margin-bottom: 10px; margin-top: 8px;
   }
   .pf-section-title {
-    font-family: 'Newsreader', serif;
-    font-size: clamp(22px, 3vw, 30px);
-    font-weight: 300;
-    color: #453a2a;
-    letter-spacing: -.01em;
-    line-height: 1.25;
-    margin-bottom: 22px;
-  }
-  .pf-body {
-    font-size: 15px;
-    line-height: 1.85;
-    color: #5a4f43;
-    max-width: 640px;
+    font-family: 'Newsreader', serif; font-size: clamp(22px, 3vw, 30px);
+    font-weight: 300; color: #453a2a; letter-spacing: -.01em; line-height: 1.25; margin-bottom: 22px;
   }
 
+  /* Edit 5a: wider body, more line-height */
+  .pf-body { font-size: 15px; line-height: 1.9; color: #5a4f43; max-width: 760px; }
+
   /* Callout */
-  .pf-callout {
-    border-left: 2px solid #3D5A35;
-    padding: 18px 22px;
-    background: rgba(61,90,53,.03);
-    margin-bottom: 32px;
-  }
-  .pf-callout-lbl {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .26em;
-    color: rgba(61,90,53,.5);
-    margin-bottom: 8px;
-  }
-  .pf-callout-txt {
-    font-family: 'Newsreader', serif;
-    font-size: 18px;
-    font-style: italic;
-    font-weight: 300;
-    color: #453a2a;
-    line-height: 1.6;
-  }
+  .pf-callout { border-left: 2px solid #5C4033; padding: 18px 22px; background: rgba(92,64,51,.03); margin-bottom: 32px; }
+  .pf-callout-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .26em; color: rgba(92,64,51,.5); margin-bottom: 8px; }
+  .pf-callout-txt { font-family: 'Newsreader', serif; font-size: 18px; font-style: italic; font-weight: 300; color: #453a2a; line-height: 1.6; }
 
   /* Numbered list */
   .pf-qlist { list-style: none; margin: 0; padding: 0; }
   .pf-q {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-    padding: 16px 0;
-    border-bottom: 1px solid rgba(61,90,53,.07);
-    opacity: 0;
-    transform: translateX(-10px);
-    transition: opacity .6s cubic-bezier(.22,1,.36,1),
-                transform .6s cubic-bezier(.22,1,.36,1);
+    display: flex; gap: 16px; align-items: flex-start; padding: 16px 0;
+    border-bottom: 1px solid rgba(92,64,51,.07);
+    opacity: 0; transform: translateX(-10px);
+    transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1);
   }
-  .pf-q:first-child { border-top: 1px solid rgba(61,90,53,.07); }
+  .pf-q:first-child { border-top: 1px solid rgba(92,64,51,.07); }
   .pf-q.visible { opacity: 1; transform: translateX(0); }
-  .pf-qn {
-    font-family: 'Newsreader', serif;
-    font-size: 13px;
-    font-weight: 300;
-    color: rgba(61,90,53,.38);
-    min-width: 22px;
-    flex-shrink: 0;
-    padding-top: 2px;
-  }
+  @media (prefers-reduced-motion: reduce) { .pf-q { transition: none; opacity: 1; transform: none; } }
+  .pf-qn { font-family: 'Newsreader', serif; font-size: 13px; font-weight: 300; color: rgba(92,64,51,.38); min-width: 22px; flex-shrink: 0; padding-top: 2px; }
   .pf-qt { font-size: 15px; line-height: 1.7; color: #5a4f43; }
 
-  /* Tree label above SVG */
-  .pf-tree { margin-top: 40px; }
-  .pf-tree-cap {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .28em;
-    color: rgba(61,90,53,.35);
-    margin-bottom: 18px;
-    text-align: center;
-  }
-
-  /* Driver columns */
-  .pf-drivers {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    margin-top: 52px;
-    border-top: 1px solid rgba(61,90,53,.1);
-  }
-  @media (max-width: 720px) { .pf-drivers { grid-template-columns: 1fr; } }
-
-  .pf-driver {
-    padding: 28px 28px 28px 0;
-    border-right: 1px solid rgba(61,90,53,.08);
-    opacity: 0;
-    transform: translateY(14px);
-    transition: opacity .65s cubic-bezier(.22,1,.36,1),
-                transform .65s cubic-bezier(.22,1,.36,1);
-  }
-  .pf-driver:last-child { border-right: none; padding-right: 0; }
-  .pf-driver + .pf-driver { padding-left: 28px; }
-  .pf-driver:first-child { padding-left: 0; }
-  @media (max-width: 720px) {
-    .pf-driver {
-      border-right: none;
-      border-bottom: 1px solid rgba(61,90,53,.08);
-      padding: 24px 0;
-    }
-    .pf-driver + .pf-driver { padding-left: 0; }
-  }
-  .pf-driver.visible { opacity: 1; transform: translateY(0); }
-  .pf-driver-name {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .24em;
-    color: #3D5A35;
-    margin-bottom: 14px;
-  }
-  .pf-driver-note {
-    font-size: 13px;
-    line-height: 1.65;
-    color: rgba(90,79,67,.65);
-    font-style: italic;
-    margin-bottom: 12px;
-  }
-  .pf-driver-sub {
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .2em;
-    color: rgba(61,90,53,.5);
-    margin: 14px 0 8px;
-  }
-
-  /* Shared dot list */
-  .pf-dl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
-  .pf-di {
-    display: flex;
-    align-items: flex-start;
-    gap: 9px;
-    font-size: 13px;
-    line-height: 1.65;
-    color: #5a4f43;
-  }
-  .pf-dot {
-    width: 4px; height: 4px;
-    border-radius: 50%;
-    background: rgba(61,90,53,.3);
-    margin-top: 6px;
-    flex-shrink: 0;
-  }
-
-  /* Cost two-column layout */
-  .pf-cost-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 56px;
-    margin-top: 40px;
-  }
-  @media (max-width: 640px) { .pf-cost-grid { grid-template-columns: 1fr; gap: 32px; } }
-  .pf-cost-col-title {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .24em;
-    color: #3D5A35;
-    padding-bottom: 14px;
-    margin-bottom: 18px;
-    border-bottom: 1px solid rgba(61,90,53,.15);
-  }
+  .pf-split { display: grid; grid-template-columns: 380px 1fr; gap: 64px; align-items: start; margin-top: 96px; }
+  @media (max-width: 980px) { .pf-split { grid-template-columns: 1fr; gap: 24px; } }
+  .pf-split-text { position: sticky; top: 96px; align-self: start; transition: opacity .4s ease; }
+  @media (max-width: 980px) { .pf-split-text { position: static; } }
+  .pf-split-cap { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .28em; color: rgba(92,64,51,.35); margin-bottom: 14px; text-align: left; }
+  /* Edit 5a: larger desc text */
+  .pf-split-desc { font-size: 15px; line-height: 1.95; color: #5a4f43; max-width: 340px; }
+  /* Edit 1: no scrollbars */
+  .pf-split-chart { min-width: 0; overflow: visible; }
 
   /* Italic note */
-  .pf-note {
-    margin-top: 24px;
-    font-size: 13px;
-    line-height: 1.7;
-    color: rgba(90,79,67,.6);
-    font-style: italic;
+  .pf-note { margin-top: 24px; font-size: 13px; line-height: 1.7; color: rgba(90,79,67,.6); font-style: italic; }
+
+  /* Demand lenses -- open, airy, consistent with the page (Edit R6) */
+  .pf-lenses {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    align-items: stretch;
+    margin-top: 4px;
+    border-top: 1px solid rgba(92,64,51,.16);
+  }
+  @media (max-width: 760px) {
+    .pf-lenses { grid-template-columns: 1fr; border-top: none; }
   }
 
-  /* Section nav (right dots) */
-  .pf-snav {
-    position: fixed;
-    right: 28px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    z-index: 50;
+  .pf-lens {
+    display: flex; flex-direction: column;
+    padding: 26px 28px 8px;
+    background: transparent;
+    border-left: 1px solid rgba(92,64,51,.10);
+    transition: background .3s ease;
   }
+  .pf-lens:first-child { border-left: none; padding-left: 0; }
+  .pf-lens:hover { background: rgba(92,64,51,.02); }
+  @media (max-width: 760px) {
+    .pf-lens {
+      border-left: none;
+      border-top: 1px solid rgba(92,64,51,.12);
+      padding: 24px 0 4px;
+    }
+    .pf-lens:first-child { border-top: none; padding-top: 8px; }
+  }
+
+  .pf-lens-ey {
+    font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .24em;
+    color: rgba(92,64,51,.5); margin-bottom: 12px;
+  }
+  .pf-lens-h {
+    font-family: 'Newsreader', serif; font-size: 19px; font-weight: 300;
+    color: #453a2a; line-height: 1.25; letter-spacing: -.01em;
+    margin: 0 0 18px; min-height: 48px;
+  }
+  .pf-lens-list { list-style: none; margin: 0; padding: 0; }
+  .pf-lens-list li {
+    font-size: 14px; line-height: 1.5; color: #5a4f43;
+    padding: 8px 0 8px 18px; position: relative;
+  }
+  .pf-lens-list li::before {
+    content: ''; position: absolute; left: 0; top: .82em;
+    width: 8px; height: 1px; background: rgba(92,64,51,.42);
+  }
+  .pf-lens-eq {
+    margin: 14px 0 0; padding-left: 18px;
+    font-family: 'Newsreader', serif; font-style: italic; font-weight: 300;
+    font-size: 13.5px; color: rgba(69,58,42,.7); line-height: 1.45;
+  }
+  .pf-lenses-foot {
+    margin-top: 34px; padding-top: 22px;
+    border-top: 1px solid rgba(92,64,51,.10);
+    text-align: center;
+    font-family: 'Newsreader', serif; font-style: italic; font-weight: 300;
+    font-size: 15px; color: rgba(90,79,67,.72);
+  }
+
+  .pf-costpair { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; margin-top: 88px; align-items: start; }
+  @media (max-width: 980px) { .pf-costpair { grid-template-columns: 1fr; gap: 40px; } }
+  .pf-costcol { min-width: 0; }
+  .pf-costcol .pf-split-cap { text-align: left; margin-bottom: 12px; }
+  .pf-costcol .pf-split-desc { margin-bottom: 20px; max-width: none; }
+
+  /* Section nav */
+  .pf-snav { position: fixed; right: 28px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 16px; z-index: 50; }
   @media (max-width: 1300px) { .pf-snav { display: none; } }
-
-  .pf-snav-btn {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    justify-content: flex-end;
-  }
-  .pf-snav-lbl {
-    font-family: 'Work Sans', sans-serif;
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .2em;
-    color: #3D5A35;
-    opacity: 0;
-    transition: opacity .18s ease;
-    pointer-events: none;
-    white-space: nowrap;
-  }
+  .pf-snav-btn { display: flex; align-items: center; gap: 9px; background: none; border: none; cursor: pointer; padding: 0; justify-content: flex-end; }
+  .pf-snav-lbl { font-family: 'Work Sans', sans-serif; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .2em; color: #5C4033; opacity: 0; transition: opacity .18s ease; pointer-events: none; white-space: nowrap; }
   .pf-snav-btn:hover .pf-snav-lbl { opacity: 1; }
-  .pf-snav-dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: rgba(61,90,53,.2);
-    transition: background .25s ease, transform .25s ease;
-    flex-shrink: 0;
-  }
-  .pf-snav-btn.active .pf-snav-dot {
-    background: #3D5A35;
-    transform: scale(1.6);
-  }
-  .pf-snav-btn:hover .pf-snav-dot { background: rgba(61,90,53,.55); }
+  .pf-snav-bar { width: 18px; height: 2px; border-radius: 1px; background: rgba(92,64,51,.22); transition: width .28s cubic-bezier(.22,1,.36,1), background .28s ease; flex-shrink: 0; }
+  .pf-snav-btn:hover .pf-snav-bar { background: rgba(92,64,51,.5); width: 26px; }
+  .pf-snav-btn.active .pf-snav-bar { width: 30px; background: #5C4033; }
 `
 
 /* ─── Main component ─── */
@@ -550,8 +315,8 @@ const PAGE_CSS = `
 export default function ProfitabilityFramework() {
   const rootRef = useRef<HTMLDivElement>(null)
   const [activeSection, setActiveSection] = useState('setup')
+  const [, startTransition] = useTransition()
 
-  /* Scroll reveal */
   useEffect(() => {
     const root = rootRef.current; if (!root) return
     const io = new IntersectionObserver(
@@ -561,67 +326,75 @@ export default function ProfitabilityFramework() {
         setTimeout(() => el.classList.add('visible'), parseInt(el.dataset.delay ?? '0', 10))
         io.unobserve(el)
       }),
-      { threshold: 0.08, rootMargin: '0px 0px -32px 0px' },
+      { threshold: 0.05, rootMargin: '0px 0px -18% 0px' },
     )
-    root.querySelectorAll('.pf-reveal, .pf-q, .pf-driver').forEach(el => io.observe(el))
+    root.querySelectorAll('.pf-reveal, .pf-q').forEach(el => io.observe(el))
     return () => io.disconnect()
   }, [])
 
-  /* Section tracker for right-side dots */
   useEffect(() => {
-    const io = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) setActiveSection(e.target.id) }),
-      { threshold: 0, rootMargin: '0px 0px -70% 0px' },
-    )
-    NAV_SECTIONS.forEach(s => {
-      const el = document.getElementById(s.id); if (el) io.observe(el)
-    })
-    return () => io.disconnect()
+    const ACTIVATION_OFFSET = 0.30
+    let raf = 0
+    const compute = () => {
+      raf = 0
+      const line = window.innerHeight * ACTIVATION_OFFSET
+      let bestId = NAV_SECTIONS[0].id
+      let bestDist = Infinity
+      for (const s of NAV_SECTIONS) {
+        const el = document.getElementById(s.id)
+        if (!el) continue
+        const top = el.getBoundingClientRect().top
+        const dist = line - top
+        if (dist >= 0 && dist < bestDist) { bestDist = dist; bestId = s.id }
+      }
+      startTransition(() => setActiveSection(prev => prev === bestId ? prev : bestId))
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(compute) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    compute()
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
   }, [])
 
   return (
     <div ref={rootRef} className="pf-root">
       <style>{PAGE_CSS}</style>
 
-      {/* Right-side section nav */}
       <nav className="pf-snav" aria-label="Page sections">
         {NAV_SECTIONS.map(s => (
           <button
             key={s.id}
             className={`pf-snav-btn${activeSection === s.id ? ' active' : ''}`}
-            onClick={() =>
-              document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }
+            onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             aria-label={`Go to ${s.label}`}
           >
             <span className="pf-snav-lbl">{s.label}</span>
-            <span className="pf-snav-dot" />
+            <span className="pf-snav-bar" />
           </button>
         ))}
       </nav>
 
-      {/* Back to Repository */}
-      <div className="pf-back">
+      {/* Back-link: left edge of screen, matching case-preview pages */}
+      <div className="pf-crumb-bar">
         <Link href="/repository" className="pf-back-link">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path d="M9 2.5L5 7l4 4.5" stroke="currentColor" strokeWidth="1.25"
-              strokeLinecap="round" strokeLinejoin="round" />
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M7 2L3.5 5.5L7 9" stroke="#5C4033" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Repository
         </Link>
       </div>
 
-      {/* Hero */}
       <header className="pf-hero">
         <span className="pf-eyebrow pf-reveal" data-delay="0">Framework</span>
         <h1 className="pf-headline pf-reveal" data-delay="55">Profitability</h1>
-        <p className="pf-lead pf-reveal" data-delay="115">
-          Diagnose whether the issue lies on the revenue side, the cost side, or both.
-        </p>
       </header>
 
       <main>
-        {/* ── Section 1: The Setup ── */}
+        {/* Section 1: The Setup (book copy, Edit 3c) */}
         <section id="setup" className="pf-section">
           <div className="pf-wrap">
             <span className="pf-section-ey pf-reveal" data-delay="0">The Setup</span>
@@ -632,23 +405,22 @@ export default function ProfitabilityFramework() {
             <div className="pf-callout pf-reveal" data-delay="110">
               <p className="pf-callout-lbl">Example prompt</p>
               <p className="pf-callout-txt">
-                "Your client's profits are down by 20%. Analyse the reason for the same
-                by isolating the problem."
+                "Your profits are down by 20%, analyse the reason for the same by isolating the problem."
               </p>
             </div>
 
             <p className="pf-body pf-reveal" data-delay="150">
-              Before structuring an answer, get oriented by asking the right preliminary questions.
-              These narrow the scope early and prevent going down irrelevant paths.
+              It is important to begin by understanding the problem better by asking some preliminary
+              questions for profitability cases, such as:
             </p>
 
             <ol className="pf-qlist" aria-label="Preliminary questions" style={{ marginTop: 28 }}>
               {[
-                'Since when has the client been facing this problem, and what is the magnitude of the decline?',
-                'Where is the client located geographically?',
-                'Which part of the value chain does the client operate in?',
-                'Is this a company-specific problem or an industry-wide one?',
-                'Segmentation questions: does the decline affect all stores, all geographies, all product lines and all customers?',
+                'Since when has the client been facing the problem and what is the magnitude of the decline?',
+                'Where is the client located, geographically?',
+                'Which part of the value chain does our client lie in?',
+                'Is it a company-specific or an industry-wide problem?',
+                'Segmentation questions: All stores? All geographies? All product lines? All customers?',
               ].map((q, i) => (
                 <li key={i} className="pf-q" data-delay={String(i * 75)}>
                   <span className="pf-qn">{i + 1}</span>
@@ -666,14 +438,17 @@ export default function ProfitabilityFramework() {
             <h2 className="pf-section-title pf-reveal" data-delay="55">
               The problem stems from revenue, cost, or both
             </h2>
-            <p className="pf-body pf-reveal" data-delay="110">
-              Every profitability case starts here. Determine which side of the equation is
-              responsible before going deeper into either branch.
-            </p>
 
-            <div className="pf-tree pf-reveal" data-delay="160">
-              <p className="pf-tree-cap">Profit decomposition</p>
-              <StaticTree tree={PROFIT_TREE} />
+            <div className="pf-split pf-reveal" data-delay="110">
+              <aside className="pf-split-text">
+                <p className="pf-split-cap">Profit decomposition</p>
+                <p className="pf-split-desc">
+                  Split profit into its two levers and isolate which side is driving the decline.
+                </p>
+              </aside>
+              <div className="pf-split-chart">
+                <AdditionalFrameworkPanel tree={PROFIT_TREE_FW} multiActive hideHeader noScroll />
+              </div>
             </div>
           </div>
         </section>
@@ -686,79 +461,99 @@ export default function ProfitabilityFramework() {
               Revenue is volume times price
             </h2>
             <p className="pf-body pf-reveal" data-delay="110">
-              Revenue equals the number of units sold multiplied by price per unit. Volume
-              problems trace back to production, distribution, or demand. Price problems
-              require a separate line of inquiry. Start by asking which revenue streams have
-              been equally affected.
+              Revenue side can be affected by production, distribution and demand.
             </p>
 
-            <div className="pf-tree pf-reveal" data-delay="160">
-              <p className="pf-tree-cap">Revenue decomposition</p>
-              <StaticTree tree={REVENUE_TREE} />
-            </div>
-
-            <div className="pf-drivers">
-              <div className="pf-driver" data-delay="0">
-                <p className="pf-driver-name">Production</p>
-                <ul className="pf-dl">
-                  {[
-                    'Number of manufacturing units',
-                    'Capacity of each unit',
-                    'Production capacity being used',
-                    'Defects in manufactured goods',
-                  ].map((item, i) => (
-                    <li key={i} className="pf-di"><span className="pf-dot" />{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="pf-driver" data-delay="85">
-                <p className="pf-driver-name">Distribution</p>
-                <p className="pf-driver-note">
-                  Ask the mode of distribution the client uses and benchmark against competitors.
+            {/* Revenue decomposition */}
+            <div className="pf-split pf-reveal" data-delay="0">
+              <aside className="pf-split-text">
+                <p className="pf-split-cap">Revenue decomposition</p>
+                <p className="pf-split-desc">
+                  Revenue = units sold × price per unit. Units sold is the lever that breaks down further.
                 </p>
-                <ul className="pf-dl">
-                  {[
-                    'Number of distributors',
-                    'Amount sold per distributor (affected by monetary and non-monetary factors)',
-                  ].map((item, i) => (
-                    <li key={i} className="pf-di"><span className="pf-dot" />{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="pf-driver" data-delay="170">
-                <p className="pf-driver-name">Demand</p>
-                <p className="pf-driver-note">
-                  Begin by understanding whether all revenue streams have been affected equally.
-                </p>
-                <p className="pf-driver-sub">Product-centric</p>
-                <ul className="pf-dl" style={{ marginBottom: 12 }}>
-                  {['Number of products sold', 'Price of products sold', 'Product mix'].map((item, i) => (
-                    <li key={i} className="pf-di"><span className="pf-dot" />{item}</li>
-                  ))}
-                </ul>
-                <p className="pf-driver-sub">Sales-centric</p>
-                <ul className="pf-dl" style={{ marginBottom: 12 }}>
-                  {[
-                    'Number of sales and average ticket size',
-                    'Footfall, Conversion and Average ticket size (Sales = Footfall × Conversion)',
-                  ].map((item, i) => (
-                    <li key={i} className="pf-di"><span className="pf-dot" />{item}</li>
-                  ))}
-                </ul>
-                <p className="pf-driver-sub">Customer-centric</p>
-                <ul className="pf-dl">
-                  {['Number of customers', 'Revenue per customer'].map((item, i) => (
-                    <li key={i} className="pf-di"><span className="pf-dot" />{item}</li>
-                  ))}
-                </ul>
+              </aside>
+              <div className="pf-split-chart">
+                <AdditionalFrameworkPanel tree={REVENUE_TREE_FW} multiActive hideHeader noScroll />
               </div>
             </div>
 
-            <p className="pf-note pf-reveal" data-delay="0">
-              Don't restrict yourself to one lens. The right approach depends on how the business is structured.
-            </p>
+            {/* Production */}
+            <div className="pf-split pf-reveal" data-delay="0">
+              <aside className="pf-split-text">
+                <p className="pf-split-cap">Production drivers</p>
+                <p className="pf-split-desc">
+                  Production can be analysed by looking at the following factors:
+                  number of manufacturing units, capacity of each unit, production
+                  capacity used, and defects in the manufactured goods.
+                </p>
+              </aside>
+              <div className="pf-split-chart">
+                <AdditionalFrameworkPanel tree={PRODUCTION_TREE_FW} multiActive hideHeader noScroll />
+              </div>
+            </div>
+
+            {/* Distribution */}
+            <div className="pf-split pf-reveal" data-delay="0">
+              <aside className="pf-split-text">
+                <p className="pf-split-cap">Distribution drivers</p>
+                <p className="pf-split-desc">
+                  Distribution can be analysed by looking at the following factors.
+                  Begin by asking the mode of distribution adopted by our client and
+                  benchmark it with competitors: number of distributors, and amount
+                  sold per distributor (which can be affected by monetary and
+                  non-monetary reasons).
+                </p>
+              </aside>
+              <div className="pf-split-chart">
+                <AdditionalFrameworkPanel tree={DISTRIBUTION_TREE_FW} multiActive hideHeader noScroll />
+              </div>
+            </div>
+
+            {/* Demand: book-style text (Edit 3c) */}
+            <div className="pf-split pf-reveal" data-delay="0">
+              <aside className="pf-split-text">
+                <p className="pf-split-cap">Demand drivers</p>
+                <p className="pf-split-desc">
+                  Demand can be analysed by looking at the following factors.
+                  Begin by understanding whether all revenue streams have been
+                  affected equally.
+                </p>
+              </aside>
+              <div className="pf-split-chart">
+                <div className="pf-lenses">
+                  <div className="pf-lens pf-reveal" data-delay="0">
+                    <span className="pf-lens-ey">01 · Product-centric</span>
+                    <h4 className="pf-lens-h">Look at the product</h4>
+                    <ul className="pf-lens-list">
+                      <li>Number of products sold</li>
+                      <li>Price of products sold</li>
+                      <li>Product mix</li>
+                    </ul>
+                  </div>
+
+                  <div className="pf-lens pf-reveal" data-delay="90">
+                    <span className="pf-lens-ey">02 · Sales-centric</span>
+                    <h4 className="pf-lens-h">Look at the sales</h4>
+                    <ul className="pf-lens-list">
+                      <li>Number of sales</li>
+                      <li>Average ticket size</li>
+                    </ul>
+                    <p className="pf-lens-eq">Number of sales = Footfall × Conversion</p>
+                  </div>
+
+                  <div className="pf-lens pf-reveal" data-delay="180">
+                    <span className="pf-lens-ey">03 · Customer-centric</span>
+                    <h4 className="pf-lens-h">Look at the customer</h4>
+                    <ul className="pf-lens-list">
+                      <li>Number of customers</li>
+                      <li>Revenue per customer</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <p className="pf-lenses-foot">Essentially, don't restrict yourself to one framework.</p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -770,60 +565,58 @@ export default function ProfitabilityFramework() {
               Cost is units times cost per unit
             </h2>
             <p className="pf-body pf-reveal" data-delay="110">
-              For cost-side problems, draw a process map or divide costs into fixed and variable.
-              Cost per unit varies by industry.
+              For cost side problems, it is helpful to draw a process map or divide the costs
+              into fixed and variable costs.
             </p>
 
-            <div className="pf-tree pf-reveal" data-delay="160">
-              <p className="pf-tree-cap">Cost decomposition</p>
-              <StaticTree tree={COST_TREE} />
+            {/* Cost decomposition */}
+            <div className="pf-split pf-reveal" data-delay="0">
+              <aside className="pf-split-text">
+                <p className="pf-split-cap">Cost decomposition</p>
+                <p className="pf-split-desc">
+                  Costs = Number of units × Cost per unit. Cost per unit divides into fixed and
+                  variable components, depending on the industry.
+                </p>
+              </aside>
+              <div className="pf-split-chart">
+                <AdditionalFrameworkPanel tree={COST_TREE_FW} multiActive hideHeader noScroll />
+              </div>
             </div>
 
-            <div className="pf-cost-grid pf-reveal" data-delay="0">
-              <div>
-                <p className="pf-cost-col-title">Fixed Cost / Unit</p>
-                <ul className="pf-dl">
-                  {[
-                    'Land',
-                    'Building',
-                    'Salaries (fixed component)',
-                    'Equipment',
-                    'Furniture',
-                    'Machinery',
-                    'Warehouses',
-                    'Fixed charges (interest payments, insurance, marketing and taxes)',
-                  ].map((item, i) => (
-                    <li key={i} className="pf-di"><span className="pf-dot" />{item}</li>
-                  ))}
-                </ul>
+            {/* Fixed + Variable side-by-side (Edit 3b) */}
+            <div className="pf-costpair pf-reveal" data-delay="0">
+              <div className="pf-costcol">
+                <p className="pf-split-cap">Fixed cost components</p>
+                <p className="pf-split-desc">
+                  Some of the most common fixed costs are: land, building, fixed component
+                  of salaries, equipment, furniture, machinery, warehouses, depreciation,
+                  fixed charges such as interest payments and insurance, marketing and taxes.
+                </p>
+                <div className="pf-split-chart">
+                  <AdditionalFrameworkPanel tree={FIXED_COST_TREE_FW} multiActive hideHeader noScroll forceVertical />
+                </div>
               </div>
-              <div>
-                <p className="pf-cost-col-title">Variable Cost / Unit</p>
-                <ul className="pf-dl">
-                  {[
-                    'Raw material',
-                    'Transportation',
-                    'Processing',
-                    'Packaging',
-                    'Storage',
-                    'Distribution',
-                    'Marketing',
-                    'After-sales expenses',
-                  ].map((item, i) => (
-                    <li key={i} className="pf-di"><span className="pf-dot" />{item}</li>
-                  ))}
-                </ul>
+              <div className="pf-costcol">
+                <p className="pf-split-cap">Variable cost components</p>
+                <p className="pf-split-desc">
+                  Some of the most common variable costs are: raw material, transportation,
+                  processing and packaging, storage, distribution, marketing and after-sales
+                  expenses.
+                </p>
+                <div className="pf-split-chart">
+                  <AdditionalFrameworkPanel tree={VARIABLE_COST_TREE_FW} multiActive hideHeader noScroll forceVertical />
+                </div>
               </div>
             </div>
 
             <p className="pf-note pf-reveal" data-delay="0">
-              This is an indicative, not exhaustive, list. Components will vary depending on the industry.
+              Note: This is an indicative and not exhaustive list. The above components will vary according to the industry.
             </p>
           </div>
         </section>
       </main>
 
-      <div style={{ borderTop: '1px solid rgba(61,90,53,.1)' }}>
+      <div style={{ borderTop: '1px solid rgba(92,64,51,.1)' }}>
         <Footer currentPage="repository" />
       </div>
     </div>
