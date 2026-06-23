@@ -157,12 +157,12 @@ function MentionDropdown({ names, anchorRef, onPick }: {
         animation: 'forum-drop 0.22s cubic-bezier(0.16,1,0.3,1) both',
         minWidth: rect.width > 200 ? 200 : rect.width,
       }}
-      className="w-48 rounded-xl border border-[#3D5A35]/12 bg-[#fff8f0] shadow-[0_12px_32px_rgba(59,47,47,0.14)] overflow-hidden">
+      className="w-48 rounded-xl border border-[#5C4033]/12 bg-[#fff8f0] shadow-[0_12px_32px_rgba(59,47,47,0.14)] overflow-hidden">
       {names.length === 0 ? (
         <div className="px-3 py-2.5 text-[11.5px] text-[#5C4033]/38 italic">No one to tag yet</div>
       ) : names.map(n => (
         <button key={n} onMouseDown={e => { e.preventDefault(); onPick(n) }}
-          className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-[#3D5A35]/6 transition-colors">
+          className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-[#5C4033]/6 transition-colors">
           <Avatar name={n} px={20} />
           <span className="text-[12px] font-medium text-[#3B2F2F]/80 truncate">{n}</span>
         </button>
@@ -419,7 +419,7 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
         .f-input { transition: border-color 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1), background 0.25s ease }
         .f-input:focus { border-color:rgba(61,90,53,0.3) !important; box-shadow:0 0 0 3px rgba(61,90,53,0.07), 0 1px 4px rgba(61,90,53,0.06) }
         .f-score { transition: color 0.2s cubic-bezier(0.16,1,0.3,1) }
-        .f-mention { color: #3D5A35; font-weight: 500 }
+        .f-mention { color: #5C4033; font-weight: 500 }
         .f-composer-line { transition: border-color 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s cubic-bezier(0.16,1,0.3,1) }
         .f-composer-wrap:hover .f-composer-line { border-color: rgba(61,90,53,0.2) !important; box-shadow: 0 1px 0 rgba(61,90,53,0.08) }
         .f-edited { display:inline-flex; align-items:center; gap:2px; opacity:0.4; transition: opacity 0.2s ease }
@@ -428,7 +428,7 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
         .f-row:hover .f-reply-line { opacity: 0.28 }
       `}</style>
 
-      <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
+      <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
 
         {/* ── Top bar ── */}
         <div className="flex items-baseline gap-2 px-6 py-4">
@@ -458,8 +458,8 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
           )}
 
           {loading ? (
-            <div className="relative my-3 h-px overflow-hidden rounded-full bg-[#3D5A35]/8">
-              <div className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-[#3D5A35]/25 to-transparent"
+            <div className="relative my-3 h-px overflow-hidden rounded-full bg-[#5C4033]/8">
+              <div className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-[#5C4033]/25 to-transparent"
                 style={{ animation: 'forum-shimmer 1.6s cubic-bezier(0.4,0,0.6,1) infinite' }} />
             </div>
           ) : threads.length === 0 ? (
@@ -516,7 +516,7 @@ function EmptyState() {
       <div className="flex items-center justify-center">
         <svg
           width="28" height="28" viewBox="0 0 24 24" fill="none"
-          stroke="#3D5A35" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+          stroke="#5C4033" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
           style={{ animation: 'forum-quill-float 3s ease-in-out infinite', opacity: 0.45 }}
         >
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -535,7 +535,7 @@ function EmptyState() {
 function BodyText({ text, className }: { text: string; className?: string }) {
   const parts = text.split(/(@\w+)/g)
   return (
-    <p className={className}>
+    <p className={`${className ?? ''} break-words [overflow-wrap:anywhere]`}>
       {parts.map((p, i) =>
         p.startsWith('@')
           ? <span key={i} className="f-mention">{p}</span>
@@ -589,7 +589,7 @@ function Composer({ user, displayName, draft, setDraft, composing, setComposing,
       <button onClick={onLogin}
         className="group flex w-full items-center gap-3 py-1.5 text-left">
         <Avatar name="?" px={24} />
-        <span className="flex-1 border-b border-[#3D5A35]/10 pb-2 text-[13px] text-[#5C4033]/32 transition-colors group-hover:text-[#5C4033]/52">
+        <span className="flex-1 border-b border-[#5C4033]/10 pb-2 text-[13px] text-[#5C4033]/32 transition-colors group-hover:text-[#5C4033]/52">
           Sign in to post
         </span>
       </button>
@@ -625,7 +625,7 @@ function Composer({ user, displayName, draft, setDraft, composing, setComposing,
                 Cancel
               </button>
               <button onClick={onPost} disabled={posting || !draft.trim()}
-                className="rounded-full bg-[#3D5A35] px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#fff8f0] transition hover:bg-[#31492c] disabled:cursor-not-allowed disabled:opacity-40">
+                className="rounded-full bg-[#5C4033] px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#fff8f0] transition hover:bg-[#31492c] disabled:cursor-not-allowed disabled:opacity-40">
                 {posting ? 'Posting…' : 'Post'}
               </button>
             </div>
@@ -691,35 +691,8 @@ function ThreadRow({
 
   return (
     <div className="f-rise f-row px-3 py-4 -mx-3" style={{ animationDelay: `${delay}ms` }}>
-      <div className="flex gap-4">
-
-        {/* ── Vote rail ── */}
-        <div className="flex w-5 shrink-0 flex-col items-center gap-0.5 pt-0.5">
-          <button onClick={() => vote(1)} aria-label="Upvote"
-            className={`f-btn flex h-5 w-5 items-center justify-center rounded ${
-              myVote === 1 ? 'text-[#3D5A35]' : 'text-[#5C4033]/22 hover:text-[#3D5A35]'
-            } ${pop === 1 ? 'f-pop' : ''}`}>
-            <svg viewBox="0 0 10 10" className="h-[9px] w-[9px]" fill="currentColor">
-              <path d="M5 1.5 1.5 6h7z"/>
-            </svg>
-          </button>
-          <span className={`text-[10.5px] font-semibold tabular-nums leading-tight ${
-            myVote === 1 ? 'text-[#3D5A35]' : myVote === -1 ? 'text-[#b4543e]' : 'text-[#5C4033]/38'
-          }`}>
-            {thread.voteScore}
-          </span>
-          <button onClick={() => vote(-1)} aria-label="Downvote"
-            className={`f-btn flex h-5 w-5 items-center justify-center rounded ${
-              myVote === -1 ? 'text-[#b4543e]' : 'text-[#5C4033]/22 hover:text-[#b4543e]'
-            } ${pop === -1 ? 'f-pop' : ''}`}>
-            <svg viewBox="0 0 10 10" className="h-[9px] w-[9px]" fill="currentColor">
-              <path d="M5 8.5 1.5 4h7z"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* ── Content ── */}
-        <div className="min-w-0 flex-1">
+      {/* ── Content (full width — vote rail removed, votes now inline below) ── */}
+      <div className="min-w-0">
 
           {/* Meta row */}
           <div className="flex items-center gap-2 mb-1.5">
@@ -740,10 +713,10 @@ function ThreadRow({
           {isEditingThread ? (
             <div className="mt-1">
               <textarea value={editDraft} onChange={e => setEditDraft(e.target.value)} rows={3} autoFocus
-                className="f-input w-full resize-none rounded-lg border border-[#3D5A35]/12 bg-[rgba(255,248,240,0.6)] px-3.5 py-2.5 text-[13.5px] leading-[1.6] text-[#3B2F2F] outline-none" />
+                className="f-input w-full resize-none rounded-lg border border-[#5C4033]/12 bg-[rgba(255,248,240,0.6)] px-3.5 py-2.5 text-[13.5px] leading-[1.6] text-[#3B2F2F] outline-none" />
               <div className="mt-2.5 flex items-center gap-2">
                 <button onClick={onSaveThreadEdit} disabled={savingEdit === thread.id || !editDraft.trim()}
-                  className="rounded-full bg-[#3D5A35] px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#fff8f0] hover:bg-[#31492c] disabled:opacity-40 transition">
+                  className="rounded-full bg-[#5C4033] px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#fff8f0] hover:bg-[#31492c] disabled:opacity-40 transition">
                   {savingEdit === thread.id ? 'Saving…' : 'Save'}
                 </button>
                 <button onClick={onCancelThreadEdit} className="text-[11.5px] text-[#5C4033]/40 hover:text-[#5C4033] transition-colors">Cancel</button>
@@ -756,8 +729,26 @@ function ThreadRow({
           {/* Action row */}
           {!isEditingThread && (
             <div className="mt-2.5 flex items-center gap-4">
+              {/* Inline votes (replaces the old left rail) */}
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => vote(1)} aria-label="Upvote"
+                  className={`f-btn flex h-5 w-5 items-center justify-center rounded ${
+                    myVote === 1 ? 'text-[#5C4033]' : 'text-[#5C4033]/22 hover:text-[#5C4033]'
+                  } ${pop === 1 ? 'f-pop' : ''}`}>
+                  <svg viewBox="0 0 10 10" className="h-[9px] w-[9px]" fill="currentColor"><path d="M5 1.5 1.5 6h7z"/></svg>
+                </button>
+                <span className={`text-[10.5px] font-semibold tabular-nums ${
+                  myVote === 1 ? 'text-[#5C4033]' : myVote === -1 ? 'text-[#b4543e]' : 'text-[#5C4033]/38'
+                }`}>{thread.voteScore}</span>
+                <button onClick={() => vote(-1)} aria-label="Downvote"
+                  className={`f-btn flex h-5 w-5 items-center justify-center rounded ${
+                    myVote === -1 ? 'text-[#b4543e]' : 'text-[#5C4033]/22 hover:text-[#b4543e]'
+                  } ${pop === -1 ? 'f-pop' : ''}`}>
+                  <svg viewBox="0 0 10 10" className="h-[9px] w-[9px]" fill="currentColor"><path d="M5 8.5 1.5 4h7z"/></svg>
+                </button>
+              </div>
               <button onClick={onToggleReply}
-                className="flex items-center gap-1.5 text-[11px] font-medium text-[#5C4033]/38 transition hover:text-[#3D5A35]">
+                className="flex items-center gap-1.5 text-[11px] font-medium text-[#5C4033]/38 transition hover:text-[#5C4033]">
                 <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
                   <path d="M4.5 3L2 5.5 4.5 8M2.2 5.5H8C9.1 5.5 10 6.4 10 7.5V9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -766,7 +757,7 @@ function ThreadRow({
               {isOwner && (
                 <div className="f-ghost flex items-center gap-0.5">
                   <button onClick={onStartThreadEdit} aria-label="Edit"
-                    className="f-btn flex h-6 w-6 items-center justify-center rounded text-[#5C4033]/28 hover:bg-[#3D5A35]/8 hover:text-[#3D5A35]/70">
+                    className="f-btn flex h-6 w-6 items-center justify-center rounded text-[#5C4033]/28 hover:bg-[#5C4033]/8 hover:text-[#5C4033]/70">
                     <svg viewBox="0 0 12 12" className="h-[10px] w-[10px]" fill="none">
                       <path d="M1.5 10.5l1-3.5 6-6 2.5 2.5-6 6-3.5 1z" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -785,7 +776,7 @@ function ThreadRow({
           {/* Reply composer */}
           {replyOpen && !isEditingThread && (
             <div className="f-drop mt-3 flex gap-3">
-              <div className="f-reply-line mt-0.5 w-px shrink-0 self-stretch rounded-full bg-gradient-to-b from-[#3D5A35]/22 to-transparent" style={{ opacity: 0.22 }} />
+              <div className="f-reply-line mt-0.5 w-px shrink-0 self-stretch rounded-full bg-gradient-to-b from-[#5C4033]/22 to-transparent" style={{ opacity: 0.22 }} />
               <div className="flex-1">
                 <textarea ref={replyTaRef} value={replyDraft}
                   onChange={onReplyTextChange}
@@ -793,12 +784,12 @@ function ThreadRow({
                   onKeyDown={e => { if (e.key === 'Escape') setRMention(null) }}
                   placeholder="Write a reply… type @ to mention"
                   rows={2} autoFocus
-                  className="f-input w-full resize-none rounded-lg border border-[#3D5A35]/12 bg-[rgba(255,248,240,0.55)] px-3.5 py-2.5 text-[13px] leading-[1.6] text-[#3B2F2F] outline-none placeholder:text-[#5C4033]/28" />
+                  className="f-input w-full resize-none rounded-lg border border-[#5C4033]/12 bg-[rgba(255,248,240,0.55)] px-3.5 py-2.5 text-[13px] leading-[1.6] text-[#3B2F2F] outline-none placeholder:text-[#5C4033]/28" />
                 {rMention && <MentionDropdown names={rFiltered} anchorRef={replyTaRef} onPick={rPickMention} />}
                 <div className="mt-2.5 flex items-center justify-end gap-2.5">
                   <button onClick={onToggleReply} className="text-[11.5px] text-[#5C4033]/35 hover:text-[#5C4033] transition-colors">Cancel</button>
                   <button onClick={onPostReply} disabled={postingReply || !replyDraft.trim()}
-                    className="rounded-full bg-[#3D5A35] px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#fff8f0] hover:bg-[#31492c] disabled:opacity-40 transition">
+                    className="rounded-full bg-[#5C4033] px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#fff8f0] hover:bg-[#31492c] disabled:opacity-40 transition">
                     {postingReply ? 'Posting…' : 'Reply'}
                   </button>
                 </div>
@@ -808,9 +799,7 @@ function ThreadRow({
 
           {/* Replies */}
           {replyCount > 0 && !isEditingThread && (
-            <div className="mt-3 flex gap-3">
-              <div className="f-reply-line ml-[2px] w-px shrink-0 self-stretch rounded-full bg-gradient-to-b from-[#3D5A35]/20 to-transparent" style={{ opacity: 0.2 }} />
-              <div className="flex flex-col gap-3 flex-1">
+            <div className="mt-3 flex flex-col gap-3 border-l-[1.5px] border-[#5C4033]/16 pl-3.5">
                 {threadReplies.map((r, ri) => {
                   const replyKey = `${thread.id}:${r.id}`
                   const isEditingThis = editingReplyKey === replyKey
@@ -830,7 +819,7 @@ function ThreadRow({
                             {isReplyOwner && !isEditingThis && (
                               <span className="f-reply-ghost ml-1 flex items-center gap-0.5">
                                 <button onClick={() => onStartReplyEdit(r.id, r.body)} aria-label="Edit reply"
-                                  className="f-btn flex h-5 w-5 items-center justify-center rounded text-[#5C4033]/25 hover:bg-[#3D5A35]/8 hover:text-[#3D5A35]/60">
+                                  className="f-btn flex h-5 w-5 items-center justify-center rounded text-[#5C4033]/25 hover:bg-[#5C4033]/8 hover:text-[#5C4033]/60">
                                   <svg viewBox="0 0 12 12" className="h-[9px] w-[9px]" fill="none">
                                     <path d="M1.5 10.5l1-3.5 6-6 2.5 2.5-6 6-3.5 1z" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
                                   </svg>
@@ -848,10 +837,10 @@ function ThreadRow({
                           {isEditingThis ? (
                             <div>
                               <textarea value={editDraft} onChange={e => setEditDraft(e.target.value)} rows={2} autoFocus
-                                className="f-input w-full resize-none rounded-lg border border-[#3D5A35]/12 bg-[rgba(255,248,240,0.6)] px-3 py-2 text-[12.5px] leading-[1.6] text-[#3B2F2F] outline-none" />
+                                className="f-input w-full resize-none rounded-lg border border-[#5C4033]/12 bg-[rgba(255,248,240,0.6)] px-3 py-2 text-[12.5px] leading-[1.6] text-[#3B2F2F] outline-none" />
                               <div className="mt-2 flex items-center gap-2">
                                 <button onClick={() => onSaveReplyEdit(r.id)} disabled={savingEdit === replyKey || !editDraft.trim()}
-                                  className="rounded-full bg-[#3D5A35] px-3.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#fff8f0] hover:bg-[#31492c] disabled:opacity-40 transition">
+                                  className="rounded-full bg-[#5C4033] px-3.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#fff8f0] hover:bg-[#31492c] disabled:opacity-40 transition">
                                   {savingEdit === replyKey ? 'Saving…' : 'Save'}
                                 </button>
                                 <button onClick={onCancelReplyEdit} className="text-[11px] text-[#5C4033]/40 hover:text-[#5C4033] transition-colors">Cancel</button>
@@ -864,11 +853,11 @@ function ThreadRow({
                           {!isEditingThis && (
                             <div className="f-reply-ghost mt-1 flex items-center gap-1">
                               <button onClick={() => onReplyVote(r.id, 1)} aria-label="Upvote reply"
-                                className={`f-btn flex items-center justify-center rounded px-1 py-0.5 text-[9px] transition ${rMyVote === 1 ? 'text-[#3D5A35]' : 'text-[#5C4033]/28 hover:text-[#3D5A35]'}`}>
+                                className={`f-btn flex items-center justify-center rounded px-1 py-0.5 text-[9px] transition ${rMyVote === 1 ? 'text-[#5C4033]' : 'text-[#5C4033]/28 hover:text-[#5C4033]'}`}>
                                 <svg viewBox="0 0 8 8" className="h-[7px] w-[7px]" fill="currentColor"><path d="M4 1 1 5h6z"/></svg>
                               </button>
                               {rScore !== 0 && (
-                                <span className={`text-[9px] font-semibold tabular-nums ${rMyVote === 1 ? 'text-[#3D5A35]' : rMyVote === -1 ? 'text-[#b4543e]' : 'text-[#5C4033]/35'}`}>
+                                <span className={`text-[9px] font-semibold tabular-nums ${rMyVote === 1 ? 'text-[#5C4033]' : rMyVote === -1 ? 'text-[#b4543e]' : 'text-[#5C4033]/35'}`}>
                                   {rScore}
                                 </span>
                               )}
@@ -883,10 +872,8 @@ function ThreadRow({
                     </div>
                   )
                 })}
-              </div>
             </div>
           )}
-        </div>
       </div>
     </div>
   )

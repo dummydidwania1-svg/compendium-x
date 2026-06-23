@@ -589,6 +589,7 @@ export function InterviewerPageInner({
 	const [caseData, setCaseData] = useState<CaseDocument | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [loadError, setLoadError] = useState('')
+	const [notFound, setNotFound] = useState(false)
 	const [reloadTick, setReloadTick] = useState(0)
 	const [resolvedCaseId, setResolvedCaseId] = useState<string | null>(null)
 	const router = useRouter()
@@ -1276,6 +1277,7 @@ export function InterviewerPageInner({
 		const fetchData = async () => {
 			setLoading(true)
 			setLoadError('')
+			setNotFound(false)
 			try {
 				const resolvedParams = await params
 				const caseId = resolvedParams.id
@@ -1316,6 +1318,7 @@ export function InterviewerPageInner({
 					localStorage.setItem(cacheKey, JSON.stringify(liveCase))
 				} else {
 					setCaseData(null)
+					setNotFound(true)
 				}
 			} catch (error) {
 				// If we already have cached data showing, swallow Firestore errors silently
@@ -1539,12 +1542,12 @@ useEffect(() => {
 }, [forcePreview, previewMode, caseData, router])
 
 useEffect(() => {
-  if (loading || loadError || caseData) return
+  if (loading || loadError || caseData || !notFound) return
   const repoUrl = lobbyId
     ? `/repository?mode=select&lobby=${lobbyId}&sessionMode=${searchParams.get('sessionMode') ?? 'local'}&caseError=not_found`
     : `/repository?caseError=not_found`
   router.replace(repoUrl)
-}, [loading, loadError, caseData, lobbyId, searchParams, router])
+}, [loading, loadError, caseData, notFound, lobbyId, searchParams, router])
 
 	const handleSubmitFeedback = async () => {
 		if (!resolvedCaseId || !caseData) return

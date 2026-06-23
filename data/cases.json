@@ -8574,7 +8574,7 @@
     "industry": "Appliances",
     "difficulty": "Easy",
     "case_type": "Profitability",
-    "company": "L.E.K Consulting",
+    "company": "L.E.K. Consulting",
     "round": "[FLAG]",
     "prompt": "Your client is a washing machine manufacturer that has witnessed a steady decline in revenues. Diagnose the problem and give your recommendations.",
     "frameworkTree": {

@@ -558,7 +558,7 @@ const DifficultyBar = ({ level, index = 0 }: { level: number; index?: number }) 
           <div
             key={idx}
             className="w-3 rounded-sm transition-all duration-500"
-            style={{ height: `${h}px`, backgroundColor: idx + 1 <= filled ? '#3D5A35' : 'rgba(217,208,196,0.3)' }}
+            style={{ height: `${h}px`, backgroundColor: idx + 1 <= filled ? '#5C4033' : 'rgba(217,208,196,0.3)' }}
           />
         ))}
       </div>
@@ -570,7 +570,7 @@ const DifficultyBar = ({ level, index = 0 }: { level: number; index?: number }) 
 
 function NoteCard({ title, items, className = '' }: { title: string; items: string[]; className?: string }) {
   return (
-    <div className={`overflow-hidden rounded-xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] transition-all duration-300 hover:shadow-[0_8px_24px_-8px_rgba(58,45,35,0.12)] hover:-translate-y-0.5 ${className}`}>
+    <div className={`overflow-hidden rounded-xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] transition-all duration-300 hover:shadow-[0_8px_24px_-8px_rgba(58,45,35,0.12)] hover:-translate-y-0.5 ${className}`}>
       <div className="bg-[#D9D0C4]/50 px-4 py-2.5">
         <span className="block text-center text-[10px] font-bold uppercase tracking-[0.2em] text-[#5C4033]">{title}</span>
       </div>
@@ -578,7 +578,7 @@ function NoteCard({ title, items, className = '' }: { title: string; items: stri
         <ul className="mx-auto flex max-w-[13.25rem] flex-col space-y-3">
           {items.map(item => (
             <li key={item} className="flex items-start justify-center gap-2.5 text-[13px] leading-relaxed text-[#5C4033]/80">
-              <span className="mt-[0.48rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#3D5A35]/40" />
+              <span className="mt-[0.48rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#5C4033]/40" />
               <span className="flex-1 text-left" style={{ textWrap: 'pretty' }}>{item}</span>
             </li>
           ))}
@@ -621,7 +621,7 @@ function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
   if (block.kind === 'heading') {
     return (
       <div className="pt-3 pb-0.5">
-        <h4 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3D5A35]/50">{renderInline(block.text)}</h4>
+        <h4 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">{renderInline(block.text)}</h4>
         <div className="mt-1.5 h-[1px] w-14" style={dividerStyle} />
       </div>
     )
@@ -1182,27 +1182,52 @@ function DesktopChart({
       <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${metrics.h}px`, transform: chartScale < 1 ? `scale(${chartScale})` : undefined, transformOrigin: 'top center' }}>
 
         <svg className="absolute inset-0 h-full w-full overflow-visible z-10" viewBox={`0 0 ${cW} ${metrics.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-          {edgeRenderData.map((edge) => {
-            if (!edge) return null
-            const { pid, cid, px, cx, sY, eY, mY } = edge
-            const childDepth = nodeDepth(cid)
-            const edgeRevealed = childDepth <= revealDepth
-            const stagger = (depthStagger.get(cid) ?? 0) * 40
-            return (
-              <path key={`${pid}-${cid}-${edgeAnimKey}-${mY}`}
-  d={`M ${Math.round(px)} ${Math.round(sY)} V ${Math.round(mY)} H ${Math.round(cx)} V ${Math.round(eY)}`}
-  fill="none" stroke="#8B6B5A" strokeWidth="2" strokeLinecap="round"
-  shapeRendering="crispEdges"
-  pathLength={1}
-  style={{
-    opacity: edgeRevealed ? 1 : 0,
-    strokeDasharray: 1,
-    strokeDashoffset: edgeRevealed ? 0 : 1,
-    transition: `opacity 0.5s cubic-bezier(0.22,1,0.36,1) ${stagger}ms, stroke-dashoffset 0.65s cubic-bezier(0.22,1,0.36,1) ${stagger}ms`,
-  }}
-/>
-            )
-          })}
+          {(() => {
+            // Group edges by parent → one <path> per parent (trunk + bus + stubs in single element)
+            const byParent = new Map<string, NonNullable<typeof edgeRenderData[0]>[]>()
+            edgeRenderData.forEach(e => {
+              if (!e) return
+              const arr = byParent.get(e.pid) ?? []
+              arr.push(e)
+              byParent.set(e.pid, arr)
+            })
+            const elems: React.ReactNode[] = []
+            byParent.forEach((valid, pid) => {
+              if (!valid.length) return
+              const { px, sY, mY } = valid[0]
+              const childDepth = nodeDepth(valid[0].cid)
+              const edgeRevealed = childDepth <= revealDepth
+              const stagger = (depthStagger.get(valid[0].cid) ?? 0) * 40
+              const rpx = Math.round(px)
+              const rsY = Math.round(sY)
+              const rmY = Math.round(mY)
+              const xs = valid.map(e => Math.round(e.cx))
+              const busX1 = Math.min(...xs, rpx)
+              const busX2 = Math.max(...xs, rpx)
+              // Single path: trunk + horizontal bus + per-child stubs — no inter-element gaps
+              const d = [
+                `M ${rpx} ${rsY} V ${rmY}`,
+                `M ${busX1} ${rmY} H ${busX2}`,
+                ...valid.map(e => `M ${Math.round(e.cx)} ${rmY} V ${Math.round(e.eY)}`),
+              ].join(' ')
+              elems.push(
+                <path
+                  key={`${pid}-${edgeAnimKey}`}
+                  d={d}
+                  fill="none"
+                  stroke="#8B6B5A"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    opacity: edgeRevealed ? 1 : 0,
+                    transition: `opacity 0.5s cubic-bezier(0.22,1,0.36,1) ${stagger}ms`,
+                  }}
+                />
+              )
+            })
+            return elems
+          })()}
         </svg>
 
         {visibleIds.map((id) => {
@@ -1722,8 +1747,8 @@ function MobileTreeNode({
   return (
     <div className={depth > 0 ? 'relative ml-5 pl-5 before:absolute before:left-0 before:top-0 before:h-full before:w-px before:bg-[#d8ccc0]' : ''}>
       <div className={`rounded-2xl border px-4 py-4 transition-all ${
-        isFoc ? 'border-[#3D5A35]/15 bg-[rgba(255,248,240,0.88)] shadow-[0_4px_12px_rgba(59,47,47,0.04)]'
-              : 'border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)]'
+        isFoc ? 'border-[#5C4033]/15 bg-[rgba(255,248,240,0.88)] shadow-[0_4px_12px_rgba(59,47,47,0.04)]'
+              : 'border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)]'
       }`}>
         <div className="flex items-center gap-3">
           <button data-node-button type="button" onClick={() => onSelect(nodeId)}
@@ -1757,7 +1782,7 @@ function SectionHeading({ text }: { text: string }) {
   return (
     <Reveal>
       <div className="mb-5 flex items-center gap-4">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3D5A35]">{text}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]">{text}</span>
         <div className="h-[1px] flex-1" style={{ background: 'linear-gradient(90deg, rgba(61,90,53,0.18), transparent)' }} />
       </div>
     </Reveal>
@@ -1864,16 +1889,12 @@ function PracticeFab({ visible, onClick }: { visible: boolean; onClick: () => vo
         onMouseLeave={() => setHovered(false)}
         className="relative"
         style={{
-          width: '48px',
-          height: '48px',
+          width: '52px',
+          height: '52px',
           borderRadius: '50%',
-          background: hovered ? 'rgba(255,248,240,0.96)' : 'rgba(255,248,240,0.65)',
-          backdropFilter: 'blur(24px) saturate(1.5)',
-          WebkitBackdropFilter: 'blur(24px) saturate(1.5)',
-          border: `1px solid ${hovered ? 'rgba(61,90,53,0.28)' : 'rgba(61,90,53,0.22)'}`,
-          boxShadow: hovered
-            ? '0 12px 40px -8px rgba(61,90,53,0.30), 0 1px 0 rgba(255,255,255,0.7) inset'
-            : '0 4px 20px rgba(61,90,53,0.12), 0 1px 0 rgba(255,255,255,0.7) inset',
+          background: hovered ? 'rgba(61,90,53,0.95)' : 'rgba(61,90,53,0.18)',
+          border: '1px solid rgba(61,90,53,0.30)',
+          boxShadow: hovered ? '0 8px 22px -6px rgba(61,90,53,0.45)' : '0 2px 10px -4px rgba(61,90,53,0.18)',
           transform: hovered ? 'scale(1.06)' : 'scale(1)',
           transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
           cursor: 'pointer',
@@ -1887,16 +1908,16 @@ function PracticeFab({ visible, onClick }: { visible: boolean; onClick: () => vo
           <span
             className="absolute inset-0 rounded-full pointer-events-none"
             style={{
-              border: '1px solid rgba(61,90,53,0.25)',
+              border: '1px solid rgba(61,90,53,0.35)',
               animation: 'cpm-fab-ping 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite',
             }}
           />
         )}
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"
           style={{ marginLeft: '1.5px', position: 'relative', zIndex: 1 }}>
           <path
             d="M5.5 3.5L12 8L5.5 12.5V3.5Z"
-            fill={hovered ? 'rgba(61,90,53,0.88)' : 'rgba(61,90,53,0.65)'}
+            fill={hovered ? '#FFF8F0' : 'rgba(61,90,53,0.85)'}
             style={{ transition: 'fill 0.2s ease' }}
           />
         </svg>
@@ -2455,25 +2476,18 @@ function VisTableInline({ vis }: { vis: VisTable }) {
   const headerStyle: React.CSSProperties = {
     fontFamily: "'Work Sans', sans-serif",
     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
-    color: '#f0f5ee', background: '#3D5A35',
+    color: '#f0f5ee', background: '#5C4033',
   }
   const colCount = vis.columns.length
   const dataColCount = colCount - 1
   return (
-    <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
-      <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+    <div className="w-full overflow-x-auto rounded-[4px] border border-[#5C4033]/15">
+      <table className="w-full border-collapse" style={{ tableLayout: vis.columnWidths ? 'fixed' : 'auto' }}>
+{vis.columnWidths && (
 <colgroup>
-  {vis.columnWidths
-    ? vis.columnWidths.map((w, i) => <col key={i} style={colStyle(w)} />)
-    : (
-      <>
-        <col />
-        {Array.from({ length: dataColCount }).map((_, i) => (
-          <col key={i} style={colStyle(`${100 / dataColCount}%`)} />
-        ))}
-      </>
-    )}
+  {vis.columnWidths.map((w, i) => <col key={i} style={colStyle(w)} />)}
 </colgroup>
+)}
         <thead>
           <tr>
             {vis.columns.map((col, i) => (
@@ -2524,13 +2538,13 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
   fontFamily: "'Work Sans', sans-serif",
   fontSize: '10px', fontWeight: 600,
   textTransform: 'uppercase', letterSpacing: '0.2em',
-  color: '#f0f5ee', background: '#3D5A35',
+  color: '#f0f5ee', background: '#5C4033',
 }
   return (
     <div className="pt-10">
 {vis.header && <SectionLabel>{vis.header}</SectionLabel>}
       {!vis.noTitle && <VisDivider label={vis.title} />}
-      <div className="w-full overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
+      <div className="w-full overflow-x-auto rounded-[4px] border border-[#5C4033]/15">
         <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
           {vis.columnWidths && (
             <colgroup>
@@ -2545,7 +2559,7 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
 textAlign: i  === 0 ? 'left' : 'center',   // th
                     fontFamily: "'Work Sans', sans-serif",
                     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
-                    color: '#f0f5ee', background: '#3D5A35', whiteSpace: 'nowrap',
+                    color: '#f0f5ee', background: '#5C4033', whiteSpace: 'nowrap',
                     borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined,
                   }}>
                   {col}
@@ -2609,7 +2623,7 @@ function VisCalcPairBlock({ vis, className = 'mt-8' }: { vis: VisCalcPair; class
     return (
       <div className="flex-1 min-w-0">
         {/* Green header — full panel width, tight vertical padding */}
-        <div className="px-5 py-1.5" style={{ background: '#3D5A35' }}>
+        <div className="px-5 py-1.5" style={{ background: '#5C4033' }}>
           <span className="text-[10px] font-semibold uppercase tracking-[0.16em] leading-none"
             style={{ color: 'rgba(240,245,238,0.9)', fontFamily: FONT }}>
             {panel.title}
@@ -2684,11 +2698,11 @@ function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   const H_GAP = 60
   const V_GAP = 36  // clearance between parent bottom edge and child top edge
   const PAD = 24
-  const GREEN    = '#3D5A35'
+  const GREEN    = '#5C4033'
   const MUTED_BG = 'rgba(255,248,240,1)'
   const MUTED_BD = 'rgba(92,64,51,0.28)'
   const MUTED_TX = '#7A5C4A'
-  const EDGE_ON  = '#3D5A35'
+  const EDGE_ON  = '#5C4033'
   const EDGE_OFF = 'rgba(92,64,51,0.30)'
   // Approx char width at 13px Work Sans
   const CW = FS * 0.54
@@ -2891,7 +2905,7 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
   const headerStyle: React.CSSProperties = {
     fontFamily: "'Work Sans', sans-serif",
     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
-    color: '#f0f5ee', background: '#3D5A35', whiteSpace: 'nowrap',
+    color: '#f0f5ee', background: '#5C4033', whiteSpace: 'nowrap',
   }
   const renderBullets = (text: string) => {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
@@ -2910,10 +2924,18 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
   return (
     <div className="pt-10">
       <VisDivider label="Recommendations" />
-      <div className="overflow-x-auto rounded-[4px] border border-[#3D5A35]/15">
+      <div className="overflow-x-auto flex justify-center">
         <table className="border-collapse" style={{ tableLayout: 'auto', width: 'fit-content', maxWidth: '100%' }}>
 <thead>
   <tr>
+    {matrixMode && (
+      <th style={{
+        padding: '11px 16px',
+        fontFamily: "'Work Sans', sans-serif",
+        fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
+        color: '#f0f5ee', background: '#5C4033',
+      }} />
+    )}
     {cols.map((col, ci) => {
      const thStyle: React.CSSProperties = {
   padding: '11px 16px',
@@ -2924,8 +2946,8 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
   textTransform: 'uppercase',
   letterSpacing: '0.2em',
   color: '#f0f5ee',
-  background: '#3D5A35',
-  borderLeft: ci > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined,
+  background: '#5C4033',
+  borderLeft: '1px solid rgba(240,245,238,0.15)',
 }
       return (
         <th key={ci} style={thStyle}>
@@ -3543,7 +3565,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
      ═══════════════════════════════════════════════ */
   return (
     <div style={{ fontFamily: "'Work Sans', sans-serif" }}
-      className="min-h-screen bg-[#fff8f0] text-[#3B2F2F] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]">
+      className="min-h-screen bg-[#fff8f0] text-[#3B2F2F] antialiased selection:bg-[#5C4033]/20 selection:text-[#3B2F2F]">
 
       {/* ─── Keyframes ────────────────────────── */}
       <style>{`
@@ -3688,9 +3710,9 @@ html::-webkit-scrollbar {
       className="inline-flex items-center gap-1 transition-opacity duration-200 opacity-70 hover:opacity-100"
     >
       <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-        <path d="M7 2L3.5 5.5L7 9" stroke="#3D5A35" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M7 2L3.5 5.5L7 9" stroke="#5C4033" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-[#3D5A35]">Repository</span>
+      <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-[#5C4033]">Repository</span>
     </Link>
   </div>
 
@@ -3757,7 +3779,7 @@ html::-webkit-scrollbar {
             </div>
 
             {/* Containment frame — walkthrough */}
-            <div className="hidden rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] lg:block">
+            <div className="hidden rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] lg:block">
 <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">                {/* ── Desktop sidebar: case metadata ── */}
                 <aside className="hidden lg:block">
   <div
@@ -3885,7 +3907,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
 
             <div className="hidden lg:block">
 
-<div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
+<div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
 <div className={forumOpen ? '' : 'lg:grid lg:grid-cols-[200px_minmax(0,1fr)]'}>
                   {/* ── Desktop sidebar: notes ─────────── */}
                   {!forumOpen && (
@@ -4205,10 +4227,10 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 style={{ borderBottom: '1px solid rgba(61,90,53,0.10)', background: 'rgba(61,90,53,0.05)' }}
               >
                 <div className="flex items-center gap-2">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5C4033" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#3D5A35]">Forum</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#5C4033]">Forum</span>
                 </div>
                 <div className="flex items-center gap-0.5">
                   <button
@@ -4249,8 +4271,8 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
             onClick={() => setForumOpen(o => !o)}
             className="lg:hidden fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-lg transition-all duration-200"
             style={{
-              background: forumOpen ? '#3D5A35' : 'rgba(255,248,240,0.95)',
-              color: forumOpen ? '#fff' : '#3D5A35',
+              background: forumOpen ? '#5C4033' : 'rgba(255,248,240,0.95)',
+              color: forumOpen ? '#fff' : '#5C4033',
               border: '1px solid rgba(61,90,53,0.22)',
               backdropFilter: 'blur(12px)',
               WebkitBackdropFilter: 'blur(12px)',
@@ -4280,10 +4302,10 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-[#5C4033]/08">
                 <div className="flex items-center gap-2">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5C4033" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#3D5A35]">Forum</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]">Forum</span>
                 </div>
                 <button onClick={() => setForumOpen(false)} className="text-[#5C4033]/50 hover:text-[#5C4033]">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -4327,10 +4349,10 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 style={{ borderBottom: '1px solid rgba(61,90,53,0.10)', background: 'rgba(61,90,53,0.05)' }}
               >
                 <div className="flex items-center gap-2.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5C4033" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#3D5A35]">Forum</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#5C4033]">Forum</span>
                 </div>
                 <button
                   onClick={() => setForumExpanded(false)}
@@ -4560,7 +4582,7 @@ export function CaseInterviewerMaster({
 
   return (
     <div style={{ fontFamily: "'Work Sans', sans-serif" }}
-      className="min-h-screen bg-[#fff8f0] text-[#3B2F2F] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]">
+      className="min-h-screen bg-[#fff8f0] text-[#3B2F2F] antialiased selection:bg-[#5C4033]/20 selection:text-[#3B2F2F]">
 
       <style>{`
         html, body { overscroll-behavior-x: none; }
@@ -4599,7 +4621,7 @@ export function CaseInterviewerMaster({
             <Image src="/logo.png" alt="Case Compendium X" width={56} height={56} className="h-14 w-14 object-contain" />
             <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
               <span className="text-[#453a2a]">Case Compendium</span>
-              <span className="text-[#3D5A35]">X</span>
+              <span className="text-[#5C4033]">X</span>
             </div>
           </div>
           {(onReplaceCase || onCancelSession) && (
@@ -4695,7 +4717,7 @@ export function CaseInterviewerMaster({
                 ].join('  •  ')}
               </p>
 
-              <div className="hidden rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] lg:block">
+              <div className="hidden rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] lg:block">
                 <div className="custom-scrollbar relative px-7 py-6">
                   <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 120px)', height: '120px', marginBottom: '-120px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)' }} />
                   <div>
@@ -4729,7 +4751,7 @@ export function CaseInterviewerMaster({
             {/* Drill Down */}
             <section ref={drilldownRef2} className="relative z-10 mt-12">
               <div className="hidden lg:block">
-                <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
+                <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
                   <div>
                     <div className="relative min-w-0">
                       <div className={`relative flex flex-col px-7 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : hasTree ? ' pt-6' : ' pt-1'}${recommendations.length === 0 && hasTree ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
@@ -5033,32 +5055,32 @@ export function CaseInterviewerMaster({
           >
             {/* Scrollable content */}
             <div className="flex flex-col gap-3 flex-1 overflow-y-auto min-h-0">
-              <p className="text-center text-[11px]" style={{ color: '#3D5A35', textShadow: '0 0 10px rgba(61,90,53,0.6), 0 0 24px rgba(61,90,53,0.25)', letterSpacing: '0.01em' }}>
+              <p className="text-center text-[11px]" style={{ color: '#5C4033', textShadow: '0 0 10px rgba(61,90,53,0.6), 0 0 24px rgba(61,90,53,0.25)', letterSpacing: '0.01em' }}>
                 Please pair with verbal feedback
               </p>
 
               {/* Notes */}
-              <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
+              <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="h-[5px] w-[5px] rounded-full bg-[#3D5A35]" style={{ animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
+                  <span className="h-[5px] w-[5px] rounded-full bg-[#5C4033]" style={{ animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Interviewer Notes</p>
                 </div>
                 <textarea
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   placeholder="Record observations..."
-                  className="w-full resize-none rounded-[12px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#3D5A35]/30 focus:outline-none focus:ring-1 focus:ring-[#3D5A35]/20 transition-all"
+                  className="w-full resize-none rounded-[12px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all"
                   style={{ height: '160px', fontFamily: "'Work Sans', sans-serif" }}
                 />
               </div>
 
               {/* Ratings */}
-              <div className="rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
+              <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Live Evaluation</p>
                 {EVAL_CRITERIA.map(c => {
                   const score = scores[c.id]
                   return (
-                    <div key={c.id} className="rounded-[12px] border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.6)] px-3 py-2 flex flex-col gap-1.5">
+                    <div key={c.id} className="rounded-[12px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] px-3 py-2 flex flex-col gap-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[12px] font-medium text-[#3B2F2F]">{c.label}</span>
                         <span className="rounded-full border border-[#5C4033]/15 bg-[rgba(255,248,240,0.9)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5C4033]/60">
@@ -5068,8 +5090,8 @@ export function CaseInterviewerMaster({
                       <input
                         type="range" min="0" max="5" step="1" value={score}
                         onChange={e => setScores({ ...scores, [c.id]: parseInt(e.target.value, 10) })}
-                        className="w-full cursor-pointer appearance-none rounded-full accent-[#3D5A35]"
-                        style={{ height: '5px', background: `linear-gradient(to right, #3D5A35 ${score * 20}%, rgba(92,64,51,0.15) ${score * 20}%)` }}
+                        className="w-full cursor-pointer appearance-none rounded-full accent-[#5C4033]"
+                        style={{ height: '5px', background: `linear-gradient(to right, #5C4033 ${score * 20}%, rgba(92,64,51,0.15) ${score * 20}%)` }}
                       />
                       <div className="flex justify-between text-[8px] font-semibold uppercase tracking-[0.1em] text-[#5C4033]/35">
                         <span>NR</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
@@ -5083,7 +5105,7 @@ export function CaseInterviewerMaster({
             {/* End case — always visible at bottom */}
             <button
               onClick={onEndCase}
-              className="mt-3 w-full flex-shrink-0 rounded-2xl border border-[#3D5A35]/20 bg-[#3D5A35] py-3.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#f0f5ee] transition-all hover:bg-[#2e4428] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.35)]"
+              className="mt-3 w-full flex-shrink-0 rounded-2xl border border-[#5C4033]/20 bg-[#5C4033] py-3.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#f0f5ee] transition-all hover:bg-[#2e4428] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.35)]"
             >
               End Case & Evaluate →
             </button>

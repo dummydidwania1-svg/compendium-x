@@ -31,6 +31,7 @@ function normalizeCompany(raw: string | null): string | null {
   const t = raw.trim()
   if (/^accenture( strategy)?$/i.test(t)) return 'Accenture Strategy'
   if (/^(by (the )?)?author(s)?$/i.test(t)) return 'By the Authors'
+  if (/^l\.e\.k\.? consulting$/i.test(t)) return 'L.E.K. Consulting'
   return t
 }
 
