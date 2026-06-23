@@ -2131,6 +2131,18 @@ if (previewMode && !forcePreview) {
 						{/* Right sidebar — fixed, narrower live rail */}
 						{!previewMode && (
 							<aside className="flex w-full flex-col border-t border-[#d8cdc0] bg-[linear-gradient(180deg,#eee6da_0%,#e8dfd2_100%)] shadow-[-18px_0_42px_-44px_rgba(58,44,35,0.45)] md:sticky md:top-[49px] md:self-start md:w-[17.5rem] md:border-l md:border-t-0 lg:w-[18.5rem] xl:w-[19rem]">
+							<style>{`
+  .eval-range { -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; }
+  .eval-range:focus { outline:none; }
+  .eval-range::-webkit-slider-runnable-track { height:3px; border-radius:2px; background:rgba(92,64,51,0.16); }
+  .eval-range::-moz-range-track { height:3px; border-radius:2px; background:rgba(92,64,51,0.16); }
+  .eval-range::-moz-range-progress { height:3px; border-radius:2px; background:#3D5A35; }
+  .eval-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; margin-top:-6px; width:15px; height:15px; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
+  .eval-range::-moz-range-thumb { width:15px; height:15px; border:none; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
+  .eval-range.is-nr::-webkit-slider-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
+  .eval-range.is-nr::-moz-range-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
+  .eval-range.is-nr::-moz-range-progress { background:transparent; }
+`}</style>
 								<div className="flex flex-1 flex-col gap-6 p-6 md:p-8">
 									<section className="flex-shrink-0 border-b border-[#d8cdc0] pb-6">
 										<div className="mb-3 flex items-center gap-3">
@@ -2143,50 +2155,55 @@ if (previewMode && !forcePreview) {
 											value={notes}
 											onChange={(e) => setNotes(e.target.value)}
 											placeholder="Record observations..."
-											className="h-32 w-full resize-none rounded-[18px] border border-[#d5cabd] bg-[#f6efe5] p-4 text-[14px] italic leading-7 text-[#4a3f38] shadow-[inset_0_1px_2px_rgba(95,72,52,0.05)] transition-all placeholder:text-[#a09385] focus:border-[#4a3627] focus:outline-none focus:ring-2 focus:ring-[#4a3627]/10"
+											className="h-40 w-full resize-none rounded-[18px] border border-[#d5cabd] bg-[#f6efe5] p-4 text-[14px] italic leading-7 text-[#4a3f38] shadow-[inset_0_1px_2px_rgba(95,72,52,0.05)] transition-all placeholder:text-[#a09385] focus:border-[#4a3627] focus:outline-none focus:ring-2 focus:ring-[#4a3627]/10"
 										/>
 									</section>
 
 									<section className="flex flex-col gap-4">
 										<div className="border-b border-[#d8cdc0] pb-4">
 											<h3 className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#4a3f38]">
-												Live Evaluation
+												Evaluation
 											</h3>
 										</div>
-										<div className="space-y-4">
+										<div className="space-y-5">
 											{LIVE_EVALUATION_CRITERIA.map((criteria) => {
 												const score = scores[criteria.id]
+												const rated = score > 0
+												const pct = (score / 5) * 100
 												return (
-													<div
-														key={criteria.id}
-														className="rounded-[18px] border border-[#ded3c6] bg-[#f6efe5]/92 px-3.5 py-3 shadow-[0_18px_34px_-34px_rgba(73,53,37,0.5)]"
-													>
+													<div key={criteria.id}>
 														<div className="flex items-center justify-between gap-3">
-															<span className="text-[13px] font-semibold leading-5 text-[#2d2520]">
+															<span className="text-[13px] font-semibold leading-5 text-[#5C4033]">
 																{criteria.label}
 															</span>
-															<span className="rounded-full border border-[#d5cabd] bg-[#fbf7f0] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#7f7b6a]">
-																{score > 0 ? `${score}/5` : 'NR'}
-															</span>
+															{rated && (
+																<span className="rounded-full border border-[#3D5A35]/35 bg-[rgba(174,208,161,0.22)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#3D5A35]">
+																	{score}/5
+																</span>
+															)}
 														</div>
 														<div className="pb-1 pt-3">
 															<input
 																type="range"
 																min="0"
 																max="5"
-																step="1"
+																step="0.5"
 																value={score}
 																onChange={(e) =>
 																	setScores({
 																		...scores,
-																		[criteria.id]: Number.parseInt(e.target.value, 10),
+																		[criteria.id]: Number.parseFloat(e.target.value),
 																	})
 																}
-																className="w-full cursor-pointer appearance-none rounded-full bg-[#cec5b9]/50 accent-[#4a3627]"
-																style={{ height: '6px' }}
+																className={`eval-range${rated ? '' : ' is-nr'}`}
+																style={
+																	rated
+																		? { background: `linear-gradient(90deg, #3D5A35 ${pct}%, rgba(92,64,51,0.16) ${pct}%)`, height: '3px', borderRadius: '2px' }
+																		: undefined
+																}
 															/>
-															<div className="mt-1.5 flex justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-[#7f7b6a]">
-																<span>NR</span>
+															<div className="mt-2 flex justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-[#a99a87]">
+																<span className="italic">NR</span>
 																<span>1</span>
 																<span>2</span>
 																<span>3</span>
@@ -2203,9 +2220,9 @@ if (previewMode && !forcePreview) {
 									<div className="mt-auto pt-4">
 										<button
 											onClick={() => setCurrentView('feedback')}
-											className="w-full rounded-[18px] bg-[#4a3627] py-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#efe8de] transition hover:bg-[#3d2c1f]"
+											className="w-full rounded-[18px] bg-[#3D5A35] py-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#efe8de] transition hover:bg-[#34502d]"
 										>
-											End Case & Evaluate →
+											End Case & Evaluate
 										</button>
 									</div>
 								</div>
@@ -2382,12 +2399,12 @@ if (previewMode && !forcePreview) {
 												type="range"
 												min="0"
 												max="5"
-												step="1"
+												step="0.5"
 												value={score}
 												onChange={(e) =>
 													setScores({
 														...scores,
-														[criteria.id]: Number.parseInt(e.target.value, 10),
+														[criteria.id]: Number.parseFloat(e.target.value),
 													})
 												}
 												className="mt-3 w-full cursor-pointer appearance-none rounded-full bg-[#cec5b9]/50 accent-[#3D5A35]"

@@ -5049,20 +5049,33 @@ export function CaseInterviewerMaster({
               top: '70px',
               height: 'calc(100vh - 70px)',
               paddingLeft: '20px',
-              paddingTop: '16px',
+              paddingTop: '10px',
               paddingBottom: '16px',
             }}
           >
+            <style>{`
+              .eval-range { -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; }
+              .eval-range:focus { outline:none; }
+              .eval-range::-webkit-slider-runnable-track { height:3px; border-radius:1px; background:rgba(92,64,51,0.16); }
+              .eval-range::-moz-range-track { height:3px; border-radius:2px; background:rgba(92,64,51,0.16); }
+              .eval-range::-moz-range-progress { height:3px; border-radius:2px; background:#3D5A35; }
+              .eval-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; margin-top:-6px; width:15px; height:15px; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
+              .eval-range::-moz-range-thumb { width:15px; height:15px; border:none; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
+              .eval-range.is-nr::-webkit-slider-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
+              .eval-range.is-nr::-moz-range-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
+              .eval-range.is-nr::-moz-range-progress { background:transparent; }
+            `}</style>
+
             {/* Scrollable content */}
             <div className="flex flex-col gap-3 flex-1 overflow-y-auto min-h-0">
-              <p className="text-center text-[11px]" style={{ color: '#5C4033', textShadow: '0 0 10px rgba(61,90,53,0.6), 0 0 24px rgba(61,90,53,0.25)', letterSpacing: '0.01em' }}>
+              <p className="text-center text-[10px]" style={{ color: '#5C4033', textShadow: '0 0 10px rgba(61,90,53,0.6), 0 0 24px rgba(61,90,53,0.25)', letterSpacing: '0.01em' }}>
                 Please pair with verbal feedback
               </p>
 
               {/* Notes */}
               <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="h-[5px] w-[5px] rounded-full bg-[#5C4033]" style={{ animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
+                  <span className="h-[7px] w-[7px] rounded-full bg-[#5C4033]" style={{ animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Interviewer Notes</p>
                 </div>
                 <textarea
@@ -5070,44 +5083,53 @@ export function CaseInterviewerMaster({
                   onChange={e => setNotes(e.target.value)}
                   placeholder="Record observations..."
                   className="w-full resize-none rounded-[12px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all"
-                  style={{ height: '160px', fontFamily: "'Work Sans', sans-serif" }}
+                  style={{ height: '110px', fontFamily: "'Work Sans', sans-serif" }}
                 />
               </div>
 
               {/* Ratings */}
-              <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Live Evaluation</p>
-                {EVAL_CRITERIA.map(c => {
-                  const score = scores[c.id]
-                  return (
-                    <div key={c.id} className="rounded-[12px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] px-3 py-2 flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[12px] font-medium text-[#3B2F2F]">{c.label}</span>
-                        <span className="rounded-full border border-[#5C4033]/15 bg-[rgba(255,248,240,0.9)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5C4033]/60">
-                          {score > 0 ? `${score}/5` : 'NR'}
-                        </span>
+              <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Evaluation</p>
+                <div className="space-y-5">
+                  {EVAL_CRITERIA.map(c => {
+                    const score = scores[c.id]
+                    const rated = score > 0
+                    const pct = (score / 5) * 100
+                    return (
+                      <div key={c.id}>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-[13px] font-semibold leading-5 text-[#5C4033]">{c.label}</span>
+                          {rated && (
+                            <span className="rounded-full border border-[#3D5A35]/35 bg-[rgba(174,208,161,0.22)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#3D5A35]">
+                              {score}/5
+                            </span>
+                          )}
+                        </div>
+                        <div className="pb-1 pt-3">
+                          <input
+                            type="range" min="0" max="5" step="0.5" value={score}
+                            onChange={e => setScores({ ...scores, [c.id]: parseFloat(e.target.value) })}
+                            className={`eval-range${rated ? '' : ' is-nr'}`}
+                            style={rated ? { background: `linear-gradient(90deg, #3D5A35 ${pct}%, rgba(92,64,51,0.16) ${pct}%)`, height: '3px', borderRadius: '2px' } : undefined}
+                          />
+                          <div className="mt-2 flex justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-[#a99a87]">
+                            <span className="italic">NR</span>
+                            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                          </div>
+                        </div>
                       </div>
-                      <input
-                        type="range" min="0" max="5" step="1" value={score}
-                        onChange={e => setScores({ ...scores, [c.id]: parseInt(e.target.value, 10) })}
-                        className="w-full cursor-pointer appearance-none rounded-full accent-[#5C4033]"
-                        style={{ height: '5px', background: `linear-gradient(to right, #5C4033 ${score * 20}%, rgba(92,64,51,0.15) ${score * 20}%)` }}
-                      />
-                      <div className="flex justify-between text-[8px] font-semibold uppercase tracking-[0.1em] text-[#5C4033]/35">
-                        <span>NR</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             </div>
 
             {/* End case — always visible at bottom */}
             <button
               onClick={onEndCase}
-              className="mt-3 w-full flex-shrink-0 rounded-2xl border border-[#5C4033]/20 bg-[#5C4033] py-3.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#f0f5ee] transition-all hover:bg-[#2e4428] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.35)]"
+              className="mt-3 w-full flex-shrink-0 rounded-[18px] bg-[#3D5A35] py-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#efe8de] transition hover:bg-[#34502d]"
             >
-              End Case & Evaluate →
+              End Case & Evaluate
             </button>
           </aside>
 
