@@ -37,7 +37,7 @@ if (getApps().length === 0) initializeApp()
 const db = getFirestore()
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY')
-const GEMINI_MODEL = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-2.5-flash-lite'
+const GEMINI_MODEL = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-2.5-flash'
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com'
 const FILE_READY_ATTEMPTS = 90
