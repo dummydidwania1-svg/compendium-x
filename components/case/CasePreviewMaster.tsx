@@ -2628,8 +2628,9 @@ textAlign: i  === 0 ? 'left' : 'center',   // th
 
     const trStyle: React.CSSProperties = {
       background: isSummary
-        ? 'linear-gradient(90deg, rgba(61,90,53,0.06) 0%, rgba(61,90,53,0.025) 100%)'
+        ? 'linear-gradient(90deg, rgba(234,226,213,0.92) 0%, rgba(234,226,213,0.55) 100%)'
         : 'transparent',
+      borderTop: isSummary ? '1px solid rgba(92,64,51,0.18)' : undefined,
       transition: 'background 0.25s cubic-bezier(0.22,1,0.36,1)',
     }
 
@@ -2639,7 +2640,7 @@ textAlign: i  === 0 ? 'left' : 'center',   // th
           const tdStyle: React.CSSProperties = {
             padding: '11px 16px',
             textAlign: ci === 0 ? 'left' : 'center',                       // step 3: center the 3 data cols
-            fontWeight: isSummary ? (ci === 0 ? 600 : 700) : (ci === 0 ? 500 : 400), // step 4: bold all summary cells
+            fontWeight: isSummary ? (ci === 0 ? 600 : 600) : (ci === 0 ? 500 : 400),
             color: '#3B2F2F',
             fontFamily: "'Newsreader', serif",
             whiteSpace: 'nowrap',
@@ -3499,8 +3500,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [navigate])
 
-  // ─── Horizontal swipe / trackpad navigation ───────────────
-  useSwipeNavigation(navigate)
+  // (horizontal swipe navigation intentionally removed; native browser back/forward gesture is restored here)
 
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
   const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
@@ -3637,7 +3637,6 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
 
       {/* ─── Keyframes ────────────────────────── */}
       <style>{`
-      html, body { overscroll-behavior-x: none; }
         @keyframes cpm-fade-up { from { opacity:0; transform:translateY(22px); filter:blur(6px) } to { opacity:1; transform:translateY(0); filter:blur(0) } }
         @keyframes cpm-glow { 0%,100% { opacity:.42; transform:translate3d(0,0,0) scale(1) } 50% { opacity:.7; transform:translate3d(12px,-8px,0) scale(1.04) } }
         @keyframes cpm-connector { from { opacity:0; stroke-dashoffset:1 } to { opacity:1; stroke-dashoffset:0 } }
@@ -3717,15 +3716,15 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
 }
 
 .cpm-sum-row:hover {
-  background: linear-gradient(90deg, rgba(61,90,53,0.11) 0%, rgba(61,90,53,0.05) 100%) !important;
+  background: linear-gradient(90deg, rgba(234,226,213,1) 0%, rgba(234,226,213,0.7) 100%) !important;
 }
 
 .cpm-sum-row td:first-child {
-  box-shadow: inset 2px 0 0 rgba(61,90,53,0); /* hidden by default */
+  box-shadow: inset 2px 0 0 rgba(92,64,51,0); /* hidden by default */
   transition: box-shadow 0.25s cubic-bezier(0.22,1,0.36,1);
 }
 .cpm-sum-row:hover td:first-child {
-  box-shadow: inset 2px 0 0 rgba(61,90,53,0.4);
+  box-shadow: inset 2px 0 0 rgba(92,64,51,0.4);
 }
 
 /* Two-away sibling: even lighter ripple */
@@ -4568,7 +4567,7 @@ export function CaseInterviewerMaster({
     if (dir === 'prev' && step === 1) scrollToRef(walkthroughRef2)
   }, [scrollToRef])
 
-  useSwipeNavigation(navigate)
+  // (horizontal swipe navigation intentionally removed; gesture is inert on the interviewer page)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -4839,6 +4838,7 @@ export function CaseInterviewerMaster({
                             </div>
                           </Reveal>
                         </>)}
+                        {hasTree && (
                         <div ref={(el) => { chartRef.current = el; overlayHostRef.current = el }} className={(() => {
                           const hasViz = !!(recommendationsTable || visualisations?.some(v => v.type === 'table' || v.type === 'decision'))
                           const hasContent = recommendations.length > 0 || hasViz
@@ -4858,6 +4858,7 @@ export function CaseInterviewerMaster({
                             <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                           )}
                         </div>
+                        )}
                         <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="interviewer" tree={tree} />
                         {/* ── Additional framework trees (interviewer desktop — inside same column) ── */}
                         {additionalFrameworkTrees?.map((addTree, idx) => (
@@ -4902,51 +4903,6 @@ export function CaseInterviewerMaster({
                                 <VisDecisionBlock key={i} vis={v as VisDecision} />
                               ))}</Reveal>
                             </>)}
-                          </div>
-                        )}
-
-
-                        {abbreviations && abbreviations.length > 0 && (
-                          <div className="pt-16">
-                            <Reveal>
-                              <div className="mb-4 flex items-center gap-4">
-                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Abbreviations</span>
-                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                              </div>
-                            </Reveal>
-                            <ul className="space-y-2">
-                              {(abbreviations ?? []).map((item, i) => (
-                                <Reveal key={`rec-${i}`}>
-                                  <li className="flex items-start gap-2">
-                                    <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
-                                  </li>
-                                </Reveal>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                                               {abbreviations && abbreviations.length > 0 && (
-                          <div className="pt-16">
-                            <Reveal>
-                              <div className="mb-4 flex items-center gap-4">
-                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">Abbreviations</span>
-                                <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                              </div>
-                            </Reveal>
-                            <ul className="space-y-2">
-                              {(abbreviations ?? []).map((item, i) => (
-                                <Reveal key={`rec-${i}`}>
-                                  <li className="flex items-start gap-2">
-                                    <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
-                                  </li>
-                                </Reveal>
-                              ))}
-                            </ul>
                           </div>
                         )}
 
