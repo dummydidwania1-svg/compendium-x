@@ -18,6 +18,7 @@ import CursorGlow from '@/components/CursorGlow'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
+import casesCatalog from '@/data/cases.json'
 
 
 function normalizeCaseType(raw: string | null): string | null {
@@ -44,6 +45,12 @@ const CASES_CACHE_VERSION = 4
 // fetched on every load regardless; this just controls "do we show
 // something immediately or render a brief loading state."
 const CASES_CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
+
+const READY_CASE_SLUGS = new Set<string>(
+  (casesCatalog as Array<{ title?: string; slug?: string }>)
+    .map((c) => (c.slug && c.slug.trim()) ? c.slug.trim() : slugifyCase(c.title ?? ''))
+    .filter(Boolean)
+)
 
 type CaseListItem = {
   id: string
@@ -236,6 +243,8 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
   const [liveSessionOverlayInfo, setLiveSessionOverlayInfo] = useState<{ caseId: string; caseName: string; lobbyId: string; sessionMode: string } | null>(null)
   // When the interviewer panel couldn't load a case and redirected back here.
   const [caseLoadErrorVisible, setCaseLoadErrorVisible] = useState(false)
+  const [comingSoonVisible, setComingSoonVisible] = useState(false)
+  const [comingSoonBody, setComingSoonBody] = useState('')
   const [offlineBanner, setOfflineBanner] = useState(false)
   const [firestoreFailed, setFirestoreFailed] = useState(false)
   // ID of the case the user just clicked, while the API call + navigation
@@ -711,6 +720,27 @@ const prefetchCase = (caseItem: CaseListItem) => {
     // Same reasoning as above — don't clear; the route change unmounts us.
   }
 
+  const handlePreviewClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    caseItem: CaseListItem,
+  ) => {
+    const slug = caseItem.slug ?? slugifyCase(caseItem.title)
+    if (READY_CASE_SLUGS.has(slug)) return
+    e.preventDefault()
+    setComingSoonBody('Team CCX is putting the finishing touches on this case. Check back shortly.')
+    setComingSoonVisible(true)
+  }
+
+  const handleSelectClick = (caseItem: CaseListItem) => {
+    const slug = caseItem.slug ?? slugifyCase(caseItem.title)
+    if (!READY_CASE_SLUGS.has(slug)) {
+      setComingSoonBody('Team CCX is putting the finishing touches on this case. Please select a different case.')
+      setComingSoonVisible(true)
+      return
+    }
+    void handleSelectCase(caseItem.id, caseItem.title)
+  }
+
   const resultsLabel = loading
     ? 'Loading...'
     : `${filteredCases.length} ${filteredCases.length === 1 ? 'case' : 'cases'} available`
@@ -758,7 +788,7 @@ const CaseRow = ({ caseItem, index }: { caseItem: CaseListItem; index: number })
     <div className="px-2 py-4">
   {selectionMode ? (
     <button
-      onClick={() => handleSelectCase(caseItem.id, caseItem.title)}
+      onClick={() => handleSelectClick(caseItem)}
       disabled={pendingCaseId !== null}
       className="repo-preview-button w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
     >
@@ -768,6 +798,7 @@ const CaseRow = ({ caseItem, index }: { caseItem: CaseListItem; index: number })
     <Link
       href={`/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`}
       onMouseEnter={() => prefetchCase(caseItem)}
+      onClick={(e) => handlePreviewClick(e, caseItem)}
       className="repo-preview-button block w-full rounded-full px-3 py-2 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
     >
       Preview
@@ -797,7 +828,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
     </div>
 {selectionMode ? (
   <button
-    onClick={() => handleSelectCase(caseItem.id, caseItem.title)}
+    onClick={() => handleSelectClick(caseItem)}
     disabled={pendingCaseId !== null}
     className="repo-preview-button w-full rounded-full px-5 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
   >
@@ -807,6 +838,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
   <Link
     href={`/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`}
     onMouseEnter={() => prefetchCase(caseItem)}
+    onClick={(e) => handlePreviewClick(e, caseItem)}
     className="repo-preview-button block w-full rounded-full px-5 py-2 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
   >
     Preview Case
@@ -842,6 +874,23 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
           title="That case couldn't load"
           body="Something went wrong opening the case. Pick a different one to try again."
           onDismiss={() => setCaseLoadErrorVisible(false)}
+        />
+      ) : null}
+
+      {comingSoonVisible && !micGuardShowing ? (
+        <LobbyOverlay
+          key="case-coming-soon"
+          type="info"
+          autoDismissMs={2500}
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+          }
+          title="Cooking this one up"
+          body={comingSoonBody}
+          onDismiss={() => setComingSoonVisible(false)}
         />
       ) : null}
 
