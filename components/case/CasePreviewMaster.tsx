@@ -4669,6 +4669,16 @@ export function CaseInterviewerMaster({
         @keyframes cpm-badge-shimmer { 0%,100% { background-position:0% 50% } 50% { background-position:100% 50% } }
         html { scrollbar-width:none; -ms-overflow-style:none; }
         html::-webkit-scrollbar { display:none; }
+        .cpm-sum-row:hover {
+          background: linear-gradient(90deg, rgba(234,226,213,1) 0%, rgba(234,226,213,0.7) 100%) !important;
+        }
+        .cpm-sum-row td:first-child {
+          box-shadow: inset 2px 0 0 rgba(92,64,51,0);
+          transition: box-shadow 0.25s cubic-bezier(0.22,1,0.36,1);
+        }
+        .cpm-sum-row:hover td:first-child {
+          box-shadow: inset 2px 0 0 rgba(92,64,51,0.4);
+        }
       `}</style>
 
       <MobileDrilldownOverlay />
@@ -4785,18 +4795,24 @@ export function CaseInterviewerMaster({
               </p>
 
               <div className="hidden rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] lg:block">
-                <div className="custom-scrollbar relative px-7 py-6">
-                  <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 120px)', height: '120px', marginBottom: '-120px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)' }} />
-                  <div>
-                    {blocks.map((block, index) => (
-                      <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
-                        <Reveal>
-                          {block.kind === 'vis-inline'
-                            ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableInline vis={v as VisTable} /> : null })()
-                            : <WalkthroughBlockView block={block} />}
-                        </Reveal>
+                <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">
+                  {/* Empty spacer column to match preview table-column width (no sidebar content in interviewer) */}
+                  <div className="hidden lg:block" aria-hidden="true" />
+                  <div className="relative min-w-0">
+                    <div className="custom-scrollbar relative pl-7 pr-5 py-6">
+                      <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 120px)', height: '120px', marginBottom: '-120px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)' }} />
+                      <div>
+                        {blocks.map((block, index) => (
+                          <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
+                            <Reveal>
+                              {block.kind === 'vis-inline'
+                                ? (() => { const v = visualisations?.[block.visIndex]; return v?.type === 'table' ? <VisTableInline vis={v as VisTable} /> : null })()
+                                : <WalkthroughBlockView block={block} />}
+                            </Reveal>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -4819,9 +4835,11 @@ export function CaseInterviewerMaster({
             <section ref={drilldownRef2} className="relative z-10 mt-12">
               <div className="hidden lg:block">
                 <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
-                  <div>
+                  <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">
+                    {/* Empty spacer column to match preview drill-down table-column width (no sidebar content in interviewer) */}
+                    <div className="hidden lg:block" aria-hidden="true" />
                     <div className="relative min-w-0">
-                      <div className={`relative flex flex-col px-7 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : hasTree ? ' pt-6' : ' pt-1'}${recommendations.length === 0 && hasTree ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
+                      <div className={`relative flex flex-col pl-7 pr-5 pb-6${visualisations?.some(v => v.type === 'calcpair') ? ' pt-[28px]' : hasTree ? ' pt-6' : ' pt-1'}${recommendations.length === 0 && hasTree ? ' justify-center' : ''}`} style={{ minHeight: 'calc(100vh - 216px)' }}>
                         {isChartFullyExpanded && treeFullyRevealed && !drilldownBottomVisible && (
                           <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 110px)', height: '110px', marginBottom: '-110px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)', transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
                         )}
