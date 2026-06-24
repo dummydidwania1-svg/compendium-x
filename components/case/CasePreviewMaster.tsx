@@ -39,6 +39,7 @@ export type FrameworkTree = {
   nodes: Record<string, FrameworkNode>
   defaultExpanded: string[]
   defaultFocusedId: string
+  defaultFocusedIds?: string[]
   notes: { title: string; items: string[] }[]
   label?: string
 }
@@ -140,6 +141,7 @@ let PARENTS: Record<string, string> = {}
 let ROOT_ID = ''
 let DEFAULT_EXPANDED = new Set<string>()
 let DEFAULT_FOCUSED_ID = ''
+let DEFAULT_FOCUSED_IDS: string[] = []
 let NOTES: { title: string; items: string[] }[] = []
 
 
@@ -152,6 +154,15 @@ function pathTo(id: string): string[] {
   let c: string | undefined = id
   while (c) { p.unshift(c); c = PARENTS[c] }
   return p
+}
+
+// Union of root-to-node paths for one or more focused ids.
+// Falls back to the single id when the array is empty/undefined.
+function focusPathSet(ids: string[] | undefined, single: string): Set<string> {
+  const list = (ids && ids.length > 0) ? ids : (single ? [single] : [])
+  const out = new Set<string>()
+  for (const fid of list) for (const seg of pathTo(fid)) out.add(seg)
+  return out
 }
 
 function descendants(id: string): string[] {
@@ -695,7 +706,7 @@ function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview'): b
   const threshold = 9
 
   // Build the DEFAULT-VISIBLE set: green path expanded, inactive subtrees collapsed
-  const defaultPath = pathTo(DEFAULT_FOCUSED_ID)
+  const defaultPath = Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID))
   const defaultExpanded = new Set(
     Array.from(DEFAULT_EXPANDED).filter(id => defaultPath.includes(id))
   )
@@ -841,7 +852,7 @@ function VerticalChart({
   const [cW, setCW] = useState(0)
   const [cWReady, setCWReady] = useState(false)
   const started = revealDepth >= 0
-  const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
+  const defaultPath = useMemo(() => Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID)), [])
 
   // Measure container width — hide chart until first real measurement
   useEffect(() => {
@@ -1089,7 +1100,7 @@ function DesktopChart({
   const [cW, setCW] = useState(980)
   const [cWReady, setCWReady] = useState(false)
   const started = revealDepth >= 0
-  const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
+  const defaultPath = useMemo(() => Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID)), [])
   const maxD = useMemo(() => Math.max(...visibleIds.map(nodeDepth), 0), [visibleIds])
 
   // Fixed vStep matched to original 6-level tree: (520-42-36)/6 ≈ 74px
@@ -1400,7 +1411,7 @@ function InactiveDrilldownOverlay({
   visibleIds?: string[]
   mode?: 'preview' | 'interviewer'
 }) {
-  const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
+  const defaultPath = useMemo(() => Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID)), [])
   const [active, setActive] = useState<{
     id: string
     rect: { top: number; left: number; right: number; bottom: number; width: number; height: number }
@@ -1668,7 +1679,7 @@ function OverlaySubtree({
    so no host ref / index mapping is needed.
    ═══════════════════════════════════════════════════════════ */
 function MobileDrilldownOverlay() {
-  const defaultPath = useMemo(() => pathTo(DEFAULT_FOCUSED_ID), [])
+  const defaultPath = useMemo(() => Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID)), [])
   const [active, setActive] = useState<{
     id: string
     rect: { top: number; left: number; right: number; bottom: number; width: number; height: number }
@@ -3018,6 +3029,7 @@ function loadTree(tree: FrameworkTree) {
   ROOT_ID = Object.keys(NODES).find(id => !PARENTS[id]) ?? ''
   DEFAULT_EXPANDED = new Set(tree.defaultExpanded)
   DEFAULT_FOCUSED_ID = tree.defaultFocusedId
+  DEFAULT_FOCUSED_IDS = tree.defaultFocusedIds ?? []
   NOTES = tree.notes
 }
 
@@ -3037,14 +3049,14 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
     if (multiActive) return new Set(tree.defaultExpanded)
-    const dp = pathTo(tree.defaultFocusedId)
+    const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
     return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
   })
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
     if (multiActive) return new Set(tree.defaultExpanded)
-    const dp = pathTo(tree.defaultFocusedId)
+    const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
     return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
   })
   const [mobileFocId, setMobileFocId] = useState(() => tree.defaultFocusedId || '')
@@ -3099,7 +3111,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     loadTree(tree)
     setFocusedId(id)
     const node = NODES[id]
-    if (!multiActive && !pathTo(DEFAULT_FOCUSED_ID).includes(id) && node?.children.length) return
+    if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && node?.children.length) return
     startChartTransition(() => {
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
@@ -3122,7 +3134,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
   const handleToggle = (id: string) => {
     loadTree(tree)
     const node = NODES[id]; if (!node?.children.length) return
-    if (!multiActive && !pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
+    if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return
     startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
@@ -3148,7 +3160,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
   const handleMobileSelect = (id: string) => {
     loadTree(tree)
     setMobileFocId(id)
-    if (!multiActive && !pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return
+    if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && NODES[id]?.children.length) return
     setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
@@ -3159,7 +3171,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
   const handleMobileToggle = (id: string) => {
     loadTree(tree)
     const node = NODES[id]; if (!node?.children.length) return
-    if (!multiActive && !pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
+    if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return
     setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree)
@@ -3253,6 +3265,7 @@ export default function CasePreviewMaster({
   ROOT_ID = Object.keys(NODES).find(id => !PARENTS[id]) ?? ''
   DEFAULT_EXPANDED = new Set(tree.defaultExpanded)
   DEFAULT_FOCUSED_ID = tree.defaultFocusedId
+  DEFAULT_FOCUSED_IDS = tree.defaultFocusedIds ?? []
   NOTES = tree.notes
   const hasTree = ROOT_ID !== ''
   const maxTreeDepth = hasTree ? Math.max(...Object.keys(NODES).map(nodeDepth), 0) : 0
@@ -3381,7 +3394,7 @@ export default function CasePreviewMaster({
 
   // ─── Chart state ─────────────────────────────
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-  const dp = pathTo(tree.defaultFocusedId)
+  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
   return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
 })
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
@@ -3457,7 +3470,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   useSwipeNavigation(navigate)
 
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
-  const dp = pathTo(tree.defaultFocusedId)
+  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
   return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
 })
   const [mobileFocId, setMobileFocId] = useState(() => tree.defaultFocusedId || '')
@@ -3505,7 +3518,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   loadTree(tree)
   setFocusedId(id)
   const node = NODES[id]
-  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && node?.children.length) return // inactive → overlay only
+  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && node?.children.length) return // inactive → overlay only
   startChartTransition(() => {
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
@@ -3529,7 +3542,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   loadTree(tree)
   const node = NODES[id]; if (!node?.children.length) return
   // Inactive (off chosen-path) nodes never expand in-chart — they use the hover/tap overlay.
-  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return
+  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return
     startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
@@ -3553,7 +3566,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   const handleMobileSelect = (id: string) => {
   loadTree(tree)
   setMobileFocId(id)
-  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return // inactive → tap overlay only
+  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && NODES[id]?.children.length) return // inactive → tap overlay only
     setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
@@ -3564,7 +3577,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   const handleMobileToggle = (id: string) => {
   loadTree(tree)
   const node = NODES[id]; if (!node?.children.length) return
-  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return // inactive → tap overlay only
+  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → tap overlay only
     setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree)
@@ -4474,13 +4487,13 @@ export function CaseInterviewerMaster({
   ]
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-  const dp = pathTo(tree.defaultFocusedId)
+  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
   return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
 })
   const [focusedId, setFocusedId]     = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
-  const dp = pathTo(tree.defaultFocusedId)
+  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
   return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
 })
   const [mobileFocId, setMobileFocId]   = useState(() => tree.defaultFocusedId || '')
@@ -4557,7 +4570,7 @@ export function CaseInterviewerMaster({
   setFocusedId(id)
   const node = NODES[id]
   // Inactive nodes only focus; their drill-down is shown via the overlay, not in-chart.
-  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && node?.children.length) return
+  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && node?.children.length) return
     startChartTransition(() => {
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
@@ -4577,7 +4590,7 @@ export function CaseInterviewerMaster({
   }
   const handleToggle = (id: string) => {
   loadTree(tree)
-  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return // inactive → overlay only
+  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → overlay only
   startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
@@ -4589,10 +4602,10 @@ export function CaseInterviewerMaster({
       setEdgeAnimKey(k => k + 1)
     })
   }
-  const handleMobileSelect = (id: string) => { loadTree(tree); setMobileFocId(id); if (!pathTo(DEFAULT_FOCUSED_ID).includes(id) && NODES[id]?.children.length) return; setMobileExpIds(prev => { const next = new Set(prev); loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
+  const handleMobileSelect = (id: string) => { loadTree(tree); setMobileFocId(id); if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && NODES[id]?.children.length) return; setMobileExpIds(prev => { const next = new Set(prev); loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
   const handleMobileToggle = (id: string) => {
   loadTree(tree)
-  if (!pathTo(DEFAULT_FOCUSED_ID).includes(id)) return // inactive → tap overlay only
+  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → tap overlay only
   setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree)

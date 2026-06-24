@@ -2599,165 +2599,62 @@
     "prompt": "Hey. Your client is an Automobile manufacturer that has been facing a decline in profits over the last 2 years. They want you to analyse why this is happening and then give solutions.",
     "frameworkTree": {
       "nodes": {
-        "revenue": {
-          "id": "revenue",
-          "label": "Revenue",
-          "tone": "root",
-          "children": [
-            "sale-of-tractors",
-            "rent-of-tractors",
-            "value-added-services-other-parts"
-          ]
-        },
-        "sale-of-tractors": {
-          "id": "sale-of-tractors",
-          "label": "Sale Of Tractors",
-          "tone": "branch",
-          "children": [
-            "average-price",
-            "number-of-tractors"
-          ]
-        },
-        "rent-of-tractors": {
-          "id": "rent-of-tractors",
-          "label": "Rent Of Tractors",
-          "tone": "support",
-          "children": []
-        },
-        "value-added-services-other-parts": {
-          "id": "value-added-services-other-parts",
-          "label": "Value Added Services/ Other Parts",
-          "tone": "support",
-          "children": []
-        },
-        "average-price": {
-          "id": "average-price",
-          "label": "Average Price",
-          "tone": "support",
-          "children": []
-        },
-        "number-of-tractors": {
-          "id": "number-of-tractors",
-          "label": "Number of Tractors",
-          "tone": "branch",
-          "children": [
-            "production",
-            "distribution",
-            "demand"
-          ]
-        },
-        "production": {
-          "id": "production",
-          "label": "Production",
-          "tone": "support",
-          "children": []
-        },
-        "distribution": {
-          "id": "distribution",
-          "label": "Distribution",
-          "tone": "support",
-          "children": []
-        },
-        "demand": {
-          "id": "demand",
-          "label": "Demand",
-          "tone": "branch",
-          "children": [
-            "need",
-            "awareness",
-            "accessibility",
-            "affordability",
-            "experience"
-          ]
-        },
-        "need": {
-          "id": "need",
-          "label": "Need",
-          "tone": "support",
-          "children": []
-        },
-        "awareness": {
-          "id": "awareness",
-          "label": "Awareness",
-          "tone": "support",
-          "children": []
-        },
-        "accessibility": {
-          "id": "accessibility",
-          "label": "Accessibility",
-          "tone": "support",
-          "children": []
-        },
-        "affordability": {
-          "id": "affordability",
-          "label": "Affordability",
-          "tone": "support",
-          "children": []
-        },
-        "experience": {
-          "id": "experience",
-          "label": "Experience",
-          "tone": "branch",
-          "children": [
-            "pre-purchase",
-            "in-store-experience",
-            "delivery",
-            "usage",
-            "after-sales"
-          ]
-        },
-        "pre-purchase": {
-          "id": "pre-purchase",
-          "label": "Pre-Purchase",
-          "tone": "support",
-          "children": []
-        },
-        "in-store-experience": {
-          "id": "in-store-experience",
-          "label": "In-Store Experience",
-          "tone": "leaf",
-          "children": []
-        },
-        "delivery": {
-          "id": "delivery",
-          "label": "Delivery",
-          "tone": "support",
-          "children": []
-        },
-        "usage": {
-          "id": "usage",
-          "label": "Usage",
-          "tone": "support",
-          "children": []
-        },
-        "after-sales": {
-          "id": "after-sales",
-          "label": "After-Sales",
-          "tone": "leaf",
-          "children": []
-        }
+        "declining-profits": { "id": "declining-profits", "label": "Profits", "tone": "root", "children": ["revenue", "costs"] },
+        "revenue": { "id": "revenue", "label": "Revenue", "tone": "branch", "children": ["asset-revenue", "service-revenue"] },
+        "costs": { "id": "costs", "label": "Costs", "tone": "support", "children": ["variable-costs", "fixed-costs"] },
+        "asset-revenue": { "id": "asset-revenue", "label": "Asset Revenue", "tone": "branch", "children": ["sale-of-tractors", "rent-of-tractors"] },
+        "service-revenue": { "id": "service-revenue", "label": "Service Revenue", "tone": "branch", "children": ["value-added-services", "after-sales-services-stream", "parts-and-spares"] },
+        "sale-of-tractors": { "id": "sale-of-tractors", "label": "Sale of Tractors", "tone": "branch", "children": ["avg-price", "no-of-tractors"] },
+        "rent-of-tractors": { "id": "rent-of-tractors", "label": "Rent of Tractors", "tone": "support", "children": [] },
+        "value-added-services": { "id": "value-added-services", "label": "Value-Added Services", "tone": "support", "children": [] },
+        "after-sales-services-stream": { "id": "after-sales-services-stream", "label": "After-Sales Services", "tone": "leaf", "children": [] },
+        "parts-and-spares": { "id": "parts-and-spares", "label": "Parts & Spares", "tone": "support", "children": [] },
+        "avg-price": { "id": "avg-price", "label": "Avg. Price", "tone": "support", "children": [] },
+        "no-of-tractors": { "id": "no-of-tractors", "label": "No. of Tractors", "tone": "branch", "children": ["production", "distribution", "demand"] },
+        "production": { "id": "production", "label": "Production", "tone": "support", "children": [] },
+        "distribution": { "id": "distribution", "label": "Distribution", "tone": "support", "children": [] },
+        "demand": { "id": "demand", "label": "Demand", "tone": "branch", "children": ["need", "awareness", "affordability", "accessibility", "experience"] },
+        "need": { "id": "need", "label": "Need", "tone": "support", "children": [] },
+        "awareness": { "id": "awareness", "label": "Awareness", "tone": "support", "children": [] },
+        "affordability": { "id": "affordability", "label": "Affordability", "tone": "support", "children": [] },
+        "accessibility": { "id": "accessibility", "label": "Accessibility", "tone": "support", "children": [] },
+        "experience": { "id": "experience", "label": "Experience", "tone": "branch", "children": ["pre-purchase", "in-store", "delivery", "usage", "after-sales-stage"] },
+        "pre-purchase": { "id": "pre-purchase", "label": "Pre-Purchase", "tone": "support", "children": [] },
+        "in-store": { "id": "in-store", "label": "In-Store", "tone": "leaf", "children": [] },
+        "delivery": { "id": "delivery", "label": "Delivery", "tone": "support", "children": [] },
+        "usage": { "id": "usage", "label": "Usage", "tone": "support", "children": [] },
+        "after-sales-stage": { "id": "after-sales-stage", "label": "After-Sales", "tone": "leaf", "children": [] },
+        "variable-costs": { "id": "variable-costs", "label": "Variable Costs", "tone": "support", "children": [] },
+        "fixed-costs": { "id": "fixed-costs", "label": "Fixed Costs", "tone": "support", "children": [] }
       },
       "defaultExpanded": [
+        "declining-profits",
         "revenue",
+        "asset-revenue",
         "sale-of-tractors",
-        "number-of-tractors",
+        "no-of-tractors",
         "demand",
         "experience"
       ],
-      "defaultFocusedId": "after-sales",
+      "defaultFocusedId": "in-store",
+      "defaultFocusedIds": ["in-store", "after-sales-stage"],
       "notes": [
         {
           "title": "Questions",
           "items": [
             "Where does the client lie on the value chain?",
+            "Do they manufacture only tractors?",
             "Is the tractor a commoditized product?",
-            "Segmentation of problem based on geography"
+            "Segmentation of problem based on geography",
+            "Have the competitors faced a decline?"
           ]
         },
         {
           "title": "Keep In Mind",
           "items": [
-            "Make sure to never stop immediately after reaching the problem. Try to analyse why the problem occurred as it would help in your recommendations later on."
+            "Don't stop at the problem, probe why",
+            "Always benchmark client pricing against competitors",
+            "Commoditised products compete on soft experience factors"
           ]
         },
         {
@@ -2769,6 +2666,63 @@
         }
       ]
     },
+    "additionalFrameworkTrees": [
+      {
+        "label": "In-Store Experience",
+        "nodes": {
+          "in-store-experience": { "id": "in-store-experience", "label": "In-Store Experience", "tone": "root", "children": ["internal-factors", "external-factors"] },
+          "internal-factors": { "id": "internal-factors", "label": "Internal Factors", "tone": "branch", "children": ["staff-related", "store-related"] },
+          "external-factors": { "id": "external-factors", "label": "External Factors", "tone": "support", "children": [] },
+          "staff-related": { "id": "staff-related", "label": "Staff-Related", "tone": "branch", "children": ["knowledge", "availability", "attitude"] },
+          "store-related": { "id": "store-related", "label": "Store-Related", "tone": "support", "children": ["layout", "ambience"] },
+          "knowledge": { "id": "knowledge", "label": "Knowledge", "tone": "support", "children": [] },
+          "availability": { "id": "availability", "label": "Availability", "tone": "support", "children": [] },
+          "attitude": { "id": "attitude", "label": "Attitude", "tone": "branch", "children": ["perks"] },
+          "perks": { "id": "perks", "label": "Perks Reduced", "tone": "branch", "children": [] },
+          "layout": { "id": "layout", "label": "Layout", "tone": "support", "children": [] },
+          "ambience": { "id": "ambience", "label": "Ambience", "tone": "support", "children": ["sight", "sound", "smell", "touch", "taste"] },
+          "sight": { "id": "sight", "label": "Sight", "tone": "support", "children": [] },
+          "sound": { "id": "sound", "label": "Sound", "tone": "support", "children": [] },
+          "smell": { "id": "smell", "label": "Smell", "tone": "support", "children": [] },
+          "touch": { "id": "touch", "label": "Touch", "tone": "support", "children": [] },
+          "taste": { "id": "taste", "label": "Taste", "tone": "support", "children": [] }
+        },
+        "defaultExpanded": [
+          "in-store-experience",
+          "internal-factors",
+          "staff-related",
+          "attitude"
+        ],
+        "defaultFocusedId": "perks",
+        "notes": []
+      },
+      {
+        "label": "After-Sales Services",
+        "nodes": {
+          "after-sales-services": { "id": "after-sales-services", "label": "After-Sales Services", "tone": "root", "children": ["reach", "experience", "pricing"] },
+          "reach": { "id": "reach", "label": "Reach", "tone": "support", "children": ["location", "ease-of-booking"] },
+          "experience": { "id": "experience", "label": "Experience", "tone": "support", "children": ["service-types", "quality", "turnaround-time"] },
+          "pricing": { "id": "pricing", "label": "Pricing", "tone": "branch", "children": ["free-period", "charge-per-service"] },
+          "location": { "id": "location", "label": "Location", "tone": "support", "children": [] },
+          "ease-of-booking": { "id": "ease-of-booking", "label": "Ease of Booking", "tone": "support", "children": [] },
+          "service-types": { "id": "service-types", "label": "Service Types", "tone": "support", "children": [] },
+          "quality": { "id": "quality", "label": "Quality", "tone": "support", "children": [] },
+          "turnaround-time": { "id": "turnaround-time", "label": "Turnaround Time", "tone": "support", "children": [] },
+          "free-period": { "id": "free-period", "label": "Free Period", "tone": "branch", "children": ["client-3-yrs-free", "competitor-5-yrs-free"] },
+          "charge-per-service": { "id": "charge-per-service", "label": "Charge per Service", "tone": "branch", "children": ["client-5000", "competitor-3000"] },
+          "client-3-yrs-free": { "id": "client-3-yrs-free", "label": "Client: 3 yrs free", "tone": "leaf", "children": [] },
+          "competitor-5-yrs-free": { "id": "competitor-5-yrs-free", "label": "Competitor: 5 yrs free", "tone": "leaf", "children": [] },
+          "client-5000": { "id": "client-5000", "label": "Client: ₹5,000", "tone": "leaf", "children": [] },
+          "competitor-3000": { "id": "competitor-3000", "label": "Competitor: ₹3,000", "tone": "leaf", "children": [] }
+        },
+        "defaultExpanded": [
+          "after-sales-services",
+          "pricing"
+        ],
+        "defaultFocusedId": "pricing",
+        "notes": []
+      }
+    ],
     "recommendationsTable": {
       "framework": "Feasibility-Impact Matrix",
       "columns": [
