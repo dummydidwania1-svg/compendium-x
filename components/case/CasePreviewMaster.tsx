@@ -165,6 +165,30 @@ function focusPathSet(ids: string[] | undefined, single: string): Set<string> {
   return out
 }
 
+// Build a parent map for an arbitrary node set (does not touch globals)
+function parentsForNodes(nodes: Record<string, FrameworkNode>): Record<string, string> {
+  const p: Record<string, string> = {}
+  Object.values(nodes).forEach(n => n.children.forEach(c => { p[c] = n.id }))
+  return p
+}
+
+// Path from a node up to its root within a specific node set
+function pathToForNodes(nodes: Record<string, FrameworkNode>, parents: Record<string, string>, id: string): string[] {
+  const out: string[] = []
+  let cur: string | undefined = id
+  while (cur) { out.push(cur); cur = parents[cur] }
+  return out.reverse()
+}
+
+// Union of focus paths for a specific node set
+function focusPathSetForNodes(nodes: Record<string, FrameworkNode>, ids: string[], single: string): Set<string> {
+  const parents = parentsForNodes(nodes)
+  const all = (ids && ids.length ? ids : (single ? [single] : []))
+  const set = new Set<string>()
+  all.forEach(id => { if (nodes[id]) pathToForNodes(nodes, parents, id).forEach(p => set.add(p)) })
+  return set
+}
+
 function descendants(id: string): string[] {
   const node = NODES[id]
   if (!node) return []
@@ -1405,13 +1429,20 @@ function buildSubtreeLayout(rootId: string, orient: 'TB' | 'LR' = 'TB') {
 }
 
 function InactiveDrilldownOverlay({
-  hostRef, visibleIds, mode = 'preview',
+  hostRef, visibleIds, mode = 'preview', tree,
 }: {
   hostRef: React.RefObject<HTMLDivElement | null>
   visibleIds?: string[]
   mode?: 'preview' | 'interviewer'
+  tree?: FrameworkTree
 }) {
-  const defaultPath = useMemo(() => Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID)), [])
+  const localNodes = tree?.nodes ?? NODES
+  const defaultPath = useMemo(
+    () => tree
+      ? Array.from(focusPathSetForNodes(tree.nodes, tree.defaultFocusedIds ?? [], tree.defaultFocusedId))
+      : Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID)),
+    [tree]
+  )
   const [active, setActive] = useState<{
     id: string
     rect: { top: number; left: number; right: number; bottom: number; width: number; height: number }
@@ -1428,7 +1459,7 @@ function InactiveDrilldownOverlay({
   const scheduleClose = () => { if (pinnedRef.current) return; cancelClose(); closeTimer.current = setTimeout(() => setActive(null), 160) }
   const closeNow = () => { pinnedRef.current = false; cancelClose(); setActive(null) }
   const isDrillable = (id: string | null | undefined): id is string =>
-    !!id && !!NODES[id] && !defaultPath.includes(id) && (NODES[id].children?.length ?? 0) > 0
+    !!id && !!localNodes[id] && !defaultPath.includes(id) && (localNodes[id].children?.length ?? 0) > 0
   const openEl = (el: Element, pin: boolean) => {
   const id = el.getAttribute('data-node-id')
   if (!isDrillable(id)) return
@@ -1442,6 +1473,7 @@ function InactiveDrilldownOverlay({
   cancelClose()
     const r = el.getBoundingClientRect()
     pinnedRef.current = pin
+    if (tree) loadTree(tree) // re-assert this panel's tree so OverlaySubtree reads the right nodes
     setActive({ id, rect: { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height } })
   }
   useEffect(() => {
@@ -3233,7 +3265,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
             )}
           </div>
         )}
-        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" />
+        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} />
       </div>
 
       {/* Chart — mobile */}
@@ -4024,7 +4056,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                         )}
                       </div>
                       )}
-<InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" />
+<InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} />
 
                       {/* ── Additional framework trees (desktop — inside same column) ── */}
                       {additionalFrameworkTrees?.map((addTree, idx) => (
@@ -4825,7 +4857,7 @@ export function CaseInterviewerMaster({
                             <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
                           )}
                         </div>
-                        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="interviewer" />
+                        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="interviewer" tree={tree} />
                         {/* ── Additional framework trees (interviewer desktop — inside same column) ── */}
                         {additionalFrameworkTrees?.map((addTree, idx) => (
                           <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
