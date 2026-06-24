@@ -126,28 +126,53 @@ type Turn = { offsetMs: number | null; text: string }
 
 /**
  * Parse per-turn timing markers produced by the dual-mic Gemini prompt.
- * Format: `[t=30.5]` at the start of a line (seconds from track start).
- * Returns structured turns (offsetMs null when no marker present) and cleanText.
+ * Markers look like `[t=30.5]` (seconds from track start) and Gemini emits them
+ * INLINE within the running text (not necessarily at the start of a line), often
+ * followed by a redundant role label such as "Candidate:" / "Interviewer:".
+ * This splits the text on every marker occurrence (anywhere in the string),
+ * strips the redundant leading role label from each turn (the role is already
+ * known per track), and returns structured turns plus a clean display string.
+ * offsetMs is null for any leading text that appears before the first marker.
  */
 function parseTurnOffsets(raw: string): { turns: Turn[]; cleanText: string } {
   const turns: Turn[] = []
-  const MARKER_RE = /^\[t=([\d.]+)\]\s*/
+  // Match a marker anywhere in the text, capturing its seconds value.
+  const MARKER_RE = /\[t=([\d.]+)\]/g
+  // Strip a single redundant leading speaker label (e.g. "Interviewer:").
+  const LABEL_RE = /^\s*(?:candidate|interviewer|speaker\s*\d*)\s*:\s*/i
 
-  for (const line of raw.split('\n')) {
-    const match = MARKER_RE.exec(line)
-    if (match) {
-      turns.push({ offsetMs: parseFloat(match[1]) * 1000, text: line.slice(match[0].length).trim() })
-    } else {
-      const trimmed = line.trim()
-      if (trimmed) {
-        if (turns.length > 0) {
-          turns[turns.length - 1].text += ' ' + trimmed
-        } else {
-          turns.push({ offsetMs: null, text: trimmed })
-        }
-      }
+  const clean = (text: string): string => {
+    let out = text.trim()
+    // Gemini may repeat the label multiple times in a row; strip them all.
+    while (LABEL_RE.test(out)) {
+      out = out.replace(LABEL_RE, '').trim()
     }
+    return out
   }
+
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  let pendingOffset: number | null = null
+  while ((match = MARKER_RE.exec(raw)) !== null) {
+    // Text that appeared since the previous marker belongs to the previous turn
+    // (or to a leading null-offset turn if no marker has been seen yet).
+    const segment = raw.slice(lastIndex, match.index)
+    const text = clean(segment)
+    if (text) turns.push({ offsetMs: pendingOffset, text })
+    pendingOffset = parseFloat(match[1]) * 1000
+    lastIndex = match.index + match[0].length
+  }
+  // Trailing text after the final marker.
+  const tail = clean(raw.slice(lastIndex))
+  if (tail) turns.push({ offsetMs: pendingOffset, text: tail })
+
+  // Fallback: if no markers were found at all, keep the whole thing as one
+  // null-offset turn so display still works (merge will interpolate/fallback).
+  if (turns.length === 0) {
+    const whole = clean(raw)
+    if (whole) turns.push({ offsetMs: null, text: whole })
+  }
+
   return { turns, cleanText: turns.map((t) => t.text).join('\n') }
 }
 
