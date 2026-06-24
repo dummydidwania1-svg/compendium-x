@@ -640,7 +640,6 @@ const grouped = useMemo(() => {
   }, [grouped])
 
   useEffect(() => {
-    if (selectionMode) return
     const onScroll = () => setStuck(window.scrollY > 40)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -973,6 +972,10 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
 }
 @media (max-width: 760px) {
   .repo-table-toolbar { top: 106px; }
+}
+[data-mode='select'] .repo-table-toolbar { top: 70px; }
+@media (max-width: 760px) {
+  [data-mode='select'] .repo-table-toolbar { top: 70px; }
 }
 .repo-table-head { background: transparent; }
 
@@ -1381,7 +1384,7 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
             : 'pb-12 pt-[90px]'
         }`}
       >
-        <section data-stuck={stuck ? 'true' : undefined} className="mx-auto w-full max-w-[1320px] pb-16">
+        <section data-stuck={stuck ? 'true' : undefined} data-mode={selectionMode ? 'select' : undefined} className="mx-auto w-full max-w-[1320px] pb-16">
 
           {/* Header */}
           <div className="mb-12 max-w-[760px]">
