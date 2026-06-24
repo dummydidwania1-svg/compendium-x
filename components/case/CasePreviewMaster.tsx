@@ -2979,12 +2979,13 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
   return (
     <div className="pt-10">
       <VisDivider label="Recommendations" />
-      <div className="overflow-x-auto flex justify-center">
-        <table className="border-collapse" style={{ tableLayout: 'auto', width: 'fit-content', maxWidth: '100%' }}>
+      <div className="overflow-x-auto">
+        <table className="border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
 <thead>
   <tr>
     {matrixMode && (
       <th style={{
+        width: '180px',
         padding: '11px 16px',
         fontFamily: "'Work Sans', sans-serif",
         fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
