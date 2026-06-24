@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { X } from 'lucide-react'
@@ -150,6 +150,140 @@ function DifficultyDots({ level }: { level: string | null }) {
     </span>
   )
 }
+
+const ROW_GRID =
+  'grid grid-cols-[40px_minmax(0,1.5fr)_minmax(0,1.05fr)_minmax(0,0.6fr)_minmax(0,1fr)_112px] items-center gap-x-4'
+
+const OPEN_ENDED = (t: string | null) =>
+  ['guesstimate', 'unconventional'].includes((t ?? '').toLowerCase())
+
+const SectionBand = ({ letter, type, isFirst }: { letter: string; type: string; isFirst: boolean }) => (
+  <div className={`repo-section ${ROW_GRID} px-2 sm:px-4 ${isFirst ? 'pt-3' : 'pt-8'} pb-3`}>
+<div className="flex items-center px-2">   {/* ← same px-/justify as the CaseRow number cell */}
+  <span className="font-serif text-[16px] leading-none tracking-tight text-[#3D5A35]/85">
+    {letter}
+  </span>
+</div>
+    <div className="col-span-5 flex items-baseline gap-3 px-2 pr-4">
+      <span className="font-serif text-[15px] italic tracking-wide text-[#453a2a]/80">{type}</span>
+      <span className="repo-section-rule" />
+    </div>
+  </div>
+)
+
+type CaseRowProps = {
+  caseItem: CaseListItem
+  index: number
+  selectionMode: boolean
+  pendingCaseId: string | null
+  prefetchCase: (caseItem: CaseListItem) => void
+  handleSelectClick: (caseItem: CaseListItem) => void
+  handlePreviewClick: (e: React.MouseEvent<HTMLAnchorElement>, caseItem: CaseListItem) => void
+}
+
+const CaseRow = memo(function CaseRow({
+  caseItem,
+  index,
+  selectionMode,
+  pendingCaseId,
+  prefetchCase,
+  handleSelectClick,
+  handlePreviewClick,
+}: CaseRowProps) {
+  return (
+    <div
+      onMouseEnter={() => prefetchCase(caseItem)}
+      onFocus={() => prefetchCase(caseItem)}
+      style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
+      className={`repo-table-row repo-rise ${ROW_GRID} px-2 sm:px-4 ${pendingCaseId === caseItem.id ? 'opacity-50' : ''}`}
+    >
+      <div className="px-2 py-4 text-[11px] tabular-nums text-[#5C4033]/35">
+        {index + 1}
+      </div>
+      <div className="px-2 py-4 pr-4">
+        <div className="repo-title">
+          <span className="text-[13px] font-medium leading-snug tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
+        </div>
+      </div>
+      <div className="px-2 py-4 text-[12px] text-[#5C4033]/65">
+        {OPEN_ENDED(caseItem.case_type) ? '' : (caseItem.industry ?? '')}
+      </div>
+      <div className="px-2 py-4"><DifficultyDots level={caseItem.difficulty} /></div>
+      <div className="px-2 py-4 text-[12px] text-[#5C4033]/65">{caseItem.company ?? ''}</div>
+      <div className="px-2 py-4">
+        {selectionMode ? (
+          <button
+            onClick={() => handleSelectClick(caseItem)}
+            disabled={pendingCaseId !== null}
+            className="repo-preview-button w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {pendingCaseId === caseItem.id ? 'Starting…' : 'Select'}
+          </button>
+        ) : (
+          <Link
+            href={`/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`}
+            onMouseEnter={() => prefetchCase(caseItem)}
+            onClick={(e) => handlePreviewClick(e, caseItem)}
+            className="repo-preview-button block w-full rounded-full px-3 py-2 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
+          >
+            Preview
+          </Link>
+        )}
+      </div>
+    </div>
+  )
+})
+
+type CaseCardProps = CaseRowProps
+
+const CaseCard = memo(function CaseCard({
+  caseItem,
+  index,
+  selectionMode,
+  pendingCaseId,
+  prefetchCase,
+  handleSelectClick,
+  handlePreviewClick,
+}: CaseCardProps) {
+  return (
+    <div
+      onMouseEnter={() => prefetchCase(caseItem)}
+      onFocus={() => prefetchCase(caseItem)}
+      style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
+      className={`repo-mobile-card repo-rise px-4 py-4 space-y-2 ${pendingCaseId === caseItem.id ? 'opacity-50' : ''}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[11px] tabular-nums text-[#5C4033]/35">{index + 1}</span>
+          <span className="text-[13px] font-medium tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
+        </div>
+        <DifficultyDots level={caseItem.difficulty} />
+      </div>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#5C4033]/65">
+        {!OPEN_ENDED(caseItem.case_type) && caseItem.industry ? <span>{caseItem.industry}</span> : null}
+        {caseItem.company ? <span>· {caseItem.company}</span> : null}
+      </div>
+      {selectionMode ? (
+        <button
+          onClick={() => handleSelectClick(caseItem)}
+          disabled={pendingCaseId !== null}
+          className="repo-preview-button w-full rounded-full px-5 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {pendingCaseId === caseItem.id ? 'Starting…' : 'Select Case'}
+        </button>
+      ) : (
+        <Link
+          href={`/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`}
+          onMouseEnter={() => prefetchCase(caseItem)}
+          onClick={(e) => handlePreviewClick(e, caseItem)}
+          className="repo-preview-button block w-full rounded-full px-5 py-2 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
+        >
+          Preview Case
+        </Link>
+      )}
+    </div>
+  )
+})
 
 const SEARCH_DEMOS = ['bcg easy', 'fmcg revenue', 'market entry', 'guesstimate hard']
 
@@ -659,7 +793,7 @@ const grouped = useMemo(() => {
   // bundle so click → navigation feels closer to instant. We mirror the
   // exact URLs handleSelectCase will router.push to, including the lobby
   // params, so the prefetched route hydrates correctly.
-const prefetchCase = (caseItem: CaseListItem) => {
+const prefetchCase = useCallback((caseItem: CaseListItem) => {
   if (prefetchedCasesRef.current.has(caseItem.id)) return
   prefetchedCasesRef.current.add(caseItem.id)
   const destination =
@@ -667,7 +801,7 @@ const prefetchCase = (caseItem: CaseListItem) => {
       ? `/case/${caseItem.id}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`
       : `/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`
   router.prefetch(destination)
-}
+}, [selectionMode, lobbyId, sessionMode, router])
 
   const handleSelectCase = async (caseId: string, caseTitle?: string) => {
     if (pendingCaseId) return // ignore double-clicks while one is in flight
@@ -720,7 +854,7 @@ const prefetchCase = (caseItem: CaseListItem) => {
     // Same reasoning as above — don't clear; the route change unmounts us.
   }
 
-  const handlePreviewClick = (
+  const handlePreviewClick = useCallback((
     e: React.MouseEvent<HTMLAnchorElement>,
     caseItem: CaseListItem,
   ) => {
@@ -729,9 +863,9 @@ const prefetchCase = (caseItem: CaseListItem) => {
     e.preventDefault()
     setComingSoonBody('Team CCX is putting the finishing touches on this case. Check back shortly.')
     setComingSoonVisible(true)
-  }
+  }, [setComingSoonBody, setComingSoonVisible])
 
-  const handleSelectClick = (caseItem: CaseListItem) => {
+  const handleSelectClick = useCallback((caseItem: CaseListItem) => {
     const slug = caseItem.slug ?? slugifyCase(caseItem.title)
     if (!READY_CASE_SLUGS.has(slug)) {
       setComingSoonBody('Team CCX is putting the finishing touches on this case. Please select a different case.')
@@ -739,113 +873,13 @@ const prefetchCase = (caseItem: CaseListItem) => {
       return
     }
     void handleSelectCase(caseItem.id, caseItem.title)
-  }
+  }, [handleSelectCase, setComingSoonBody, setComingSoonVisible])
 
   const resultsLabel = loading
     ? 'Loading...'
     : `${filteredCases.length} ${filteredCases.length === 1 ? 'case' : 'cases'} available`
 
-const ROW_GRID =
-  'grid grid-cols-[40px_minmax(0,1.5fr)_minmax(0,1.05fr)_minmax(0,0.6fr)_minmax(0,1fr)_112px] items-center gap-x-4'
-
-
-  const OPEN_ENDED = (t: string | null) => ['guesstimate', 'unconventional'].includes((t ?? '').toLowerCase())
-
-const SectionBand = ({ letter, type, isFirst }: { letter: string; type: string; isFirst: boolean }) => (
-  <div className={`repo-section ${ROW_GRID} px-2 sm:px-4 ${isFirst ? 'pt-3' : 'pt-8'} pb-3`}>
-<div className="flex items-center px-2">   {/* ← same px-/justify as the CaseRow number cell */}
-  <span className="font-serif text-[16px] leading-none tracking-tight text-[#3D5A35]/85">
-    {letter}
-  </span>
-</div>
-    <div className="col-span-5 flex items-baseline gap-3 px-2 pr-4">
-      <span className="font-serif text-[15px] italic tracking-wide text-[#453a2a]/80">{type}</span>
-      <span className="repo-section-rule" />
-    </div>
-  </div>
-)
-
-const CaseRow = ({ caseItem, index }: { caseItem: CaseListItem; index: number }) => (
-  <div
-    onMouseEnter={() => prefetchCase(caseItem)}
-    onFocus={() => prefetchCase(caseItem)}
-    style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
-    className={`repo-table-row repo-rise ${ROW_GRID} px-2 sm:px-4 ${pendingCaseId === caseItem.id ? 'opacity-50' : ''}`}
-  >
-    <div className="px-2 py-4 text-[11px] tabular-nums text-[#5C4033]/35">
-      {index + 1}
-    </div>
-    <div className="px-2 py-4 pr-4">
-      <div className="repo-title">
-        <span className="text-[13px] font-medium leading-snug tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
-      </div>
-    </div>
-    <div className="px-2 py-4 text-[12px] text-[#5C4033]/65">
-      {OPEN_ENDED(caseItem.case_type) ? '' : (caseItem.industry ?? '')}
-    </div>
-    <div className="px-2 py-4"><DifficultyDots level={caseItem.difficulty} /></div>
-    <div className="px-2 py-4 text-[12px] text-[#5C4033]/65">{caseItem.company ?? ''}</div>
-    <div className="px-2 py-4">
-  {selectionMode ? (
-    <button
-      onClick={() => handleSelectClick(caseItem)}
-      disabled={pendingCaseId !== null}
-      className="repo-preview-button w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      {pendingCaseId === caseItem.id ? 'Starting…' : 'Select'}
-    </button>
-  ) : (
-    <Link
-      href={`/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`}
-      onMouseEnter={() => prefetchCase(caseItem)}
-      onClick={(e) => handlePreviewClick(e, caseItem)}
-      className="repo-preview-button block w-full rounded-full px-3 py-2 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
-    >
-      Preview
-    </Link>
-  )}
-</div>
-  </div>
-)
-
-const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }) => (
-  <div
-    onMouseEnter={() => prefetchCase(caseItem)}
-    onFocus={() => prefetchCase(caseItem)}
-    style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
-    className={`repo-mobile-card repo-rise px-4 py-4 space-y-2 ${pendingCaseId === caseItem.id ? 'opacity-50' : ''}`}
-  >
-    <div className="flex items-start justify-between gap-3">
-      <div className="flex items-baseline gap-2">
-        <span className="text-[11px] tabular-nums text-[#5C4033]/35">{index + 1}</span>
-<span className="text-[13px] font-medium tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
-      </div>
-      <DifficultyDots level={caseItem.difficulty} />
-    </div>
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#5C4033]/65">
-      {!OPEN_ENDED(caseItem.case_type) && caseItem.industry ? <span>{caseItem.industry}</span> : null}
-      {caseItem.company ? <span>· {caseItem.company}</span> : null}
-    </div>
-{selectionMode ? (
-  <button
-    onClick={() => handleSelectClick(caseItem)}
-    disabled={pendingCaseId !== null}
-    className="repo-preview-button w-full rounded-full px-5 py-2 text-[9px] font-medium uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-60"
-  >
-    {pendingCaseId === caseItem.id ? 'Starting…' : 'Select Case'}
-  </button>
-) : (
-  <Link
-    href={`/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`}
-    onMouseEnter={() => prefetchCase(caseItem)}
-    onClick={(e) => handlePreviewClick(e, caseItem)}
-    className="repo-preview-button block w-full rounded-full px-5 py-2 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
-  >
-    Preview Case
-  </Link>
-)}
-  </div>
-)
+  const cardHandlers = { selectionMode, pendingCaseId, prefetchCase, handleSelectClick, handlePreviewClick }
 
   return (
     <div
@@ -1576,10 +1610,10 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
         className="repo-fw-section"
       >
         <SectionBand letter={g.letter} type={g.type} isFirst={gi === 0} />
-        {g.items.map((caseItem, i) => <CaseRow key={caseItem.id} caseItem={caseItem} index={i} />)}
+        {g.items.map((caseItem, i) => <CaseRow key={caseItem.id} caseItem={caseItem} index={i} {...cardHandlers} />)}
       </div>
     ))
-  : filteredCases.map((caseItem, i) => <CaseRow key={caseItem.id} caseItem={caseItem} index={i} />)}
+  : filteredCases.map((caseItem, i) => <CaseRow key={caseItem.id} caseItem={caseItem} index={i} {...cardHandlers} />)}
 </div>
 
                   {/* Mobile cards */}
@@ -1593,10 +1627,10 @@ const CaseCard = ({ caseItem, index }: { caseItem: CaseListItem; index: number }
         className="repo-fw-section"
       >
         <SectionBand letter={g.letter} type={g.type} isFirst={gi === 0} />
-        {g.items.map((caseItem, i) => <CaseCard key={caseItem.id} caseItem={caseItem} index={i} />)}
+        {g.items.map((caseItem, i) => <CaseCard key={caseItem.id} caseItem={caseItem} index={i} {...cardHandlers} />)}
       </div>
     ))
-  : filteredCases.map((caseItem, i) => <CaseCard key={caseItem.id} caseItem={caseItem} index={i} />)}
+  : filteredCases.map((caseItem, i) => <CaseCard key={caseItem.id} caseItem={caseItem} index={i} {...cardHandlers} />)}
 </div>
 
                   {/* Coming Soon - animated glass strip */}
