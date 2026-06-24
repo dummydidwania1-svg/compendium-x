@@ -132,24 +132,24 @@ const Navbar = ({ currentPage }: NavbarProps) => {
               HOME
             </a>
             <Link
+              href="/repository"
+              style={{ fontFamily: "'Work Sans', sans-serif" }}
+              className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'repository' ? 'active' : ''}`}
+            >
+              REPOSITORY
+            </Link>
+            <Link
               href="/dashboard"
               style={{ fontFamily: "'Work Sans', sans-serif" }}
               className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'dashboard' ? 'active' : ''}`}
             >
               DASHBOARD
             </Link>
-            <Link
-              href="/collaborators"
-              style={{ fontFamily: "'Work Sans', sans-serif" }}
-              className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'collaborators' ? 'active' : ''}`}
-            >
-              ACKNOWLEDGEMENTS
-            </Link>
             <div className="nav-dropdown">
               <span
                 style={{ fontFamily: "'Work Sans', sans-serif" }}
                 className={`nav-link nav-dropdown-trigger text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${
-                  currentPage === 'about' || currentPage === 'about-ccx' ? 'active' : ''
+                  currentPage === 'about' || currentPage === 'about-ccx' || currentPage === 'collaborators' ? 'active' : ''
                 }`}
                 tabIndex={0}
               >
@@ -165,6 +165,11 @@ const Navbar = ({ currentPage }: NavbarProps) => {
                 <Link href="/our-story" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
                   <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
                     The Team
+                  </span>
+                </Link>
+                <Link href="/collaborators" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
+                  <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
+                    Acknowledgements
                   </span>
                 </Link>
               </div>
@@ -230,10 +235,11 @@ const Navbar = ({ currentPage }: NavbarProps) => {
           >
             {[
               { href: '/', label: 'HOME', page: 'home' },
+              { href: '/repository', label: 'REPOSITORY', page: 'repository' },
               { href: '/dashboard', label: 'DASHBOARD', page: 'dashboard' },
-              { href: '/collaborators', label: 'ACKNOWLEDGEMENTS', page: 'collaborators' },
               { href: '/about-ccx', label: 'THE PLATFORM', page: 'about-ccx' },
               { href: '/our-story', label: 'THE TEAM', page: 'about' },
+              { href: '/collaborators', label: 'ACKNOWLEDGEMENTS', page: 'collaborators' },
             ].map(({ href, label, page }) => (
               <Link
                 key={href}

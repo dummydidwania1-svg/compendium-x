@@ -449,15 +449,17 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
 const NAV_LINKS = [
   { label: 'Home', href: '/x' },
   { label: 'Dashboard', href: '/dashboard' },
-  { label: 'About Us', href: '/about' },
+  { label: 'About Us', href: '/our-story' },
 ]
 
 const FOOTER_LINKS = [
-  { label: 'About Us', href: '/about' },
-  { label: 'Privacy Policy', href: '/privacy-policy' },
+  { label: 'Home', href: '/' },
+  { label: 'The Platform', href: '/about-ccx' },
+  { label: 'The Team', href: '/our-story' },
+  { label: 'Acknowledgements', href: '/collaborators' },
   {
     label: 'Contact Us',
-    href: 'mailto:contact@casecompendiumx.in?subject=Compendium%20X%20Privacy%20Request',
+    href: 'mailto:saksham@casecompendiumx.in?subject=Compendium%20X%20Enquiry',
   },
 ]
 
@@ -641,7 +643,7 @@ function Footer() {
               </svg>
             </a>
             <a
-              href="mailto:contact@casecompendiumx.in"
+              href="mailto:saksham@casecompendiumx.in"
               className="transition-all hover:text-white"
               style={{ color: 'rgba(213, 196, 177, 0.7)' }}
               aria-label="Email us"
