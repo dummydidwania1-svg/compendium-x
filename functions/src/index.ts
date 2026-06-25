@@ -50,7 +50,11 @@ const GEMINI_MODEL = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-2.5-flash'
 const ELEVENLABS_API_KEY = defineSecret('ELEVENLABS_API_KEY')
 const ELEVENLABS_MODEL = process.env.ELEVENLABS_MODEL || 'scribe_v2'
 const ELEVEN_TURN_GAP_MS = Number(process.env.ELEVEN_TURN_GAP_MS || 1500)
-const TRANSCRIBE_PROVIDER = process.env.TRANSCRIBE_PROVIDER || 'gemini'
+// Default is now 'elevenlabs' (verified live on dual-mic sessions). Override
+// back to Gemini at any time by setting TRANSCRIBE_PROVIDER=gemini in
+// functions/.env and redeploying. Per-track auto-fallback to Gemini on any
+// ElevenLabs error remains in place regardless of this default.
+const TRANSCRIBE_PROVIDER = process.env.TRANSCRIBE_PROVIDER || 'elevenlabs'
 const ELEVENLABS_STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text'
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com'
