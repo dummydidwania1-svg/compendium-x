@@ -28,13 +28,21 @@
  */
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore'
+import { getStorage } from 'firebase-admin/storage'
 import { onDocumentWritten } from 'firebase-functions/v2/firestore'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { defineSecret } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/v2'
+import { execFile } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
+import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { promisify } from 'node:util'
 
 if (getApps().length === 0) initializeApp()
 const db = getFirestore()
+const execFileAsync = promisify(execFile)
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY')
 const GEMINI_MODEL = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-2.5-flash'
@@ -56,6 +64,12 @@ const ELEVEN_TURN_GAP_MS = Number(process.env.ELEVEN_TURN_GAP_MS || 1500)
 // ElevenLabs error remains in place regardless of this default.
 const TRANSCRIBE_PROVIDER = process.env.TRANSCRIBE_PROVIDER || 'elevenlabs'
 const ELEVENLABS_STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text'
+
+// Server-side audio merge (dual-mic): time-align both mic recordings by their
+// startOffsetMs and mix into one mono file written to Storage as mergedAudioUrl.
+// Best-effort: any failure is logged and never blocks the transcript merge.
+// Disable by setting MERGE_AUDIO=off.
+const MERGE_AUDIO_ENABLED = (process.env.MERGE_AUDIO || 'on') !== 'off'
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com'
 const FILE_READY_ATTEMPTS = 90
@@ -779,6 +793,110 @@ function mergeTranscriptTracks(
 }
 
 /* -------------------------------------------------------------------------- */
+/* mergeSessionAudio — time-aligned mono mix of both mic tracks (best-effort) */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Download both mic recordings, delay each by its startOffsetMs so the two
+ * voices line up exactly like the real conversation (the same offsets the
+ * transcript merge uses), mix into one mono Opus/WebM, upload to Storage, and
+ * return a token-based download URL. Returns null if anything is missing.
+ *
+ * ffmpeg recipe (proven on real sessions):
+ *   [0:a]aresample=async=1,adelay=Cms:all=1[a];
+ *   [1:a]aresample=async=1,adelay=Ims:all=1[b];
+ *   [a][b]amix=inputs=2:normalize=0:dropout_transition=0[mix];
+ *   [mix]alimiter=limit=0.95[out]
+ *
+ * This is best-effort: callers must wrap it so a failure never blocks the
+ * transcript merge.
+ */
+async function mergeSessionAudio(
+  sessionId: string,
+  candidate: { audioUrl?: string; startOffsetMs?: number } | null,
+  interviewer: { audioUrl?: string; startOffsetMs?: number } | null,
+): Promise<string | null> {
+  if (!candidate?.audioUrl || !interviewer?.audioUrl) return null
+
+  // ffmpeg-static exports the absolute path to a bundled ffmpeg binary.
+  const ffmpegMod = (await import('ffmpeg-static')) as unknown as { default: string | null }
+  const ffmpegPath = ffmpegMod.default
+  if (!ffmpegPath) {
+    logger.warn('audio_merge_skipped_no_ffmpeg', { sessionId })
+    return null
+  }
+
+  const cDelay = Math.max(0, Math.round(candidate.startOffsetMs ?? 0))
+  const iDelay = Math.max(0, Math.round(interviewer.startOffsetMs ?? 0))
+
+  const workDir = await mkdtemp(join(tmpdir(), `merge-${sessionId}-`))
+  const cPath = join(workDir, 'candidate.webm')
+  const iPath = join(workDir, 'interviewer.webm')
+  const outPath = join(workDir, 'merged.webm')
+
+  try {
+    const [cRes, iRes] = await Promise.all([fetch(candidate.audioUrl), fetch(interviewer.audioUrl)])
+    if (!cRes.ok || !iRes.ok) {
+      logger.warn('audio_merge_download_failed', {
+        sessionId,
+        candidateStatus: cRes.status,
+        interviewerStatus: iRes.status,
+      })
+      return null
+    }
+    await Promise.all([
+      writeFile(cPath, Buffer.from(await cRes.arrayBuffer())),
+      writeFile(iPath, Buffer.from(await iRes.arrayBuffer())),
+    ])
+
+    const filter =
+      `[0:a]aresample=async=1,adelay=${cDelay}:all=1[a];` +
+      `[1:a]aresample=async=1,adelay=${iDelay}:all=1[b];` +
+      `[a][b]amix=inputs=2:normalize=0:dropout_transition=0[mix];` +
+      `[mix]alimiter=limit=0.95[out]`
+
+    await execFileAsync(
+      ffmpegPath,
+      [
+        '-y',
+        '-fflags', '+genpts', '-i', cPath,
+        '-fflags', '+genpts', '-i', iPath,
+        '-filter_complex', filter,
+        '-map', '[out]',
+        '-ac', '1',
+        '-c:a', 'libopus',
+        '-b:a', '64k',
+        outPath,
+      ],
+      { maxBuffer: 1024 * 1024 * 64 },
+    )
+
+    const merged = await readFile(outPath)
+
+    // Upload to a server-controlled path and mint a Firebase download token so
+    // the URL works in the existing <audio> player exactly like per-track URLs.
+    const bucket = getStorage().bucket()
+    const objectPath = `merged-audio/${sessionId}/merged.webm`
+    const token = randomUUID()
+    const file = bucket.file(objectPath)
+    await file.save(merged, {
+      resumable: false,
+      contentType: 'audio/webm',
+      metadata: { metadata: { firebaseStorageDownloadTokens: token } },
+    })
+
+    const mergedAudioUrl =
+      `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
+      `${encodeURIComponent(objectPath)}?alt=media&token=${token}`
+
+    logger.info('audio_merge_completed', { sessionId, cDelay, iDelay, bytes: merged.length })
+    return mergedAudioUrl
+  } finally {
+    await rm(workDir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* evaluateAndMerge — shared merge decision (FIX 1a)                         */
 /* -------------------------------------------------------------------------- */
 
@@ -919,6 +1037,33 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
       hasCandidateTrack: candidateCompleted,
       hasInterviewerTrack,
     })
+
+    // Best-effort time-aligned audio merge. Runs only when BOTH mic tracks have
+    // audio. Wrapped in its own try/catch so any failure (ffmpeg, download,
+    // upload) is logged and NEVER affects the transcript merge above.
+    if (
+      MERGE_AUDIO_ENABLED &&
+      candidateData?.audioUrl &&
+      interviewerData?.audioUrl &&
+      !sessionData.mergedAudioUrl
+    ) {
+      try {
+        const mergedAudioUrl = await mergeSessionAudio(
+          sessionId,
+          { audioUrl: candidateData.audioUrl, startOffsetMs: candidateData.startOffsetMs },
+          { audioUrl: interviewerData.audioUrl, startOffsetMs: interviewerData.startOffsetMs },
+        )
+        if (mergedAudioUrl) {
+          await sessionRef.set(
+            { mergedAudioUrl, mergedAudioCompletedAt: FieldValue.serverTimestamp() },
+            { merge: true },
+          )
+        }
+      } catch (audioErr) {
+        const m = audioErr instanceof Error ? audioErr.message : 'Unknown audio merge error.'
+        logger.warn('audio_merge_failed', { sessionId, message: m })
+      }
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown merge error.'
     logger.error('merge_failed', { sessionId, message })
@@ -1085,8 +1230,10 @@ export const mergeTranscripts = onDocumentWritten(
   {
     document: 'sessions/{sessionId}/recordings/{role}',
     region: 'us-central1',
-    timeoutSeconds: 120,
-    memory: '256MiB',
+    // Raised from 120s/256MiB: evaluateAndMerge now runs a best-effort ffmpeg
+    // audio merge that downloads both webm tracks and re-encodes to opus.
+    timeoutSeconds: 300,
+    memory: '1GiB',
     secrets: [],
     retry: false,
   },
@@ -1235,8 +1382,10 @@ export const finalizePendingMerges = onSchedule(
   {
     schedule: 'every 30 minutes',
     region: 'us-central1',
-    timeoutSeconds: 120,
-    memory: '256MiB',
+    // Raised from 120s/256MiB: this sweep calls evaluateAndMerge, which now runs
+    // a best-effort ffmpeg audio merge (download + opus re-encode) per session.
+    timeoutSeconds: 300,
+    memory: '1GiB',
   },
   async () => {
     const snapshot = await db

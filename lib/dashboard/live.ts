@@ -37,6 +37,7 @@ export type DashboardCaseEntry = {
   transcriptError: string | null
   transcriptReason: string | null
   audioUrl: string | null
+  mergedAudioUrl: string | null
   workspaceImageUrls: string[]
   hasTranscript: boolean
   hasPDF: boolean
@@ -62,6 +63,7 @@ export type DashboardSessionMeta = {
   transcriptError: string | null
   transcriptReason: string | null
   audioUrl: string | null
+  mergedAudioUrl: string | null
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
@@ -162,6 +164,9 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     // Local sessions: embedded recording.audioUrl
     // Remote sessions: denormalized candidateAudioUrl written by the recording route
     audioUrl: asString(source.audioUrl) ?? asString(value?.candidateAudioUrl),
+    // Server-side time-aligned combined audio (both mics), written to the doc root
+    // by the Cloud Function. Preferred over a single mic track when present.
+    mergedAudioUrl: asString(value?.mergedAudioUrl),
   }
 }
 
@@ -201,11 +206,12 @@ export function mapDashboardEntry(
     transcriptError: sessionMeta?.transcriptError ?? null,
     transcriptReason: sessionMeta?.transcriptReason ?? null,
     audioUrl: sessionMeta?.audioUrl ?? null,
+    mergedAudioUrl: sessionMeta?.mergedAudioUrl ?? null,
     workspaceImageUrls,
     hasTranscript: Boolean(transcript || transcriptPreview),
     hasPDF: false,
     hasSnapshot: workspaceImageUrls.length > 0,
-    hasAudio: Boolean(sessionMeta?.audioUrl),
+    hasAudio: Boolean(sessionMeta?.mergedAudioUrl || sessionMeta?.audioUrl),
     isUnrated: record.isUnrated,
   }
 }
