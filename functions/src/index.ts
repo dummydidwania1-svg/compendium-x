@@ -39,6 +39,20 @@ const db = getFirestore()
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY')
 const GEMINI_MODEL = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-2.5-flash'
 
+// --- ElevenLabs Scribe (ASR) transcription, for dual-mic tracks --------------
+// Gemini *generates* [t=] timestamps as LLM tokens (unreliable / non-monotonic /
+// compressed). ElevenLabs Scribe is an ASR model that *measures* each word's
+// start/end from the audio waveform, so offsets are monotonic and span the full
+// take by construction. We use it as the timestamp source for subcollection
+// (dual-mic) tracks when TRANSCRIBE_PROVIDER === 'elevenlabs'. Default is
+// 'gemini' so simply deploying this code changes nothing until the flag flips.
+// On any ElevenLabs error we fall back to the existing Gemini path per-track.
+const ELEVENLABS_API_KEY = defineSecret('ELEVENLABS_API_KEY')
+const ELEVENLABS_MODEL = process.env.ELEVENLABS_MODEL || 'scribe_v2'
+const ELEVEN_TURN_GAP_MS = Number(process.env.ELEVEN_TURN_GAP_MS || 1500)
+const TRANSCRIBE_PROVIDER = process.env.TRANSCRIBE_PROVIDER || 'gemini'
+const ELEVENLABS_STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text'
+
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com'
 const FILE_READY_ATTEMPTS = 90
 const FILE_READY_WAIT_MS = 2000
@@ -176,6 +190,65 @@ function parseTurnOffsets(raw: string): { turns: Turn[]; cleanText: string } {
   return { turns, cleanText: turns.map((t) => t.text).join('\n') }
 }
 
+// One word as returned by ElevenLabs Scribe.
+type ElevenWord = { text: string; start: number; end: number; type: string }
+
+// Call ElevenLabs Scribe with raw audio bytes and return its words[] array.
+// Each word carries a waveform-measured start/end (seconds). Retries on 429/5xx
+// with the same backoff schedule as the Gemini generation loop.
+async function elevenLabsWords(
+  audioBytes: ArrayBuffer,
+  mimeType: string,
+  apiKey: string,
+): Promise<ElevenWord[]> {
+  let lastError = ''
+  for (let attempt = 1; attempt <= GENERATION_MAX_ATTEMPTS; attempt += 1) {
+    const form = new FormData()
+    form.append('model_id', ELEVENLABS_MODEL)
+    form.append('timestamps_granularity', 'word')
+    form.append(
+      'file',
+      new Blob([audioBytes], { type: mimeType || 'audio/webm' }),
+      'audio.webm',
+    )
+    const response = await fetch(ELEVENLABS_STT_URL, {
+      method: 'POST',
+      headers: { 'xi-api-key': apiKey },
+      body: form,
+    })
+    if (response.ok) {
+      const payload = (await response.json().catch(() => null)) as { words?: ElevenWord[] } | null
+      return payload?.words ?? []
+    }
+    lastError = `ElevenLabs HTTP ${response.status}: ${(await response.text().catch(() => '')).slice(0, 300)}`
+    const retriable = response.status >= 500 || response.status === 429
+    if (!retriable || attempt === GENERATION_MAX_ATTEMPTS) break
+    await sleep(500 * 3 ** (attempt - 1))
+  }
+  throw new Error(lastError || 'ElevenLabs request failed.')
+}
+
+// Group Scribe words into Turn[] {offsetMs,text}. A new turn starts after a
+// silence gap of >= gapMs between the previous word's end and the next word's
+// start. offsetMs = the first word's measured start (ms from track start).
+function elevenWordsToTurns(words: ElevenWord[], gapMs: number = ELEVEN_TURN_GAP_MS): Turn[] {
+  const real = words.filter((w) => w.type === 'word' && typeof w.start === 'number')
+  const grouped: Array<{ offsetMs: number; text: string }> = []
+  let current: { offsetMs: number; text: string } | null = null
+  let prevEndMs: number | null = null
+  for (const word of real) {
+    const startMs = Math.round(word.start * 1000)
+    if (current === null || (prevEndMs !== null && startMs - prevEndMs >= gapMs)) {
+      current = { offsetMs: startMs, text: word.text }
+      grouped.push(current)
+    } else {
+      current.text += (word.text.startsWith("'") ? '' : ' ') + word.text
+    }
+    prevEndMs = Math.round(word.end * 1000)
+  }
+  return grouped.map((t) => ({ offsetMs: t.offsetMs, text: t.text.trim() }))
+}
+
 async function waitForFileReady(fileName: string, apiKey: string): Promise<GeminiFile> {
   const endpoint = `${GEMINI_API_BASE}/v1beta/${fileName}?key=${encodeURIComponent(apiKey)}`
   for (let attempt = 0; attempt < FILE_READY_ATTEMPTS; attempt += 1) {
@@ -230,8 +303,13 @@ async function runTranscription(args: {
   requestedMimeType: string
   storagePath: string
   apiKey: string
+  elevenApiKey?: string
 }): Promise<void> {
-  const { target, sessionId, audioUrl, requestedMimeType, storagePath, apiKey } = args
+  const { target, sessionId, audioUrl, requestedMimeType, storagePath, apiKey, elevenApiKey } = args
+  // Tracks which provider actually produced the transcript, so writeSuccess can
+  // record the right transcriptModel. Defaults to Gemini; set true only when the
+  // ElevenLabs path succeeds for a dual-mic track.
+  let usedEleven = false
 
   const markProcessing = async () => {
     if (target.kind === 'embedded') {
@@ -272,7 +350,7 @@ async function runTranscription(args: {
       transcript: fields.transcript,
       transcriptPreview: fields.transcriptPreview,
       transcriptCompletedAt: FieldValue.serverTimestamp(),
-      transcriptModel: GEMINI_MODEL,
+      transcriptModel: usedEleven ? `elevenlabs:${ELEVENLABS_MODEL}` : GEMINI_MODEL,
       transcriptUsage: fields.usageMetadata,
       transcriptMimeType: fields.finalMimeType,
       transcriptByteSize: fields.byteSize,
@@ -386,6 +464,41 @@ async function runTranscription(args: {
       )
     }
 
+    // Shared result holders so both the ElevenLabs and Gemini paths feed the
+    // same writeSuccess() below.
+    let displayTranscript = ''
+    let turns: Turn[] = []
+    let usageMetadata: unknown = null
+    let finalMimeType = sourceMimeType
+
+    // ---- ElevenLabs Scribe path (dual-mic only, flag-gated, auto-fallback) ----
+    // When enabled, we transcribe with Scribe and SKIP the Gemini upload+generate
+    // entirely (cost saver). On any error we log and fall through to Gemini below,
+    // so a bad key / outage degrades gracefully instead of failing the session.
+    if (
+      target.kind === 'subcollection' &&
+      TRANSCRIBE_PROVIDER === 'elevenlabs' &&
+      elevenApiKey
+    ) {
+      try {
+        const words = await elevenLabsWords(audioBytes, sourceMimeType, elevenApiKey)
+        const elevenTurns = elevenWordsToTurns(words)
+        if (elevenTurns.length === 0) throw new Error('ElevenLabs returned no words.')
+        turns = elevenTurns
+        displayTranscript = elevenTurns.map((t) => t.text).join('\n')
+        finalMimeType = sourceMimeType
+        usedEleven = true
+      } catch (elevenErr) {
+        logger.warn('elevenlabs_failed_fallback_gemini', {
+          sessionId,
+          role: target.kind === 'subcollection' ? target.role : undefined,
+          message: elevenErr instanceof Error ? elevenErr.message : String(elevenErr),
+        })
+        // usedEleven stays false -> Gemini block runs below.
+      }
+    }
+
+    if (!usedEleven) {
     const startUploadResponse = await fetch(
       `${GEMINI_API_BASE}/upload/v1beta/files?key=${encodeURIComponent(apiKey)}`,
       {
@@ -475,8 +588,6 @@ async function runTranscription(args: {
     // For subcollection tracks: parse [t=XX.X] timing markers for merge ordering,
     // then strip them from the displayed transcript text.
     // For embedded (legacy) tracks: just strip any stray timestamps.
-    let displayTranscript: string
-    let turns: Turn[] = []
     if (target.kind === 'subcollection') {
       const parsed = parseTurnOffsets(rawTranscript)
       displayTranscript = stripTimestamps(parsed.cleanText)
@@ -485,16 +596,18 @@ async function runTranscription(args: {
       displayTranscript = stripTimestamps(rawTranscript)
     }
 
-    if (!displayTranscript) throw new Error('Gemini returned an empty transcript.')
+    usageMetadata =
+      (generationPayload as { usageMetadata?: unknown } | null)?.usageMetadata ?? null
+    finalMimeType = readyFile.mimeType || sourceMimeType
+    } // end if (!usedEleven) — Gemini path
+
+    // ---- Shared validation + write (both providers) ----
+    if (!displayTranscript) throw new Error('Transcription returned an empty transcript.')
     if (displayTranscript.length < MIN_TRANSCRIPT_CHARS) {
       throw new Error(
         `Transcript was too short to be a real session (${displayTranscript.length} characters). Re-record with at least ~1 minute of speech.`,
       )
     }
-
-    const usageMetadata =
-      (generationPayload as { usageMetadata?: unknown } | null)?.usageMetadata ?? null
-    const finalMimeType = readyFile.mimeType || sourceMimeType
 
     await writeSuccess({
       transcript: displayTranscript,
@@ -510,7 +623,7 @@ async function runTranscription(args: {
       kind: target.kind,
       role: target.kind === 'subcollection' ? target.role : undefined,
       bytes: byteSize,
-      model: GEMINI_MODEL,
+      model: usedEleven ? `elevenlabs:${ELEVENLABS_MODEL}` : GEMINI_MODEL,
       turnCount: turns.length,
     })
   } catch (err) {
@@ -560,13 +673,32 @@ function mergeTranscriptTracks(
   candidate: TrackData | null,
   interviewer: TrackData | null,
 ): string {
+  // Label each line with its known speaker. In dual-mic, the role is 100% certain
+  // (each track is one person), so no diarization guessing is needed.
+  const labelLines = (text: string, role: 'Candidate' | 'Interviewer'): string =>
+    text
+      .split('\n')
+      .filter((l) => l.trim())
+      .map((l) => `${role}: ${l}`)
+      .join('\n')
+
   if (!candidate && !interviewer) return ''
-  if (!candidate) return interviewer!.transcript
-  if (!interviewer) return candidate.transcript
+  if (!candidate) return labelLines(interviewer!.transcript, 'Interviewer')
+  if (!interviewer) return labelLines(candidate.transcript, 'Candidate')
 
-  type PositionedTurn = { globalMs: number; seqKey: number; text: string }
+  type PositionedTurn = {
+    globalMs: number
+    seqKey: number
+    text: string
+    role: 'Candidate' | 'Interviewer'
+  }
 
-  function buildPositioned(track: TrackData, trackStart: number, seqBase: number): PositionedTurn[] {
+  function buildPositioned(
+    track: TrackData,
+    trackStart: number,
+    seqBase: number,
+    role: 'Candidate' | 'Interviewer',
+  ): PositionedTurn[] {
     // Resolve the best available turn representation.
     let turns: Array<{ offsetMs: number | null; text: string }>
 
@@ -622,23 +754,24 @@ function mergeTranscriptTracks(
       // interviewer uses 1_000_000..1_000_000+M-1 (non-overlapping ranges).
       seqKey: seqBase + i,
       text: t.text,
+      role,
     }))
   }
 
   const cStart = Math.max(0, candidate.startOffsetMs ?? 0)
   const iStart = Math.max(0, interviewer.startOffsetMs ?? 0)
 
-  const cTurns = buildPositioned(candidate, cStart, 0)
-  const iTurns = buildPositioned(interviewer, iStart, 1_000_000)
+  const cTurns = buildPositioned(candidate, cStart, 0, 'Candidate')
+  const iTurns = buildPositioned(interviewer, iStart, 1_000_000, 'Interviewer')
 
   if (cTurns.length === 0 && iTurns.length === 0) return ''
-  if (cTurns.length === 0) return interviewer.transcript
-  if (iTurns.length === 0) return candidate.transcript
+  if (cTurns.length === 0) return labelLines(interviewer.transcript, 'Interviewer')
+  if (iTurns.length === 0) return labelLines(candidate.transcript, 'Candidate')
 
   const all = [...cTurns, ...iTurns]
   all.sort((a, b) => (a.globalMs !== b.globalMs ? a.globalMs - b.globalMs : a.seqKey - b.seqKey))
 
-  return all.map((t) => t.text).join('\n')
+  return all.map((t) => `${t.role}: ${t.text}`).join('\n')
 }
 
 /* -------------------------------------------------------------------------- */
@@ -880,7 +1013,7 @@ export const transcribeParticipantRecording = onDocumentWritten(
     region: 'us-central1',
     timeoutSeconds: 540,
     memory: '1GiB',
-    secrets: [GEMINI_API_KEY],
+    secrets: [GEMINI_API_KEY, ELEVENLABS_API_KEY],
     retry: false,
   },
   async (event) => {
@@ -922,6 +1055,8 @@ export const transcribeParticipantRecording = onDocumentWritten(
       requestedMimeType: (afterData?.mimeType as string | undefined) ?? '',
       storagePath,
       apiKey: GEMINI_API_KEY.value(),
+      // ElevenLabs key is read lazily; only used when TRANSCRIBE_PROVIDER === 'elevenlabs'.
+      elevenApiKey: ELEVENLABS_API_KEY.value(),
     })
   },
 )
