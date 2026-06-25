@@ -12,7 +12,7 @@ export default function StructuredData() {
     logo: 'https://www.casecompendiumx.in/logo.png',
     description:
       'AI first consulting case interview platform built by SRCC students. Agents record, transcribe and analyse every mock, surface blind spots and track your goals to the offer. Practice real McKinsey, BCG, Bain, Kearney, L.E.K., Strategy& and Accenture Strategy cases contributed by students across SRCC, Ashoka, St. Stephens, LSR, IIT Delhi and IIT Bombay.',
-    foundingDate: '2019',
+    foundingDate: '2021',
     areaServed: 'IN',
     knowsAbout: [
       'Case interview preparation',
