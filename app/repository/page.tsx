@@ -206,7 +206,7 @@ const CaseRow = memo(function CaseRow({
         <div className="repo-title">
           <span className="inline-flex items-center gap-1.5">
             <span className="text-[13px] font-medium leading-snug tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
-            <NewCaseBadge caseKey={caseItem.slug ?? caseItem.title} size="sm" />
+            <NewCaseBadge caseId={caseItem.numericId} caseKey={caseItem.slug ?? caseItem.title} size="sm" />
           </span>
         </div>
       </div>

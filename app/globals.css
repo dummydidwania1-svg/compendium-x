@@ -782,16 +782,16 @@ opacity: 0.52;
   flex: 0 0 auto;
   vertical-align: middle;
   line-height: 0;
-  filter: drop-shadow(0 1px 2px rgba(59,47,47,0.18));
-  /* gentle breathing so it has life without being loud */
-  animation: ncx-new-pulse 3.6s ease-in-out infinite;
+  filter: drop-shadow(0 1px 3px rgba(59,47,47,0.22));
   transform-origin: center;
+  /* one-time entrance pop, then a gentle glow breath */
+  animation:
+    ncx-new-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    ncx-new-glow 4.2s ease-in-out 0.6s infinite;
+  transition: transform 0.25s cubic-bezier(0.22,1,0.36,1), filter 0.25s ease;
 }
 .ncx-new-badge-svg {
   display: block;
-  /* slow continuous spin of the seal, very subtle */
-  animation: ncx-new-spin 18s linear infinite;
-  transform-origin: 50% 50%;
 }
 .ncx-new-badge-text {
   position: absolute;
@@ -801,47 +801,51 @@ opacity: 0.52;
   justify-content: center;
   font-family: 'Newsreader', serif;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: #FFF8F0;
   text-transform: uppercase;
   pointer-events: none;
-  /* keep the text upright while the seal spins underneath */
-  animation: ncx-new-counterspin 18s linear infinite;
-  transform-origin: 50% 50%;
+  text-shadow: 0 1px 1px rgba(40,28,20,0.45);
+  /* never rotated; stays crisp and upright */
 }
-/* sheen sweep, a faint highlight rotating opposite the text */
-.ncx-new-badge-sheen {
-  transform-origin: 50% 50%;
-  animation: ncx-new-sheen 4.5s ease-in-out infinite;
+/* modern diagonal shine that sweeps across periodically */
+.ncx-new-badge-glint {
+  animation: ncx-new-glint 5.5s ease-in-out 1s infinite;
+  will-change: transform, opacity;
 }
-/* hover: small lift + brighten the gold ring */
+/* hover: subtle lift, brighter gold ring, and an immediate shine pass */
 .ncx-new-badge:hover {
-  filter: drop-shadow(0 3px 6px rgba(59,47,47,0.28));
+  transform: translateY(-1px) scale(1.05);
+  filter: drop-shadow(0 4px 8px rgba(59,47,47,0.30));
 }
 .ncx-new-badge:hover .ncx-new-badge-star {
-  stroke: #D8BE93;
+  stroke: #DCC196;
+}
+.ncx-new-badge:hover .ncx-new-badge-glint {
+  animation: ncx-new-glint 0.9s ease-in-out both;
 }
 
-@keyframes ncx-new-pulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.06); }
+@keyframes ncx-new-pop {
+  0%   { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  60%  { opacity: 1; transform: scale(1.08) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
 }
-@keyframes ncx-new-spin {
-  to { transform: rotate(360deg); }
+@keyframes ncx-new-glow {
+  0%, 100% { filter: drop-shadow(0 1px 3px rgba(59,47,47,0.22)); }
+  50%      { filter: drop-shadow(0 2px 7px rgba(196,168,130,0.45)); }
 }
-@keyframes ncx-new-counterspin {
-  to { transform: rotate(-360deg); }
-}
-@keyframes ncx-new-sheen {
-  0%, 100% { opacity: 0.06; transform: scale(0.9); }
-  50%      { opacity: 0.18; transform: scale(1.05); }
+/* the glint travels left to right across the seal then waits */
+@keyframes ncx-new-glint {
+  0%   { transform: translateX(0) rotate(20deg); opacity: 0; }
+  12%  { opacity: 0.9; }
+  30%  { transform: translateX(52px) rotate(20deg); opacity: 0; }
+  100% { transform: translateX(52px) rotate(20deg); opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ncx-new-badge,
-  .ncx-new-badge-svg,
-  .ncx-new-badge-text,
-  .ncx-new-badge-sheen {
+  .ncx-new-badge-glint {
     animation: none !important;
   }
+  .ncx-new-badge { opacity: 1; transform: none; }
 }

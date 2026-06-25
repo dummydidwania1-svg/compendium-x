@@ -78,7 +78,7 @@ export type RecommendationsTableB = { framework: string; columns: string[]; dime
 export type RecommendationsTable  = RecommendationsTableB
 
 export type CasePreviewMasterProps = {
-  caseData: { title: string; prompt?: string; framework?: string }
+  caseData: { id?: number; title: string; prompt?: string; framework?: string }
   previewMode: boolean
   transcriptDisplayLines: TranscriptDisplayLine[]
   parsedFramework: ParsedFramework
@@ -3787,7 +3787,7 @@ html::-webkit-scrollbar {
   <h1 className="font-light leading-[1.02] tracking-tight text-[#453a2a]"
     style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '3.4rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
     <span className="inline-flex items-center justify-center gap-3 w-full">
-      <NewCaseBadge caseKey={caseData.title} size="md" />
+      <NewCaseBadge caseId={caseData.id} caseKey={caseData.title} size="md" />
       <span>{caseData.title.trim()}</span>
     </span>
   </h1>
@@ -4773,7 +4773,7 @@ export function CaseInterviewerMaster({
               <h1 className="-ml-[2px] font-light leading-[1.02] tracking-tight text-[#453a2a]"
                 style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '4.2rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
                 <span className="inline-flex items-center gap-3">
-                  <NewCaseBadge caseKey={caseData.title} size="md" />
+                  <NewCaseBadge caseId={caseData.id} caseKey={caseData.title} size="md" />
                   <span>{caseData.title.trim()}</span>
                 </span>
               </h1>

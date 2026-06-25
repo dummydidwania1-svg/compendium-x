@@ -35,6 +35,7 @@ class CaseErrorBoundary extends Component<{ children: ReactNode }, { crashed: bo
 }
 
 type CaseDocument = {
+  id?: number
   title: string
   industry?: string
   case_type?: string
