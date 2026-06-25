@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
 import { createPortal } from 'react-dom'
+import NewCaseBadge from '@/components/case/NewCaseBadge'
 
 /* ═══════════════════════════════════════════════════════════
    Types
@@ -3783,9 +3784,12 @@ html::-webkit-scrollbar {
     </Link>
   </div>
 
-  <h1 className="text-center font-light leading-[1.02] tracking-tight text-[#453a2a]"
+  <h1 className="font-light leading-[1.02] tracking-tight text-[#453a2a]"
     style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '3.4rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
-    {caseData.title.trim()}
+    <span className="inline-flex items-center justify-center gap-3 w-full">
+      <NewCaseBadge caseKey={caseData.title} size="md" />
+      <span>{caseData.title.trim()}</span>
+    </span>
   </h1>
 </section>
 
@@ -4768,7 +4772,10 @@ export function CaseInterviewerMaster({
             <section className="relative z-10 pb-4 pt-2">
               <h1 className="-ml-[2px] font-light leading-[1.02] tracking-tight text-[#453a2a]"
                 style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '4.2rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
-                {caseData.title.trim()}
+                <span className="inline-flex items-center gap-3">
+                  <NewCaseBadge caseKey={caseData.title} size="md" />
+                  <span>{caseData.title.trim()}</span>
+                </span>
               </h1>
               {/* Metadata byline */}
               <p className="mt-2 text-[13px] text-[#5C4033]/55 tracking-wide" style={{ animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.18s both' }}>

@@ -19,6 +19,7 @@ import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import casesCatalog from '@/data/cases.json'
+import NewCaseBadge from '@/components/case/NewCaseBadge'
 
 
 function normalizeCaseType(raw: string | null): string | null {
@@ -203,7 +204,10 @@ const CaseRow = memo(function CaseRow({
       </div>
       <div className="px-2 py-4 pr-4">
         <div className="repo-title">
-          <span className="text-[13px] font-medium leading-snug tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="text-[13px] font-medium leading-snug tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
+            <NewCaseBadge caseKey={caseItem.slug ?? caseItem.title} size="sm" />
+          </span>
         </div>
       </div>
       <div className="px-2 py-4 text-[12px] text-[#5C4033]/65">
@@ -254,9 +258,10 @@ const CaseCard = memo(function CaseCard({
       className={`repo-mobile-card repo-rise px-4 py-4 space-y-2 ${pendingCaseId === caseItem.id ? 'opacity-50' : ''}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-center gap-2">
           <span className="text-[11px] tabular-nums text-[#5C4033]/35">{index + 1}</span>
           <span className="text-[13px] font-medium tracking-[0.01em] text-[#3B2F2F]">{caseItem.title}</span>
+          <NewCaseBadge caseKey={caseItem.slug ?? caseItem.title} size="sm" />
         </div>
         <DifficultyDots level={caseItem.difficulty} />
       </div>

@@ -772,3 +772,76 @@ opacity: 0.52;
   .cst-field { opacity: 0.5; }
 }
 
+
+/* ===== Third-edition NEW case badge ===== */
+.ncx-new-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  line-height: 0;
+  filter: drop-shadow(0 1px 2px rgba(59,47,47,0.18));
+  /* gentle breathing so it has life without being loud */
+  animation: ncx-new-pulse 3.6s ease-in-out infinite;
+  transform-origin: center;
+}
+.ncx-new-badge-svg {
+  display: block;
+  /* slow continuous spin of the seal, very subtle */
+  animation: ncx-new-spin 18s linear infinite;
+  transform-origin: 50% 50%;
+}
+.ncx-new-badge-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Newsreader', serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #FFF8F0;
+  text-transform: uppercase;
+  pointer-events: none;
+  /* keep the text upright while the seal spins underneath */
+  animation: ncx-new-counterspin 18s linear infinite;
+  transform-origin: 50% 50%;
+}
+/* sheen sweep, a faint highlight rotating opposite the text */
+.ncx-new-badge-sheen {
+  transform-origin: 50% 50%;
+  animation: ncx-new-sheen 4.5s ease-in-out infinite;
+}
+/* hover: small lift + brighten the gold ring */
+.ncx-new-badge:hover {
+  filter: drop-shadow(0 3px 6px rgba(59,47,47,0.28));
+}
+.ncx-new-badge:hover .ncx-new-badge-star {
+  stroke: #D8BE93;
+}
+
+@keyframes ncx-new-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+@keyframes ncx-new-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes ncx-new-counterspin {
+  to { transform: rotate(-360deg); }
+}
+@keyframes ncx-new-sheen {
+  0%, 100% { opacity: 0.06; transform: scale(0.9); }
+  50%      { opacity: 0.18; transform: scale(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ncx-new-badge,
+  .ncx-new-badge-svg,
+  .ncx-new-badge-text,
+  .ncx-new-badge-sheen {
+    animation: none !important;
+  }
+}
