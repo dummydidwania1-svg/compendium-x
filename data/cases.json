@@ -6,7 +6,6 @@
     "industry": "BFSI",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "BCG",
     "round": "Partner",
     "prompt": "Your client is a commercial bank that has faced a 20% decline in revenues. You need to analyse why this is happening and recommend solutions accordingly.",
@@ -202,7 +201,6 @@
     "industry": "Oil and Gas",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "Bain & Company",
     "round": "Manager",
     "prompt": "Your client is XYZ Energy. They are concerned about declining profits and would like your help in diagnosing the problem.",
@@ -378,7 +376,6 @@
     "industry": "Food & Beverage",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "BCG",
     "round": "Partner",
     "prompt": "Hey. Your client owns a restaurant facing a 10% decline in profits since the last 2 months. You have been hired to analyse why and suggest recommendations to turn around the situation.",
@@ -603,7 +600,6 @@
     "industry": "FMCG",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "Bain & Company",
     "round": "Partner",
     "prompt": "Hey. Let's start with a case. Your client is Fringles, a famous Soya chip manufacturer in India. Fringles has been reporting declining profits for the last one year. They have approached you to diagnose the problem immediately.",
@@ -822,8 +818,7 @@
     "industry": "Retail",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Revenue",
-    "company": "Authors",
+    "company": "By the Authors",
     "round": "N/A",
     "prompt": "Your client is the owner of one of the Miniso stores in Delhi and the store has been facing declining product sales. You need to analyse why this is happening and also recommend solutions accordingly.",
     "frameworkTree": {
@@ -1063,7 +1058,6 @@
     "industry": "FMCG",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "L.E.K. Consulting",
     "round": "Buddy",
     "prompt": "Hey! Your client is a toffee manufacturer and they have recently seen a decline in their profits. You have been hired by them to figure out the reasons for such a decline and give recommendations on the same.",
@@ -1276,7 +1270,6 @@
     "industry": "Retail",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "BCG",
     "round": "Manager",
     "prompt": "I have an interesting case for you. Your client is the owner of a mall in South Delhi. Over the last month, the mall has made higher than normal profits and is concerned about the same. He wants you to find out why this has been happening.",
@@ -1511,7 +1504,6 @@
     "industry": "Healthcare",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "Kearney",
     "round": "Buddy",
     "prompt": "Let's start with a case. Your client is ABC Hospital in Kolkata. Over the last two months, they have been facing a decline in revenues and would like your help in figuring out why this may be happening.",
@@ -1754,7 +1746,6 @@
     "industry": "Cosmetics",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "Kearney",
     "round": "Buddy",
     "prompt": "Let's begin with the case. Zendaya is a cosmetics manufacturer. The Board of Directors (BOD) is worried about the company's declining sales. It wants you to diagnose the problem and come up with a turnaround strategy. How will you go about it?",
@@ -2026,7 +2017,6 @@
     "industry": "BFSI",
     "difficulty": "Hard",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "BCG",
     "round": "Principal",
     "prompt": "Hey! Your client is a bank in the Middle East that has been facing a decline in its market share. You have been hired to consult them on this problem.",
@@ -2246,7 +2236,6 @@
     "industry": "Retail",
     "difficulty": "Hard",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "McKinsey & Co.",
     "round": "Partner",
     "prompt": "Your client owns a chain of departmental stores and has been facing a problem of declining revenue. You have been hired to analyse the situation and recommend solutions accordingly.",
@@ -2593,7 +2582,6 @@
     "industry": "Automobile",
     "difficulty": "Hard",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "Kearney",
     "round": "Buddy",
     "prompt": "Hey. Your client is an Automobile manufacturer that has been facing a decline in profits over the last 2 years. They want you to analyse why this is happening and then give solutions.",
@@ -2752,8 +2740,7 @@
     "industry": "FMCG",
     "difficulty": "Hard",
     "case_type": "Profitability",
-    "subtype": "Revenue",
-    "company": "Authors",
+    "company": "By the Authors",
     "round": "N/A",
     "prompt": "Hey. Your client is Mr. Wonka, CEO of Wonka Industries. Wonka Industries has been facing declining profits in the last 2 months. He has hired you, a famous connoisseur of candy, to solve his woes.",
     "frameworkTree": {
@@ -3037,7 +3024,6 @@
     "industry": "Airlines",
     "difficulty": "Hard",
     "case_type": "Profitability",
-    "subtype": "Revenue",
     "company": "McKinsey & Co.",
     "round": "Buddy",
     "prompt": "Your client is the Airport Authority of India. They are concerned about declining revenues in the Bangalore Airport. They would like you to analyse why this may be happening and give suitable suggestions.",
@@ -3301,7 +3287,6 @@
     "industry": "Media",
     "difficulty": "Easy",
     "case_type": "Profitability",
-    "subtype": "Cost",
     "company": "Bain & Company",
     "round": "Partner",
     "prompt": "Hey, let's begin with a quick case. Your client is a famous newspaper publisher in India. Their cost structure seems to be below par. They have asked you to consult them on the same.",
@@ -3497,7 +3482,6 @@
     "industry": "E-Commerce",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Cost",
     "company": "Accenture Strategy",
     "round": "Partner",
     "prompt": "Your client is an e-commerce player who has been facing the problem of increasing costs. You need to analyse why this is happening and recommend solutions accordingly.",
@@ -3688,7 +3672,6 @@
     "industry": "FMCG",
     "difficulty": "Medium",
     "case_type": "Profitability",
-    "subtype": "Cost",
     "company": "Kearney",
     "round": "Manager",
     "prompt": "Your client is the CEO of a major juice manufacturer. She is concerned about the company's profitability compared to other competitors'. She would like your assistance in identifying the reason behind this.",
@@ -3920,7 +3903,6 @@
     "industry": "Steel",
     "difficulty": "Hard",
     "case_type": "Profitability",
-    "subtype": "Cost",
     "company": "Bain & Company",
     "round": "Manager",
     "prompt": "Hey. Your client is a steel manufacturing company. You are required to diagnose why the company's costs have increased by 4% in the last 6 months.",
@@ -4132,7 +4114,6 @@
     "industry": "FMCG",
     "difficulty": "Hard",
     "case_type": "Profitability",
-    "subtype": "Cost",
     "company": "BCG",
     "round": "Manager",
     "prompt": "Hey. Your client is a flavoured milk manufacturer, similar to Amul. In the last 1 year, they have been seeing unusually high profits. You are required to find out why this is happening.",
@@ -4373,7 +4354,6 @@
     "industry": "Airlines",
     "difficulty": "Hard",
     "case_type": "Profitability",
-    "subtype": "Cost",
     "company": "McKinsey & Co.",
     "round": "Buddy",
     "prompt": "The CEO of a low-cost airline operator has approached you. He is worried about the company's declining profits and would like you to diagnose the problem and give suitable recommendations.",
@@ -4835,7 +4815,6 @@
     "industry": "Retail",
     "difficulty": "Hard",
     "case_type": "Profitability",
-    "subtype": "Cost",
     "company": "McKinsey & Co.",
     "round": "Partner",
     "prompt": "Hey, let's begin with a quick case. Your client is Donatella Versace, owner of a famous retail apparel store in India. Due to Covid-19, profits of the store have decreased. To increase profits, she has decided to open a makeup outlet inside the store. She has approached you to decide whether this is a wise decision.",
@@ -4843,7 +4822,7 @@
       "nodes": {
         "wise-decision": {
           "id": "wise-decision",
-          "label": "Is Opening a Makeup Outlet a Wise Decision?",
+          "label": "Open Makeup Outlet?",
           "tone": "root",
           "children": [
             "additional-costs",
@@ -7674,11 +7653,11 @@
           ]
         ],
         "columnWidths": [
-          "18%",
-          "23%",
-          "11%",
-          "11%",
-          "12%",
+          "20%",
+          "21%",
+          "10%",
+          "10%",
+          "14%",
           "25%"
         ]
       },
@@ -7893,11 +7872,20 @@
     ],
     "framework": "Candidate: Sure. I want to begin by understanding our client better. Where are we currently operating and what is our objective out of this new venture?\nInterviewer: Our client currently has Panjim-Vasco Ferry, Port Blair-Havelock Ferry and Jorhat-Majuli Ferry. We would like you to assess the financial attractiveness of the Chennai-Port Blair Ferry in terms of expected revenue from Indian tourists. Assume that all ferry services to Port Blair depart from Chennai.\nCandidate: Interesting. So, our client has experience in this business. I would like to now understand the proposed ferry and the market better. What kind of ferry do we have in mind: Luxury/Economy? How long is the journey? Do we have competitors on this route?\nInterviewer: Our cruise will be luxurious. The journey is about 60 hours long and we have a few players in the market.\nCandidate: Understood. To analyse the revenue, I would like to calculate the market size and market share with the following steps:\n1) Estimate the number of people who travel\n2) Estimate the number of people who would go to Port Blair\n3) Estimate the number of people who would travel by ferry\n4) Estimate the share of the above that would choose our service\n_(Step 1: Estimate the number of people who travel for recreational purposes at least once in two years)_\nA good place to start is India's population. We can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. Next, we can slice the urban population according to different income levels:\n[VIS:0]\nCan we move forward with the above estimation on the basis of income segmentation?\nInterviewer: Sure.\nCandidate: Total number of families that go on a trip every year = 35 million\nAssumption: Average number of trips per year per family = 1\nTotal number of trips in a year = 35 million\nWe can say about 10% of these would be international\n~ Total number of domestic trips = 31.5 million ≈ 32 million (approx.)\n_(Step 2: Estimate the number of families that would go to Port Blair)_\nWe can assume that there are about 20 popular tourist destinations in India with an equal probability of being chosen. Hence, number of family trips made to Port Blair = 32 million/20 = 1.6 million\n_(Step 3: Estimate the number of families that would travel by ferry)_\nHere, I would like to know the price of ferry tickets and the price of an airline ticket.\nInterviewer: Sure, ferry prices are Rs. 8000 per ticket. We as well as our competitors are charging the same price. An airline ticket costs around Rs. 4000.\nCandidate: Thank you. We can further analyse this by segmenting families based on the mode of transportation. Since flights are cheaper and faster, most people, especially those belonging to the middle class will opt for this. About 30% would prefer a ferry given the luxurious and leisurely experience.\n[VIS:1]\n_(Step 4: Estimate the share of the above that would choose our service)_\nI would now like to benchmark our cruise with those of our competitors.\nInterviewer: We have a well established brand name unlike our competitors and in addition to that the service that we provide is superior to that of our competitors. Assume we will be able to capture 40% of the market.\nCandidate: ~ Number of families that travel by our cruise = 500,000 * 40% = 200,000 families. Expected revenue = 2,00,000*4* 8,000 = 6,400,000,000 = Rs. 6.4 billion. Keeping the cost in mind, our client can make decisions based on this revenue figure.\nInterviewer: Yes, indeed, thank you for your time."
   },
+
+
+
+
+
+
+
+
+
   {
-    "id": 57,
-    "docId": "case-57",
+    "id": 69,
+    "docId": "case-69",
     "title": "Schindler's Fit",
-    "industry": "Electronics",
+    "industry": "Consumer Durables",
     "difficulty": "Medium",
     "case_type": "Unconventional",
     "company": "BCG",
@@ -8093,8 +8081,8 @@
     "framework": "Candidate: Thank you for the case. Before I dive in, I'd like to ask a few questions to understand the problem statement better.\nInterviewer: Sure, please go ahead.\nCandidate: What is our objective with this branding strategy? Are we trying to maximise revenue, expand reach, or maximise profits?\nInterviewer: We are looking to maximise both revenue and profitability.\nCandidate: Understood. Are there any product differences or core competencies that set the two brands apart?\nInterviewer: For this case, assume that the products sold by both brands are identical.\nCandidate: Got it. In India, brands usually target specific regions or consumer segments. For example, Blinkit has a stronger presence in northern India, while Zepto has greater penetration in western India. Does the merged company show any regional dominance in terms of its customer base?\nInterviewer: Great question. Schindler primarily operates in Tier-1 (T1) cities through outlets such as Vijay Sales, Croma, and Reliance Mart, owing to its premium brand perception. Voltas, on the other hand, operates mainly in Tier-3 (T3) cities.\nCandidate: That distinction is helpful. Are there any financial or time constraints I should keep in mind?\nInterviewer: None.\nCandidate: Perfect. I'll approach this in two parts. First, I'll lay out my initial hypothesis on which of the three models is likely to work best. Then I'll test it by analysing each model on its revenues and branding costs to see which one is most profitable.\nInterviewer: Yes, go ahead.\nCandidate: Let me start with the qualitative evaluation of the three models. Starting with the Air India-Vistara model: here, Air India had a substantially larger market share and brand recognition in India, so it could fully absorb Vistara and continue under its own name. That logic does not hold for us. Schindler is a new brand that has just entered India, and Voltas is left with only a 2% market share. Neither brand is dominant enough to absorb the other, so I would strike off this first model.\nInterviewer: Fair point. Continue.\nCandidate: Next, the Vodafone Idea model, where both names are merged into one. In my opinion this is not the best fit either. Schindler carries a premium perception while Voltas carries a non-premium perception, and the two operate in different markets. If we merge them, it creates confusion in the minds of customers. The upper class will no longer see Schindler as a luxurious product once the Voltas name is attached to it, so the premium positioning of Schindler gets diluted. At the same time, we still won't be able to charge a premium from the middle class because that market is price-sensitive.\nInterviewer: So why does the third option avoid that problem?\nCandidate: Because the third model, the Tata-JLR model, keeps the brands separate under a common parent. The reason Tata and JLR operate separately is that they cater to different market segments. Jaguar and Land Rover serve the rich, while Tata sells cars like the Tiago or Nano that are tailor-made for the lower and middle classes. We have a very similar situation with Schindler and Voltas, where one is premium and T1-focused and the other is mass-market and T3-focused. So operating separately under the same parent company is the best strategy here.\nInterviewer: I really appreciate your approach. Now move on to the profitability analysis for these three cases. For simplicity, consider only branding costs.\nCandidate: Perfect, let me go case by case. In the first model, where Schindler becomes the sole brand and Voltas is discontinued, the revenue potential is limited. The focus would shift entirely to the T1 cities, letting go of all the revenue that could be earned from the T3 cities. The cost would sit in the middle range, since only one brand needs to be marketed, but it has to be marketed effectively because Schindler has only just entered the Indian market.\nIn the second model, the merged brand, revenues would likely be the lowest, because the new company is diluted across both T1 and T3 cities. The middle class would find the new product expensive and might switch to other alternatives in the market, while premium consumers may hesitate to pay a higher price for a brand now associated with a mass-market perception. The cost, on the other hand, would be the highest, because the company would need to invest heavily in repositioning and in resolving the brand confusion in the market.\nIn the third model, where both brands operate separately, revenues would likely be the highest, because both brands play independently in their respective markets. We also avoid keeping all our eggs in one basket. The cost would still be high, since both brands have to be marketed separately, which is the main drawback of this model.\nConsidering both revenue potential and branding costs together, the third model, the Tata-JLR approach where both brands operate independently under a common parent company, is the one most likely to maximise profitability.\nInterviewer: We are thinking on the same lines. Good work on the approach. We can end the case here.\n\nSchindler-Voltas Branding Strategy Framework & Recommendations\nPOST-MERGER BRANDING STRATEGY FOR A SCHINDLER-VOLTAS MERGER\nClarifying Questions: Objective of the branding strategy (revenue, reach, or profit) Product differences and core competencies of each brand Regional or segment dominance of the merged customer base Financial or time constraints\nBrownie Points: Splitting the market by city tier (T1 premium vs T3 mass) Applying a diversification lens, not keeping all eggs in one basket Spotting the premium-dilution risk in the merged-name option\nKeep In Mind: Separate brands only when segments differ Compare each model on revenue vs cost\nRECOMMENDATIONS: Adopt the Tata-JLR model. Operate Schindler and Voltas as separate brands under one common parent company. This protects Schindler's premium positioning in the T1 cities, retains Voltas's reach in the T3 cities, and across both revenue and branding cost is the most profitable of the three options."
   },
   {
-    "id": 58,
-    "docId": "case-58",
+    "id": 70,
+    "docId": "case-70",
     "title": "Power to the People",
     "industry": "Automotive",
     "difficulty": "Hard",
@@ -8313,8 +8301,8 @@
     "framework": "Candidate: Thanks for the case. Before I dive in, I'd like to note a few clarifying questions across three areas: the problem and its objectives, the client context, and a high-level view of the EV battery industry. Starting with the objective, what is the rationale behind this initiative? My hypothesis is that, with the growing EV ecosystem, the government wants batteries produced domestically rather than imported, to promote the Make in India initiative and to capture greater economic value in the long term.\nInterviewer: That's largely the motive, and there's nothing else you need to consider there for now.\nCandidate: Understood. Are there any specific time or budget constraints we should keep in mind?\nInterviewer: There is a budget aspect that will eventually need discussion, but it is not part of this case. On timelines, the government wants to implement this as soon as possible; for simplicity, assume a timeline of around one year.\nCandidate: And on the client context, how does the current landscape look, and how many players exist in this space?\nInterviewer: That won't be very relevant here. I'd like you to focus on the strategy itself and how you would approach it.\nCandidate: Understood. I'd lay out the strategy as a three-step, sequential approach, where each step builds on the previous one and we proceed only if the previous step is viable. First, financial feasibility: whether domestic manufacturing makes economic sense compared to imports. Second, operational feasibility: whether we can realistically set up a domestic, end-to-end value chain. Third, the policy, compliance, and risk ecosystem: whether there are any regulatory or execution risks that could derail the strategy. Does this approach work, or am I missing anything?\nInterviewer: This is a very exhaustive approach and covers everything relevant. Go ahead.\nCandidate: I'll start with financial feasibility. The objective is to check whether the delta from domestic production is positive compared to importing EV batteries. I'd break it into three components: revenue per unit, variable cost per unit, and capital expenditure (CAPEX). If domestic production generates higher long-term value than imports across these components, that justifies moving to the next step. Moving to operational feasibility, I'd map the entire EV battery value chain from start to end to identify bottlenecks, breaking it into three stages: raw material procurement; manufacturing, testing, and technology; and distribution and reverse logistics. After evaluating each stage, we can judge whether the ecosystem can be built domestically in a reliable and scalable manner.\nInterviewer: This looks quite exhaustive. Walk me through what you would cover within the value chain.\nCandidate: Within raw material procurement, I'd look at two sources: domestic mining of the key raw materials required for EV batteries, and recycling, especially chemical recycling, since EV batteries are well suited to circularity and recycled materials can be reused as inputs. Within technology and manufacturing, three parts: research and development, covering in-house research, technology development, and acquisition of the required intellectual property (IP); testing, including both early-stage testing and late-stage quality and safety testing; and production and storage, covering the actual manufacturing of batteries and appropriate storage conditions after production. Within distribution and reverse logistics, last-mile distribution to original equipment manufacturers (OEMs) and any reverse logistics for defective units or end-of-life batteries.\nInterviewer: Very comprehensive. You mentioned CAPEX under financial feasibility. What would you cover there?\nCandidate: I'd look at CAPEX across three categories: human capital costs, physical capital costs, and miscellaneous costs such as insurance, marketing, and other supporting expenditures.\nInterviewer: Focus on physical capital costs. What would you include?\nCandidate: Within physical capital costs, three key components: land and infrastructure costs; plant and machinery costs; and ecosystem enablers' costs, including licensing, IP-related costs, and environmental compliance costs such as waste management and recycling infrastructure.\nInterviewer: This is very comprehensive and covers exactly the strategy I wanted you to focus on. With this, we can close the case.\n\nEV Battery Indigenisation Framework & Recommendations\nSTRATEGY FOR INDIGENISING EV BATTERY MANUFACTURING FOR THE GOVERNMENT OF INDIA\nClarifying Questions: Rationale for indigenization (why the government wants to pursue it) Any time or budget constraints Current client landscape and number of players\nBrownie Points: Sequential, gated approach where each step proceeds only if the previous one is viable Bringing chemical recycling and circularity into raw material procurement Including reverse logistics for defective and end-of-life batteries and environmental compliance under ecosystem enablers\nKeep In Mind: Deliverable is a MECE value chain Keep deeper detail ready for drill-downs\nRECOMMENDATIONS: [FLAG] No recommendation in source material. This was a structuring case; the interviewer closed it after the framework without asking for a final recommendation."
   },
   {
-    "id": 59,
-    "docId": "case-59",
+    "id": 71,
+    "docId": "case-71",
     "title": "Parts and Recreation",
     "industry": "Automotive",
     "difficulty": "Medium",
@@ -8522,20 +8510,20 @@
     "framework": "Interviewer: Let's get started. Our client is an automotive Original Equipment Manufacturer, or OEM. They have approached BCG to build a growth strategy. Please go ahead.\nCandidate: Thank you. Before I structure my approach, I'd like to ask a few clarifying questions. To confirm my understanding, an Original Equipment Manufacturer is a company that produces the actual vehicles along with the parts that go into them. Is that the right way to think about our client?\nInterviewer: That's correct.\nCandidate: I'd also like to know which part of the business we are focusing on. Is it the vehicle manufacturing business as a whole, or one specific division?\nInterviewer: Good question. The client is the spare parts division of an automobile company. That is who has come to us.\nCandidate: Understood. For spare parts, I see two broad ways the business can operate. First, a product channel, where we sell spare parts to retailers who then sell them onward. Second, a service channel, where we fit and service the spare parts ourselves for the customer. Do we run both of these?\nInterviewer: Yes, that's a good observation. We have both a product channel and a service channel.\nCandidate: One more point on the product itself. Can our spare parts be used only in the cars that our own company manufactures, or can they also be fitted in other companies' cars?\nInterviewer: They can only be used on our own cars.\nCandidate: That's helpful. Finally, I'd like to understand the goal. Are we targeting top line or bottom line growth, and what is the target and the time frame?\nInterviewer: We are looking at the top line. The client wants to double its revenue over the next 2 to 3 years.\nCandidate: Got it. To structure this, growth can come from two directions: organic growth and inorganic growth. For a spare parts business, I don't think inorganic growth makes much sense. Since our parts can only be used on our own cars, acquiring another company would add limited value and would take a lot of time to merge and fine tune into our operations. So I'd set inorganic growth aside and focus on organic growth. Does that sound fair?\nInterviewer: Yes, that sounds fair.\nCandidate: For organic growth, I'd break revenue into three levers:\nOrganic Revenue = Number of Cars × Spare Parts per Car × Price per Spare Part\nOne quick check before I go deeper: should we also look at increasing the number of cars sold, since more cars on the road directly increases the demand for spare parts?\nInterviewer: That's a good observation, but the client is only the spare parts division. So let's focus there.\nCandidate: Understood. I'll set the number of cars aside and focus on increasing the number of spare parts sold per car and the price per part. To go deeper, I'd look at our two routes to market separately: the product channel and the service channel.\nInterviewer: Let's start with the service channel.\nCandidate: Sure. In the service channel, customers come to us directly to get their cars serviced, and we fit our own spare parts during that service. I'd split this channel into two routes: a Direct-to-Consumer route, or D2C, where we deal with the end customer, and a Business-to-Business route, or B2B, where we work with other businesses. Let me start with the Direct-to-Consumer route. I'd think about it in two stages: before the customer buys the car, and after they own it. Before the purchase, there are two opportunities. First, mandatory fitments that are built into the car automatically, for example a spare tyre. At the moment of buying the car, an extra 4,000 to 5,000 rupees for these fitments feels small to the customer, so they rarely object. Second, optional add-ons that the customer can choose to include.\nInterviewer: And after the purchase?\nCandidate: After the purchase, I'd offer one free service or one free repair along with the car. Customers usually hesitate to visit the official service centre at first. A free first service brings them in, lets them experience the quality of our work, and makes them far more likely to return to us when a real issue comes up later.\nInterviewer: You keep mentioning a value proposition. What is the biggest pain point that would push a customer towards a local retailer instead of us?\nCandidate: The biggest pain point is price sensitivity. Local retailers are usually cheaper.\nInterviewer: So how would you counter that price sensitivity?\nCandidate: We can't simply undercut the retailers, because we offer a better service and genuine original parts, so our costs are higher. Instead of cutting the price, I'd raise the value proposition. Many customers, especially price sensitive ones, buy their cars on an Equated Monthly Instalment, or EMI. If we can find a way to fold the cost of their servicing and spare parts into their existing EMI, the value proposition improves a lot. For example, if a local retailer charges 5,000 rupees, our service might cost 10,000 rupees. Paid upfront, that gap feels large. But spread across the monthly EMI, it becomes a small increase of perhaps a hundred rupees a month, which makes our higher quality option feel far more affordable.\nInterviewer: Alright. Let's move to the Business-to-Business route within the service channel.\nCandidate: In the Business-to-Business route, the key questions are how we sell to our partners and how we get them to prefer us. I'd set up an incentive and milestone program. We define clear milestones, and partners who reach a certain volume of sales or service earn better terms and advantages. The strongest performers can be recognised as our authorized partners. This works as a win-win. Customers get the trust of seeing an official authorized partner badge, so they are comfortable going there. For the retailer, becoming an authorized partner means more business, because customers of our brand will prefer to come to them. And for us, sales rise as more service and parts flow through this partner network.\nInterviewer: Good. Can you summarise the case for me?\nCandidate: Certainly. Our client is the spare parts division of an automotive OEM that wants to double its revenue in 2 to 3 years. We focused on organic growth and set inorganic growth aside, since our parts only fit our own cars. Within organic growth, we concentrated on selling more spare parts through two channels. In the service channel, on the Direct-to-Consumer side, we capture value before purchase through mandatory fitments and optional add-ons, and after purchase through a free first service that builds trust, supported by EMI bundling to overcome price sensitivity. On the Business-to-Business side, we use a milestone based incentive and authorized partner program to grow sales through our partner network.\nInterviewer: That's a clear summary. We can close the case here.\n\nParts and Recreation Framework & Recommendations\nGROWTH STRATEGY TO DOUBLE REVENUE FOR AN AUTOMOTIVE SPARE PARTS DIVISION\nClarifying Questions: Meaning of OEM Channels in play (product and service) Whether the parts fit other cars Top line or bottom line Target and time frame\nBrownie Points: Defining OEM before proceeding Bundling service cost into the EMI Building a milestone based authorized partner program\nKeep In Mind: Grow parts per car, not volume Raise value instead of cutting price\nRECOMMENDATIONS: [FLAG] No recommendation in source material. This was an open-ended, conversational growth case; the interviewer closed it after the structure and summary without asking for a final recommendation."
   },
   {
-    "id": 60,
-    "docId": "case-60",
+    "id": 72,
+    "docId": "case-72",
     "title": "Dry Hard",
-    "industry": "Appliances",
+    "industry": "Consumer Durables",
     "difficulty": "Easy",
     "case_type": "Profitability",
     "company": "L.E.K. Consulting",
-    "round": "[FLAG]",
+    "round": "Principal",
     "prompt": "Your client is a washing machine manufacturer that has witnessed a steady decline in revenues. Diagnose the problem and give your recommendations.",
     "frameworkTree": {
       "nodes": {
         "decline-root": {
           "id": "decline-root",
-          "label": "Revenue Decline 20%",
+          "label": "Revenue",
           "tone": "root",
           "children": [
             "units",
@@ -8544,7 +8532,7 @@
         },
         "units": {
           "id": "units",
-          "label": "Units Sold (Down)",
+          "label": "Units Sold",
           "tone": "branch",
           "children": [
             "prod-cap",
@@ -8557,46 +8545,25 @@
           "label": "Price Per Unit",
           "tone": "support",
           "children": [
-            "price-out"
           ]
-        },
-        "price-out": {
-          "id": "price-out",
-          "label": "Price Steady",
-          "tone": "leaf",
-          "children": []
         },
         "prod-cap": {
           "id": "prod-cap",
           "label": "Production Capacity",
           "tone": "support",
           "children": [
-            "prod-cap-out"
           ]
-        },
-        "prod-cap-out": {
-          "id": "prod-cap-out",
-          "label": "Capacity Steady",
-          "tone": "leaf",
-          "children": []
         },
         "distribution": {
           "id": "distribution",
           "label": "Distribution",
           "tone": "support",
           "children": [
-            "dist-out"
           ]
-        },
-        "dist-out": {
-          "id": "dist-out",
-          "label": "Distribution Steady",
-          "tone": "leaf",
-          "children": []
         },
         "consumer-pull": {
           "id": "consumer-pull",
-          "label": "Consumer Pull (Driver)",
+          "label": "Consumer Pull",
           "tone": "branch",
           "children": [
             "quality",
@@ -8612,30 +8579,79 @@
             "features",
             "after-sale",
             "maintenance",
-            "water-cycle"
+            "power-req"
           ]
         },
         "features": {
           "id": "features",
-          "label": "Size & Load Type",
+          "label": "Features",
           "tone": "leaf",
-          "children": []
+          "children": [
+            "size",
+            "load"
+          ]
         },
+        "size": {
+          "id": "size",
+          "label": "Drum Size",
+          "tone": "leaf",
+          "children": [
+            "small",
+            "large"
+          ]
+        },
+        "small": {
+          "id": "small",
+          "label": "Small",
+          "tone": "leaf",
+          "children": [
+          ]
+        },   
+        "large": {
+          "id": "large",
+          "label": "Large",
+          "tone": "leaf",
+          "children": [
+          ]
+        },
+        "load": {
+          "id": "load",
+          "label": "Load Type",
+          "tone": "leaf",
+          "children": [
+            "top-load",
+            "front-load"
+          ]
+        },
+        "top-load": {
+          "id": "top-load",
+          "label": "Top Load",
+          "tone": "leaf",
+          "children": [
+          ]
+        },                 
+        "front-load": {
+          "id": "front-load",
+          "label": "Front Load",
+          "tone": "leaf",
+          "children": [
+          ]
+        },                 
         "after-sale": {
           "id": "after-sale",
-          "label": "After-Sale Steady",
+          "label": "After-Sale Services",
           "tone": "leaf",
           "children": []
         },
         "maintenance": {
           "id": "maintenance",
-          "label": "Maintenance Steady",
+          "label": "Maintenance Cost",
           "tone": "leaf",
           "children": []
         },
-        "water-cycle": {
-          "id": "water-cycle",
-          "label": "Water Per Cycle (High)",
+        "power-req": {
+          "id": "power-req",
+          "label": "Power Requirements",
           "tone": "leaf",
           "children": []
         },
@@ -8644,14 +8660,7 @@
           "label": "Marketing",
           "tone": "support",
           "children": [
-            "mkt-out"
           ]
-        },
-        "mkt-out": {
-          "id": "mkt-out",
-          "label": "Marketing Steady",
-          "tone": "leaf",
-          "children": []
         },
         "externalities": {
           "id": "externalities",
@@ -8663,7 +8672,7 @@
         },
         "drought": {
           "id": "drought",
-          "label": "Drought (Root Cause)",
+          "label": "Drought",
           "tone": "leaf",
           "children": []
         }
@@ -8673,22 +8682,22 @@
         "units",
         "consumer-pull",
         "quality",
-        "externalities"
+        "features",
+        "load"
       ],
-      "defaultFocusedId": "drought",
+      "defaultFocusedId": "top-load",
       "notes": [
         {
           "title": "Questions",
           "items": [
             "Value chain stage",
-            "Market structure",
-            "Top-load vs front-load"
+            "Magnitude & duration of decline",
+            "Competitor benchmarking"
           ]
         },
         {
           "title": "Keep In Mind",
           "items": [
-            "Explore external and internal factors",
             "Match product features to local utility costs"
           ]
         },
@@ -8701,11 +8710,25 @@
         }
       ]
     },
-    "framework": "Interviewer: Your client is a washing machine manufacturer that has witnessed a steady decline in revenues. Diagnose the problem and give your recommendations.\nCandidate: Sure. Before I lay out my approach, I would like to ask a few preliminary questions.\nInterviewer: Certainly, go ahead.\nCandidate: To start, which stage of the value chain is the company involved in? And what has been the quantum of this decline, and over what period?\nInterviewer: The client is solely involved in the manufacturing of washing machines. The company has witnessed a 20% decline in revenues over the past 1 year.\nCandidate: Got it. Should I look only at the revenue side, or has the client also seen any change in costs?\nInterviewer: There has been no change in costs. Just focus on revenues.\nCandidate: Understood. I would break revenue into two levers:\nRevenue = Number of Units Sold * Price per Unit\nHave we seen a recent change in either of these?\nInterviewer: The number of units sold has gone down. There has been no change in the price.\nCandidate: I will further subdivide the factors affecting the number of units sold into three categories: production capacity, distribution, and consumer pull. Have we seen any recent change in the production capacity of the company?\nInterviewer: Not really.\nCandidate: And has there been any recent change in the distribution of our washing machines?\nInterviewer: No.\nCandidate: That leaves consumer pull as the likely driver. Should I proceed with that?\nInterviewer: Yes, go ahead with consumer pull.\nCandidate: For the drop in consumer pull, I see three possible reasons: quality, marketing, and externalities. Am I missing any major factor?\nInterviewer: No, you can proceed.\nCandidate: Before I examine each one, could you tell me what the market competition looks like?\nInterviewer: The market is fragmented, with multiple competitors each holding roughly 15% market share, including our client.\nCandidate: Got it. Is our washing machine different in quality from the competitors'?\nInterviewer: Yes.\nCandidate: I would break quality into four sub-factors: features, after-sale services, maintenance cost, and power requirements. Is any of these different from the competitors'?\nInterviewer: Our client's washing machine is smaller in size than the competitors', and is a top-load model, unlike most competitors who have a front-load model. Maintenance cost and after-sale services are the same.\nCandidate: My knowledge of washing machine models is limited. Could you elaborate on the difference between top-load and front-load?\nInterviewer: A top-load model generally requires more water per cycle than a front-load model.\nCandidate: Understood. Moving on, has there been any recent change in the client's marketing strategies?\nInterviewer: Nothing as such.\nCandidate: Finally, have there been any recent externalities that may have hit consumer pull?\nInterviewer: Yes. The nearby region has been struck by drought in the last year.\nCandidate: That ties everything together. Our washing machine is smaller in size, so it can wash fewer clothes at once and requires more cycles than the competitors'. On top of that, since the region has been hit by drought, water is scarce and more expensive. So running our machine costs the customer more water and more money than running a front-load competitor's machine, which is why consumer pull has dropped.\nInterviewer: You've identified the problem correctly. What corrective action do you recommend?\nCandidate: One quick check before I give my recommendations: is it feasible for the client to change the size and type of the washing machine without much expenditure?\nInterviewer: That change is likely to be very expensive.\nCandidate: Alright. Can I take a couple of minutes to put my recommendations together?\nInterviewer: Sure.\nCandidate: I would split my recommendations into short-term and long-term.\nShort-term:\n1) Reduce the price of the washing machines and offer attractive discounts to customers, until the effects of the drought ease off and water availability improves. This will bring down the cost of running our machine and help regain lost sales in the interim.\n2) Issue advertisements showing how the water used in the washing machine can be re-used in daily household chores, to mitigate the loss of sales caused by the drought.\nLong-term:\n1) Improve the company's goodwill in the market by making donations and providing supplies to areas affected by the drought, alongside other Corporate Social Responsibility (CSR) initiatives.\nI think employing these actions can help in improving the company's revenues.\nInterviewer: Sounds great. We can close the case here.\n\nDry Hard Framework & Recommendations\nDIAGNOSING A 20% REVENUE DROP AT A WASHING MACHINE MANUFACTURER\nClarifying Questions: Value chain stage Market structure Top-load vs front-load\nBrownie Points: Clarifying competitor product differences Reframing the drought into a marketing message\nKeep In Mind: Explore external and internal factors Match product features to local utility costs\nRECOMMENDATIONS: Short-term: 1) Reduce prices and offer discounts until drought eases and water availability improves. 2) Run advertisements showing how washing machine water can be re-used in household chores to mitigate sales loss. Long-term: 1) Improve company goodwill through donations and supplies to drought-affected areas and other CSR initiatives.\n"
+    "framework": "Candidate: Sure. Before I lay out my approach, I would like to ask a few preliminary questions.\nInterviewer: Certainly, go ahead.\nCandidate: To start, which stage of the value chain is the company involved in? And what has been the quantum of this decline, and over what period?\nInterviewer: The client is solely involved in the manufacturing of washing machines. The company has witnessed a 20% decline in revenues over the past 1 year.\nCandidate: Got it. Should I look only at the revenue side, or has the client also seen any change in costs?\nInterviewer: There has been no change in costs. Just focus on revenues.\nCandidate: Understood. I would break revenue into two levers:\nRevenue = Number of Units Sold * Price per Unit\nHave we seen a recent change in either of these?\nInterviewer: The number of units sold has gone down. There has been no change in the price.\nCandidate: I will further subdivide the factors affecting the number of units sold into three categories: production capacity, distribution, and consumer pull. Have we seen any recent change in the production capacity of the company?\nInterviewer: Not really.\nCandidate: And has there been any recent change in the distribution of our washing machines?\nInterviewer: No.\nCandidate: That leaves consumer pull as the likely driver. Should I proceed with that?\nInterviewer: Yes, go ahead with consumer pull.\nCandidate: For the drop in consumer pull, I see three possible reasons: quality, marketing, and externalities. Am I missing any major factor?\nInterviewer: No, you can proceed.\nCandidate: Before I examine each one, could you tell me what the market competition looks like?\nInterviewer: The market is fragmented, with multiple competitors each holding roughly 15% market share, including our client.\nCandidate: Got it. Is our washing machine different in quality from the competitors'?\nInterviewer: Yes.\nCandidate: I would break quality into four sub-factors: features, after-sale services, maintenance cost, and power requirements. Is any of these different from the competitors'?\nInterviewer: Our client's washing machine is smaller in size than the competitors', and is a top-load model, unlike most competitors who have a front-load model. Maintenance cost and after-sale services are the same.\nCandidate: My knowledge of washing machine models is limited. Could you elaborate on the difference between top-load and front-load?\nInterviewer: A top-load model generally requires more water per cycle than a front-load model.\nCandidate: Understood. Moving on, has there been any recent change in the client's marketing strategies?\nInterviewer: Nothing as such.\nCandidate: Finally, have there been any recent externalities that may have hit consumer pull?\nInterviewer: Yes. The nearby region has been struck by drought in the last year.\nCandidate: That ties everything together. Our washing machine is smaller in size, so it can wash fewer clothes at once and requires more cycles than the competitors'. On top of that, since the region has been hit by drought, water is scarce and more expensive. So running our machine costs the customer more water and more money than running a front-load competitor's machine, which is why consumer pull has dropped.\nInterviewer: You've identified the problem correctly. What corrective action do you recommend?\nCandidate: One quick check before I give my recommendations: is it feasible for the client to change the size and type of the washing machine without much expenditure?\nInterviewer: That change is likely to be very expensive.\nCandidate: Alright. Can I take a couple of minutes to put my recommendations together?\nInterviewer: Sure.\nCandidate: _(Recommendations on the next page.)_\nInterviewer: Sounds great. We can close the case here.\n\nDry Hard Framework & Recommendations\nDIAGNOSING A 20% REVENUE DROP AT A WASHING MACHINE MANUFACTURER\nClarifying Questions: Value chain stage Market structure Top-load vs front-load\nBrownie Points: Clarifying competitor product differences Reframing the drought into a marketing message\nKeep In Mind: Explore external and internal factors Match product features to local utility costs.",
+    "recommendationsTable": {
+      "framework": "Short-Term / Long-Term",
+      "columns": [
+        "Short-term",
+        "Long-term"
+      ],
+      "rows": [
+        {
+          "dimension": "",
+          "shortTerm": "Reduce prices and offer discounts until drought eases and water availability improves\nRun advertisements showing how washing machine water can be re-used in household chores to mitigate sales loss",
+          "longTerm": "Improve company goodwill through donations and supplies to drought-affected areas and other CSR initiatives"
+        }
+      ]
+    }
   },
   {
-    "id": 61,
-    "docId": "case-61",
+    "id": 73,
+    "docId": "case-73",
     "title": "Net Worth",
     "industry": "Policy",
     "difficulty": "Hard",
@@ -9037,8 +9060,8 @@
     "framework": "Interviewer: Your client is the Prime Minister's Office (PMO). You are advising the ministry on a vision-setting and economic planning exercise. The brief is to identify sectors where the government should double down on economic policy, with three primary objectives in mind: GDP, private sector investment, and employment. The government has already identified a few sectors and would like your help in confirming whether those choices are prudent. Please go ahead.\nCandidate: Thank you. Before I lay out my approach, I have a few clarifying questions.\nCandidate: What is the time period we are looking at for this policy?\nInterviewer: Fifteen years.\nCandidate: Are there any quantitative targets in mind for the three objectives?\nInterviewer: Not really.\nCandidate: Are there any budget constraints or regulatory limitations?\nInterviewer: No, none. Treat the budget as unrestricted.\nCandidate: You also mentioned a few pre-identified sectors. Could you share those along with the rationale?\nInterviewer: We will come to that in the latter part of the case. For now, walk me through how you would approach identifying the right sectors.\nCandidate: Sure. I will map the economy first, then describe how I would shortlist against the three objectives. I would split the economy into three categories: Primary (agriculture and non-agriculture), Secondary (manufacturing and non-manufacturing), and Tertiary (IT-based and non-IT-based services). I would then assess each sector against three parameters: 1) Current trends, 2) Growth potential over the fifteen-year horizon, and 3) Sustainability, meaning how likely the sector is to remain relevant fifteen years out (kept separate from growth potential because a sector that could be displaced by Artificial Intelligence or automation would score poorly here even if its growth potential looks strong today). I would walk each sector across the three objectives using these parameters, and shortlist the ones that score consistently.\nInterviewer: That works. Here are the sectors we have shortlisted so far: Primary: coffee, fruits (oranges and coconuts), fisheries; Secondary: food processing; Tertiary: tourism, Business Process Outsourcing / Knowledge Process Outsourcing (BPO/KPO).\nCandidate: Got it.\nInterviewer: Based on this list of seven or eight sectors, how would you narrow it down to two or three? What Key Performance Indicators (KPIs) would you use?\nCandidate: Let me list the metrics first: Compound Annual Growth Rate (CAGR) of the sector, employment percentage it accounts for, private sector investment flowing in, startup growth percentage (a leading indicator of investment), a risk or sustainability score, and comparables, sectors in other countries at a similar economic stage in the past and the growth trajectories they followed.\nInterviewer: This feels quite cluttered. Remember, you are presenting to a political audience. Simplify it.\nCandidate: Fair point. Let me re-organise the metrics directly against the three objectives. GDP: contribution to GDP, GDP growth rate. Private sector investment: Foreign Direct Investment (FDI), Foreign Institutional Investment (FII), startup growth percentage. Employment: current employment trends, and the risk of human labour being displaced as technology and capital become more abundant in the sector.\nInterviewer: That works. Running these metrics, we have drilled down to fisheries as the sector to focus on. It is currently highly underdeveloped and has substantial scope for further growth.\nInterviewer: I would now like you to perform a guesstimate: estimate the market size of the fisheries sector in this country. One clarification: the country is not India. It is an island nation in Southeast Asia.\nCandidate: Understood. Market size of fisheries can be approximated as number of fishes * average price per fish.\nInterviewer: For this exercise, restrict yourself to the number of fishes. Pricing is not what we are testing.\nCandidate: Got it. Two broad approaches: demand-side (fishes consumed within the country) or supply-side (fishes harvested or cultivated). The demand-side approach assumes no fish is exported, which is unlikely for an island economy, so I would lean towards supply side.\nInterviewer: Agreed. Exports are meaningful here, so demand side is too restrictive. Go with supply side.\nCandidate: Before I dive in, how are fishes typically caught in this country? Labour-intensive or capital-intensive? Any advanced technology in use?\nInterviewer: No advanced technology. Fishing is largely traditional, through hand and net by local fishermen.\nCandidate: That helps. Three possible bottlenecks could constrain the supply side: 1) fishermen, 2) total stock of fishes available, and 3) distributors moving the catch onward.\nInterviewer: Focus on the fishes angle. Assume all fishes within the country's territory can be cultivated, so you are estimating the total potential stock irrespective of fishermen, boats, or distributors.\nCandidate: Understood. I would first split the country's water bodies into inland and marine.\nInterviewer: Assume no fishes in inland water bodies. Focus only on marine.\nCandidate: Sure. To estimate the marine area, I would need the country's size and shape.\nInterviewer: Land area is 200 km².\nCandidate: Two simplifying assumptions: the country is roughly a square island (a 200 km² square gives a side of approximately 14 km), and the ocean surrounds the island on all four sides with fishing possible on all four coasts. One important constraint: a country's fishing rights typically extend only up to its domestic territorial waters, which under international convention is around twelve nautical miles from the coast. Beyond that, fishing requires separate permissions.\nInterviewer: Sharp insight. For this case, assume the cultivable marine zone extends 8 km from each coastline.\nCandidate: Got it. The outer boundary of the cultivable zone is then a larger square with a side of 14 + 8 + 8 = 30 km. Outer area = 900 km². Subtracting the land area of 200 km², the cultivable marine zone works out to 700 km².\nInterviewer: Good. Within this 700 km², fish density is not uniform. How would you think about it?\nCandidate: My hypothesis: density is higher closer to the coast (reef and shallow-water habitats) and falls as you move further into the open ocean.\nInterviewer: Directionally yes, though the order is slightly different. Moving outward from the coast: Medium-density band covers 25 km² as the first stretch from the coast; High-density band covers 400 km² as the next stretch, holding most of the catch; Low-density band covers 275 km² as the outermost stretch. The three together cover the full 700 km².\nCandidate: Got it. I will need a yield assumption for each band.\nInterviewer: Take the low-density band as 500 kg of fish per km² per month. Use a 2x multiple for medium and 3x for high.\nCandidate: So medium = 1,000 kg per km² per month and high = 1,500 kg per km² per month. Working through each band: Low: 275 * 500 = 1,37,500 kg/month. Medium: 25 * 1,000 = 25,000 kg/month. High: 400 * 1,500 = 6,00,000 kg/month. Total potential fish harvest = 7,62,500 kg per month.\nInterviewer: Good. That gives us the size of the prize. One final question: what would you recommend to increase the potential of the fisheries sector in this country?\nCandidate: I would split the recommendations into two categories: ways to increase the total number of fishes available, and ways to increase the productivity of catching what we already have access to.\nTo increase the number of fishes available: 1) Partner with friendly neighbouring countries to cultivate in their waters under a shared arrangement. 2) Pursue international approvals or treaties that allow our fleet to fish in selected international waters. 3) Invest in artificial aquaculture and aquaponics farms on land, which decouple supply from the natural marine boundary entirely.\nTo increase productivity and efficiency: 1) Introduce better technology, machinery, and modern fishing methods to replace the hand-and-net approach. 2) Group individual fishermen into cooperatives or larger fishing units (analogy: consolidating fragmented agricultural plots, where scale unlocks shared investment in machinery and technology that an individual fisherman or small boat cannot afford alone).\nInterviewer: That covers it well. We can close the case here.\n\nNet Worth Framework & Recommendations\nSECTOR IDENTIFICATION FOR 15-YEAR POLICY (PMO ADVISORY)\nClarifying Questions: Quantitative targets per objective Budget or regulatory constraints\nBrownie Points: Citing twelve nautical miles for territorial waters Choosing supply-side because exports matter on an island Applying agricultural consolidation to fisheries\nKeep In Mind: Tie every metric directly to a stated objective Long horizon elevates sustainability as a separate lens\nRECOMMENDATIONS: Increase fish stock: 1) Partner with neighbouring countries to cultivate in their waters. 2) Pursue international treaties to fish in international waters. 3) Invest in land-based aquaculture and aquaponics farms. Increase productivity: 1) Introduce modern technology, machinery, and fishing methods. 2) Group individual fishermen into cooperatives or larger units.\n"
   },
   {
-    "id": 62,
-    "docId": "case-62",
+    "id": 74,
+    "docId": "case-74",
     "title": "Pound for Pound",
     "industry": "Pharmaceuticals",
     "difficulty": "Hard",
@@ -9341,8 +9364,8 @@
     "framework": "Candidate: Before I begin, I would like to clarify a few things. Are we estimating the market size in terms of the number of units, or in monetary terms?\nInterviewer: We currently do not have information on the price. That is something we would like you to estimate as well, so you will have to estimate both the price and the market size.\nCandidate: Understood. Since this is a weight-loss drug, I would like to understand which segments of the population are eligible for the drug and which segments it may not be suited for.\nInterviewer: The drug is not recommended for people with cardiac issues.\nCandidate: Got it. Are there any age restrictions as well?\nInterviewer: Yes. You can assume the drug is not recommended for seniors above the age of 60.\nCandidate: Would it also be fair to assume a lower age cap of 20 years, since children and adolescents may not typically opt for such medication?\nInterviewer: That sounds reasonable. Let's proceed.\nCandidate: One more clarification: are we launching this drug in a specific city, or across urban centres in India?\nInterviewer: Across all urban centres.\nCandidate: And are there any side effects associated with the drug that may affect adoption?\nInterviewer: No, you can assume there are no major side effects.\nCandidate: Great. Let me walk you through my approach. When estimating the market size, I would like to focus specifically on the number of people who would realistically purchase the drug, rather than those who may only be interested in it.\nCandidate: I will start with the population of India, which I will assume to be 140 crore. Next, I will split this into rural and urban segments, since the drug is only being launched in urban centres. Initially, I would assume the urban population to be roughly 40 crore.\nInterviewer: Let's take the urban population as 60 crore instead.\nCandidate: Sure, I will proceed with 60 crore.\nCandidate: Next, I will apply an income filter, since affordability will be an important factor for a drug like this. Splitting the urban population into four income segments: Lower income 20%, Lower Middle Class 30%, Upper Middle Class 30%, Rich 20%. Given the likely cost of such treatment, I will focus only on the UMC and Rich segments and exclude the rest. That gives us 50% of the urban population, or roughly 30 crore people.\nCandidate: Next, I will apply an age filter: less than 20 years 25%, above 60 years 5%, target band 20 to 60 years 70%. Applying 70% to the 30 crore gives approximately 21 crore individuals in the eligible age group.\nCandidate: Now I would like to estimate which segments within this population would actually consider purchasing the drug. Broadly, I see two categories of potential buyers:\n1) Health-conscious individuals interested in fitness or cosmetic weight loss.\n2) People who are obese or suffering from health conditions related to high weight. Does this two-category split sound reasonable, or would you like me to consider any other buyer profile?\nInterviewer: That split works well. Go ahead and size each of them.\nCandidate: Thank you. For the first category, I will assume around 5% of individuals are highly health-conscious. Applied to the 21 crore eligible base, that gives roughly 1.05 crore people as the cosmetic demand pool. For the second category, I will assume roughly 1 in 5 Indians are obese (20%), giving 4.2 crore people as the medical demand pool. Total demand pool approximately 5.25 crore people.\nCandidate: I believe we should move to pricing, because the actual buyers will depend heavily on affordability.\nInterviewer: Yes, we can move on to pricing.\nCandidate: I would like to determine a price range using three approaches:\n1) Competitor-based pricing benchmarked against Novo Nordisk's Wegovy.\n2) Cost-based pricing (manufacturing cost plus margin) for the lower bound.\n3) Value-based pricing based on willingness to pay for substitutes like gym memberships, supplements, diet programs, for the upper bound.\nInterviewer: Focus specifically on competitor-based pricing. How would you approach that?\nCandidate: To benchmark, I would like to understand dosage and treatment length.\nInterviewer: For fitness or cosmetic weight loss, the treatment lasts about 3 months at roughly Rs 50,000 per month. For obesity cases, the treatment is about one year.\nCandidate: I also wanted to clarify whether there are relapse cases.\nInterviewer: No, they do not need to repeat the drug cycle, but lifestyle maintenance is required to prevent relapse.\nCandidate:~ To close the estimation, I will apply an affordability filter of 20% on the 5.25 crore demand pool, giving 1.05 crore actual buyers: 21 lakh cosmetic buyers (3 months * Rs 50,000 = Rs 1.5 lakh per person) and 84 lakh obesity buyers (12 months * Rs 50,000 = Rs 6 lakh per person). Sizing in rupees: cosmetic segment 21 lakh * Rs 1.5 lakh = Rs 31,500 crore; obesity segment 84 lakh * Rs 6 lakh = Rs 5,04,000 crore. Total addressable market approximately Rs 5,35,500 crore, or about Rs 5.35 lakh crore (roughly $64 billion). The obesity segment dominates because the treatment duration is four times longer.\nInterviewer: Makes sense. That was a comprehensive analysis. We can end the case here.\n\nPound for Pound Framework & Recommendations\nMARKET SIZING FOR WEGOVY-STYLE DRUG (INDIAN PHARMA ENTRY)\nClarifying Questions: Units versus monetary market sizing Eligibility exclusions (cardiac and age) Geographic scope (urban versus pan-India) Side effects affecting adoption\nBrownie Points: Proposing three pricing approaches with explicit bounds Asking about relapse and lifestyle maintenance Differentiating cosmetic versus medically obese segments\nKeep In Mind: Affordability is the binding adoption constraint Cosmetic and medical journeys differ structurally\nRECOMMENDATIONS:\n1) Anchor pricing on Novo Nordisk's Wegovy and validate with cost-plus and value-based bounds.\n2) Target the obesity segment for volume and the cosmetic segment for premium positioning.\n3) Run sensitivity tests on the affordability assumption before committing capacity."
   },
   {
-    "id": 63,
-    "docId": "case-63",
+    "id": 75,
+    "docId": "case-75",
     "title": "Up In The Air",
     "industry": "Aviation",
     "difficulty": "Hard",
@@ -9738,8 +9761,8 @@
     "framework": "Candidate: Before I dive in I'd like to clarify a few things. First, can I confirm what the business does and where it operates?\n\nInterviewer: Sure. The company runs flying taxis between Chennai's main airport and two or three points across the city. Think of it as a premium service for people who want to skip road traffic.\n\nCandidate: Got it. Next, the specifications of the E-Plane. Fleet size, seating capacity, and the type of vehicle.\n\nInterviewer: We have a fleet of 7 planes. Each one seats 5 passengers, and the vehicle is essentially an electric drone.\n\nCandidate: Understood. And the goal of the pricing strategy. By when does the company want to break even?\n\nInterviewer: In 3 years. That's the horizon we're working with.\n\nCandidate: Last clarification. Is there a predetermined operation plan? Days per week, and number of trips per day?\n\nInterviewer: Yes, the team has locked that in. 7 days a week, 10 trips a day.\n\nCandidate: That gives me what I need. The approach here is straightforward. There are two cost components, fixed and variable, and the minimum price to charge is the one that lets the business recover both within 3 years.\n\nOn the fixed side, two heads:\n1. Research and Development costs\n2. PPE costs, which means Property, Plant, and Equipment, splitting into land and the flight fleet\n\nOn the variable side:\n1. Operations, mainly energy per trip\n2. Repair and maintenance\n3. Labour, both skilled and unskilled\n4. Any miscellaneous costs\n\nDoes this split look reasonable, or should I consider any other cost head?\n\nInterviewer: That covers it. Start with fixed costs. You can take R&D cost as 4 crore rupees.\n\nCandidate: Noted. For PPE, fleet cost dominates. Let me build up the cost of one E-Plane first. I'd think of it as the cost of an average 5-seater car plus the modules needed to make it airborne.\n\nA 5-seater car is around 10 lakh rupees. The airborne modules are frame, rotors, and electrical circuitry, in a ratio of 1:3:2.\n\n1. Frame: 6 lakh rupees\n2. Rotors: 18 lakh rupees\n3. Electrical circuitry: 12 lakh rupees\n4. Module total: 36 lakh rupees\n\nThus, cost per plane that comes to 10 lakh plus 36 lakh, which is 46 lakh rupees. I'll round to 50 lakh per plane.\n\nFleet Cost = 50 lakh * 7 = 3.5 crore rupees\n\nAdding land into the PPE bucket, total fixed cost lands at around 10 crore rupees.\n\nInterviewer: Take that as the fixed figure. Walk me through variables.\n\nCandidate: For operations, energy cost per trip uses the following formula:\n\nEnergy Cost per Trip = Distance * Consumption per km * Variability Factor * Cost per Unit Energy\n\nI added a variability factor because for a plane, climatic and landing conditions can move energy consumption significantly trip to trip.\n\nInterviewer: How would you pick the two or three points the plane operates between?\n\nCandidate: Since docking and refuelling happen at the airport, one end of each route is fixed. For the other end, I'd select places that either take a long time to reach from the airport by road, or are inaccessible by road. That's where this service creates the most time-saved value.\n\nInterviewer: Who's actually willing to pay for that?\n\nCandidate: It's a premium service, so the customers will mostly come from the upper strata. Two segments stand out: wealthy residents and tourists.\n\nInterviewer: I'd add government officials to that list. They often need fast point-to-point movement and have budgets that cover it.\n\nCandidate: That's a good addition. So we have three segments: wealthy residents, tourists, and government officials. Combining these with the access-difficulty filter narrows the potential locations to places with a high concentration of premium users. For Chennai, Marina Beach would work on one route, and a cinema district could anchor another. Ideally the two points sit on opposite sides of the city.\n\nInterviewer: Any other filters before you move on?\n\nCandidate: Two more, both turn out to be neutral here:\n\n1. Climatic conditions across Chennai are largely uniform, so they don't change much across points\n2. Landing feasibility is also uniform once we pick reasonable open spaces\n\nBack to the energy build. With distance roughly 15 kilometres from the airport to Marina, average consumption around 2.5 kilowatt-hours per kilometre, and energy cost around 20 rupees per kilowatt-hour, per-trip energy lands at about 750 rupees. Spread over 3 years of operation, total energy cost works out to approximately 50 lakh rupees.\n\nDoes the per-trip approach look right before I add the rest?\n\nInterviewer: Yes, continue.\n\nCandidate: After energy I'd add:\n\n1. Repair and maintenance, roughly 20 lakh rupees over 3 years\n2. Labour, both skilled and unskilled:\n   - Skilled: 30 engineers, at 20 lakh rupees per annum each, over 3 years, which is 18 crore rupees\n   - Unskilled: effectively negligible, close to zero\n\nTotal variable cost is 50 lakh + 20 lakh + 18 crore, which is approximately 18 crore rupees.\n\nAdding fixed costs calculated earlier (10 crore) and variable cost (18 crore), total cost over 3 years is 28 crore rupees.\n\nInterviewer: Now, what about customer side?\n\nCandidate: With 10 trips per day at 5 seats each, full-occupancy capacity is 50 customers a day. Over 3 years that's 50 multiplied by 365 multiplied by 3, which equals 54,750 customer-trips. I'll round to 50,000 for clean math.\n\nBreakeven equation:\n\n50,000 * Price = 28 crore rupees\n\n^ Price = 28,00,00,000 / 50,000 = 5,600 rupees per customer\n\nThat's the cost-based price floor.\n\nInterviewer: How do you go from there to an actual pricing strategy?\n\nCandidate: 5,600 is the lower ceiling, the cost-based floor. To set the upper ceiling I'll value-base the price, using the existing cab service as a benchmark.\n\nA cab from the airport to Marina costs 600 rupees for one person over 15 kilometres, and takes roughly 90 minutes in traffic. The e-plane covers the same route in about 10 minutes.\n\nTime saved per trip = 90 - 10 = 80 minutes\n\nI'll value that saved time using two methods.\n\na) Method 1: Cab fare scaled by time multiple. The e-plane is 9 times faster than a cab (90 minutes divided by 10 minutes). Scaling the cab fare by the same factor:\n\n600 * 9 = 5,400 rupees per trip\n\nb) Method 2: Per-minute value of the customer's time. The idea is to price the trip at what the customer's own time is worth across the 80 minutes saved:\n\nStep 1: Monthly income: A premium customer earns roughly 5 lakh rupees per month.\n\nStep 2: Productive minutes per month: Assume the customer is productive for about 8,000 minutes per month, which works out to roughly 133 hours.\n\nStep 3: Per-minute value of time:\n\n^ Per Minute Value = 5,00,000 / 8,000 = 62.5 rupees per minute\n\nStep 4: Value of the 80 minutes saved per trip:\n\nTrip Value = 80 * 62.5 = 5,000 rupees per trip\n\nSo I now have three anchor numbers:\n\n1. 5,000 rupees, low value-based estimate (Method 2)\n2. 5,400 rupees, high value-based estimate (Method 1)\n3. 5,600 rupees, cost-based breakeven floor\n\nInterviewer: How does that translate into the actual launch strategy?\n\nCandidate: I'd structure it as a 3-year ladder:\n\n1. Year 1: 5,000 rupees, starting at the low value-based estimate to drive early adoption\n2. Year 2: 5,400 rupees, stepping up to the high value-based estimate as the customer base matures\n3. Year 3: 5,600 rupees, reaching the cost-based floor and breaking even by year 3\n\nThis way the business attracts customers at a believable price point in year 1, captures full willingness to pay by year 2, and reaches breakeven by year 3.\n\nInterviewer: Solid. Let's wrap there.\n\n\nCATCH ME IF YOU CAB FRAMEWORK & RECOMMENDATIONS\nE-PLANE PRICING STRATEGY FOR CHENNAI AIRPORT FLYING TAXI\n\nClarifying Questions: Business and geography; Specs (fleet, capacity, vehicle type); Breakeven timeline; Operation plan (days and trips)\n\nBrownie Points: Two-method value-based sense-check anchored on a cab benchmark; Variability factor for climatic and landing conditions; Selecting points by access difficulty plus premium segment density\n\nKeep In Mind: Cost-based price is the floor, not the final number; Use a real competing alternative to value the time saved"
   },
   {
-  "id": 64,
-  "docId": "case-64",
+  "id": 76,
+  "docId": "case-76",
   "title": "Wired Differently",
   "industry": "Manufacturing",
   "difficulty": "Hard",
@@ -9826,8 +9849,8 @@
   "framework": "Interviewer: I have a case for you. The client is a manufacturing firm with two divisions, Automobiles and Electronics. The Automobiles division is doing well, with high worker satisfaction and morale. The Electronics division has had persistently high worker dissatisfaction. Leadership recently replicated the Human Resources (HR) policies from the Automobiles division into the Electronics division, expecting the same lift. A fresh survey shows worker dissatisfaction in Electronics is still high. Walk me through how you would diagnose why the same policies are not working in Electronics.\nCandidate: Thank you. Before I lay out my approach, I have a few clarifying questions.\nCandidate: First, when you say worker dissatisfaction, are we talking about a specific signal like attrition and absenteeism, or a broader survey-based sentiment measure?\nInterviewer: It is a survey-based sentiment measure, where workers self-report on factors like morale, fairness, and workplace experience.\nCandidate: Got it. How long ago were the Automobiles policies replicated into the Electronics division, and how long has the new survey been in the field?\nInterviewer: The policies have been in place for about a year, and the latest survey is recent, within the last quarter.\nCandidate: Understood. Are the two divisions located in the same city or in different geographies?\nInterviewer: They are in different states. The Automobiles factory is in Karnataka. The Electronics factory is in Haryana.\nCandidate: That is helpful. Could you also tell me about the workforce in each division, in terms of age, gender, language, and any other relevant demographic?\nInterviewer: Sure. The Automobiles factory in Karnataka has a workforce that is predominantly Hindi-speaking, young, and largely female. The Electronics factory in Haryana has a workforce that is predominantly local men.\nCandidate: That is a meaningful split. One last clarification: when leadership replicated the Automobiles policies, was it the entire HR policy bundle, or only specific pieces like compensation and shift structure?\nInterviewer: Assume it was the entire bundle, replicated as-is.\nCandidate: Got it. Let me lay out my approach. The question is really about why an identical policy bundle is producing different sentiment outcomes in the two divisions. I would group the possible drivers into four pillars:\n1. Demographic Factors\n2. Union-Related Factors\n3. Job-Related Factors\n4. Externalities and Work Culture\nLet me walk through each one.\nCandidate: Pillar 1, Demographic Factors. The two workforces differ on gender, language, age, family structure, income, lifestyle, and broader cultural context. An HR bundle that resonates with a young, Hindi-speaking, predominantly female workforce in Karnataka will not land the same way on a workforce of local men in Haryana. A one-size-fits-all policy almost never lands equally on both groups.\nInterviewer: That makes sense. Move on.\nCandidate: Pillar 2, Union-Related Factors. Even if the policy text is the same on paper, the way it is received depends on the union environment. In Haryana, the union may be more entrenched, the local demands may be different, and the union may be more effective at translating individual complaints into collective friction. So the same policy can show up as a low-grade irritant in one division and as an organised grievance in the other.\nInterviewer: Fair. Continue.\nCandidate: Pillar 3, Job-Related Factors. The work itself is different. Two sub-factors stand out.\n1. Labour Intensity: automobile assembly and electronics assembly differ in the kind of physical and mental strain they impose. The same policy on, say, break frequency or shift length may be adequate for one and inadequate for the other.\n2. Working Hours and Compensation: differences in shift structure, base pay, and variable perks can mean that a benefit that feels generous in one division feels routine or insufficient in the other.\nCandidate: Pillar 4, Externalities and Work Culture. This covers two sub-factors.\n1. Superior-Subordinate Relationships: how local management interacts with workers on the shop floor. A policy is only as good as the manager implementing it.\n2. Peer Dynamics: the interpersonal environment among co-workers, which is heavily shaped by local culture and is not directly controlled by HR policy.\nCandidate: Across these four pillars, I would expect the demographic and work-culture pillars to do most of the explanatory work here, given the location and gender mix difference. The union and job-related pillars are likely amplifiers rather than the root cause, but I would still test them.\nInterviewer: That structure works well. Let us now switch tracks. Suppose leadership designs a new set of corrective policies tailored to the Electronics division. I want you to estimate the breakeven period for implementing these new policies. Here are the parameters you will work with.\nInterviewer: The new policies cost an additional 50 million dollars as a one-time fixed investment, plus 5 million dollars per year as ongoing variable cost, on top of the existing HR spend. Total organisation revenue is 200 million dollars. The new policies are expected to lift worker productivity, which we will model as a revenue enhancement of 30 percent in Year 1, 20 percent in Year 2, and 10 percent every year from Year 3 onwards. The new policies are also expected to improve retention. The factory has 10,000 workers. The current attrition rate is 20 percent of workers leaving every year. Under the new policies, attrition is expected to drop to 10 percent. The hiring and training cost per new employee is 1,000 dollars.\nCandidate: Understood. The breakeven question is: when does the cumulative incremental benefit from the new policies cross the cumulative incremental cost? I will set up two value drivers and one cost line, and then walk through year by year.\nCandidate: Value driver 1, Revenue Enhancement. The underlying revenue formula is revenue equals the number of workers, multiplied by hours worked per week, multiplied by output per hour. A productivity lift moves the output-per-hour term, which lifts revenue. So in Year 1, incremental revenue from productivity is 30 percent of 200 million dollars.\nCandidate: Value driver 2, Retention Cost Savings. Every worker who leaves has to be replaced, and each replacement costs 1,000 dollars in hiring and training. So the savings formula is retention savings equals the change in attrition rate, multiplied by total workers, multiplied by hiring and training cost per worker. Attrition drops from 20 percent to 10 percent, a 10 percentage point improvement, applied to 10,000 workers at 1,000 dollars per worker.\nCandidate: One adjustment to flag on the retention number. The raw saving captures the avoided hiring and training cost. In a more comprehensive view, I would also subtract the cost of the existing employee being retained (which the firm is already paying anyway, so it nets to zero on the incremental view), and I would subtract a small opportunity cost for the initial inefficiency period of any new hire that we no longer need to absorb. For this exercise I will use the raw saving as the base case.\nInterviewer: Good. Now compute the yearly numbers.\nCandidate: Let me first try a compounding view, where each year's productivity gain stacks on top of the prior year's lifted revenue base.\nInterviewer: Hold on. Use a linear baseline instead. Apply each year's productivity percentage to the original 200 million dollar revenue base, not to a compounded base.\nCandidate: Got it, that is cleaner for a breakeven view and avoids overstating the gain. Working through the linear baseline:\nCandidate: Year 1 incremental benefit:\nRevenue Enhancement = 30% * 200 million = 60 million dollars\nRetention Savings = 10% * 10,000 * 1,000 = 10 million dollars\nTotal Year 1 Benefit = 60 million + 10 million = 70 million dollars\nYear 1 Incremental Cost = 50 million fixed + 5 million variable = 55 million dollars\nYear 1 Net = 70 million - 55 million = +15 million dollars\nCumulative Net at end of Year 1 = +15 million dollars\nCandidate: Year 2 incremental benefit:\nRevenue Enhancement = 20% * 200 million = 40 million dollars\nRetention Savings = 10 million dollars (unchanged year on year)\nTotal Year 2 Benefit = 40 million + 10 million = 50 million dollars\nYear 2 Incremental Cost = 5 million dollars variable\nYear 2 Net = 50 million - 5 million = +45 million dollars\nCumulative Net at end of Year 2 = +60 million dollars\nCandidate: Year 3 incremental benefit:\nRevenue Enhancement = 10% * 200 million = 20 million dollars\nRetention Savings = 10 million dollars\nTotal Year 3 Benefit = 30 million dollars\nYear 3 Incremental Cost = 5 million dollars variable\nYear 3 Net = 25 million dollars\nCumulative Net at end of Year 3 = +85 million dollars\nCandidate: On a pure cash basis, the cumulative net turns positive by the end of Year 1 because the first-year productivity lift alone covers the upfront 50 million dollar investment. If the breakeven is being measured on a stricter basis, for example net of margin assumptions on the revenue line, or amortising the fixed cost over the policy's useful life, the breakeven moves out. With a reasonable margin assumption on the revenue uplift (say converting the 60 million dollars of Year 1 incremental revenue into a smaller incremental profit number) and amortising the 50 million dollars over the policy horizon, the breakeven lands at approximately 3 years.\nInterviewer: Roughly 3 years is the right answer. Good work walking through the structure cleanly.\nInterviewer: Let us close the case here.\n\nWired Differently Framework & Recommendations\nWHY THE SAME HR POLICIES PRODUCE DIFFERENT WORKER SENTIMENT IN TWO DIVISIONS\nClarifying Questions: Definition of dissatisfaction. Time in field for new policies. Plant locations. Workforce demographics per division. Scope of policy replication.\nBrownie Points: Probing the demographic and location split before bucketing. Splitting drivers into demographic, union, job, and culture pillars. Pivoting from compounding to a linear baseline on the interviewer's cue.\nKeep In Mind: Same policy text, different reception by demographic context. Demographic and culture splits often explain policy variance more than the policy text itself.\nRECOMMENDATIONS: [FLAG] No explicit recommendations in source material."
   },
   {
-  "id": 65,
-  "docId": "case-65",
+  "id": 77,
+  "docId": "case-77",
   "title": "Don't Sweat It",
   "industry": "Transport",
   "difficulty": "Medium",
@@ -9836,65 +9859,94 @@
   "round": "Buddy",
   "prompt": "The client is a corporate-empanelled cab vendor in India. They partner with corporates across the country to provide cab rides to those corporates' employees, where the corporate pays on the employee's behalf, so the ride is free for the employee. Most corporates work with multiple cab vendors at the same time, and employees pick whichever vendor they want for any given ride. For example, BCG has five empanelled cab vendors and our client is one of them. Over the past several months, the share of employees opting for our client's cabs has been dropping. Diagnose what is driving the decline.",
   "frameworkTree": {
-    "nodes": {
-      "dont-sweat-it": { "id": "dont-sweat-it", "label": "Don't Sweat It", "tone": "root", "children": ["profit-tree", "diagnosis-funnel"] },
-      "profit-tree": { "id": "profit-tree", "label": "Profit Equation", "tone": "branch", "children": ["profit-formula", "revenue-formula", "focus-opt-rate"] },
-      "profit-formula": { "id": "profit-formula", "label": "Profit = Revenue - Cost", "tone": "leaf", "children": [] },
-      "revenue-formula": { "id": "revenue-formula", "label": "Revenue = Partners * Employees * Opt Rate * Rides * Distance * Price per Km", "tone": "leaf", "children": [] },
-      "focus-opt-rate": { "id": "focus-opt-rate", "label": "Symptom isolates the Opt Rate term", "tone": "highlight", "children": [] },
-      "diagnosis-funnel": { "id": "diagnosis-funnel", "label": "Diagnostic Funnel", "tone": "branch", "children": ["supply-demand", "demand-needs", "ux-phases", "during-split", "vehicle-vc", "smell-causes", "root-cause"] },
-      "supply-demand": { "id": "supply-demand", "label": "Opt Rate Drivers", "tone": "branch", "children": ["supply", "demand"] },
-      "supply": { "id": "supply", "label": "Supply Side", "tone": "leaf", "children": [] },
-      "demand": { "id": "demand", "label": "Demand Side", "tone": "primary", "children": [] },
-      "demand-needs": { "id": "demand-needs", "label": "Demand Conditions", "tone": "branch", "children": ["need", "awareness", "acceptability"] },
-      "need": { "id": "need", "label": "Need", "tone": "leaf", "children": [] },
-      "awareness": { "id": "awareness", "label": "Awareness", "tone": "leaf", "children": [] },
-      "acceptability": { "id": "acceptability", "label": "Acceptability (UX)", "tone": "primary", "children": [] },
-      "ux-phases": { "id": "ux-phases", "label": "UX Phases", "tone": "branch", "children": ["pre-ride", "during-ride", "post-ride"] },
-      "pre-ride": { "id": "pre-ride", "label": "Pre-ride", "tone": "leaf", "children": [] },
-      "during-ride": { "id": "during-ride", "label": "During Ride", "tone": "primary", "children": [] },
-      "post-ride": { "id": "post-ride", "label": "Post-ride", "tone": "leaf", "children": [] },
-      "during-split": { "id": "during-split", "label": "During-Ride Drivers", "tone": "branch", "children": ["vehicle", "driver", "route"] },
-      "vehicle": { "id": "vehicle", "label": "Vehicle", "tone": "primary", "children": [] },
-      "driver": { "id": "driver", "label": "Driver", "tone": "leaf", "children": [] },
-      "route": { "id": "route", "label": "Route", "tone": "leaf", "children": [] },
-      "vehicle-vc": { "id": "vehicle-vc", "label": "Vehicle Value Chain", "tone": "branch", "children": ["v-type", "v-brand", "v-appearance", "v-quality", "v-utilities"] },
-      "v-type": { "id": "v-type", "label": "Type", "tone": "leaf", "children": [] },
-      "v-brand": { "id": "v-brand", "label": "Brand", "tone": "leaf", "children": [] },
-      "v-appearance": { "id": "v-appearance", "label": "Appearance", "tone": "leaf", "children": [] },
-      "v-quality": { "id": "v-quality", "label": "Quality of Interiors", "tone": "primary", "children": [] },
-      "v-utilities": { "id": "v-utilities", "label": "Utilities", "tone": "leaf", "children": [] },
-      "smell-causes": { "id": "smell-causes", "label": "Why a Smell?", "tone": "branch", "children": ["s-dirty", "s-interiors", "s-driver", "s-perception"] },
-      "s-dirty": { "id": "s-dirty", "label": "Vehicle Dirty", "tone": "leaf", "children": [] },
-      "s-interiors": { "id": "s-interiors", "label": "Interiors Poor", "tone": "primary", "children": [] },
-      "s-driver": { "id": "s-driver", "label": "Driver Hygiene", "tone": "leaf", "children": [] },
-      "s-perception": { "id": "s-perception", "label": "Air Freshener Perception", "tone": "leaf", "children": [] },
-      "root-cause": { "id": "root-cause", "label": "Sweat-absorbent seat covers retain sweat", "tone": "highlight", "children": [] }
-    },
-    "defaultExpanded": ["dont-sweat-it", "profit-tree", "diagnosis-funnel"],
-    "defaultFocusedId": "root-cause",
+"nodes": {
+  "profit-root": { "id": "profit-root", "label": "Profit", "tone": "root", "children": ["revenue", "cost"] },
+  "cost": { "id": "cost", "label": "Cost", "tone": "leaf", "children": [] },
+  "revenue": { "id": "revenue", "label": "Revenue", "tone": "primary", "children": ["partners", "employees", "opt-rate", "rides", "distance", "price"] },
+  "partners": { "id": "partners", "label": "Corporate Partners", "tone": "leaf", "children": [] },
+  "employees": { "id": "employees", "label": "Employees per Partner", "tone": "leaf", "children": [] },
+  "opt-rate": { "id": "opt-rate", "label": "Opt Rate", "tone": "primary", "children": ["supply", "demand"] },
+  "rides": { "id": "rides", "label": "Rides per Employee", "tone": "leaf", "children": [] },
+  "distance": { "id": "distance", "label": "Distance per Ride", "tone": "leaf", "children": [] },
+  "price": { "id": "price", "label": "Price per Kilometre", "tone": "leaf", "children": [] },
+  "supply": { "id": "supply", "label": "Supply Side", "tone": "leaf", "children": ["enough-cars","wait-time","geography"] },
+    "enough-cars": { "id": "enough-cars", "label": "Less Cars", "tone": "leaf", "children": [] },
+      "wait-time": { "id": "wait-time", "label": "Long Wait Times", "tone": "leaf", "children": [] },
+        "geography": { "id": "geography", "label": "Limited Geographic Reach", "tone": "leaf", "children": [] },
+  "demand": { "id": "demand", "label": "Demand Side", "tone": "primary", "children": ["need", "awareness", "affordability", "acceptability"] },
+  "need": { "id": "need", "label": "Need", "tone": "leaf", "children": [] },
+  "awareness": { "id": "awareness", "label": "Awareness", "tone": "leaf", "children": [] },
+  "affordability": { "id": "affordability", "label": "Affordability", "tone": "leaf", "children": [] },
+  "acceptability": { "id": "acceptability", "label": "Acceptability", "tone": "primary", "children": ["pre-ride", "during-ride", "post-ride"] },
+  "pre-ride": { "id": "pre-ride", "label": "Pre-Ride", "tone": "leaf", "children": ["dl-app","lg-in","fnd-cab","book-cab","otp"] },
+    "dl-app": { "id": "dl-app", "label": "Downloading App", "tone": "leaf", "children": [] },
+      "lg-in": { "id": "lg-in", "label": "Logging In", "tone": "leaf", "children": [] },
+        "fnd-cab": { "id": "fnd-cab", "label": "Finding A Cab", "tone": "leaf", "children": [] },
+          "book-cab": { "id": "book-cab", "label": "Booking A Cab", "tone": "leaf", "children": [] },
+            "otp": { "id": "otp", "label": "OTP Service", "tone": "leaf", "children": [] },
+  "during-ride": { "id": "during-ride", "label": "During Ride", "tone": "primary", "children": ["vehicle", "driver", "route"] },
+  "post-ride": { "id": "post-ride", "label": "Post-Ride", "tone": "leaf", "children": ["drop-off","f&r","follow-up"] },
+    "drop-off": { "id": "drop-off", "label": "Dropping Off", "tone": "leaf", "children": [] },
+      "f&r": { "id": "f&r", "label": "Feedback & Ratings", "tone": "leaf", "children": [] },
+        "follow-up": { "id": "follow-up", "label": "Follow-Up", "tone": "leaf", "children": [] },
+  "vehicle": { "id": "vehicle", "label": "Vehicle", "tone": "primary", "children": ["v-type", "v-brand", "v-appearance", "v-quality", "v-utilities"] },
+  "driver": { "id": "driver", "label": "Driver", "tone": "leaf", "children": ["behaviour","communication","d-style"] },
+    "behaviour": { "id": "behaviour", "label": "Behaviour", "tone": "leaf", "children": [] },
+      "communication": { "id": "communication", "label": "Communication", "tone": "leaf", "children": [] },
+        "d-style": { "id": "d-style", "label": "Driving Style", "tone": "leaf", "children": [] },
+  "route": { "id": "route", "label": "Route", "tone": "leaf", "children": ["t-taken","traffic", "detours"] },
+    "t-taken": { "id": "t-taken", "label": "Time Taken", "tone": "leaf", "children": [] },
+      "traffic": { "id": "traffic", "label": "Traffic", "tone": "leaf", "children": [] },
+        "detours": { "id": "detours", "label": "Detours", "tone": "leaf", "children": [] },
+  "v-type": { "id": "v-type", "label": "Type", "tone": "leaf", "children": [] },
+  "v-brand": { "id": "v-brand", "label": "Brand", "tone": "leaf", "children": [] },
+  "v-appearance": { "id": "v-appearance", "label": "Exterior Appearance", "tone": "leaf", "children": [] },
+  "v-quality": { "id": "v-quality", "label": "Interior Quality", "tone": "primary", "children": ["v-smell"] },
+   "v-smell": { "id": "v-smell", "label": "Smell", "tone": "primary", "children": ["s-dirty", "s-interiors", "s-driver", "s-perception"] }, 
+  "v-utilities": { "id": "v-utilities", "label": "Utilities Inside", "tone": "leaf", "children": [] },
+  "s-dirty": { "id": "s-dirty", "label": "Vehicle Dirty", "tone": "leaf", "children": [] },
+  "s-interiors": { "id": "s-interiors", "label": "Interiors Not Maintained", "tone": "primary", "children": [] },
+  "s-driver": { "id": "s-driver", "label": "Unhygienic Driver", "tone": "leaf", "children": [] },
+  "s-perception": { "id": "s-perception", "label": "Competitor Scent", "tone": "leaf", "children": [] }
+},
+    "defaultExpanded": ["profit-root","revenue","opt-rate","demand","acceptability","during-ride","vehicle","v-quality","v-smell"], 
+    "defaultFocusedId": "s-interiors",
     "notes": [
       {
-        "title": "Clarifying Questions",
+        "title": "Questions",
         "items": [
-          "Charging structure (fixed versus variable)",
-          "Drop across all corporates or concentrated"
+          "Time period of the decline?",
+          "Charging structure: fixed or variable?",
+          "Drop across all corporates or concentrated?"
         ]
       },
       {
         "title": "Keep In Mind",
         "items": [
-          "Operational change can produce downstream defects"
+          "When the service is free to the user, drop affordability",
+          "Run a value chain on the vehicle in the order a rider notices things"
         ]
       },
       {
         "title": "Brownie Points",
         "items": [
-          "Decomposing revenue into six multiplicative drivers"
+          "Decomposing revenue into six multiplicative drivers",
+          "Forming an early demand-side hypothesis from the breadth of the decline",
+          "Raising competitor air-freshener perception, recognising smell can be relative"
         ]
       }
     ]
   },
-  "framework": "Interviewer: I have a case for you. The client is a corporate-empanelled cab vendor operating in India. They partner with large corporates across the country and provide cab rides to those corporates' employees. The corporate pays the cab vendor on the employee's behalf, so the ride is free for the employee. Most corporates work with multiple cab vendors at the same time, and the employee picks whichever vendor they want for any given ride. For example, BCG has five empanelled cab vendors, and our client is one of them. Over the past several months, the share of employees opting for our client's cabs has been dropping. Diagnose what is driving the decline.\nCandidate: Thank you. Before I lay out my approach, I have a few clarifying questions.\nCandidate: First, what is the time period over which this drop has been observed?\nInterviewer: Roughly the last 7 to 8 months.\nCandidate: Understood. Second, how does the client charge the corporate? Is it a fixed fee, a variable fee, or both?\nInterviewer: There are two components. A fixed charge per corporate per period, and a variable charge based on usage. For this case, ignore the fixed charge and focus only on the variable side.\nCandidate: Got it. Third, is the client operating pan-India or in specific cities?\nInterviewer: Assume pan-India.\nCandidate: Last clarification. Is the share drop showing up across every corporate partner, or is it concentrated in a subset of them?\nInterviewer: Assume it is broadly across the portfolio, not isolated to one corporate.\nCandidate: Got it. Let me lay out my approach. I want to start at the profit equation and trace where the decline is coming from.\nProfit equals revenue minus cost. Since the symptom is that the share of employees opting for us is dropping, the impact lands on the revenue side, so I will focus there first.\nVariable revenue here breaks down into a clean equation:\nRevenue = Number of Corporate Partners * Employees per Corporate * Opt Rate for our service * Average Rides per Employee * Average Distance per Ride * Price Charged per Kilometre\nThe fixed charge would sit on top of that as a per-corporate component, but you have asked me to leave that aside.\nInterviewer: Good. Of those drivers, which one would you like to focus on?\nCandidate: The symptom is specifically about the opt rate, so I will narrow there. The number of corporate partners, the employee base, the ride frequency, and the per-kilometre price are not what you flagged. The opt rate is the term that has moved.\nInterviewer: Correct. The opt rate is dropping. Continue.\nCandidate: A drop in opt rate can come from one of two broad sources.\n1. Supply side: even when an employee wants our cab, the service is not available. For example, not enough cars on the road, long wait times, or limited geographic coverage.\n2. Demand side: the cars are available, but employees are choosing one of the other four vendors instead of ours.\nMy initial hypothesis is that this is a demand-side issue, since the share drop is showing up broadly across corporates and across geographies, which is more consistent with employees actively switching away than with a sudden capacity collapse.\nInterviewer: Your hypothesis is right. It is a demand-side issue. Walk me through the demand side.\nCandidate: On the demand side, for an employee to choose our cab in any given booking, three conditions have to hold.\n1. Need: the employee actually needs a ride at that moment.\n2. Awareness: the employee knows our cab is one of the available options.\n3. Affordability and acceptability: the cost works for the employee and the experience is acceptable.\nThe need is constant, because the underlying transport need is unchanged. Awareness should also be stable, since we are already on the booking platform alongside the other four vendors. Affordability is not the constraint here, because the ride is free for the employee in any case. That points the issue toward acceptability, which is really a user experience question.\nInterviewer: Yes. The user experience is the issue. Take it forward.\nCandidate: I will break the user experience into three phases of the journey.\n1. Pre-ride: booking the cab, finding it in the app, downloading or logging in, getting a confirmation, and getting the OTP.\n2. During the ride: the actual ride from pickup to drop.\n3. Post-ride: drop-off, feedback, ratings, and follow-up.\nIf awareness is fine and the app is functioning, the pre-ride phase is unlikely to be where the choice is being lost. The post-ride phase mostly shapes future choices through feedback. The during-the-ride phase is where the lived experience happens, and it is the phase most likely to push an employee to switch vendors on the next booking.\nInterviewer: The during-ride phase is where the issue sits. Go deeper.\nCandidate: Within the during-ride phase, there are three things that shape the experience.\n1. The vehicle itself.\n2. The driver: behaviour, communication, driving style, professionalism.\n3. The route: time taken, traffic, detours.\nInterviewer: The issue is with the vehicle.\nCandidate: Got it. Let me run a mental value chain on the vehicle, in roughly the order an employee would notice things.\n1. Type of vehicle: SUV, sedan, hatchback. Is the form factor appropriate for the rider?\n2. Brand of vehicle: is it a recognised brand that signals reliability?\n3. Appearance from outside: is the vehicle clean, dent-free, presentable?\n4. Quality of interiors: once the employee sits inside, is it well-maintained, are the seats and accessories in good shape?\n5. Utilities inside the vehicle: air conditioner working, music system working, charging points functional.\nInterviewer: The issue is in the quality bucket. There is a smell coming from the vehicles. What could possibly be causing a smell in a cab?\nCandidate: Let me list four reasons a smell could be coming from the inside of the vehicle.\n1. The vehicle is physically dirty: dirt, mud, and dust accumulated from the routes it travels, and that is producing the smell.\n2. The interiors are not well-maintained: seat covers, mats, and accessories have degraded or are not being cleaned, and the material itself is producing the smell.\n3. The driver is not hygienic: the smell is associated with the driver rather than the vehicle itself.\n4. Perception driven by competition: our cabs may not actually smell worse, but the other four vendors are using strong air fresheners, so by comparison our cabs are perceived as smelling worse.\nInterviewer: The interiors are not well-maintained, and specifically it is the seat covers. About 7 to 8 months ago, the company changed all seat covers to a new sweat-absorbent material. The intent was good, since the new material absorbs sweat from the rider's clothes. The problem is that the material retains sweat instead of letting it evaporate. Over time, the seat covers accumulate retained sweat and start producing a smell, which is what employees are noticing during the ride and what is pushing them toward the other four vendors.\n\nDon't Sweat It Framework\nWHY ARE FEWER EMPLOYEES OPTING FOR OUR CABS?\nClarifying Questions: Charging structure (fixed versus variable). Drop across all corporates or concentrated.\nBrownie Points: Decomposing revenue into six multiplicative drivers.\nKeep In Mind: Operational change can produce downstream defects."
+      "visualisations": [
+      {
+        "title": "Revenue Formula",
+        "type": "formula",
+        "lhs": "Revenue",
+        "rhs": "Partners × Employees/Partner × Opt Rate % ×  Rides/Employee × Distance/Ride × Price/Kilometre",
+        "derivations": [],
+        "content": "Revenue = Partners × Employees/Partner × Opt Rate % ×  Rides/Employee × Distance/Ride × Price/Kilometre"
+      }
+    ],
+  "framework": "Candidate: Thank you. Before I lay out my approach, I have a few clarifying questions. First, what is the time period over which this drop has been observed?\nInterviewer: Roughly the last 7 to 8 months.\nCandidate: Understood. Second, how does the client charge the corporate? Is it a fixed fee, a variable fee, or both?\nInterviewer: There are two components. A fixed charge per corporate per period, and a variable charge based on usage. For this case, ignore the fixed charge and focus only on the variable side.\nCandidate: Got it. Third, is the client operating pan-India or in specific cities?\nInterviewer: Assume pan-India.\nCandidate: Last clarification. Is the share drop showing up across every corporate partner, or is it concentrated in a subset of them?\nInterviewer: Assume it is broadly across the portfolio, not isolated to one corporate.\nCandidate: Got it. Let me lay out my approach. I want to start at the profit equation and trace where the decline is coming from.\nProfit equals revenue minus cost. Since the symptom is that the share of employees opting for us is dropping, the impact lands on the revenue side, so I will focus there first.\nVariable revenue here breaks down into a clean equation:\nVariable Revenue = Number of Corporate Partners * Employees per Partner * Opt Rate for our service * Average Rides per Employee * Average Distance per Ride * Price Charged per Kilometre\nThe fixed charge would sit on top of that as a per-corporate component, but you have asked me to leave that aside.\nInterviewer: Good. Of those drivers, which one would you like to focus on?\nCandidate: The symptom is specifically about the opt rate, so I will narrow there. The number of corporate partners, the employee base, the ride frequency, and the per-kilometre price are not what you flagged. The opt rate is the term that has moved.\nInterviewer: Correct. The opt rate is dropping. Continue.\nCandidate: A drop in opt rate can come from one of two broad sources.\n1. Supply side: even when an employee wants our cab, the service is not available. For example, not enough cars on the road, long wait times, or limited geographic coverage.\n2. Demand side: the cars are available, but employees are choosing one of the other four vendors instead of ours.\nMy initial hypothesis is that this is a demand-side issue, since the share drop is showing up broadly across corporates and across geographies, which is more consistent with employees actively switching away than with a sudden capacity collapse.\nInterviewer: Your hypothesis is right. It is a demand-side issue. Walk me through the demand side.\nCandidate: On the demand side, for an employee to choose our cab in any given booking, three conditions have to hold.\n1. Need: the employee actually needs a ride at that moment.\n2. Awareness: the employee knows our cab is one of the available options.\n3. Affordability and acceptability: the cost works for the employee and the experience is acceptable.\nThe need is constant, because the underlying transport need is unchanged. Awareness should also be stable, since we are already on the booking platform alongside the other four vendors. Affordability is not the constraint here, because the ride is free for the employee in any case. That points the issue toward acceptability, which is really a user experience question.\nInterviewer: Yes. The user experience is the issue. Take it forward.\nCandidate: I will break the user experience into three phases of the journey.\n1. Pre-ride: booking the cab, finding it in the app, downloading or logging in, getting a confirmation, and getting the OTP.\n2. During the ride: the actual ride from pickup to drop.\n3. Post-ride: drop-off, feedback, ratings, and follow-up.\nIf awareness is fine and the app is functioning, the pre-ride phase is unlikely to be where the choice is being lost. The post-ride phase mostly shapes future choices through feedback. The during-the-ride phase is where the lived experience happens, and it is the phase most likely to push an employee to switch vendors on the next booking.\nInterviewer: The during-ride phase is where the issue sits. Go deeper.\nCandidate: Within the during-ride phase, there are three things that shape the experience.\n1. The vehicle itself.\n2. The driver: behaviour, communication, driving style, professionalism.\n3. The route: time taken, traffic, detours.\nInterviewer: The issue is with the vehicle.\nCandidate: Got it. Let me run a mental value chain on the vehicle, in roughly the order an employee would notice things.\n1. Type of vehicle: SUV, sedan, hatchback. Is the form factor appropriate for the rider?\n2. Brand of vehicle: is it a recognised brand that signals reliability?\n3. Appearance from outside: is the vehicle clean, dent-free, presentable?\n4. Quality of interiors: once the employee sits inside, is it well-maintained, are the seats and accessories in good shape?\n5. Utilities inside the vehicle: air conditioner working, music system working, charging points functional.\nInterviewer: The issue is in the quality bucket. There is a smell coming from the vehicles. What could possibly be causing a smell in a cab?\nCandidate: Let me list four reasons a smell could be coming from the inside of the vehicle.\n1. The vehicle is physically dirty: dirt, mud, and dust accumulated from the routes it travels, and that is producing the smell.\n2. The interiors are not well-maintained: seat covers, mats, and accessories have degraded or are not being cleaned, and the material itself is producing the smell.\n3. The driver is not hygienic: the smell is associated with the driver rather than the vehicle itself.\n4. Perception driven by competition: our cabs may not actually smell worse, but the other four vendors are using strong air fresheners, so by comparison our cabs are perceived as smelling worse.\nInterviewer: The interiors are not well-maintained, and specifically it is the seat covers. About 7 to 8 months ago, the company changed all seat covers to a new sweat-absorbent material. The intent was good, since the new material absorbs sweat from the rider's clothes. The problem is that the material retains sweat instead of letting it evaporate. Over time, the seat covers accumulate retained sweat and start producing a smell, which is what employees are noticing during the ride and what is pushing them toward the other four vendors.\n\nDon't Sweat It Framework\nWhy are fewer employees opting for our cabs?\nClarifying Questions: Charging structure (fixed versus variable). Drop across all corporates or concentrated.\nBrownie Points: Decomposing revenue into six multiplicative drivers.\nKeep In Mind: Operational change can produce downstream defects."
   }
 ]
