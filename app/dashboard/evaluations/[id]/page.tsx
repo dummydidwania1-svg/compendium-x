@@ -49,6 +49,7 @@ type SessionRecordingView = {
   transcriptError: string | null
   transcriptModel: string | null
   audioUrl: string | null
+  mergedAudioUrl: string | null
 }
 
 function asNullableString(value: unknown): string | null {
@@ -66,6 +67,9 @@ function mapSessionRecording(value: unknown): SessionRecordingView | null {
     transcriptError: asNullableString(source.transcriptError),
     transcriptModel: asNullableString(source.transcriptModel),
     audioUrl: asNullableString(source.audioUrl),
+    // mergedAudioUrl lives on the session-doc root (written by the Cloud
+    // Function), not under `recording`, so the caller passes it in explicitly.
+    mergedAudioUrl: asNullableString(source.mergedAudioUrl),
   }
 }
 
@@ -234,8 +238,15 @@ export default function EvaluationDetailPage() {
           return
         }
 
-        const rawRecording = snapshot.data()?.recording
-        const mapped = mapSessionRecording(rawRecording)
+        const sessionData = snapshot.data() ?? {}
+        const rawRecording = sessionData.recording
+        // Fold the root-level mergedAudioUrl into the recording view so the
+        // player can prefer the combined audio over a single mic track.
+        const recordingSource =
+          rawRecording && typeof rawRecording === 'object'
+            ? { ...(rawRecording as Record<string, unknown>), mergedAudioUrl: sessionData.mergedAudioUrl }
+            : rawRecording
+        const mapped = mapSessionRecording(recordingSource)
         if (!cancelled) {
           setSessionRecording(mapped)
         }
@@ -379,12 +390,12 @@ export default function EvaluationDetailPage() {
                           Model: {sessionRecording.transcriptModel}
                         </span>
                       )}
-                      {sessionRecording.audioUrl && (
+                      {(sessionRecording.mergedAudioUrl || sessionRecording.audioUrl) && (
                         <a
-                          href={sessionRecording.audioUrl}
+                          href={sessionRecording.mergedAudioUrl ?? sessionRecording.audioUrl ?? undefined}
                           className="rounded-full border border-emerald-400/40 bg-emerald-300/10 px-2.5 py-1 text-emerald-100 transition hover:border-emerald-300/80 hover:bg-emerald-300/20"
                         >
-                          Open Session Audio
+                          {sessionRecording.mergedAudioUrl ? 'Open Combined Audio' : 'Open Session Audio'}
                         </a>
                       )}
                     </div>
