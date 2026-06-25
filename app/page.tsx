@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import Navbar from '@/components/dashboard/Navbar'
 import Footer from '@/components/dashboard/Footer'
+import StructuredData from '@/components/seo/StructuredData'
 
 
 const PAGE_CSS = `
@@ -718,6 +719,7 @@ const tRemove = setTimeout(() => {
 
   return (
     <div className="ccx-page">
+      <StructuredData />
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link
