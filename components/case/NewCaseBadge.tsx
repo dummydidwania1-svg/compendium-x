@@ -45,7 +45,7 @@ export default function NewCaseBadge({ caseId, caseKey, size = 'sm', className =
 
   // Bigger than before so the inner disc has room for legible upright text.
   const dim = size === 'md' ? 38 : 22
-  const fontSize = size === 'md' ? 8.8 : 5.6
+  const fontSize = size === 'md' ? 9.4 : 6.1
   const ring = size === 'md' ? 1.6 : 1.2
 
   return (
@@ -65,9 +65,9 @@ export default function NewCaseBadge({ caseId, caseKey, size = 'sm', className =
       >
         <defs>
           <linearGradient id={`ncxNewGrad-${size}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#6E4B33" />
-            <stop offset="55%" stopColor="#5C4033" />
-            <stop offset="100%" stopColor="#7A5230" />
+            <stop offset="0%" stopColor="#4C6B40" />
+            <stop offset="55%" stopColor="#3D5A35" />
+            <stop offset="100%" stopColor="#314A2B" />
           </linearGradient>
           {/* clip used to keep the shine glint inside the seal */}
           <clipPath id={`ncxNewClip-${size}`}>
@@ -79,15 +79,15 @@ export default function NewCaseBadge({ caseId, caseKey, size = 'sm', className =
         <path
           className="ncx-new-badge-star"
           fill={`url(#ncxNewGrad-${size})`}
-          stroke="#C4A882"
+          stroke="#A8C49A"
           strokeWidth={ring}
           strokeLinejoin="round"
           d="M20 1.5 L23.4 6.6 L29.1 4.0 L29.6 10.2 L35.8 9.6 L33.4 15.4 L38.7 18.1 L34.0 22.0 L37.9 26.8 L31.9 28.3 L33.0 34.4 L27.0 32.6 L25.2 38.6 L20 35.0 L14.8 38.6 L13.0 32.6 L7.0 34.4 L8.1 28.3 L2.1 26.8 L6.0 22.0 L1.3 18.1 L6.6 15.4 L4.2 9.6 L10.4 10.2 L10.9 4.0 L16.6 6.6 Z"
         />
 
         {/* clean inner disc: gives the text a flat round field so NEW is fully legible and contained */}
-        <circle cx="20" cy="20" r="11.5" fill="#553B2E" />
-        <circle cx="20" cy="20" r="11.5" fill="none" stroke="#C4A882" strokeOpacity="0.45" strokeWidth="0.8" />
+        <circle cx="20" cy="20" r="11.6" fill="#2E4427" />
+        <circle cx="20" cy="20" r="11.6" fill="none" stroke="#B7D0A9" strokeOpacity="0.5" strokeWidth="0.8" />
 
         {/* modern shine glint: a soft diagonal light band that sweeps across, clipped to the seal */}
         <g clipPath={`url(#ncxNewClip-${size})`}>
