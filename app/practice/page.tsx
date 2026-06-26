@@ -369,7 +369,7 @@ export default function PracticeModeSelection() {
                 animation: mounted ? 'practice-card-in 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both' : 'none',
                 opacity: mounted ? undefined : 0,
               }}
-              onClick={startRemoteSession}
+              onClick={() => void startRemoteSession()}
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#3D5A35]/6">
                 <div>
@@ -392,7 +392,7 @@ export default function PracticeModeSelection() {
                 <div className="mt-5">
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); startRemoteSession() }}
+                    onClick={(e) => { e.stopPropagation(); void startRemoteSession() }}
                     className="practice-btn w-full rounded-full px-3 py-2 text-[9px] font-medium uppercase tracking-[0.16em]"
                   >
                     Create Link
