@@ -56,34 +56,39 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
   // gateState to subscription deps, which would restart the subscription on every state change).
   const gateStateRef = useRef<GateState>('asking')
   useEffect(() => { gateStateRef.current = gateState }, [gateState])
-  // Coordinates the first-snapshot grace period: the mount effect waits for
-  // firstSnapshotReceivedRef to be true before calling request(), giving the opt-out
-  // subscription a chance to resolve the gate before the browser mic prompt fires.
+  // Coordinates the first-snapshot grace period. The mount effect waits for this
+  // before calling request(), AND the denied/granted sync waits for it before
+  // transitioning -- otherwise a mic already blocked in the browser flips the hook
+  // to 'denied' instantly and shows the blocked screen before the opt-out can win.
   const firstSnapshotReceivedRef = useRef(false)
   const firstSnapshotResolveRef = useRef<(() => void) | null>(null)
+  const [gateReady, setGateReady] = useState(false)
 
   // Live opt-out subscription for the whole gate lifecycle.
-  // Also signals the mount effect once the first snapshot returns.
+  // Resolves the gate the instant the candidate's opt-out lands (from ANY
+  // unresolved state -- asking or denied), and unblocks the grace period.
   useEffect(() => {
+    const unblock = () => {
+      firstSnapshotReceivedRef.current = true
+      firstSnapshotResolveRef.current?.()
+      firstSnapshotResolveRef.current = null
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setGateReady(true)
+    }
     const unsub = onSnapshot(
       sessionDoc(lobbyId),
       (snap) => {
-        // Unblock the mount gate (first snapshot received).
-        firstSnapshotReceivedRef.current = true
-        firstSnapshotResolveRef.current?.()
-        firstSnapshotResolveRef.current = null
-        if (!snap.exists()) return
-        if (snap.data()?.candidateOptedOutRecording === true && gateStateRef.current === 'asking') {
+        if (snap.exists() && snap.data()?.candidateOptedOutRecording === true && !resolvedRef.current) {
           try { sessionStorage.setItem(SHOWN_KEY(lobbyId), '1') } catch { /* quota */ }
-          resolvedRef.current = true  // prevent mount effect from firing mic prompt after unmount
+          resolvedRef.current = true  // block the mount mic prompt + the denied/granted sync
           onResolvedRef.current()
+          return
         }
+        unblock()
       },
       () => {
-        // On Firestore error, unblock the mount gate so the mic prompt still fires.
-        firstSnapshotReceivedRef.current = true
-        firstSnapshotResolveRef.current?.()
-        firstSnapshotResolveRef.current = null
+        // On Firestore error, unblock so the gate still functions normally.
+        unblock()
       }
     )
     return () => unsub()
@@ -110,12 +115,15 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Sync denied from hook state (fires when user blocks via address bar).
+  // Sync denied/granted from hook state. Held until the grace period clears
+  // (gateReady) and never fires once the opt-out has resolved the gate, so a
+  // candidate who chose "Continue without recording" never sees any mic UI.
   useEffect(() => {
+    if (!gateReady || resolvedRef.current) return
     if (gateState === 'granted' || gateState === 'declined') return
     if (state === 'granted') setGateState('granted')
     else if (state === 'denied') setGateState('denied')
-  }, [state, gateState])
+  }, [state, gateState, gateReady])
 
   // 2.2s draining timer for granted and declined states.
   // Deps: only gateState and lobbyId (both stable while the countdown runs).

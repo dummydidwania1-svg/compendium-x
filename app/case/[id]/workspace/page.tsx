@@ -1628,9 +1628,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
   const prepVisible = isLocalSession ? localPrepVisible : remotePrepVisible
   const prepStep = isLocalSession ? localPrepStep : remotePrepStep
-  const prepSteps = isLocalSession
-    ? ['Keep this tab open', 'Allow microphone access', 'Continue here']
-    : ['Starting microphone', 'Setting up', 'Recording begins']
+  // Same prep strip for both modes -- mic is granted on the practice page and
+  // recording auto-starts, so remote mirrors local exactly.
+  const prepSteps = ['Keep this tab open', 'Allow microphone access', 'Continue here']
   const localPermissionBlocked = isLocalSession && microphonePermissionState === 'denied'
 
   useEffect(() => {
@@ -2689,7 +2689,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                     <span className="text-[11px] leading-relaxed text-[#5C4033]/72">{workspaceToast.message}</span>
                   </div>
                 ) : null}
-                <div className={`relative grid gap-5 ${isLocalSession ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}>
+                <div className="relative grid gap-5 grid-cols-3">
                   {workflowSteps.map((step, index) => {
                     const isCurrent = workflowCurrentStep === index + 1
                     const isPast = workflowCurrentStep > index + 1
@@ -2753,12 +2753,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
 
               <div className="mt-6 flex flex-wrap justify-center gap-3">
-                {/* Local mode: recording auto-starts (mic already granted on the
+                {/* Both modes: recording auto-starts (mic already granted on the
                     practice page), so the idle state is just a momentary gap before
                     capture begins — never surface the "Allow Recording" button there.
-                    Only show it on a genuine failure the candidate must recover from.
-                    Remote mode keeps showing it on idle for the share-screen prompt. */}
-                {!recordingConsentDeclined && ((isLocalSession ? recordingState === 'failed' : (recordingState === 'idle' || recordingState === 'failed')) || prepVisible) ? (
+                    Only show it on a genuine failure the candidate must recover from. */}
+                {!recordingConsentDeclined && (recordingState === 'failed' || prepVisible) ? (
                   <button
                     type="button"
                     onClick={handleEnableCapture}

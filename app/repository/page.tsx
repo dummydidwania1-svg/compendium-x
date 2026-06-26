@@ -17,6 +17,7 @@ import PlatformLoader from '@/components/PlatformLoader'
 import CursorGlow from '@/components/CursorGlow'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
+import { InterviewerMicRecovery } from '@/components/permissions/InterviewerMicRecovery'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import casesCatalog from '@/data/cases.json'
 import NewCaseBadge from '@/components/case/NewCaseBadge'
@@ -928,6 +929,17 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
         lobbyId={lobbyId}
         onShowingChange={setMicGuardShowing}
       />
+
+      {/* Interviewer mic-loss recovery — remote only, while browsing cases.
+          Shows if a previously-granted mic drops; "Skip recording" routes to the
+          gate's no-consent path. Self-suppresses on candidate opt-out / prior decline. */}
+      {selectionMode && !!lobbyId && sessionMode !== 'local' ? (
+        <InterviewerMicRecovery
+          lobbyId={lobbyId}
+          active={true}
+          onShowingChange={setMicGuardShowing}
+        />
+      ) : null}
 
       {caseLoadErrorVisible && !micGuardShowing ? (
         <LobbyOverlay

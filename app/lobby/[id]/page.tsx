@@ -8,7 +8,7 @@ import { MeetingTabShareCard } from '@/components/permissions/MeetingTabShareCar
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import type { LobbyOverlayProps } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
-import { useMicPermission } from '@/lib/permissions/microphone'
+import { InterviewerMicRecovery } from '@/components/permissions/InterviewerMicRecovery'
 import { InterviewerMicGate } from '@/components/permissions/InterviewerMicGate'
 import PlatformLoader from '@/components/PlatformLoader'
 import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
@@ -959,30 +959,6 @@ function InterviewerLobby({
     setMicGateVisible(false)
     setHandoffVisible(false)
   }, [])
-  // Remote mic-loss recovery: watch for a previously-granted mic dropping while
-  // the interviewer is on the welcome/lobby screen (before InterviewerExperience takes over).
-  const { state: interviewerMicState, request: interviewerMicRequest, retry: interviewerMicRetry } = useMicPermission()
-  const [interviewerLobbyMicLostVisible, setInterviewerLobbyMicLostVisible] = useState(false)
-  const interviewerLobbyMicReshowRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => {
-    // Only active in remote mode, after the gate resolved, and if the interviewer did not decline.
-    if (isLocalMode || micGateVisible) return
-    const declined = typeof sessionStorage !== 'undefined'
-      && sessionStorage.getItem(`compendium-interviewer-noconsent-${lobbyId}`) === '1'
-    if (declined) { setInterviewerLobbyMicLostVisible(false); return }
-    if (interviewerMicState === 'denied') {
-      setInterviewerLobbyMicLostVisible(true)
-    } else {
-      if (interviewerLobbyMicReshowRef.current) {
-        clearTimeout(interviewerLobbyMicReshowRef.current)
-        interviewerLobbyMicReshowRef.current = null
-      }
-      setInterviewerLobbyMicLostVisible(false)
-    }
-  }, [interviewerMicState, isLocalMode, micGateVisible, lobbyId])
-  useEffect(() => () => {
-    if (interviewerLobbyMicReshowRef.current) clearTimeout(interviewerLobbyMicReshowRef.current)
-  }, [])
   const [candidateTabClosed, setCandidateTabClosed] = useState(false)
   const candidateTabUrlRef = useRef<string | null>(null)
   // True once we've seen at least one fresh heartbeat — so a candidate tab that
@@ -1389,49 +1365,16 @@ function InterviewerLobby({
         onShowingChange={setMicGuardShowing}
       />
 
-      {/* Remote mic-loss recovery -- shown after gate resolves if a previously-granted
-          mic is lost before the session starts. "Skip recording" routes to the gate's
-          no-consent path so it is indistinguishable from "I don't provide consent." */}
-      {interviewerLobbyMicLostVisible && !isLocalMode && !micGateVisible && !micGuardShowing && (
-        <LobbyOverlay
-          type="warning"
-          icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>}
-          title="Looks like your mic dropped"
-          body="Your mic just cut out. Turn it back on and tap Allow mic to keep going, or skip and we'll just record your candidate."
-          actionLabel="Allow mic"
-          onAction={async () => {
-            const stream = await interviewerMicRequest()
-            if (stream) stream.getTracks().forEach((t) => t.stop())
-            else void interviewerMicRetry()
-          }}
-          secondaryActionLabel="Skip recording"
-          onSecondaryAction={async () => {
-            setInterviewerLobbyMicLostVisible(false)
-            try { sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
-            try {
-              const token = await auth.currentUser?.getIdToken()
-              if (token) {
-                void fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                  body: JSON.stringify({ role: 'interviewer', active: true, interviewerAudioCaptured: false }),
-                  keepalive: true,
-                })
-              }
-            } catch { /* best-effort */ }
-          }}
-          onDismiss={() => {
-            setInterviewerLobbyMicLostVisible(false)
-            interviewerLobbyMicReshowRef.current = setTimeout(() => {
-              interviewerLobbyMicReshowRef.current = null
-              if (typeof sessionStorage !== 'undefined'
-                && sessionStorage.getItem(`compendium-interviewer-noconsent-${lobbyId}`) !== '1') {
-                setInterviewerLobbyMicLostVisible(true)
-              }
-            }, 1500)
-          }}
+      {/* Remote mic-loss recovery -- shown after the gate resolves if a
+          previously-granted mic drops before the session starts. Self-suppresses
+          on candidate opt-out or a prior interviewer decline. */}
+      {!isLocalMode && !micGateVisible ? (
+        <InterviewerMicRecovery
+          lobbyId={lobbyId}
+          active={true}
+          onShowingChange={setMicGuardShowing}
         />
-      )}
+      ) : null}
 
       {showCloseWarning && !micGuardShowing && (
         <LobbyOverlay

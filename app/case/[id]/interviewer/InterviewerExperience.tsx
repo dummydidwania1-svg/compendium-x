@@ -16,6 +16,7 @@ import { slugifyCase } from '@/lib/slug'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
+import { useMicPermission } from '@/lib/permissions/microphone'
 
 
 /* ── Error boundary — catches client-side crashes, auto-reloads ── */
@@ -643,6 +644,12 @@ export function InterviewerPageInner({
 	// tracks into one merged transcript. Permission flow: auto-ask → remind once
 	// → continue without forcing (signal interviewerAudioCaptured:false).
 	const [interviewerMicBannerVisible, setInterviewerMicBannerVisible] = useState(false)
+	// Permission-state watcher for a manual mid-session mic block (recorder.onerror
+	// does not always fire when the user toggles the mic in site settings). When the
+	// banner is raised from this path we track it so a later 'granted' can clear it
+	// without stomping a banner raised by a hardware error (recorder.onerror).
+	const { state: interviewerMicPermState, retry: interviewerMicRetry } = useMicPermission()
+	const bannerFromPermissionRef = useRef(false)
 	const interviewerRecorderRef = useRef<MediaRecorder | null>(null)
 	const interviewerChunksRef = useRef<Blob[]>([])
 	const interviewerMicStreamRef = useRef<MediaStream | null>(null)
@@ -663,6 +670,37 @@ export function InterviewerPageInner({
 	const cachedAuthTokenRef = useRef<string | null>(null)
 	// Consecutive observations of recording:false while active:true (B5 debounce).
 	const candidateRecordingFalseCountRef = useRef(0)
+
+	// Mid-session mic-LOSS recovery (manual block). Raises the recovery banner when
+	// a previously-granted mic flips to 'denied'. Hard-suppressed when the interviewer
+	// declined at the gate or the candidate opted out, and once upload has begun.
+	useEffect(() => {
+		if (!isRemoteMode || previewMode) return
+		if (currentView === 'success' || interviewerUploadState !== 'idle') return
+		if (interviewerDeclinedConsentRef.current || candidateOptedOutRef.current) return
+		if (interviewerMicPermState === 'denied') {
+			bannerFromPermissionRef.current = true
+			// eslint-disable-next-line react-hooks/set-state-in-effect
+			setInterviewerMicBannerVisible(true)
+		} else if (interviewerMicPermState === 'granted' && bannerFromPermissionRef.current) {
+			bannerFromPermissionRef.current = false
+			// eslint-disable-next-line react-hooks/set-state-in-effect
+			setInterviewerMicBannerVisible(false)
+		}
+	}, [interviewerMicPermState, isRemoteMode, previewMode, currentView, interviewerUploadState])
+
+	// Re-query mic on focus/visibility so a mic toggled in site settings is detected.
+	useEffect(() => {
+		if (!isRemoteMode || previewMode || typeof window === 'undefined') return
+		const recheck = () => { void interviewerMicRetry() }
+		const onVis = () => { if (document.visibilityState === 'visible') void interviewerMicRetry() }
+		window.addEventListener('focus', recheck)
+		document.addEventListener('visibilitychange', onVis)
+		return () => {
+			window.removeEventListener('focus', recheck)
+			document.removeEventListener('visibilitychange', onVis)
+		}
+	}, [isRemoteMode, previewMode, interviewerMicRetry])
 
 	// ── Remote-mode overlays ─────────────────────────────────────────────────────
 	// B5: Candidate's recording window is closed / recording not active.
@@ -1816,17 +1854,20 @@ if (previewMode && !forcePreview) {
 						body="Your mic just cut out, so your side stopped recording. Turn it back on and tap Allow mic to keep going, or skip and we'll just record the candidate. Either way the case keeps running."
 						actionLabel="Allow mic"
 						onAction={async () => {
+							bannerFromPermissionRef.current = false
 							setInterviewerMicBannerVisible(false)
 							await startInterviewerRecording()
 						}}
 						secondaryActionLabel="Skip recording"
 						onSecondaryAction={async () => {
+							bannerFromPermissionRef.current = false
 							setInterviewerMicBannerVisible(false)
 							try { if (lobbyId) sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
 							interviewerDeclinedConsentRef.current = true
 							await signalNoInterviewerAudio()
 						}}
 						onDismiss={async () => {
+							bannerFromPermissionRef.current = false
 							setInterviewerMicBannerVisible(false)
 							try { if (lobbyId) sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
 							interviewerDeclinedConsentRef.current = true
