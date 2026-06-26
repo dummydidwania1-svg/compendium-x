@@ -77,7 +77,7 @@ function safeExt(filename: string): string {
   return filename.toLowerCase().split('.').pop()?.replace(/[^a-z0-9]/g, '') || 'jpg';
 }
 
-// 80 heights so the waveform has more bars and looks denser at any width
+// 80 heights - bars use flex-1 so they fill the panel at any width
 const WAVE_HEIGHTS = [
   9,14,7,21,12,24,8,17,22,10,16,20,7,14,19,9,15,5,18,23,
   11,16,21,26,13,8,20,15,7,21,10,17,23,11,18,6,14,20,25,10,
@@ -110,11 +110,11 @@ function useCountUp(target: number | null): number {
 // ─────────────────────────────────────────────────────────────
 function ParamBar({ label, score, ready }: { label: string; score: number | null; ready: boolean }) {
   return (
-    <div className="flex items-center gap-[5px] mb-[4px]">
-      <span className="text-[9px] font-medium text-[#5C4033]/45 w-[52px] text-right shrink-0">
+    <div className="flex items-center gap-[6px] mb-[5px]">
+      <span className="text-[10px] font-medium text-[#5C4033]/45 w-[58px] text-right shrink-0">
         {label}
       </span>
-      <div className="flex-1 h-[2px] rounded-full bg-[#D9D0C4]/35">
+      <div className="flex-1 h-[2.5px] rounded-full bg-[#D9D0C4]/35">
         <div
           className="h-full rounded-full transition-all duration-[900ms] ease-out"
           style={{
@@ -123,7 +123,7 @@ function ParamBar({ label, score, ready }: { label: string; score: number | null
           }}
         />
       </div>
-      <span className="text-[9px] font-semibold text-[#3B2F2F] w-[14px] text-right shrink-0 tabular-nums">
+      <span className="text-[10px] font-semibold text-[#3B2F2F] w-[16px] text-right shrink-0 tabular-nums">
         {score != null ? score : '--'}
       </span>
     </div>
@@ -131,39 +131,25 @@ function ParamBar({ label, score, ready }: { label: string; score: number | null
 }
 
 // ─────────────────────────────────────────────────────────────
-// Sidebar meta row - keeps icon-slot + text in consistent alignment
+// Sidebar meta row - consistent icon-slot + text
 // ─────────────────────────────────────────────────────────────
 function MetaRow({
   icon: Icon,
-  dot,
-  dotColor,
-  dotPulse,
   text,
   textStyle,
 }: {
-  icon?: React.ElementType;
-  dot?: boolean;
-  dotColor?: string;
-  dotPulse?: boolean;
+  icon: React.ElementType;
   text: string;
   textStyle?: React.CSSProperties;
 }) {
   return (
-    <div className="flex items-center gap-[6px] mb-[4px]">
-      {/* Fixed-width icon slot so all rows align */}
-      <div className="w-[11px] h-[11px] shrink-0 flex items-center justify-center">
-        {dot ? (
-          <div
-            className={`w-[5px] h-[5px] rounded-full ${dotPulse ? 'animate-pulse' : ''}`}
-            style={{ background: dotColor ?? 'rgba(92,64,51,.3)' }}
-          />
-        ) : Icon ? (
-          <Icon className="w-full h-full" />
-        ) : null}
+    <div className="flex items-center gap-[7px] mb-[5px]">
+      <div className="w-[12px] h-[12px] shrink-0 flex items-center justify-center">
+        <Icon className="w-full h-full" style={{ color: 'rgba(92,64,51,.42)' }} />
       </div>
       <span
-        className="text-[9.5px] leading-none"
-        style={textStyle ?? { color: 'rgba(92,64,51,.48)' }}
+        className="text-[11px] leading-none"
+        style={textStyle ?? { color: 'rgba(92,64,51,.52)' }}
       >
         {text}
       </span>
@@ -194,7 +180,7 @@ export default function CaseDetailOverlay({
   const [duration, setDuration]         = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
 
-  // Transcript (no sync highlighting - not accurate without real timestamps)
+  // Transcript
   const rawTranscript = useMemo(
     () => stripTs(entry.transcript || entry.transcriptPreview || ''),
     [entry.transcript, entry.transcriptPreview],
@@ -220,6 +206,8 @@ export default function CaseDetailOverlay({
   const transcriptStatus = entry.transcriptStatus ?? null;
   const transcriptReason = entry.transcriptReason ?? null;
   const scoreVal         = entry.isUnrated ? null : (entry.score ?? null);
+  // mergedAudioUrl is only set for dual-mic remote sessions
+  const sessionMode      = entry.mergedAudioUrl ? 'Remote' : 'Solo';
   const playedCount      = duration > 0
     ? Math.floor((currentTime / duration) * WAVE_HEIGHTS.length)
     : 0;
@@ -244,18 +232,34 @@ export default function CaseDetailOverlay({
   }, [handleClose]);
 
   // ── Audio events ──
+  // Listen for loadedmetadata AND durationchange so duration is always captured,
+  // even when the browser defers network requests until first play.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const onTime = () => setCurrentTime(audio.currentTime);
-    const onMeta = () => setDuration(audio.duration || 0);
-    const onEnd  = () => setIsPlaying(false);
+
+    const syncDuration = () => {
+      if (audio.duration && isFinite(audio.duration)) setDuration(audio.duration);
+    };
+    const onTime = () => {
+      setCurrentTime(audio.currentTime);
+      // Grab duration opportunistically on each timeupdate as a fallback
+      if (audio.duration && isFinite(audio.duration)) setDuration(d => d || audio.duration);
+    };
+    const onEnd = () => setIsPlaying(false);
+
+    audio.addEventListener('loadedmetadata', syncDuration);
+    audio.addEventListener('durationchange', syncDuration);
     audio.addEventListener('timeupdate', onTime);
-    audio.addEventListener('loadedmetadata', onMeta);
     audio.addEventListener('ended', onEnd);
+
+    // If metadata already loaded before we mounted (cached audio), grab it now
+    if (audio.duration && isFinite(audio.duration)) setDuration(audio.duration);
+
     return () => {
+      audio.removeEventListener('loadedmetadata', syncDuration);
+      audio.removeEventListener('durationchange', syncDuration);
       audio.removeEventListener('timeupdate', onTime);
-      audio.removeEventListener('loadedmetadata', onMeta);
       audio.removeEventListener('ended', onEnd);
     };
   }, []);
@@ -275,12 +279,17 @@ export default function CaseDetailOverlay({
     else           { void a.play(); setIsPlaying(true); }
   };
 
+  // Read duration directly from the element so seeking works even before
+  // the React state has been updated by loadedmetadata.
   const seekTo = (ratio: number) => {
     const a = audioRef.current;
-    if (!a || !duration) return;
-    const t = Math.max(0, Math.min(ratio, 1)) * duration;
+    if (!a) return;
+    const dur = a.duration && isFinite(a.duration) ? a.duration : duration;
+    if (!dur) return;
+    const t = Math.max(0, Math.min(ratio, 1)) * dur;
     a.currentTime = t;
     setCurrentTime(t);
+    if (!duration && isFinite(a.duration)) setDuration(a.duration);
   };
 
   const setSpeed = (rate: number) => {
@@ -361,8 +370,11 @@ export default function CaseDetailOverlay({
   // Render
   // ─────────────────────────────────────────────────────────────
   return (
+    // Outer container: fixed over full screen, but top padding keeps content
+    // below the platform navbar (~68px) so the modal header is never hidden.
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2"
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ padding: '74px 10px 10px' }}
       onClick={handleClose}
     >
       {/* Backdrop */}
@@ -375,8 +387,9 @@ export default function CaseDetailOverlay({
       <div
         className={`relative flex flex-col overflow-hidden rounded-2xl border bg-[#fff8f0] shadow-2xl ${isExiting ? 'animate-scale-out' : 'animate-scale-in'}`}
         style={{
-          width: 'min(96vw, 1080px)',
-          height: 'min(94vh, 860px)',
+          width: 'min(97vw, 1100px)',
+          // Fill available height (viewport minus top padding 74px + bottom 10px)
+          height: 'min(calc(100vh - 92px), 840px)',
           borderColor: 'rgba(61,90,53,.1)',
           boxShadow: '0 24px 64px rgba(59,47,47,.16)',
         }}
@@ -385,40 +398,40 @@ export default function CaseDetailOverlay({
 
         {/* ── HEADER ── */}
         <div
-          className="flex items-center justify-between gap-3 px-4 py-[9px] flex-shrink-0"
+          className="flex items-center justify-between gap-3 px-5 py-[11px] flex-shrink-0"
           style={{ borderBottom: '1px solid rgba(92,64,51,.07)' }}
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="eyebrow !mb-0 !text-[8px] shrink-0">case details</span>
-            <span className="text-[9px]" style={{ color: 'rgba(92,64,51,.2)' }}>·</span>
-            <span className="font-serif text-[13px] font-[500] text-[#3B2F2F] tracking-[-0.01em] truncate">
+          <div className="flex items-center gap-[9px] min-w-0">
+            <span className="eyebrow !mb-0 !text-[9px] shrink-0">case details</span>
+            <span className="text-[10px]" style={{ color: 'rgba(92,64,51,.2)' }}>·</span>
+            <span className="font-serif text-[15px] font-[500] text-[#3B2F2F] tracking-[-0.01em] truncate">
               {entry.name}
             </span>
           </div>
-          <div className="flex items-center gap-[5px] shrink-0">
+          <div className="flex items-center gap-[6px] shrink-0">
             <span
-              className="text-[7.5px] font-semibold tracking-[.07em] px-[7px] py-[2px] rounded-[5px]"
+              className="text-[8.5px] font-semibold tracking-[.06em] px-[8px] py-[3px] rounded-[5px]"
               style={{ background: 'rgba(217,208,196,.22)', border: '1px solid rgba(92,64,51,.1)', color: 'rgba(92,64,51,.55)' }}
             >
               {entry.type}
             </span>
             <span
-              className="text-[7.5px] font-semibold tracking-[.07em] px-[7px] py-[2px] rounded-[5px]"
+              className="text-[8.5px] font-semibold tracking-[.06em] px-[8px] py-[3px] rounded-[5px]"
               style={{ background: 'rgba(217,208,196,.22)', border: '1px solid rgba(92,64,51,.1)', color: 'rgba(92,64,51,.55)' }}
             >
               {entry.level}
             </span>
-            <span className="text-[8px] font-medium tabular-nums ml-1" style={{ color: 'rgba(92,64,51,.3)' }}>
+            <span className="text-[9.5px] font-medium tabular-nums ml-1" style={{ color: 'rgba(92,64,51,.3)' }}>
               {entry.isUnrated ? 'Unrated' : `${entry.score} / 5`}
             </span>
             <button
               onClick={handleClose}
-              className="ml-1 w-[18px] h-[18px] rounded-full flex items-center justify-center transition-colors duration-150"
+              className="ml-1 w-[20px] h-[20px] rounded-full flex items-center justify-center transition-colors duration-150"
               style={{ background: 'rgba(217,208,196,.5)', color: '#5C4033' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#3B2F2F'; (e.currentTarget as HTMLElement).style.color = '#F0EBE3'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(217,208,196,.5)'; (e.currentTarget as HTMLElement).style.color = '#5C4033'; }}
             >
-              <X className="w-[9px] h-[9px]" />
+              <X className="w-[10px] h-[10px]" />
             </button>
           </div>
         </div>
@@ -428,9 +441,9 @@ export default function CaseDetailOverlay({
 
           {/* ── LEFT SIDEBAR ── */}
           <div
-            className="w-[188px] shrink-0 flex flex-col gap-[9px] overflow-y-auto"
+            className="w-[200px] shrink-0 flex flex-col gap-[11px] overflow-y-auto"
             style={{
-              padding: '12px 11px',
+              padding: '14px 13px',
               borderRight: '1px solid rgba(92,64,51,.06)',
               scrollbarWidth: 'none',
             }}
@@ -438,32 +451,32 @@ export default function CaseDetailOverlay({
             {/* Score ring */}
             <div
               className="text-center"
-              style={{ paddingBottom: '10px', borderBottom: '1px solid rgba(92,64,51,.06)' }}
+              style={{ paddingBottom: '11px', borderBottom: '1px solid rgba(92,64,51,.06)' }}
             >
               <div
-                className="w-[64px] h-[64px] rounded-full inline-flex flex-col items-center justify-center"
+                className="w-[72px] h-[72px] rounded-full inline-flex flex-col items-center justify-center"
                 style={{
                   border: `1.5px solid ${scoreVal ? scoreColor(scoreVal) + '30' : 'rgba(61,90,53,.18)'}`,
-                  boxShadow: scoreVal ? `0 0 14px ${scoreColor(scoreVal)}10` : 'none',
+                  boxShadow: scoreVal ? `0 0 16px ${scoreColor(scoreVal)}10` : 'none',
                   transition: 'box-shadow .6s ease',
                 }}
               >
-                <span className="font-serif text-[28px] font-[500] text-[#3B2F2F] leading-none tabular-nums">
+                <span className="font-serif text-[32px] font-[500] text-[#3B2F2F] leading-none tabular-nums">
                   {entry.isUnrated ? '--' : displayScore}
                 </span>
                 {!entry.isUnrated && (
-                  <span className="text-[7.5px] font-medium mt-[1px]" style={{ color: 'rgba(92,64,51,.3)' }}>
+                  <span className="text-[9px] font-medium mt-[2px]" style={{ color: 'rgba(92,64,51,.3)' }}>
                     out of 5
                   </span>
                 )}
               </div>
-              <p className="text-[7.5px] mt-[4px]" style={{ color: 'rgba(92,64,51,.28)' }}>overall score</p>
+              <p className="text-[8.5px] mt-[5px]" style={{ color: 'rgba(92,64,51,.28)' }}>overall score</p>
             </div>
 
             {/* Parameter bars */}
             {!entry.isUnrated && (
-              <div style={{ paddingBottom: '10px', borderBottom: '1px solid rgba(92,64,51,.06)' }}>
-                <p className="text-[7.5px] uppercase tracking-[.14em] font-semibold text-[#3D5A35] mb-[6px]">
+              <div style={{ paddingBottom: '11px', borderBottom: '1px solid rgba(92,64,51,.06)' }}>
+                <p className="text-[8.5px] uppercase tracking-[.13em] font-semibold text-[#3D5A35] mb-[7px]">
                   Parameters
                 </p>
                 <ParamBar label="Structure"  score={entry.structure}  ready={paramsReady} />
@@ -473,37 +486,40 @@ export default function CaseDetailOverlay({
               </div>
             )}
 
-            {/* Session meta - all rows use MetaRow for consistent icon alignment */}
-            <div style={{ paddingBottom: localUrls.length > 0 ? '10px' : 0, borderBottom: localUrls.length > 0 ? '1px solid rgba(92,64,51,.06)' : 'none' }}>
-              <p className="text-[7.5px] uppercase tracking-[.14em] font-semibold text-[#3D5A35] mb-[6px]">
+            {/* Session meta */}
+            <div style={{
+              paddingBottom: localUrls.length > 0 ? '11px' : 0,
+              borderBottom: localUrls.length > 0 ? '1px solid rgba(92,64,51,.06)' : 'none',
+            }}>
+              <p className="text-[8.5px] uppercase tracking-[.13em] font-semibold text-[#3D5A35] mb-[7px]">
                 Session
               </p>
 
               <MetaRow icon={CalendarDays} text={fmtDate(entry.date)} />
               <MetaRow
-                icon={entry.lobbyId ? Wifi : User}
-                text={entry.lobbyId ? 'Remote' : 'Solo'}
+                icon={sessionMode === 'Remote' ? Wifi : User}
+                text={sessionMode}
               />
 
               {(transcriptStatus === 'completed' || transcriptStatus === 'partial') && (
                 <MetaRow
                   icon={FileCheck}
                   text="Transcript ready"
-                  textStyle={{ color: 'rgba(61,90,53,.65)', fontWeight: 500, fontSize: '9.5px' }}
+                  textStyle={{ color: 'rgba(61,90,53,.65)', fontWeight: 500, fontSize: '11px' }}
                 />
               )}
               {(transcriptStatus === 'processing' || transcriptStatus === 'pending') && (
                 <MetaRow
                   icon={Clock}
                   text="Generating..."
-                  textStyle={{ color: 'rgba(92,64,51,.42)', fontSize: '9.5px' }}
+                  textStyle={{ color: 'rgba(92,64,51,.42)', fontSize: '11px' }}
                 />
               )}
               {transcriptStatus === 'failed' && (
                 <MetaRow
                   icon={AlertCircle}
                   text="No transcript"
-                  textStyle={{ color: 'rgba(92,64,51,.38)', fontSize: '9.5px' }}
+                  textStyle={{ color: 'rgba(92,64,51,.38)', fontSize: '11px' }}
                 />
               )}
 
@@ -515,7 +531,7 @@ export default function CaseDetailOverlay({
             {/* Notes count */}
             {localUrls.length > 0 && (
               <div>
-                <p className="text-[7.5px] uppercase tracking-[.14em] font-semibold text-[#3D5A35] mb-[6px]">
+                <p className="text-[8.5px] uppercase tracking-[.13em] font-semibold text-[#3D5A35] mb-[7px]">
                   Notes
                 </p>
                 <MetaRow
@@ -531,14 +547,14 @@ export default function CaseDetailOverlay({
 
             {/* Tab bar */}
             <div
-              className="flex flex-shrink-0 px-[14px] bg-[#fff8f0]"
+              className="flex flex-shrink-0 px-[16px] bg-[#fff8f0]"
               style={{ borderBottom: '1px solid rgba(92,64,51,.07)' }}
             >
               {(['session', 'notes'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => switchTab(tab)}
-                  className={`text-[10px] py-[8px] px-[10px] border-b-2 transition-all duration-150 tracking-[.01em] ${
+                  className={`text-[11px] py-[9px] px-[12px] border-b-2 transition-all duration-150 tracking-[.01em] ${
                     activeTab === tab
                       ? 'text-[#3B2F2F] border-[#3B2F2F]/55 font-semibold'
                       : 'border-transparent font-medium'
@@ -561,15 +577,15 @@ export default function CaseDetailOverlay({
 
                 {/* ── SESSION TAB ── */}
                 {activeTab === 'session' && (
-                  <div className="p-[14px_16px] flex flex-col gap-[18px] pb-[24px]">
+                  <div className="p-[16px_18px] flex flex-col gap-[20px] pb-[28px]">
 
                     {/* Summary */}
                     <div>
-                      <p className="text-[8.5px] uppercase tracking-[.14em] font-semibold text-[#3D5A35] mb-[9px]">
+                      <p className="text-[9.5px] uppercase tracking-[.13em] font-semibold text-[#3D5A35] mb-[10px]">
                         Summary
                       </p>
                       <p
-                        className="text-[11px] leading-[1.75] rounded-r-[7px] px-[13px] py-[10px]"
+                        className="text-[12px] leading-[1.75] rounded-r-[7px] px-[14px] py-[11px]"
                         style={{
                           color: 'rgba(92,64,51,.72)',
                           background: 'rgba(61,90,53,.045)',
@@ -582,16 +598,15 @@ export default function CaseDetailOverlay({
 
                     {/* Transcript */}
                     <div>
-                      <p className="text-[8.5px] uppercase tracking-[.14em] font-semibold text-[#3D5A35] mb-[9px]">
+                      <p className="text-[9.5px] uppercase tracking-[.13em] font-semibold text-[#3D5A35] mb-[10px]">
                         Transcript
                       </p>
 
-                      {/* Has transcript - render bubbles */}
                       {entry.hasTranscript && turns.length > 0 && (
-                        <div className="flex flex-col gap-[7px]">
+                        <div className="flex flex-col gap-[8px]">
                           {(transcriptStatus === 'partial') && (
                             <div
-                              className="text-[10.5px] leading-[1.7] px-[12px] py-[8px] rounded-[8px] mb-[3px]"
+                              className="text-[11.5px] leading-[1.7] px-[13px] py-[9px] rounded-[8px] mb-[4px]"
                               style={{
                                 color: 'rgba(92,64,51,.55)',
                                 background: 'rgba(217,208,196,.12)',
@@ -608,12 +623,11 @@ export default function CaseDetailOverlay({
                             return (
                               <div
                                 key={i}
-                                className={`flex gap-[6px] items-start animate-turn-in ${isCandidate ? 'flex-row-reverse' : ''}`}
+                                className={`flex gap-[7px] items-start animate-turn-in ${isCandidate ? 'flex-row-reverse' : ''}`}
                                 style={{ animationDelay: `${Math.min(i * 30, 280)}ms` }}
                               >
-                                {/* Avatar */}
                                 <div
-                                  className="w-[20px] h-[20px] rounded-full flex items-center justify-center text-[7.5px] font-semibold shrink-0 mt-[1px]"
+                                  className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[8px] font-semibold shrink-0 mt-[1px]"
                                   style={
                                     isCandidate
                                       ? { background: 'rgba(217,208,196,.38)', color: 'rgba(92,64,51,.65)', border: '1px solid rgba(217,208,196,.55)' }
@@ -623,9 +637,8 @@ export default function CaseDetailOverlay({
                                   {isCandidate ? 'C' : 'I'}
                                 </div>
 
-                                {/* Bubble */}
                                 <div
-                                  className="max-w-[74%] px-[10px] py-[7px] text-[10.5px] leading-[1.6] text-[#3B2F2F]"
+                                  className="max-w-[74%] px-[11px] py-[8px] text-[11.5px] leading-[1.65] text-[#3B2F2F]"
                                   style={
                                     isCandidate
                                       ? {
@@ -648,10 +661,9 @@ export default function CaseDetailOverlay({
                         </div>
                       )}
 
-                      {/* Processing / pending */}
                       {(transcriptStatus === 'processing' || transcriptStatus === 'pending') && (
                         <div
-                          className="px-[12px] py-[10px] rounded-[8px] text-[11px] leading-[1.7]"
+                          className="px-[13px] py-[11px] rounded-[8px] text-[12px] leading-[1.7]"
                           style={{
                             color: 'rgba(92,64,51,.58)',
                             background: 'rgba(61,90,53,.04)',
@@ -662,30 +674,29 @@ export default function CaseDetailOverlay({
                         </div>
                       )}
 
-                      {/* Failed */}
                       {transcriptStatus === 'failed' && (
                         <div
-                          className="px-[12px] py-[10px] rounded-[8px]"
+                          className="px-[13px] py-[11px] rounded-[8px]"
                           style={{
                             background: 'rgba(217,208,196,.12)',
                             border: '1px solid rgba(217,208,196,.38)',
                           }}
                         >
                           {retryQueued ? (
-                            <p className="text-[11px] leading-[1.7]" style={{ color: 'rgba(92,64,51,.58)' }}>
+                            <p className="text-[12px] leading-[1.7]" style={{ color: 'rgba(92,64,51,.58)' }}>
                               Retry queued. Your transcript will appear here once it's ready.
                             </p>
                           ) : (
                             <>
-                              <p className="text-[11px] leading-[1.7]" style={{ color: 'rgba(92,64,51,.58)' }}>
+                              <p className="text-[12px] leading-[1.7]" style={{ color: 'rgba(92,64,51,.58)' }}>
                                 Transcript didn't come through. The audio might have been too short or mostly silent.
                               </p>
                               {entry.hasAudio && entry.lobbyId && (
-                                <div className="mt-[8px] flex items-center gap-[8px]">
+                                <div className="mt-[9px] flex items-center gap-[8px]">
                                   <button
                                     onClick={() => void handleRetry()}
                                     disabled={retrying}
-                                    className="inline-flex items-center gap-[5px] px-[10px] py-[5px] rounded-full text-[9.5px] font-semibold tracking-[.02em] transition-all duration-150 disabled:opacity-60 hover:opacity-80"
+                                    className="inline-flex items-center gap-[5px] px-[11px] py-[6px] rounded-full text-[10.5px] font-semibold tracking-[.02em] transition-all duration-150 disabled:opacity-60 hover:opacity-80"
                                     style={{
                                       background: 'rgba(217,208,196,.2)',
                                       border: '1px solid rgba(92,64,51,.15)',
@@ -693,12 +704,12 @@ export default function CaseDetailOverlay({
                                     }}
                                   >
                                     {retrying
-                                      ? <><Loader2 className="w-[10px] h-[10px] animate-spin" />Queuing...</>
-                                      : <><RefreshCw className="w-[10px] h-[10px]" />Try again</>
+                                      ? <><Loader2 className="w-[11px] h-[11px] animate-spin" />Queuing...</>
+                                      : <><RefreshCw className="w-[11px] h-[11px]" />Try again</>
                                     }
                                   </button>
                                   {retryError && (
-                                    <span className="text-[9.5px]" style={{ color: 'rgba(92,64,51,.55)' }}>
+                                    <span className="text-[10.5px]" style={{ color: 'rgba(92,64,51,.55)' }}>
                                       {retryError}
                                     </span>
                                   )}
@@ -709,14 +720,13 @@ export default function CaseDetailOverlay({
                         </div>
                       )}
 
-                      {/* No transcript at all */}
                       {!entry.hasTranscript && !transcriptStatus && (
-                        <p className="text-[11px]" style={{ color: 'rgba(92,64,51,.38)' }}>
+                        <p className="text-[12px]" style={{ color: 'rgba(92,64,51,.38)' }}>
                           No transcript recorded for this session.
                         </p>
                       )}
                       {entry.hasAudio && !entry.hasTranscript && transcriptStatus === null && (
-                        <p className="text-[11px]" style={{ color: 'rgba(92,64,51,.45)' }}>
+                        <p className="text-[12px]" style={{ color: 'rgba(92,64,51,.45)' }}>
                           Transcript wasn't generated for this recording.
                         </p>
                       )}
@@ -726,8 +736,8 @@ export default function CaseDetailOverlay({
 
                 {/* ── NOTES TAB ── */}
                 {activeTab === 'notes' && (
-                  <div className="p-[14px_16px]">
-                    <p className="text-[9.5px] mb-[10px]" style={{ color: 'rgba(92,64,51,.38)' }}>
+                  <div className="p-[16px_18px]">
+                    <p className="text-[11px] mb-[12px]" style={{ color: 'rgba(92,64,51,.38)' }}>
                       Photos of your handwritten notes and frameworks from this case.
                     </p>
 
@@ -735,12 +745,12 @@ export default function CaseDetailOverlay({
                       <div className="flex flex-col gap-[10px]">
                         <button
                           onClick={() => setExpandedUrl(null)}
-                          className="flex items-center gap-[5px] text-[9.5px] font-medium transition-colors duration-150 self-start"
+                          className="flex items-center gap-[5px] text-[11px] font-medium transition-colors duration-150 self-start"
                           style={{ color: 'rgba(92,64,51,.5)' }}
                           onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3B2F2F'}
                           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(92,64,51,.5)'}
                         >
-                          <ChevronLeft className="w-[12px] h-[12px]" />
+                          <ChevronLeft className="w-[13px] h-[13px]" />
                           Back to all photos
                         </button>
                         <div
@@ -751,19 +761,19 @@ export default function CaseDetailOverlay({
                             src={expandedUrl}
                             alt="Case notes"
                             className="w-full object-contain"
-                            style={{ maxHeight: '500px' }}
+                            style={{ maxHeight: '520px' }}
                           />
                         </div>
                       </div>
                     ) : (
                       <>
                         {localUrls.length > 0 && (
-                          <div className="flex flex-wrap gap-[7px] mb-[10px]">
+                          <div className="flex flex-wrap gap-[8px] mb-[12px]">
                             {localUrls.map((url, i) => (
                               <div
                                 key={i}
                                 onClick={() => setExpandedUrl(url)}
-                                className="w-[80px] h-[80px] rounded-[8px] overflow-hidden cursor-pointer transition-all duration-150"
+                                className="w-[84px] h-[84px] rounded-[8px] overflow-hidden cursor-pointer transition-all duration-150"
                                 style={{
                                   background: 'rgba(217,208,196,.2)',
                                   border: '1px solid rgba(217,208,196,.45)',
@@ -789,7 +799,7 @@ export default function CaseDetailOverlay({
                           onDragLeave={() => setDragging(false)}
                           onDrop={handleDrop}
                           onClick={() => fileInputRef.current?.click()}
-                          className="flex flex-col items-center justify-center gap-[6px] rounded-[10px] py-[24px] cursor-pointer transition-all duration-200"
+                          className="flex flex-col items-center justify-center gap-[7px] rounded-[10px] py-[26px] cursor-pointer transition-all duration-200"
                           style={{
                             border: `1.5px dashed ${dragging ? '#3D5A35' : 'rgba(61,90,53,.22)'}`,
                             background: dragging ? 'rgba(61,90,53,.05)' : 'transparent',
@@ -808,13 +818,13 @@ export default function CaseDetailOverlay({
                           }}
                         >
                           {uploading
-                            ? <Loader2 className="w-[18px] h-[18px] animate-spin" style={{ color: 'rgba(92,64,51,.4)' }} />
-                            : <Upload className="w-[16px] h-[16px]" style={{ color: 'rgba(92,64,51,.28)' }} />
+                            ? <Loader2 className="w-[20px] h-[20px] animate-spin" style={{ color: 'rgba(92,64,51,.4)' }} />
+                            : <Upload className="w-[18px] h-[18px]" style={{ color: 'rgba(92,64,51,.28)' }} />
                           }
-                          <p className="text-[10px] font-medium" style={{ color: 'rgba(59,47,47,.65)' }}>
+                          <p className="text-[11px] font-medium" style={{ color: 'rgba(59,47,47,.65)' }}>
                             {uploading ? 'Uploading...' : localUrls.length > 0 ? 'Add another photo' : 'Drop your photo here'}
                           </p>
-                          <p className="text-[9px]" style={{ color: 'rgba(92,64,51,.35)' }}>
+                          <p className="text-[10px]" style={{ color: 'rgba(92,64,51,.35)' }}>
                             {uploading ? 'Hang on a moment' : 'or click to browse. PNG, JPG, HEIC up to 10 MB.'}
                           </p>
                         </div>
@@ -826,7 +836,7 @@ export default function CaseDetailOverlay({
                           onChange={handleFileInput}
                         />
                         {uploadError && (
-                          <p className="text-[10px] mt-[8px]" style={{ color: 'rgba(92,64,51,.65)' }}>
+                          <p className="text-[11px] mt-[9px]" style={{ color: 'rgba(92,64,51,.65)' }}>
                             {uploadError}
                           </p>
                         )}
@@ -836,9 +846,9 @@ export default function CaseDetailOverlay({
                 )}
               </div>
 
-              {/* Bottom fade overlay */}
+              {/* Bottom fade */}
               <div
-                className="absolute bottom-0 left-0 right-0 h-[22px] pointer-events-none"
+                className="absolute bottom-0 left-0 right-0 h-[24px] pointer-events-none"
                 style={{ background: 'linear-gradient(to bottom, rgba(255,248,240,0), #fff8f0)' }}
               />
             </div>
@@ -848,28 +858,28 @@ export default function CaseDetailOverlay({
         {/* ── AUDIO PLAYER ── */}
         {hasAudio && (
           <div
-            className="flex-shrink-0 px-[14px] pt-[8px] pb-[10px] bg-[#fff8f0]"
+            className="flex-shrink-0 px-[16px] pt-[9px] pb-[11px] bg-[#fff8f0]"
             style={{ borderTop: '1px solid rgba(92,64,51,.06)' }}
           >
-            {/* Row 1: play + waveform (fills full width) + time */}
-            <div className="flex items-center gap-[8px]">
+            {/* Play + waveform + time */}
+            <div className="flex items-center gap-[9px]">
               <button
                 onClick={togglePlay}
-                className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0 transition-all duration-150"
+                className="w-[28px] h-[28px] rounded-full flex items-center justify-center shrink-0 transition-all duration-150"
                 style={{ background: '#3B2F2F', color: '#F0EBE3' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#5C4033'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.07)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#3B2F2F'; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
                 {isPlaying
-                  ? <Pause className="w-[9px] h-[9px]" />
-                  : <Play className="w-[9px] h-[9px] ml-[1px]" />
+                  ? <Pause className="w-[10px] h-[10px]" />
+                  : <Play className="w-[10px] h-[10px] ml-[1px]" />
                 }
               </button>
 
-              {/* Waveform: flex-1 bars fill the entire available width */}
+              {/* Waveform bars - flex-1 fills all available horizontal space */}
               <div
                 className="flex items-end gap-[2px] flex-1 min-w-0 cursor-pointer"
-                style={{ height: '26px' }}
+                style={{ height: '28px' }}
                 onClick={onWaveClick}
               >
                 {WAVE_HEIGHTS.map((h, i) => (
@@ -892,17 +902,17 @@ export default function CaseDetailOverlay({
                 ))}
               </div>
 
-              <span className="text-[9px] tabular-nums whitespace-nowrap shrink-0" style={{ color: 'rgba(92,64,51,.35)' }}>
+              <span className="text-[10px] tabular-nums whitespace-nowrap shrink-0" style={{ color: 'rgba(92,64,51,.35)' }}>
                 {fmtTime(currentTime)} / {fmtTime(duration)}
               </span>
             </div>
 
-            {/* Scrubber line - aligns under waveform (34px = play button 26px + gap 8px) */}
+            {/* Scrubber - 37px left offset = play button 28px + gap 9px */}
             <div
               className="relative rounded-[1px] cursor-pointer"
               style={{
                 height: '1.5px',
-                margin: '4px 0 0 34px',
+                margin: '5px 0 0 37px',
                 background: 'rgba(217,208,196,.4)',
               }}
               onClick={onScrubClick}
@@ -915,22 +925,22 @@ export default function CaseDetailOverlay({
                 }}
               />
               <div
-                className="absolute w-[6px] h-[6px] rounded-full bg-[#3B2F2F]"
+                className="absolute w-[7px] h-[7px] rounded-full bg-[#3B2F2F]"
                 style={{
-                  top: '-2.5px',
-                  left: duration > 0 ? `calc(${(currentTime / duration) * 100}% - 3px)` : '-3px',
+                  top: '-3px',
+                  left: duration > 0 ? `calc(${(currentTime / duration) * 100}% - 3.5px)` : '-3.5px',
                   transition: 'left .1s linear',
                 }}
               />
             </div>
 
             {/* Speed pills */}
-            <div className="flex items-center gap-[2px] mt-[5px] ml-[34px]">
+            <div className="flex items-center gap-[3px] mt-[6px] ml-[37px]">
               {[0.75, 1, 1.25, 1.5, 2].map(r => (
                 <button
                   key={r}
                   onClick={() => setSpeed(r)}
-                  className="text-[8.5px] px-[6px] py-[1.5px] rounded-[8px] font-medium transition-all duration-100"
+                  className="text-[9px] px-[7px] py-[2px] rounded-[8px] font-medium transition-all duration-100"
                   style={
                     playbackRate === r
                       ? { background: '#3B2F2F', color: '#F0EBE3', border: '1px solid #3B2F2F' }
