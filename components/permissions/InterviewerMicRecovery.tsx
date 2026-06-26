@@ -68,13 +68,22 @@ export function InterviewerMicRecovery({ lobbyId, active, onShowingChange }: Int
   const { state, request, retry } = useMicPermission()
   const [visible, setVisible] = useState(false)
   const [declined, setDeclined] = useState(false)
+  // Ref mirrors declined so the reshow timer closure never reads stale state.
+  // Set synchronously before dismiss fires so the double-trigger guard in
+  // onDismiss catches LobbyOverlay's post-action dismiss() call.
+  const declinedRef = useRef(false)
   const [candidateOptedOut, setCandidateOptedOut] = useState(false)
   const reshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Hydrate the declined flag from the gate's sessionStorage signal.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    try { if (sessionStorage.getItem(NOCONSENT_KEY(lobbyId)) === '1') setDeclined(true) } catch { /* quota */ }
+    try {
+      if (sessionStorage.getItem(NOCONSENT_KEY(lobbyId)) === '1') {
+        declinedRef.current = true
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setDeclined(true)
+      }
+    } catch { /* quota */ }
   }, [lobbyId])
 
   // Watch the session doc for the hard suppressors.
@@ -85,7 +94,10 @@ export function InterviewerMicRecovery({ lobbyId, active, onShowingChange }: Int
       (snap) => {
         const data = snap.data()
         if (data?.candidateOptedOutRecording === true) setCandidateOptedOut(true)
-        if (data?.interviewerAudioCaptured === false) setDeclined(true)
+        if (data?.interviewerAudioCaptured === false) {
+          declinedRef.current = true
+          setDeclined(true)
+        }
       },
       () => { /* ignore snapshot errors */ }
     )
@@ -138,6 +150,9 @@ export function InterviewerMicRecovery({ lobbyId, active, onShowingChange }: Int
   const skipRecording = useCallback(() => {
     if (reshowTimerRef.current) { clearTimeout(reshowTimerRef.current); reshowTimerRef.current = null }
     setVisible(false)
+    // Set ref synchronously so onDismiss (fired 280ms later by LobbyOverlay)
+    // returns early and does not re-show or double-signal.
+    declinedRef.current = true
     setDeclined(true)
     try { sessionStorage.setItem(NOCONSENT_KEY(lobbyId), '1') } catch { /* quota */ }
     void signalNoInterviewerAudio(lobbyId)
@@ -157,10 +172,13 @@ export function InterviewerMicRecovery({ lobbyId, active, onShowingChange }: Int
       onSecondaryAction={skipRecording}
       onDismiss={() => {
         setVisible(false)
+        // Early-return when already declined so LobbyOverlay's post-action
+        // dismiss() call doesn't schedule a reshow after "Skip recording".
+        if (declinedRef.current) return
         if (reshowTimerRef.current) clearTimeout(reshowTimerRef.current)
         reshowTimerRef.current = setTimeout(() => {
           reshowTimerRef.current = null
-          if (state === 'denied' && active && !declined && !candidateOptedOut) setVisible(true)
+          if (state === 'denied' && active && !declinedRef.current && !candidateOptedOut) setVisible(true)
         }, 1500)
       }}
     />

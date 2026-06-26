@@ -61,6 +61,10 @@ export function MicGuardOverlay({ active, lobbyId, body, onDeclined, onShowingCh
   const { state, request, retry } = useMicPermission()
   const [visible, setVisible] = useState(false)
   const [declined, setDeclined] = useState(() => hasDeclinedRecording(lobbyId))
+  // Ref mirrors declined so closures (reshow timer, onDismiss) always read the
+  // current value -- avoids the stale-closure double-trigger bug where clicking
+  // "Skip recording" runs both onSecondaryAction and onDismiss.
+  const declinedRef = useRef(false)
   const reshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Notify the parent whenever the overlay shows/hides so it can suppress its
@@ -69,8 +73,11 @@ export function MicGuardOverlay({ active, lobbyId, body, onDeclined, onShowingCh
 
   // Hydrate the decline flag if lobbyId resolves after first render.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (hasDeclinedRecording(lobbyId)) setDeclined(true)
+    if (hasDeclinedRecording(lobbyId)) {
+      declinedRef.current = true
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDeclined(true)
+    }
   }, [lobbyId])
 
   // Cross-window decline: if the OTHER window opts out, mirror it here.
@@ -82,6 +89,7 @@ export function MicGuardOverlay({ active, lobbyId, body, onDeclined, onShowingCh
         const data = JSON.parse(e.newValue) as { lobbyId?: string }
         if (data.lobbyId === lobbyId) {
           try { sessionStorage.setItem(norecordKey(lobbyId), '1') } catch { /* quota */ }
+          declinedRef.current = true
           setDeclined(true)
           onDeclined?.()
         }
@@ -135,6 +143,9 @@ export function MicGuardOverlay({ active, lobbyId, body, onDeclined, onShowingCh
   const declineRecording = useCallback(() => {
     if (reshowTimerRef.current) { clearTimeout(reshowTimerRef.current); reshowTimerRef.current = null }
     setVisible(false)
+    // Set ref synchronously BEFORE dismiss() fires onDismiss (280ms later) so
+    // the onDismiss early-return catches the double-fire.
+    declinedRef.current = true
     setDeclined(true)
     if (lobbyId) {
       try { sessionStorage.setItem(norecordKey(lobbyId), '1') } catch { /* quota */ }
@@ -157,10 +168,13 @@ export function MicGuardOverlay({ active, lobbyId, body, onDeclined, onShowingCh
       onSecondaryAction={declineRecording}
       onDismiss={() => {
         setVisible(false)
+        // Early-return when already declined (e.g. onSecondaryAction just ran) so
+        // LobbyOverlay's post-action dismiss() call doesn't schedule a reshow.
+        if (declinedRef.current) return
         if (reshowTimerRef.current) clearTimeout(reshowTimerRef.current)
         reshowTimerRef.current = setTimeout(() => {
           reshowTimerRef.current = null
-          if (state === 'denied' && active && !declined) setVisible(true)
+          if (state === 'denied' && active && !declinedRef.current) setVisible(true)
         }, 1500)
       }}
     />

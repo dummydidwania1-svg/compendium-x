@@ -785,9 +785,11 @@ export function InterviewerPageInner({
 				// Update suppressor refs so the recovery banner never fires spuriously.
 				if (data.candidateOptedOutRecording === true) candidateOptedOutRef.current = true
 				if (data.interviewerAudioCaptured === false) interviewerDeclinedConsentRef.current = true
-				// Start mic recording, but skip when: candidate opted out at launch,
-				// interviewer declined at the gate (NOCONSENT_KEY), or the session doc
-				// already shows interviewerAudioCaptured:false (gate decline echoed back).
+				// Start mic recording, but skip when: interviewer declined at the gate
+				// (NOCONSENT_KEY), or the session doc already shows interviewerAudioCaptured:false.
+				// Candidate opt-out no longer suppresses the interviewer's mic flow -- the
+				// interviewer still records, but the audio is discarded (never uploaded) in
+				// flushInterviewerAudio when candidateOptedOutRef is true.
 				if (!interviewerRecordingStartedRef.current) {
 					interviewerRecordingStartedRef.current = true
 					let declinedAtGate = false
@@ -796,7 +798,6 @@ export function InterviewerPageInner({
 							&& sessionStorage.getItem(`compendium-interviewer-noconsent-${lobbyId}`) === '1'
 					} catch { /* quota */ }
 					const skipRecording =
-						data.candidateOptedOutRecording === true ||
 						data.interviewerAudioCaptured === false ||
 						declinedAtGate
 					if (!skipRecording) void startInterviewerRecording()
@@ -983,6 +984,12 @@ export function InterviewerPageInner({
 
 	const flushInterviewerAudio = useCallback(async ({ final: isFinal }: { final: boolean }) => {
 		if (!isRemoteMode || !lobbyId) return
+		// Candidate opted out -- never upload. Mark as not_captured on final so the
+		// success view shows the friendly "ran without recording" message.
+		if (candidateOptedOutRef.current) {
+			if (isFinal) setInterviewerUploadState('not_captured')
+			return
+		}
 		if (flushInFlightRef.current) return  // skip tick if previous upload still in flight
 
 		// Force the current timeslice into ondataavailable before snapshotting
@@ -1867,6 +1874,10 @@ if (previewMode && !forcePreview) {
 							await signalNoInterviewerAudio()
 						}}
 						onDismiss={async () => {
+							// Guard: onSecondaryAction already ran if the user clicked "Skip recording",
+							// and LobbyOverlay always fires dismiss() after any action. Return early
+							// so we don't double-signal signalNoInterviewerAudio.
+							if (interviewerDeclinedConsentRef.current) return
 							bannerFromPermissionRef.current = false
 							setInterviewerMicBannerVisible(false)
 							try { if (lobbyId) sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
@@ -2309,15 +2320,17 @@ if (previewMode && !forcePreview) {
 			interviewerUploadState === 'upload_failed' ||
 			interviewerUploadState === 'not_captured' ||
 			interviewerUploadState === 'idle'
-		const uploadStatusMessage =
-			interviewerUploadState === 'uploading'
-				? 'Uploading your recording—please keep this tab open for a moment.'
+		const sessionRanWithoutRecording = candidateOptedOutRef.current
+		const uploadStatusMessage = sessionRanWithoutRecording
+			? 'Heads up - this session ran without recording, so there is no audio to upload. Your feedback is saved and that is all that is needed here.'
+			: interviewerUploadState === 'uploading'
+				? 'Uploading your recording - please keep this tab open for a moment.'
 				: interviewerUploadState === 'uploaded'
 					? 'Your recording uploaded successfully. The transcript will be ready in your dashboard shortly.'
 					: interviewerUploadState === 'upload_failed'
-						? 'Your recording couldn’t be uploaded. Only the candidate’s audio will be available in the transcript.'
+						? "Your recording couldn't be uploaded. Only the candidate's audio will be available in the transcript."
 						: interviewerUploadState === 'not_captured'
-							? 'Your microphone wasn’t captured during this session. Only the candidate’s audio will be available in the transcript.'
+							? "Your microphone wasn't captured during this session. Only the candidate's audio will be available in the transcript."
 							: null
 
 		return (
@@ -2408,7 +2421,7 @@ if (previewMode && !forcePreview) {
 							Candidate Evaluation
 						</h1>
 						<p className="mt-3 max-w-[480px] text-[13px] leading-relaxed text-[#5c4033]/68">
-							{editingFeedback ? 'Edit and lock your review before submitting.' : 'Review locked. Submit when you’re happy, or edit to change anything.'}
+							{editingFeedback ? 'Edit and lock your review before submitting.' : "Review locked. Submit when you're happy, or edit to change anything."}
 							{caseData ? (
 								<>
 									{' '}Case: <span className="font-semibold text-[#453a2a]">{caseData.title}</span>

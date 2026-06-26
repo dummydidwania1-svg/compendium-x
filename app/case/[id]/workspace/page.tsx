@@ -666,49 +666,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
   const startCaptureFlow = useCallback(
     async (mode: RecordingMode) => {
-      if (mode === 'local') {
-        if (recordingState === 'starting') return
-
-        clearRemotePrep()
-        clearLocalPrep()
-        setRecordingError('')
-        setCaptureWarning('')
-        setWorkspaceToast(null)
-
-        // Mic was already granted on the practice page before the candidate
-        // ever reached the workspace, so there is no permission prompt and no
-        // "allow recording" prep animation in local mode — recording just
-        // starts silently as soon as the interviewer launches the case.
-        const permissionState = await retryMicrophonePermission()
-        if (permissionState === 'denied') {
-          setRecordingState('failed')
-          setCaptureWarning('Microphone is blocked. Click the lock icon in your address bar to enable, then try again.')
-          return
-        }
-
-        void startRecording(mode)
-        return
-      }
-
-      if (remotePrepVisible || localPrepVisible || recordingState === 'starting') return
-
+      // Both local and remote now use the same silent-start path. Mic is granted
+      // on the practice page / at the gate, so no prep animation or re-prompt is
+      // needed -- recording just starts immediately and auto-advances to step 2.
+      if (recordingState === 'starting') return
+      clearRemotePrep()
       clearLocalPrep()
       setRecordingError('')
       setCaptureWarning('')
       setWorkspaceToast(null)
-      setRemotePrepVisible(true)
-      setRemotePrepStep(0)
 
-      remotePrepTimersRef.current = [
-        window.setTimeout(() => setRemotePrepStep(1), 800),
-        window.setTimeout(() => setRemotePrepStep(2), 1600),
-        window.setTimeout(() => {
-          clearRemotePrep()
-          void startRecording(mode)
-        }, 2450),
-      ]
+      const permissionState = await retryMicrophonePermission()
+      if (permissionState === 'denied') {
+        setRecordingState('failed')
+        setCaptureWarning('Microphone is blocked. Click the lock icon in your address bar to enable, then try again.')
+        return
+      }
+
+      void startRecording(mode)
     },
-    [clearLocalPrep, clearRemotePrep, localPrepVisible, recordingState, remotePrepVisible, retryMicrophonePermission, startRecording]
+    [clearLocalPrep, clearRemotePrep, recordingState, retryMicrophonePermission, startRecording]
   )
 
   const handleRetryUpload = useCallback(async () => {
@@ -966,8 +943,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (raw.selectedAt && selectedAtMsRef.current === null) {
         selectedAtMsRef.current = raw.selectedAt.toMillis()
       }
-      // Interviewer declined mic — show a one-time timed overlay (fires once per session).
-      if (raw.interviewerAudioCaptured === false && preferredRecordingModeRef.current !== 'local' && !interviewerDeclineShownRef.current) {
+      // Interviewer declined mic -- show a one-time timed overlay (fires once per session).
+      // Suppressed when the candidate themselves opted out (they're running without
+      // recording too, so "your side only" is irrelevant and confusing).
+      if (
+        raw.interviewerAudioCaptured === false &&
+        preferredRecordingModeRef.current !== 'local' &&
+        !recordingConsentDeclinedRef.current &&
+        !interviewerDeclineShownRef.current
+      ) {
         interviewerDeclineShownRef.current = true
         setInterviewerAudioDeclined(true)
       }
@@ -2410,7 +2394,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         />
       ) : null}
 
-      {interviewerAudioDeclined && !isLocalSession ? (
+      {interviewerAudioDeclined && !isLocalSession && !recordingConsentDeclined ? (
         <LobbyOverlay
           key="interviewer-audio-declined"
           type="info"
