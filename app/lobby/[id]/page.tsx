@@ -243,7 +243,7 @@ function CandidateLobby({
   const waitingSteps = [
     { num: '01', text: step01Text, active: sessionPhase === 'waiting' && !popupWindowClosed },
     { num: '02', text: step02Text, active: step02Active },
-    ...(!isLocalSession ? [{ num: '03', text: 'Allow recording' }, { num: '04', text: 'Review dashboard' }] : [{ num: '03', text: 'Review dashboard' }]),
+    { num: '03', text: 'Review dashboard' },
   ]
 
   const pageH1Secondary =
