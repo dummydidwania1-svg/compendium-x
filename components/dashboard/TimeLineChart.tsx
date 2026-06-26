@@ -295,7 +295,7 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
     if (workflow.splitBy === 'none') {
       if (workflow.forFilter.types.length > 0) cases = cases.filter((c: any) => workflow.forFilter.types.includes(c.type));
       if (workflow.forFilter.levels.length > 0) cases = cases.filter((c: any) => workflow.forFilter.levels.includes(c.level));
-      const sorted = [...cases].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const sorted = [...cases].sort((a, b) => a.createdAtMs - b.createdAtMs);
       const data = sorted.map((c, idx) => ({
         _idx: idx,
         date: formatChartDate(c.date),
@@ -319,7 +319,7 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
       const mk          = workflow.metrics[0] === 'overall' ? 'score' : workflow.metrics[0];
       let activeCases   = cases.filter((c: any) => groups.includes(c.type));
       if (workflow.forFilter.levels.length > 0) activeCases = activeCases.filter((c: any) => workflow.forFilter.levels.includes(c.level));
-      const sorted      = [...activeCases].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const sorted      = [...activeCases].sort((a, b) => a.createdAtMs - b.createdAtMs);
       const data        = sorted.map((c, idx) => {
         const row: any = { _idx: idx, date: formatChartDate(c.date), caseName: c.name, caseType: c.type, caseLevel: c.level };
         groups.forEach(g => { row[`t_${g}`] = c.type === g ? c[mk] : null; });
@@ -339,7 +339,7 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
       const mk          = workflow.metrics[0] === 'overall' ? 'score' : workflow.metrics[0];
       let activeCases   = cases.filter((c: any) => groups.includes(c.level));
       if (workflow.forFilter.types.length > 0) activeCases = activeCases.filter((c: any) => workflow.forFilter.types.includes(c.type));
-      const sorted      = [...activeCases].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const sorted      = [...activeCases].sort((a, b) => a.createdAtMs - b.createdAtMs);
       const data        = sorted.map((c, idx) => {
         const row: any = { _idx: idx, date: formatChartDate(c.date), caseName: c.name, caseType: c.type, caseLevel: c.level };
         groups.forEach(g => { row[`l_${g}`] = c.level === g ? c[mk] : null; });
@@ -360,7 +360,7 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
       if (!segs.length) return { chartData: [], series: [], maxSeriesPoints: 0 };
       const mk          = workflow.metrics[0] === 'overall' ? 'score' : workflow.metrics[0];
       const activeCases = cases.filter((c: any) => segs.some(s => s.type === c.type && s.level === c.level));
-      const sorted      = [...activeCases].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const sorted      = [...activeCases].sort((a, b) => a.createdAtMs - b.createdAtMs);
       const data        = sorted.map((c, idx) => {
         const row: any = { _idx: idx, date: formatChartDate(c.date), caseName: c.name, caseType: c.type, caseLevel: c.level };
         segs.forEach(s => { row[`seg_${s.type}_${s.level}`] = (c.type === s.type && c.level === s.level) ? c[mk] : null; });
