@@ -170,12 +170,14 @@ function MetaRow({
 export default function CaseDetailOverlay({
   entry,
   onClose,
+  initialTab = 'session',
 }: {
   entry: DashboardCaseEntry;
   onClose: () => void;
+  initialTab?: 'session' | 'notes';
 }) {
   const [isExiting, setIsExiting]     = useState(false);
-  const [activeTab, setActiveTab]     = useState<'session' | 'notes'>('session');
+  const [activeTab, setActiveTab]     = useState<'session' | 'notes'>(initialTab);
   const [tabKey, setTabKey]           = useState(0);
   const [paramsReady, setParamsReady] = useState(false);
   const displayScore = useCountUp(entry.isUnrated ? null : (entry.score ?? null));
@@ -212,6 +214,22 @@ export default function CaseDetailOverlay({
   const [dragging, setDragging]       = useState(false);
   const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Click-to-zoom + pan for the expanded note image
+  const [zoomed, setZoomed]       = useState(false);
+  const [zoomXY, setZoomXY]       = useState({ x: 50, y: 50 }); // transform-origin %
+  const ZOOM_SCALE = 2.2;
+
+  // Reset zoom whenever we open a different image or leave the expanded view
+  useEffect(() => { setZoomed(false); setZoomXY({ x: 50, y: 50 }); }, [expandedUrl]);
+
+  const handleZoomMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!zoomed) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 100;
+    const y = ((e.clientY - r.top) / r.height) * 100;
+    setZoomXY({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+  };
 
   // Derived
   const audioUrl         = entry.mergedAudioUrl ?? entry.audioUrl ?? null;
@@ -761,18 +779,39 @@ export default function CaseDetailOverlay({
 
                     {expandedUrl ? (
                       <div className="flex flex-col gap-[10px]">
-                        <button
-                          onClick={() => setExpandedUrl(null)}
-                          className="flex items-center gap-[5px] text-[10.5px] font-medium transition-colors duration-150 self-start"
-                          style={{ color: 'rgba(92,64,51,.46)' }}
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3B2F2F'}
-                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(92,64,51,.46)'}
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => setExpandedUrl(null)}
+                            className="flex items-center gap-[5px] text-[10.5px] font-medium transition-colors duration-150 self-start"
+                            style={{ color: 'rgba(92,64,51,.46)' }}
+                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3B2F2F'}
+                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(92,64,51,.46)'}
+                          >
+                            <ChevronLeft className="w-[12px] h-[12px]" />
+                            Back to all photos
+                          </button>
+                          <span className="text-[10px] font-medium" style={{ color: 'rgba(92,64,51,.40)' }}>
+                            {zoomed ? 'Move to look around, click to zoom out' : 'Click the image to zoom in'}
+                          </span>
+                        </div>
+                        <div
+                          className="rounded-[9px] overflow-hidden"
+                          style={{ border: '1px solid rgba(217,208,196,.45)', cursor: zoomed ? 'zoom-out' : 'zoom-in' }}
+                          onClick={() => setZoomed(z => !z)}
+                          onMouseMove={handleZoomMove}
+                          onMouseLeave={() => zoomed && setZoomXY({ x: 50, y: 50 })}
                         >
-                          <ChevronLeft className="w-[12px] h-[12px]" />
-                          Back to all photos
-                        </button>
-                        <div className="rounded-[9px] overflow-hidden" style={{ border: '1px solid rgba(217,208,196,.45)' }}>
-                          <img src={expandedUrl} alt="Case notes" className="w-full object-contain" style={{ maxHeight: '460px' }} />
+                          <img
+                            src={expandedUrl}
+                            alt="Case notes"
+                            draggable={false}
+                            className="w-full object-contain select-none transition-transform duration-200 ease-out"
+                            style={{
+                              maxHeight: '460px',
+                              transform: zoomed ? `scale(${ZOOM_SCALE})` : 'scale(1)',
+                              transformOrigin: `${zoomXY.x}% ${zoomXY.y}%`,
+                            }}
+                          />
                         </div>
                       </div>
                     ) : (

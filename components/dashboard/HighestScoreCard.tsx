@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { Eye, ImageUp, Image, X, ChevronDown, ChevronRight, FileText, Headphones, AlignLeft } from 'lucide-react';
+import { Eye, ImageUp, Image, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { COLORS } from '@/lib/constants';
 import { createPortal } from 'react-dom';
 import { filterDashboardEntries } from '@/lib/dashboard/live';
 import { useDashboard } from './DashboardContext';
-import SnapshotOverlay from './SnapshotOverlay';
+import CaseDetailOverlay from './CaseDetailOverlay';
 
 // ── Score colour using dashboard palette ──
 const scoreColor = (score: number): string => {
@@ -58,89 +58,6 @@ const IconButton = ({
   );
 };
 
-// ── Case Detail Overlay (SAME as CaseHistoryTable) ──
-const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-    <div className="absolute inset-0 bg-[#3B2F2F]/30 backdrop-blur-sm" />
-    <div
-      className="relative bg-[#fff8f0]/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#5C4033]/12 w-full max-w-3xl animate-scale-in overflow-hidden"
-      onClick={(e) => e.stopPropagation()}
-    >
-<div className="flex items-center justify-between px-4 py-3 border-b border-[#5C4033]/10">
-  <div className="flex items-center gap-2 min-w-0">
-    <span className="text-[10px] uppercase tracking-[0.12em] font-semibold text-[#5C4033]/55 shrink-0">
-      CASE DETAILS
-    </span>
-    <span className="text-[10px] text-[#5C4033]/30 shrink-0">·</span>
-    <span className="text-xs font-semibold text-[#3B2F2F] truncate">
-      {entry.name}
-    </span>
-  </div>
-  <div className="flex items-center gap-2.5 shrink-0 ml-2">
-    <span className="text-[9px] font-medium text-[#5C4033]/30 tabular-nums tracking-wide">
-      {entry.score} / 5
-    </span>
-    <button
-      onClick={onClose}
-      className="w-5 h-5 flex items-center justify-center rounded-full bg-[#D9D0C4]/50 text-[#5C4033] hover:bg-[#3B2F2F] hover:text-[#F0EBE3] transition-colors"
-    >
-      <X className="w-2.5 h-2.5" />
-    </button>
-  </div>
-</div>
-      <div className="px-4 pt-3 flex gap-1.5">
-        <span className="text-[9px] font-semibold bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/65 px-2 py-[3px] rounded-md">{entry.type}</span>
-        <span className="text-[9px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/55 px-2 py-[3px] rounded-md">{entry.level}</span>
-        <span className="text-[9px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/50 px-2 py-[3px] rounded-md">{formatDate(entry.date)}</span>
-        <span className="text-[9px] font-medium bg-[#D9D0C4]/18 border border-[#5C4033]/10 text-[#5C4033]/50 px-2 py-[3px] rounded-md">Score: {entry.score}</span>
-      </div>
-      <div className="p-5 space-y-5 max-h-[65vh] overflow-y-auto custom-scrollbar">
-        <div>
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <AlignLeft className="w-3 h-3 text-[#5C4033]/50" />
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-[#5C4033]/60">Summary</p>
-          </div>
-          <p className="text-xs text-[#5C4033]/80 leading-relaxed">
-            {entry.summary || 'No summary available for this case yet.'}
-          </p>
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <FileText className="w-3 h-3 text-[#5C4033]/50" />
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-[#5C4033]/60">Transcript</p>
-          </div>
-          {entry.hasTranscript ? (
-            <div className="bg-[#D9D0C4]/20 rounded-lg p-3">
-              <p className="text-xs text-[#5C4033]/70 italic">Transcript available — click to expand in full view.</p>
-            </div>
-          ) : entry.transcriptStatus === 'processing' || entry.transcriptStatus === 'pending' ? (
-            <p className="text-xs text-[#5C4033]/55 italic">Transcript still generating.</p>
-          ) : entry.transcriptStatus === 'failed' ? (
-            <p className="text-xs text-[#92400e]/80 italic">
-              {entry.transcriptError || 'Transcript not generated — recording may have been too short or silent.'}
-            </p>
-          ) : (
-            <p className="text-xs text-[#5C4033]/40">No transcript recorded.</p>
-          )}
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <Headphones className="w-3 h-3 text-[#5C4033]/50" />
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-[#5C4033]/60">Audio</p>
-          </div>
-          {entry.hasAudio ? (
-            <div className="bg-[#D9D0C4]/20 rounded-lg p-3">
-              <p className="text-xs text-[#5C4033]/70 italic">Audio recording available.</p>
-            </div>
-          ) : (
-            <p className="text-xs text-[#5C4033]/40">No audio recorded.</p>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 // ── Score Overlay (glass backdrop, functional asset buttons) ──
 const ScoreOverlay = ({
   title,
@@ -157,7 +74,7 @@ const ScoreOverlay = ({
   const [canScroll, setCanScroll] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [detailEntry, setDetailEntry] = useState<any>(null);
-  const [snapshotEntry, setSnapshotEntry] = useState<any>(null);
+  const [detailTab, setDetailTab] = useState<'session' | 'notes'>('session');
   const canUseDOM = typeof document !== 'undefined';
 
   useEffect(() => {
@@ -261,13 +178,13 @@ const ScoreOverlay = ({
                             <IconButton
                               icon={Eye}
                               label="Details"
-                              onClick={() => setDetailEntry(entry)}
+                              onClick={() => { setDetailTab('session'); setDetailEntry(entry); }}
                               variant="default"
                             />
                             <IconButton
                               icon={entry.hasSnapshot ? Image : ImageUp}
                               label={entry.hasSnapshot ? 'Notes' : 'Upload'}
-                              onClick={() => setSnapshotEntry(entry)}
+                              onClick={() => { setDetailTab('notes'); setDetailEntry(entry); }}
                               variant={entry.hasSnapshot ? 'accent' : 'muted'}
                             />
                           </div>
@@ -291,13 +208,10 @@ const ScoreOverlay = ({
         </div>
       </div>
 
-      {/* Overlays — portaled to body so they cover everything */}
+      {/* Detail overlay — portaled to body so it covers everything. Opens on the
+          Session tab from Details, or straight to Notes from the asset button. */}
       {detailEntry && canUseDOM && createPortal(
-        <CaseDetailOverlay entry={detailEntry} onClose={() => setDetailEntry(null)} />,
-        document.body
-      )}
-      {snapshotEntry && canUseDOM && createPortal(
-        <SnapshotOverlay entry={snapshotEntry} onClose={() => setSnapshotEntry(null)} />,
+        <CaseDetailOverlay entry={detailEntry} initialTab={detailTab} onClose={() => setDetailEntry(null)} />,
         document.body
       )}
     </>

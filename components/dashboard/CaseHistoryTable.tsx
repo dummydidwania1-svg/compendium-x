@@ -5,7 +5,6 @@ import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Eye, ImageUp, Image, ChevronDown, ChevronUp, ArrowUpDown, X } from 'lucide-react';
 import { filterDashboardEntries } from '@/lib/dashboard/live';
 import { useDashboard } from './DashboardContext';
-import SnapshotOverlay from './SnapshotOverlay';
 import CaseDetailOverlay from './CaseDetailOverlay';
 
 // ── Utility: format date as "Mar 12, 2026" ──
@@ -94,7 +93,7 @@ const CaseHistoryTable = ({ filters }: { filters: Filters }) => {
   const [canScroll, setCanScroll] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [detailEntry, setDetailEntry] = useState<any>(null);
-  const [snapshotEntry, setSnapshotEntry] = useState<any>(null);
+  const [detailTab, setDetailTab] = useState<'session' | 'notes'>('session');
   const [sortField, setSortField] = useState<SortField>('date');
 const [sortDir, setSortDir] = useState<SortDir>('desc');
 const [showSortMenu, setShowSortMenu] = useState(false);
@@ -336,7 +335,7 @@ const sortedCases = useMemo(() => {
                         <div className="flex flex-col items-center gap-0.5">
                         <IconButton
                             icon={Eye}
-                            onClick={() => setDetailEntry(entry)}
+                            onClick={() => { setDetailTab('session'); setDetailEntry(entry); }}
                             variant="default"
                         />
                         <span className="text-[7px] text-[#5C4033]/30 font-medium leading-none">Details</span>
@@ -344,7 +343,7 @@ const sortedCases = useMemo(() => {
                         <div className="flex flex-col items-center gap-0.5">
                         <IconButton
                             icon={entry.hasSnapshot ? Image : ImageUp}
-                            onClick={() => setSnapshotEntry(entry)}
+                            onClick={() => { setDetailTab('notes'); setDetailEntry(entry); }}
                             variant={entry.hasSnapshot ? 'accent' : 'muted'}
                         />
                         <span className="text-[7px] text-[#5C4033]/30 font-medium leading-none">
@@ -383,13 +382,11 @@ const sortedCases = useMemo(() => {
         )}
       </div>
 
-      {/* Overlays — portaled to body so they cover the entire dashboard */}
+      {/* Detail overlay — portaled to body so it covers the entire dashboard.
+          Opens on the Session tab from Details, or straight to Notes from the
+          asset button so the user can upload and view snapshots right there. */}
     {detailEntry && canUseDOM && createPortal(
-    <CaseDetailOverlay entry={detailEntry} onClose={() => setDetailEntry(null)} />,
-    document.body
-    )}
-    {snapshotEntry && canUseDOM && createPortal(
-    <SnapshotOverlay entry={snapshotEntry} onClose={() => setSnapshotEntry(null)} />,
+    <CaseDetailOverlay entry={detailEntry} initialTab={detailTab} onClose={() => setDetailEntry(null)} />,
     document.body
     )}
     </>
