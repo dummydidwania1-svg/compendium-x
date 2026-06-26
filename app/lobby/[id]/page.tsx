@@ -22,6 +22,8 @@ type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
   sessionMode?: 'remote' | 'local'
   expiresAt?: { toDate: () => Date } | Date
+  interviewerBrowsing?: boolean
+  interviewerAudioCaptured?: boolean
 }
 
 type PopupWindowHost = Window & {
@@ -988,7 +990,8 @@ function InterviewerLobby({
   }, [])
 
   useEffect(() => {
-    if (!handoffVisible) return
+    // Don't start the handoff timer while the mic gate is covering the screen.
+    if (!handoffVisible || micGateVisible) return
     // Mark as shown so back-navigation never replays it.
     try { sessionStorage.setItem(handoffKey, '1') } catch { /* quota */ }
     let count = 5
@@ -999,7 +1002,7 @@ function InterviewerLobby({
     }, 1000)
     const timer = setTimeout(() => setHandoffVisible(false), 5000)
     return () => { clearInterval(interval); clearTimeout(timer) }
-  }, [handoffVisible, handoffKey])
+  }, [handoffVisible, handoffKey, micGateVisible])
 
   useEffect(() => {
     startRef.current = Date.now()
@@ -1127,7 +1130,7 @@ function InterviewerLobby({
       {micGateVisible ? (
         <InterviewerMicGate
           lobbyId={lobbyId}
-          onResolved={() => setMicGateVisible(false)}
+          onResolved={() => { setMicGateVisible(false); setHandoffVisible(false) }}
         />
       ) : null}
 
@@ -1507,6 +1510,14 @@ export default function LobbyPage() {
 
     const routeFromSessionData = (data: SessionState | null) => {
       if (!data) return
+      // Remote mode: read browsing state from Firestore (localStorage only works same-device).
+      if (!isLocalSession && data.status === 'waiting') {
+        setInterviewerBrowsing(data.interviewerBrowsing === true)
+      }
+      // Remote: persist interviewer audio declined flag so workspace reads it on mount.
+      if (!isLocalSession && data.interviewerAudioCaptured === false) {
+        try { sessionStorage.setItem(`compendium-interviewer-declined-${lobbyId}`, '1') } catch { /* quota */ }
+      }
       if (data.status === 'replacing') {
         disarmWaitingNudge()
         setIsLaunching(false)
@@ -1530,7 +1541,7 @@ export default function LobbyPage() {
       }
       if (data.status === 'waiting') {
         setInterviewerReplacing(false)
-        setInterviewerBrowsing(false)
+        if (isLocalSession) setInterviewerBrowsing(false)
         armWaitingNudge()
       }
     }

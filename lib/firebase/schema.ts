@@ -206,6 +206,8 @@ export const sessionSchema = z
     interviewerAudioCaptured: z.boolean().optional(),
     /** true when the candidate chose "Continue without recording" in remote mode. */
     candidateOptedOutRecording: z.boolean().optional(),
+    /** true while the interviewer is browsing the case library (remote mode). */
+    interviewerBrowsing: z.boolean().optional(),
   })
   .loose()
 export type Session = z.infer<typeof sessionSchema>

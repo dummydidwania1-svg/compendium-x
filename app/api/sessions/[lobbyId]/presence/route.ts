@@ -36,12 +36,18 @@ const presenceInput = z.object({
    * so the interviewer gate can suppress the mic prompt (no recording needed).
    */
   candidateOptedOutRecording: z.boolean().optional(),
+  /**
+   * Only meaningful for the interviewer role in remote mode. Merges
+   * `interviewerBrowsing` onto the session doc so the candidate lobby
+   * can show "Interviewer is choosing a case" in real time.
+   */
+  interviewerBrowsing: z.boolean().optional(),
 })
 
 export const POST = authenticatedRoute<{ lobbyId: string }>(
   '/api/sessions/[lobbyId]/presence',
   async (request, caller, { lobbyId }) => {
-    const { role, active, recording, interviewerAudioCaptured, candidateOptedOutRecording } = await parseBody(request, presenceInput)
+    const { role, active, recording, interviewerAudioCaptured, candidateOptedOutRecording, interviewerBrowsing } = await parseBody(request, presenceInput)
     const ref = adminDb.collection('sessions').doc(lobbyId)
 
     await adminDb.runTransaction(async (tx) => {
@@ -84,6 +90,9 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         // and the Cloud Function produces a partial (candidate-only) transcript.
         if (interviewerAudioCaptured === false) {
           interviewerUpdate.interviewerAudioCaptured = false
+        }
+        if (typeof interviewerBrowsing === 'boolean') {
+          interviewerUpdate.interviewerBrowsing = interviewerBrowsing
         }
         tx.set(ref, interviewerUpdate, { merge: true })
       }

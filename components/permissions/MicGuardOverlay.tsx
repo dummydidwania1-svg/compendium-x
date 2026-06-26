@@ -150,7 +150,7 @@ export function MicGuardOverlay({ active, lobbyId, body, onDeclined, onShowingCh
       type="warning"
       icon={MicIcon}
       title="Mic is blocked"
-      body={body ?? "This session needs mic access to record audio and generate AI feedback. Set Microphone to Allow in your address bar and tap Allow mic, or carry on without recording."}
+      body={body ?? "This session needs mic access to record audio and generate AI feedback. Open your browser's site permissions for this page, set the microphone to Allow, then tap Allow mic. Or carry on without recording."}
       actionLabel="Allow mic"
       onAction={() => void allowMic()}
       secondaryActionLabel="Skip recording"

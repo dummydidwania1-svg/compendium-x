@@ -545,13 +545,42 @@ const clearAllFilters = () => {
     void signInAnonymouslyIfNeeded().catch(() => {
       // Surface error via actionError if it actually blocks a click.
     })
-    // Signal to the candidate lobby that the interviewer has opened the case
-    // library. The candidate tab picks this up via a 'storage' event.
+    // Signal to the candidate that the interviewer has opened the case library.
+    // Local mode: localStorage storage event (same device).
+    // Remote mode: Firestore presence field (cross-device).
     localStorage.setItem('compendium-interviewer-browsing', JSON.stringify({ lobbyId, ts: Date.now() }))
+    if (sessionMode !== 'local') {
+      void (async () => {
+        try {
+          const { auth } = await import('@/lib/firebase/config')
+          const token = await auth.currentUser?.getIdToken()
+          if (!token) return
+          await fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ role: 'interviewer', active: true, interviewerBrowsing: true }),
+          })
+        } catch { /* best-effort */ }
+      })()
+    }
     return () => {
       localStorage.removeItem('compendium-interviewer-browsing')
+      if (sessionMode !== 'local') {
+        void (async () => {
+          try {
+            const { auth } = await import('@/lib/firebase/config')
+            const token = await auth.currentUser?.getIdToken()
+            if (!token) return
+            await fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ role: 'interviewer', active: true, interviewerBrowsing: false }),
+            })
+          } catch { /* best-effort */ }
+        })()
+      }
     }
-  }, [selectionMode, lobbyId])
+  }, [selectionMode, lobbyId, sessionMode])
 
 
   useEffect(() => {

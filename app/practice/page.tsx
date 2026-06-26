@@ -274,7 +274,7 @@ export default function PracticeModeSelection() {
             </svg>
           }
           title="Mic access needed"
-          body="We use your mic to record the session and generate AI feedback. Without it, this run won't have audio or a transcript. Set Microphone to Allow in your address bar and tap Try again, or continue without recording."
+          body="We use your mic to record the session and generate AI feedback. Without it, this run won't have audio or a transcript. Open your browser's site permissions for this page, set the microphone to Allow, then tap Try again. Or continue without recording."
           actionLabel="Try again"
           onAction={() => {
             if (micBlockedForRef.current === 'remote') void startRemoteSession()
