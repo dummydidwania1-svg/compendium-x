@@ -239,41 +239,57 @@ export default function CaseDetailOverlay({
   }, [handleClose]);
 
   // ── Audio events ──
-  // Chrome's MediaRecorder produces WebM files with no duration header.
-  // preload="auto" forces a full download so the browser can calculate
-  // real duration; durationchange fires once the browser knows it.
+  // Remote (merged) audio has proper MP4/WAV headers, so duration is
+  // available immediately on loadedmetadata. Same-Device recordings are
+  // raw WebM from MediaRecorder with no duration header — the browser
+  // reports Infinity until it reads the whole file.
+  //
+  // Seek-to-end trick: setting currentTime = 1e101 after loadedmetadata
+  // forces the browser to range-request the tail of the file. The browser
+  // clamps to the real end and fires durationchange with the actual length.
+  // We then reset currentTime to 0. The seekingForDuration flag suppresses
+  // timeupdate callbacks during the trick so the UI doesn't flicker.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const syncDuration = () => {
+    let seekingForDuration = false;
+
+    const tryResolveDuration = () => {
       const d = audio.duration;
-      if (d && isFinite(d) && d > 0) setDuration(d);
-    };
-    const onTime = () => {
-      setCurrentTime(audio.currentTime);
-      // Opportunistic fallback in case durationchange fired with Infinity first
-      const d = audio.duration;
-      if (d && isFinite(d) && d > 0) setDuration(prev => prev || d);
-    };
-    const onEnd = () => {
-      setIsPlaying(false);
-      // After full playback the browser always knows exact duration
-      const d = audio.currentTime;
-      if (d > 0) setDuration(prev => prev || d);
+      if (isFinite(d) && d > 0) { setDuration(d); return; }
+      if (!seekingForDuration) { seekingForDuration = true; audio.currentTime = 1e101; }
     };
 
-    audio.addEventListener('loadedmetadata', syncDuration);
-    audio.addEventListener('durationchange', syncDuration);
+    const onDurationChange = () => {
+      const d = audio.duration;
+      if (!isFinite(d) || d <= 0) return;
+      setDuration(d);
+      if (seekingForDuration) { seekingForDuration = false; audio.currentTime = 0; }
+    };
+
+    const onTime = () => {
+      if (seekingForDuration) return;
+      setCurrentTime(audio.currentTime);
+      const d = audio.duration;
+      if (isFinite(d) && d > 0) setDuration(prev => prev || d);
+    };
+
+    const onEnd = () => {
+      setIsPlaying(false);
+      if (audio.currentTime > 0) setDuration(prev => prev || audio.currentTime);
+    };
+
+    audio.addEventListener('loadedmetadata', tryResolveDuration);
+    audio.addEventListener('durationchange', onDurationChange);
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('ended', onEnd);
 
-    // If already cached/loaded before mount
-    syncDuration();
+    if (audio.readyState >= 1) tryResolveDuration();
 
     return () => {
-      audio.removeEventListener('loadedmetadata', syncDuration);
-      audio.removeEventListener('durationchange', syncDuration);
+      audio.removeEventListener('loadedmetadata', tryResolveDuration);
+      audio.removeEventListener('durationchange', onDurationChange);
       audio.removeEventListener('timeupdate', onTime);
       audio.removeEventListener('ended', onEnd);
     };
@@ -398,12 +414,12 @@ export default function CaseDetailOverlay({
         style={{ background: 'rgba(59,47,47,.28)', backdropFilter: 'blur(4px)' }}
       />
 
-      {/* Modal shell — capped at 720px so it never feels cavernously tall */}
+      {/* Modal shell — vh-relative height so it scales with the viewport */}
       <div
         className={`relative flex flex-col overflow-hidden rounded-2xl border bg-[#fff8f0] shadow-2xl ${isExiting ? 'animate-scale-out' : 'animate-scale-in'}`}
         style={{
           width: 'min(97vw, 1080px)',
-          height: 'min(calc(100vh - 88px), 720px)',
+          height: 'min(68vh, 640px)',
           borderColor: 'rgba(61,90,53,.1)',
           boxShadow: '0 20px 56px rgba(59,47,47,.14)',
         }}
