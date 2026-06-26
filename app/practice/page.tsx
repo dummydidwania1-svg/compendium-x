@@ -23,6 +23,8 @@ export default function PracticeModeSelection() {
   // opening the interviewer popup. Shows a transient "Setting up..." state
   // on the local card so the user knows their click registered.
   const [localPreparing, setLocalPreparing] = useState(false)
+  // Tracks which session launcher set micBlocked so the overlay can call the right retry.
+  const micBlockedForRef = useRef<'local' | 'remote'>('local')
   const router = useRouter()
 
   useEffect(() => {
@@ -39,8 +41,22 @@ export default function PracticeModeSelection() {
   }, [router])
 
 
-  const startRemoteSession = () => {
+  const startRemoteSession = async (skipRecording = false) => {
+    setMicBlocked(false)
+    micBlockedForRef.current = 'remote'
     const lobbyId = Math.random().toString(36).substring(7)
+    if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        stream.getTracks().forEach((track) => track.stop())
+      } catch {
+        setMicBlocked(true)
+        return
+      }
+    }
+    if (skipRecording && typeof sessionStorage !== 'undefined') {
+      try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
+    }
     router.push(`/lobby/${lobbyId}?mode=remote`)
   }
 
@@ -54,6 +70,7 @@ export default function PracticeModeSelection() {
     if (localPreparing) return
     setPopupBlocked(false)
     setMicBlocked(false)
+    micBlockedForRef.current = 'local'
 
     // Step 1: mic check (skipped when the user opted out of recording)
     if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
@@ -259,9 +276,15 @@ export default function PracticeModeSelection() {
           title="Mic access needed"
           body="We use your mic to record the session and generate AI feedback. Without it, this run won't have audio or a transcript. Set Microphone to Allow in your address bar and tap Try again, or continue without recording."
           actionLabel="Try again"
-          onAction={() => void handleLocalClick()}
+          onAction={() => {
+            if (micBlockedForRef.current === 'remote') void startRemoteSession()
+            else void handleLocalClick()
+          }}
           secondaryActionLabel="Continue without recording"
-          onSecondaryAction={() => void handleLocalClick(true)}
+          onSecondaryAction={() => {
+            if (micBlockedForRef.current === 'remote') void startRemoteSession(true)
+            else void handleLocalClick(true)
+          }}
           onDismiss={() => {
             setMicBlocked(false)
             if (micReshowTimerRef.current) clearTimeout(micReshowTimerRef.current)

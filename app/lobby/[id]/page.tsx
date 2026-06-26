@@ -8,6 +8,7 @@ import { MeetingTabShareCard } from '@/components/permissions/MeetingTabShareCar
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import type { LobbyOverlayProps } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
+import { InterviewerMicGate } from '@/components/permissions/InterviewerMicGate'
 import PlatformLoader from '@/components/PlatformLoader'
 import { signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
@@ -923,6 +924,14 @@ function InterviewerLobby({
   const [showCloseWarning, setShowCloseWarning] = useState(false)
   const closeAttemptRef = useRef(false)
   const isLocalMode = requestedSessionMode === 'local'
+  // Remote mode: show the full-screen mic gate before the welcome lobby.
+  // Gate is skipped if mic was already granted on this device or the session
+  // key indicates it was already shown and resolved.
+  const micGateShownKey = `compendium-interviewer-micgate-shown-${lobbyId}`
+  const [micGateVisible, setMicGateVisible] = useState(
+    !isLocalMode &&
+    (typeof sessionStorage === 'undefined' || sessionStorage.getItem(micGateShownKey) !== '1')
+  )
   const [micGuardShowing, setMicGuardShowing] = useState(false)
   const [candidateTabClosed, setCandidateTabClosed] = useState(false)
   const candidateTabUrlRef = useRef<string | null>(null)
@@ -1114,8 +1123,16 @@ function InterviewerLobby({
         }
       `}</style>
 
+      {/* Interviewer mic gate — full-screen prompt shown on first remote arrival */}
+      {micGateVisible ? (
+        <InterviewerMicGate
+          lobbyId={lobbyId}
+          onResolved={() => setMicGateVisible(false)}
+        />
+      ) : null}
+
       {/* Handoff overlay — covers the interviewer window for 5s on first load */}
-      {handoffVisible ? (
+      {!micGateVisible && handoffVisible ? (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backdropFilter: 'blur(28px) saturate(1.4)', WebkitBackdropFilter: 'blur(28px) saturate(1.4)', background: 'rgba(255,248,240,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'handoff-overlay-in 0.5s cubic-bezier(0.22,1,0.36,1) both' }}>
           <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
             <div style={{ position: 'absolute', top: '30%', left: '35%', width: '360px', height: '360px', borderRadius: '999px', background: 'radial-gradient(circle, rgba(61,90,53,0.07) 0%, transparent 70%)', animation: 'handoff-glow 5s ease-in-out infinite' }} />

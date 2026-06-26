@@ -1453,6 +1453,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // Shared core for opting out — applies the decline locally (state + persistence
   // + discard any active capture). `broadcast` controls whether we also signal
   // the other window (true for a user action here, false when mirroring theirs).
+  // In remote mode, also sends a server signal so the interviewer gate can
+  // suppress the mic prompt (no recording needed on either side).
   const applyRecordingDecline = useCallback((broadcast: boolean) => {
     recordingConsentDeclinedRef.current = true
     setRecordingConsentDeclined(true)
@@ -1460,6 +1462,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
       if (broadcast) {
         try { localStorage.setItem('compendium-norecord-signal', JSON.stringify({ lobbyId, ts: Date.now() })) } catch { /* quota */ }
+        // Remote mode: signal the server so the interviewer device learns the candidate opted out.
+        if (preferredRecordingModeRef.current !== 'local') {
+          void auth.currentUser?.getIdToken().then((token) => {
+            if (!token) return
+            void fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ role: 'candidate', active: true, candidateOptedOutRecording: true }),
+              keepalive: true,
+            }).catch(() => { /* best-effort */ })
+          })
+        }
       }
     }
     if (micBlockedReshowTimerRef.current) {
@@ -1503,12 +1517,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     endingSession ||
     endSessionInitiatedRef.current
 
-  // Drive the mic-blocked overlay from microphonePermissionState (local mode only).
+  // Drive the mic-blocked overlay from microphonePermissionState (both modes).
   // Title pulse starts immediately; overlay reshows after 1.5s if still blocked.
   // Suppressed entirely once the candidate has chosen to run without recording,
   // or once the recording is captured / the session is ending.
   useEffect(() => {
-    if (!isLocalSession) return
     if (recordingConsentDeclined || micGuardDisengaged) {
       if (micBlockedReshowTimerRef.current) {
         clearTimeout(micBlockedReshowTimerRef.current)
@@ -1594,7 +1607,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
   const isLocalSession = preferredRecordingMode === 'local'
   // Top-priority overlay gate — see the mic-blocked render block for rationale.
-  const micBlockedActive = micBlockedOverlayVisible && isLocalSession
+  const micBlockedActive = micBlockedOverlayVisible
 
   // ── Dynamic header text ───────────────────────────────────────────────────
   const wsH1Primary = feedbackSubmitted ? 'Wrapping up' : 'Interview Session'
@@ -2646,19 +2659,21 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
             <div className="px-6 py-6">
               {interviewerAudioDeclined && !isLocalSession ? (
-                <div
-                  className="workspace-inline-note alert rounded-xl px-4 py-3 mb-5"
-                  role="status"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-[1px] flex-shrink-0" style={{ color: '#C4A882' }}>
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  <span className="text-[11px] leading-relaxed text-[#5C4033]/70">
-                    {"Your interviewer's mic wasn't captured. Your side of the conversation will still be transcribed — only your audio will appear in the feedback."}
-                  </span>
-                </div>
+                <LobbyOverlay
+                  key="interviewer-audio-declined"
+                  type="info"
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  }
+                  title="Recording your side only"
+                  body="Your interviewer skipped sharing their mic, so only your audio gets recorded. Your transcript will still capture everything you say."
+                  autoDismissMs={6000}
+                  onDismiss={() => setInterviewerAudioDeclined(false)}
+                />
               ) : null}
               <div className="relative">
                 {workspaceToast ? (

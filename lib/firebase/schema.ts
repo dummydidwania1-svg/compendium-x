@@ -204,6 +204,8 @@ export const sessionSchema = z
     mergedTranscriptError: optionalString,
     /** false when the interviewer explicitly declined the mic (best-effort capture). */
     interviewerAudioCaptured: z.boolean().optional(),
+    /** true when the candidate chose "Continue without recording" in remote mode. */
+    candidateOptedOutRecording: z.boolean().optional(),
   })
   .loose()
 export type Session = z.infer<typeof sessionSchema>

@@ -30,12 +30,18 @@ const presenceInput = z.object({
    * Omit (or set true) when audio is being captured normally.
    */
   interviewerAudioCaptured: z.boolean().optional(),
+  /**
+   * Only meaningful for the candidate role in remote mode. When explicitly set
+   * to `true`, merges `candidateOptedOutRecording: true` onto the session doc
+   * so the interviewer gate can suppress the mic prompt (no recording needed).
+   */
+  candidateOptedOutRecording: z.boolean().optional(),
 })
 
 export const POST = authenticatedRoute<{ lobbyId: string }>(
   '/api/sessions/[lobbyId]/presence',
   async (request, caller, { lobbyId }) => {
-    const { role, active, recording, interviewerAudioCaptured } = await parseBody(request, presenceInput)
+    const { role, active, recording, interviewerAudioCaptured, candidateOptedOutRecording } = await parseBody(request, presenceInput)
     const ref = adminDb.collection('sessions').doc(lobbyId)
 
     await adminDb.runTransaction(async (tx) => {
@@ -49,17 +55,17 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         if (data.candidateId !== caller.uid) {
           throw new TransitionError(403, 'not_candidate', 'Caller is not the session candidate.')
         }
-        tx.set(
-          ref,
-          {
-            candidatePresence: {
-              active,
-              recording: recording ?? false,
-              lastSeenAt: FieldValue.serverTimestamp(),
-            },
+        const candidateUpdate: Record<string, unknown> = {
+          candidatePresence: {
+            active,
+            recording: recording ?? false,
+            lastSeenAt: FieldValue.serverTimestamp(),
           },
-          { merge: true },
-        )
+        }
+        if (candidateOptedOutRecording === true) {
+          candidateUpdate.candidateOptedOutRecording = true
+        }
+        tx.set(ref, candidateUpdate, { merge: true })
       } else {
         // Allow writes before interviewerId is registered (lobby phase).
         // Once set, require identity match.
