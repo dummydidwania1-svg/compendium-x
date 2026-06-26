@@ -1630,7 +1630,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const prepStep = isLocalSession ? localPrepStep : remotePrepStep
   const prepSteps = isLocalSession
     ? ['Keep this tab open', 'Allow microphone access', 'Continue here']
-    : ['Starting microphone', 'Allow mic access', 'Recording begins']
+    : ['Starting microphone', 'Setting up', 'Recording begins']
   const localPermissionBlocked = isLocalSession && microphonePermissionState === 'denied'
 
   useEffect(() => {
@@ -1750,13 +1750,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persistentRecordingError, completionPending, feedbackSubmitted])
 
-  // Remote mode keeps the 4-step flow (incl. "Allow recording" for the share
-  // screen prompt). Local mode dropped that step: mic is granted on the
-  // practice page and recording auto-starts, so the session jumps straight to
-  // "in session" with no recording prompt.
+  // Both modes now use a 3-step flow. Local: mic granted on the practice page,
+  // recording auto-starts. Remote: mic granted at launch, same auto-start -- no
+  // separate "Allow recording" step needed on either mode.
   const remoteWorkflowCurrentStep = feedbackSubmitted
-    ? 4
-    : (recordingState === 'uploading' || (recordingState === 'uploaded' && !completionPending)) ? 4 : 3
+    ? 3
+    : (recordingState === 'uploading' || (recordingState === 'uploaded' && !completionPending)) ? 3 : 2
   const localWorkflowCurrentStep = feedbackSubmitted
     ? 3
     : (recordingState === 'uploading' || (recordingState === 'uploaded' && !completionPending)) ? 3 : 2
@@ -1770,8 +1769,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     : [
         { num: '01', text: 'Send invite' },
         { num: '02', text: 'Case in session' },
-        { num: '03', text: feedbackSubmitted ? 'Feedback submitted' : 'Allow recording' },
-        { num: '04', text: 'Review dashboard' },
+        { num: '03', text: feedbackSubmitted ? 'Feedback submitted' : 'Review dashboard' },
       ]
   // Idle and failed-but-recoverable both mean the same thing from the user's
   // POV — they need to click Allow Recording to start. Phrase the copy that

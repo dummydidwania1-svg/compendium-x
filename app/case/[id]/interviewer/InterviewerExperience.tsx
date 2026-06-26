@@ -648,11 +648,14 @@ export function InterviewerPageInner({
 	const interviewerMicStreamRef = useRef<MediaStream | null>(null)
 	const interviewerStartMsRef = useRef<number | null>(null)
 	const interviewerSelectedAtMsRef = useRef<number | null>(null)
-	const micDeclineCountRef = useRef(0)
 	const micErrorCountRef = useRef(0)
 	const interviewerRecordingStartedRef = useRef(false)
 	const interviewerFlushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 	const flushInFlightRef = useRef(false)
+	// Tracks whether the interviewer declined consent at the gate (NOCONSENT_KEY) or
+	// the candidate opted out at launch. Either suppresses the mid-session recovery banner.
+	const interviewerDeclinedConsentRef = useRef(false)
+	const candidateOptedOutRef = useRef(false)
 	const lastInterviewerFlushUrlRef = useRef<string | null>(null)
 	const lastInterviewerFlushPathRef = useRef<string | null>(null)
 	const lastInterviewerFlushMimeTypeRef = useRef<string>('audio/webm')
@@ -666,6 +669,15 @@ export function InterviewerPageInner({
 	const [candidateRecordingClosed, setCandidateRecordingClosed] = useState(false)
 	// A3/D10: Candidate ended the session before the interviewer submitted feedback.
 	const [candidateEndedSession, setCandidateEndedSession] = useState(false)
+
+	// Read the gate's decline signal on mount so we never show the recovery banner
+	// for an interviewer who already said "I don't provide consent."
+	useEffect(() => {
+		if (!lobbyId || typeof sessionStorage === 'undefined') return
+		interviewerDeclinedConsentRef.current =
+			sessionStorage.getItem(`compendium-interviewer-noconsent-${lobbyId}`) === '1'
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
 
 	// Restore draft scores/notes/view from localStorage so a refresh doesn't
 	// wipe the interviewer's in-progress ratings. Keyed by lobbyId so different
@@ -732,13 +744,24 @@ export function InterviewerPageInner({
 					interviewerSelectedAtMsRef.current = selectedAt.toMillis()
 				}
 				seedApplied = true
-				// Start the interviewer's mic recording now that the session is live.
-				// Skip silently when the candidate opted out -- no recording, no prompt.
+				// Update suppressor refs so the recovery banner never fires spuriously.
+				if (data.candidateOptedOutRecording === true) candidateOptedOutRef.current = true
+				if (data.interviewerAudioCaptured === false) interviewerDeclinedConsentRef.current = true
+				// Start mic recording, but skip when: candidate opted out at launch,
+				// interviewer declined at the gate (NOCONSENT_KEY), or the session doc
+				// already shows interviewerAudioCaptured:false (gate decline echoed back).
 				if (!interviewerRecordingStartedRef.current) {
 					interviewerRecordingStartedRef.current = true
-					if (data.candidateOptedOutRecording !== true) {
-						void startInterviewerRecording()
-					}
+					let declinedAtGate = false
+					try {
+						declinedAtGate = !!lobbyId && typeof sessionStorage !== 'undefined'
+							&& sessionStorage.getItem(`compendium-interviewer-noconsent-${lobbyId}`) === '1'
+					} catch { /* quota */ }
+					const skipRecording =
+						data.candidateOptedOutRecording === true ||
+						data.interviewerAudioCaptured === false ||
+						declinedAtGate
+					if (!skipRecording) void startInterviewerRecording()
 				}
 			}
 
@@ -1038,13 +1061,14 @@ export function InterviewerPageInner({
 				interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
 				interviewerMicStreamRef.current = null
 				if (currentViewRef.current === 'success') return
+				// Silently ignore if the interviewer already declined or candidate opted out --
+				// there is no recording to recover.
+				if (interviewerDeclinedConsentRef.current || candidateOptedOutRef.current) return
 				if (micErrorCountRef.current >= 2) {
 					// Repeated hardware failure: degrade to candidate-only.
-					// Captured chunks (if any) will be uploaded by stopInterviewerRecordingAndUpload.
 					void signalNoInterviewerAudio()
 				} else {
-					// First hardware error: offer one retry.
-					micDeclineCountRef.current = 0
+					// First hardware error: show recovery overlay (mic-loss, not initial prompt).
 					setInterviewerMicBannerVisible(true)
 				}
 			}
@@ -1054,15 +1078,10 @@ export function InterviewerPageInner({
 				void flushInterviewerAudio({ final: false })
 			}, INTERVIEWER_FLUSH_MS)
 		} catch {
-			micDeclineCountRef.current += 1
-			if (micDeclineCountRef.current === 1) {
-				// First denial: show reminder banner once.
-				setInterviewerMicBannerVisible(true)
-			} else {
-				// Second denial: continue without mic, signal partial transcript.
-				setInterviewerMicBannerVisible(false)
-				void signalNoInterviewerAudio()
-			}
+			// getUserMedia failed after mic was granted at the gate, or on a retry after
+			// mic-loss recovery. The gate is the only place the initial decision is made,
+			// so no banner here -- just signal candidate-only recording.
+			void signalNoInterviewerAudio()
 		}
 	}, [isRemoteMode, lobbyId, previewMode, signalNoInterviewerAudio, flushInterviewerAudio])
 
@@ -1786,28 +1805,31 @@ if (previewMode && !forcePreview) {
 					/>
 				)}
 
-				{/* Interviewer mic permission — ask once, remind once, then continue.
-				    Only shown in remote mode when getUserMedia was denied on auto-start. */}
-				{isRemoteMode && interviewerMicBannerVisible && !micGuardShowing && (
+				{/* Interviewer mic recovery -- only for mic LOSS after a previously-granted
+				    mic drops mid-session. Not shown for the initial decision (the gate
+				    handles that). Guard disengages once upload has begun. */}
+				{isRemoteMode && interviewerMicBannerVisible && !micGuardShowing && interviewerUploadState === 'idle' && (
 					<LobbyOverlay
 						type="warning"
 						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>}
-						title="Allow mic for a complete transcript"
-						body="Your microphone wasn't captured. Allowing it records your side of the conversation too, giving the candidate a full speaker-labeled transcript. You can skip — only their audio will be used."
+						title="Looks like your mic dropped"
+						body="Your mic just cut out, so your side stopped recording. Turn it back on and tap Allow mic to keep going, or skip and we'll just record the candidate. Either way the case keeps running."
 						actionLabel="Allow mic"
 						onAction={async () => {
 							setInterviewerMicBannerVisible(false)
 							await startInterviewerRecording()
 						}}
-						secondaryActionLabel="Skip"
+						secondaryActionLabel="Skip recording"
 						onSecondaryAction={async () => {
 							setInterviewerMicBannerVisible(false)
-							micDeclineCountRef.current += 1
+							try { if (lobbyId) sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
+							interviewerDeclinedConsentRef.current = true
 							await signalNoInterviewerAudio()
 						}}
 						onDismiss={async () => {
 							setInterviewerMicBannerVisible(false)
-							micDeclineCountRef.current += 1
+							try { if (lobbyId) sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
+							interviewerDeclinedConsentRef.current = true
 							await signalNoInterviewerAudio()
 						}}
 					/>

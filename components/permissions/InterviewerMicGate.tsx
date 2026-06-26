@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getDoc, onSnapshot } from 'firebase/firestore'
+import { onSnapshot } from 'firebase/firestore'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { auth } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
@@ -49,24 +49,58 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
   const [countdown, setCountdown] = useState(2)
   const requestedRef = useRef(false)
   const resolvedRef = useRef(false)
-  // Keep a stable ref to onResolved so the timer effect never puts it in its dep
-  // array (which would cause the timers to be torn down on every countdown tick).
+  // Stable ref to onResolved: prevents the timer effect from re-running mid-countdown.
   const onResolvedRef = useRef(onResolved)
   useEffect(() => { onResolvedRef.current = onResolved }, [onResolved])
+  // gateStateRef mirrors gateState for use inside snapshot callbacks (avoids adding
+  // gateState to subscription deps, which would restart the subscription on every state change).
+  const gateStateRef = useRef<GateState>('asking')
+  useEffect(() => { gateStateRef.current = gateState }, [gateState])
+  // Coordinates the first-snapshot grace period: the mount effect waits for
+  // firstSnapshotReceivedRef to be true before calling request(), giving the opt-out
+  // subscription a chance to resolve the gate before the browser mic prompt fires.
+  const firstSnapshotReceivedRef = useRef(false)
+  const firstSnapshotResolveRef = useRef<(() => void) | null>(null)
 
-  // On mount: skip if candidate opted out, else fire native mic prompt.
+  // Live opt-out subscription for the whole gate lifecycle.
+  // Also signals the mount effect once the first snapshot returns.
+  useEffect(() => {
+    const unsub = onSnapshot(
+      sessionDoc(lobbyId),
+      (snap) => {
+        // Unblock the mount gate (first snapshot received).
+        firstSnapshotReceivedRef.current = true
+        firstSnapshotResolveRef.current?.()
+        firstSnapshotResolveRef.current = null
+        if (!snap.exists()) return
+        if (snap.data()?.candidateOptedOutRecording === true && gateStateRef.current === 'asking') {
+          try { sessionStorage.setItem(SHOWN_KEY(lobbyId), '1') } catch { /* quota */ }
+          resolvedRef.current = true  // prevent mount effect from firing mic prompt after unmount
+          onResolvedRef.current()
+        }
+      },
+      () => {
+        // On Firestore error, unblock the mount gate so the mic prompt still fires.
+        firstSnapshotReceivedRef.current = true
+        firstSnapshotResolveRef.current?.()
+        firstSnapshotResolveRef.current = null
+      }
+    )
+    return () => unsub()
+  }, [lobbyId])
+
+  // Mount: wait for the first snapshot, then fire the native mic prompt.
+  // The grace period lets the opt-out subscription win if the candidate's write
+  // arrives before or right as the interviewer opens the link.
   useEffect(() => {
     if (requestedRef.current) return
     requestedRef.current = true
     void (async () => {
-      try {
-        const snap = await getDoc(sessionDoc(lobbyId))
-        if (snap.exists() && snap.data()?.candidateOptedOutRecording === true) {
-          onResolvedRef.current()
-          return
-        }
-      } catch { /* best-effort; proceed to prompt */ }
-
+      await new Promise<void>((resolve) => {
+        if (firstSnapshotReceivedRef.current) resolve()
+        else firstSnapshotResolveRef.current = resolve
+      })
+      if (resolvedRef.current) return
       const stream = await request()
       if (stream) {
         stream.getTracks().forEach((t) => t.stop())
@@ -102,23 +136,6 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
     }, 1000)
     const timer = setTimeout(() => onResolvedRef.current(), GATE_DURATION_MS)
     return () => { clearInterval(interval); clearTimeout(timer) }
-  }, [gateState, lobbyId])
-
-  // Race guard: watch for candidateOptedOutRecording arriving while still in the
-  // asking state. Covers the window between candidate lobby write and our getDoc.
-  useEffect(() => {
-    if (gateState !== 'asking') return
-    const unsub = onSnapshot(
-      sessionDoc(lobbyId),
-      (snap) => {
-        if (snap.exists() && snap.data()?.candidateOptedOutRecording === true) {
-          unsub()
-          onResolvedRef.current()
-        }
-      },
-      () => { /* ignore snapshot errors */ }
-    )
-    return () => unsub()
   }, [gateState, lobbyId])
 
   // Re-query on focus/visibility so fixing mic in browser settings auto-advances.
@@ -172,7 +189,7 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
         @keyframes imgk-glow { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.55; transform: scale(1.08); } }
         @keyframes imgk-mic-breathe { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 0.75; transform: scale(1.07); } }
         @keyframes imgk-progress { from { width: 100%; } to { width: 0%; } }
-        .imgk-btn { display: block; width: 100%; border-radius: 999px; padding: 8px 18px; font-family: 'Work Sans', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); transition: opacity 0.15s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .imgk-btn { display: inline-flex; align-items: center; justify-content: center; width: auto; border-radius: 999px; padding: 6px 16px; font-family: 'Work Sans', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); transition: opacity 0.15s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .imgk-btn:hover { opacity: 0.82; }
         .imgk-btn:active { transform: scale(0.97); opacity: 0.8; }
         .imgk-btn-primary { color: #7f1d1d; border: 1px solid rgba(127,29,29,0.22); background: rgba(127,29,29,0.06); }
@@ -282,7 +299,7 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
 
           {/* Bottom area: buttons (denied), progress bar (granted/declined), or waiting hint (asking) */}
           {isDenied && !checking ? (
-            <div className="flex flex-col items-center gap-3 w-full" style={{ maxWidth: '260px' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <button className="imgk-btn imgk-btn-primary" onClick={() => void handleTryAgain()}>
                 Try again
               </button>
