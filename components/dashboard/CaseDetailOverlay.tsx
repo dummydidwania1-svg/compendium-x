@@ -5,7 +5,7 @@ import React, {
   type ChangeEvent, type DragEvent,
 } from 'react';
 import {
-  X, RefreshCw, Upload, ChevronLeft, ChevronDown, Loader2, Play, Pause,
+  X, RefreshCw, Upload, ChevronLeft, Loader2, Play, Pause,
   CalendarDays, Wifi, User, Headphones, Images, FileCheck,
   Clock, AlertCircle,
 } from 'lucide-react';
@@ -829,22 +829,17 @@ export default function CaseDetailOverlay({
                 )}
               </div>
 
-              {/* Fade at bottom of scroll area */}
+              {/* Fade at bottom of scroll area. When there's more to read
+                  and the user hasn't scrolled yet, the fade grows taller and
+                  gently breathes once or twice as a symbol-free "more below"
+                  cue, then settles back to the slim resting fade. */}
               <div
-                className="absolute bottom-0 left-0 right-0 h-[20px] pointer-events-none"
-                style={{ background: 'linear-gradient(to bottom, rgba(255,248,240,0), #fff8f0)' }}
+                className={`absolute bottom-0 left-0 right-0 pointer-events-none transition-all duration-500 ${showScrollHint ? 'animate-scroll-hint' : ''}`}
+                style={{
+                  height: showScrollHint ? '40px' : '20px',
+                  background: 'linear-gradient(to bottom, rgba(255,248,240,0), #fff8f0)',
+                }}
               />
-
-              {/* One-time scroll hint: subtle bobbing chevron, shown only
-                  until the user scrolls for the first time */}
-              {showScrollHint && (
-                <div
-                  className="absolute bottom-[6px] left-1/2 -translate-x-1/2 pointer-events-none animate-scroll-hint"
-                  style={{ color: 'rgba(61,90,53,.55)' }}
-                >
-                  <ChevronDown className="w-[15px] h-[15px]" />
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -158,16 +158,15 @@ body {
   50% { background-color: rgba(61, 90, 53, 0.12); border-radius: 0.375rem; }
 }
 
-/* One-time scroll hint chevron for the case detail transcript */
-@keyframes scroll-hint-bob {
-  0%   { opacity: 0; transform: translateY(0); }
-  18%  { opacity: 1; }
-  50%  { transform: translateY(4px); }
-  82%  { opacity: 1; }
-  100% { opacity: 0; transform: translateY(0); }
+/* One-time scroll hint for the case detail transcript: a symbol-free
+   bottom fade that gently breathes (opacity only) to signal more content
+   below, then settles. No glyphs, so nothing collides with the text. */
+@keyframes scroll-hint-breathe {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
 }
 .animate-scroll-hint {
-  animation: scroll-hint-bob 1.5s ease-in-out 2;
+  animation: scroll-hint-breathe 1.6s ease-in-out 2;
 }
 
 .radial-bg {
