@@ -32,9 +32,13 @@ const scoreColor = (score: number): string => {
 const WeightTooltip = ({
   anchorRef,
   visible,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   anchorRef: React.RefObject<HTMLButtonElement | null>;
   visible: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }) => {
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const canUseDOM = typeof document !== 'undefined';
@@ -54,11 +58,14 @@ const WeightTooltip = ({
   return createPortal(
     <div
       className="fixed z-[9999] animate-scale-in"
-      style= {{top: pos.top, left: pos.left, transform: 'translateX(-50%)' }}
+      style={{ top: pos.top, left: pos.left, transform: 'translateX(-50%)' }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
-      <div className="rounded-xl border border-[#5C4033]/10 bg-[#fff8f0] backdrop-blur-xl shadow-xl px-3 py-2.5 min-w-[130px]"
-  style= {{boxShadow: '0 4px 24px rgba(92, 64, 51, 0.08), 0 1px 3px rgba(92, 64, 51, 0.06)' }}
->
+      <div
+        className="rounded-xl border border-[#5C4033]/10 bg-[#fff8f0] backdrop-blur-xl shadow-xl px-3 py-2.5 min-w-[130px]"
+        style={{ boxShadow: '0 4px 24px rgba(92, 64, 51, 0.08), 0 1px 3px rgba(92, 64, 51, 0.06)' }}
+      >
         <p className="text-[8px] uppercase tracking-[0.12em] text-[#5C4033]/45 font-semibold mb-1.5">
           Score Weights
         </p>
@@ -168,6 +175,23 @@ const CaseScoreCard = ({ filters }: CaseScoreCardProps) => {
   const [showDrilldown, setShowDrilldown] = useState(false);
   const [showWeights, setShowWeights] = useState(false);
   const weightBtnRef = useRef<HTMLButtonElement>(null);
+  const weightShowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const weightHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (weightShowTimerRef.current) clearTimeout(weightShowTimerRef.current);
+    if (weightHideTimerRef.current) clearTimeout(weightHideTimerRef.current);
+  }, []);
+
+  const handleWeightEnter = () => {
+    if (weightHideTimerRef.current) { clearTimeout(weightHideTimerRef.current); weightHideTimerRef.current = null; }
+    if (!showWeights) weightShowTimerRef.current = setTimeout(() => setShowWeights(true), 150);
+  };
+
+  const handleWeightLeave = () => {
+    if (weightShowTimerRef.current) { clearTimeout(weightShowTimerRef.current); weightShowTimerRef.current = null; }
+    weightHideTimerRef.current = setTimeout(() => setShowWeights(false), 250);
+  };
 
   // ── Filter cases ──
   const filteredCases = useMemo(() => {
@@ -231,8 +255,8 @@ return (
               Case Score
               <button
                 ref={weightBtnRef}
-                onMouseEnter={() => setShowWeights(true)}
-                onMouseLeave={() => setShowWeights(false)}
+                onMouseEnter={handleWeightEnter}
+                onMouseLeave={handleWeightLeave}
                 className="w-3.5 h-3.5 flex items-center justify-center text-[#5C4033]/30 hover:text-[#5C4033]/60 transition-colors"
               >
                 <Info className="w-3 h-3" />
@@ -242,7 +266,12 @@ return (
         </div>
 
         {/* Portal-based weight tooltip */}
-        <WeightTooltip anchorRef={weightBtnRef} visible={showWeights} />
+        <WeightTooltip
+          anchorRef={weightBtnRef}
+          visible={showWeights}
+          onMouseEnter={handleWeightEnter}
+          onMouseLeave={handleWeightLeave}
+        />
 
         {noData ? (
           <div className="flex-1 flex items-center justify-center py-4">

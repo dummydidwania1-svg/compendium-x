@@ -119,40 +119,46 @@ interface ParameterBarChartProps {
 const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
   const { entries, isPreview } = useDashboard();
   const [drillDown, setDrillDown] = useState<string | null>(null);
-  const [isPinned, setIsPinned] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const closeDrilldown = () => { setDrillDown(null); setIsPinned(false); };
+  useEffect(() => () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  }, []);
+
+  const closeDrilldown = () => {
+    if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; }
+    setDrillDown(null);
+  };
 
   const handleBarMouseEnter = (paramName: string) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; }
-    hoverTimerRef.current = setTimeout(() => setDrillDown(paramName), 180);
+    // 500ms delay so a passing hover doesn't trigger the overlay
+    hoverTimerRef.current = setTimeout(() => setDrillDown(paramName), 500);
   };
 
   const handleBarMouseLeave = () => {
     if (hoverTimerRef.current) { clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
-    if (!isPinned) {
-      closeTimerRef.current = setTimeout(() => setDrillDown(null), 300);
-    }
   };
 
   const handleBarClick = (paramName: string) => {
     if (hoverTimerRef.current) { clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
     if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; }
     setDrillDown(paramName);
-    setIsPinned(true);
   };
 
-  const handleDrilldownMouseEnter = () => {
+  // These run on the inner modal card, not the full-card backdrop.
+  // This means the overlay closes when the mouse leaves the modal window,
+  // not when it leaves the card — so users can switch parameters without
+  // dragging the cursor far away.
+  const handleOverlayMouseEnter = () => {
     if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; }
   };
 
-  const handleDrilldownMouseLeave = () => {
-    if (!isPinned) {
-      closeTimerRef.current = setTimeout(() => setDrillDown(null), 300);
-    }
+  const handleOverlayMouseLeave = () => {
+    closeTimerRef.current = setTimeout(() => setDrillDown(null), 200);
   };
 
   // ── Filter cases (same logic as CaseScoreCard) ──
@@ -215,7 +221,10 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
   const noData = filteredCases.length === 0;
 
   return (
-    <div className="glass-card p-6 flex flex-col relative overflow-hidden h-full min-h-[280px] group transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg">
+    <div
+      className="glass-card p-6 flex flex-col relative overflow-hidden h-full min-h-[280px] group transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg"
+      onMouseLeave={drillDown ? closeDrilldown : undefined}
+    >
       {/* ── Header ── */}
       <div className="mb-5">
         <div className="eyebrow !mb-1 flex items-center">PARAMETER ANALYSIS</div>
@@ -267,9 +276,6 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
       {drillDown && (
         <div
           className="absolute inset-0 z-40 flex items-center justify-center p-6"
-          onClick={isPinned ? closeDrilldown : undefined}
-          onMouseEnter={handleDrilldownMouseEnter}
-          onMouseLeave={handleDrilldownMouseLeave}
           style={{ borderRadius: 'inherit' }}
         >
           {/* Glass backdrop */}
@@ -278,8 +284,12 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
             style={{ borderRadius: 'inherit' }}
           />
 
+          {/* Inner modal — hover handlers live here so the overlay closes when
+              the mouse leaves the modal window, not when it leaves the card. */}
           <div
             className="relative bg-[#fff8f0]/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#5C4033]/12 w-full max-w-md animate-scale-in overflow-hidden"
+            onMouseEnter={handleOverlayMouseEnter}
+            onMouseLeave={handleOverlayMouseLeave}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -297,14 +307,12 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
     <span className="text-[9px] font-medium text-[#5C4033]/30 tabular-nums tracking-wide">
       {filteredCases.length} {filteredCases.length === 1 ? 'case' : 'cases'}
     </span>
-    {isPinned && (
-      <button
-        onClick={closeDrilldown}
-        className="w-5 h-5 flex items-center justify-center rounded-full bg-[#D9D0C4]/50 text-[#5C4033] hover:bg-[#3B2F2F] hover:text-[#F0EBE3] transition-colors"
-      >
-        <X className="w-2.5 h-2.5" />
-      </button>
-    )}
+    <button
+      onClick={closeDrilldown}
+      className="w-5 h-5 flex items-center justify-center rounded-full bg-[#D9D0C4]/50 text-[#5C4033] hover:bg-[#3B2F2F] hover:text-[#F0EBE3] transition-colors"
+    >
+      <X className="w-2.5 h-2.5" />
+    </button>
   </div>
 </div>
 
