@@ -136,7 +136,7 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; }
     // 500ms delay so a passing hover doesn't trigger the overlay
-    hoverTimerRef.current = setTimeout(() => setDrillDown(paramName), 500);
+    hoverTimerRef.current = setTimeout(() => setDrillDown(paramName), 650);
   };
 
   const handleBarMouseLeave = () => {
@@ -264,7 +264,7 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
 
               {/* ── Helper line ── */}
               <span className="text-[9px] text-[#5C4033]/40 mt-1 group-hover:text-[#5C4033]/60 transition-all tracking-wide flex items-center gap-0.5 justify-center">
-                Select a skill to explore
+                Hover over a skill to explore
                 <ChevronRight className="w-2.5 h-2.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
               </span>
             </>
