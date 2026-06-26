@@ -1711,6 +1711,14 @@ export default function LobbyPage() {
           sessionRef,
           (snapshot) => {
             if (!snapshot.exists()) {
+              // The first snapshot can be served from the local cache before the
+              // just-created doc has synced from the server -- don't flash
+              // "Something went wrong" for that. Let polling (getDoc, server-backed)
+              // confirm a genuine miss before surfacing a fatal error.
+              if (snapshot.metadata.fromCache) {
+                startPolling()
+                return
+              }
               setSessionIssue('Session not found. Generate a fresh practice link.')
               startPolling()
               return

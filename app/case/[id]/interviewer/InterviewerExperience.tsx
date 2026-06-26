@@ -668,8 +668,6 @@ export function InterviewerPageInner({
 	const lastInterviewerFlushMimeTypeRef = useRef<string>('audio/webm')
 	const recordingFinalizedRef = useRef(false)
 	const cachedAuthTokenRef = useRef<string | null>(null)
-	// Consecutive observations of recording:false while active:true (B5 debounce).
-	const candidateRecordingFalseCountRef = useRef(0)
 
 	// Mid-session mic-LOSS recovery (manual block). Raises the recovery banner when
 	// a previously-granted mic flips to 'denied'. Hard-suppressed when the interviewer
@@ -703,8 +701,6 @@ export function InterviewerPageInner({
 	}, [isRemoteMode, previewMode, interviewerMicRetry])
 
 	// ── Remote-mode overlays ─────────────────────────────────────────────────────
-	// B5: Candidate's recording window is closed / recording not active.
-	const [candidateRecordingClosed, setCandidateRecordingClosed] = useState(false)
 	// A3/D10: Candidate ended the session before the interviewer submitted feedback.
 	const [candidateEndedSession, setCandidateEndedSession] = useState(false)
 
@@ -818,41 +814,12 @@ export function InterviewerPageInner({
 				}
 			}
 
-			// B5: Candidate's recording is no longer active.
-			// Debounce: require two consecutive heartbeats with recording:false while
-			// active:true before showing the overlay, so a single transient or
-			// missing-field heartbeat cannot false-fire it. Stale presence (>25s)
-			// shows the overlay immediately — that threshold is already 2.5× the
-			// 10s heartbeat interval.
-			if (status === 'in_progress') {
-				const STALE_MS = 25000
-				const presence = data.candidatePresence as { active?: boolean; recording?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined
-				if (presence?.lastSeenAt) {
-					const age = Date.now() - presence.lastSeenAt.toDate().getTime()
-					const isStale = age > STALE_MS
-					const recordingActiveButStopped = presence.active === true && presence.recording === false
-
-					if (isStale || presence.active === false) {
-						// Offline or stale: show overlay immediately.
-						candidateRecordingFalseCountRef.current = 0
-						setCandidateRecordingClosed(true)
-					} else if (recordingActiveButStopped) {
-						// Require two consecutive observations to filter transient glitches.
-						candidateRecordingFalseCountRef.current++
-						if (candidateRecordingFalseCountRef.current >= 2) {
-							setCandidateRecordingClosed(true)
-						}
-					} else {
-						// Recording is active and healthy.
-						candidateRecordingFalseCountRef.current = 0
-						setCandidateRecordingClosed(false)
-					}
-				}
-			} else {
-				// Clear once session leaves in_progress (ended, cancelled, etc.)
-				candidateRecordingFalseCountRef.current = 0
-				setCandidateRecordingClosed(false)
-			}
+			// B5 ("Candidate's recording window is closed") is removed for now. The old
+			// heuristic keyed off candidatePresence.recording === false, which is false in
+			// many normal states (opt-out / running without recording, brief start/stop
+			// ticks), so it false-fired while the candidate window was actually open.
+			// We'll redesign a proper "candidate disconnected" signal later. Until then we
+			// never raise this overlay.
 		}
 
 		const unsubscribe = onSnapshot(
@@ -1835,20 +1802,6 @@ if (previewMode && !forcePreview) {
 					lobbyId={lobbyId}
 					onShowingChange={setMicGuardShowing}
 				/>
-
-				{/* B5 — Remote mode: candidate's recording window is closed.
-				    Triggered when candidatePresence.recording goes false or presence
-				    goes stale while session is in_progress. Interviewer-only; local
-				    mode never shows this (the candidate's mic is on the same device). */}
-				{isRemoteMode && candidateRecordingClosed && !micGuardShowing && (
-					<LobbyOverlay
-						type="warning"
-						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/><line x1="2" y1="2" x2="22" y2="22"/></svg>}
-						title="Candidate's recording window is closed"
-						body="Ask your candidate to reopen their practice tab so their audio can be recorded. The session will continue once they reconnect."
-						onDismiss={() => setCandidateRecordingClosed(false)}
-					/>
-				)}
 
 				{/* Interviewer mic recovery -- only for mic LOSS after a previously-granted
 				    mic drops mid-session. Not shown for the initial decision (the gate
