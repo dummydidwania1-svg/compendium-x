@@ -87,7 +87,7 @@ const WAVE_HEIGHTS = [
 
 // Section label used everywhere for consistent sizing
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-[10px] uppercase tracking-[.13em] font-semibold text-[#3D5A35] mb-[10px]">
+  <p className="text-[9px] uppercase tracking-[.14em] font-semibold text-[#3D5A35] mb-[8px]">
     {children}
   </p>
 );
@@ -117,24 +117,22 @@ function useCountUp(target: number | null): number {
 // ─────────────────────────────────────────────────────────────
 function ParamBar({ label, score, ready }: { label: string; score: number | null; ready: boolean }) {
   return (
-    <div className="mb-[11px]">
-      <div className="flex items-center justify-between mb-[5px]">
-        <span className="text-[11px] font-medium" style={{ color: 'rgba(92,64,51,.62)' }}>
-          {label}
-        </span>
-        <span className="text-[11px] font-semibold tabular-nums" style={{ color: '#3B2F2F' }}>
-          {score != null ? score : '--'}
-        </span>
-      </div>
-      <div className="w-full h-[5px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
+    <div className="flex items-center gap-[7px] mb-[6px]">
+      <span className="text-[10px] font-medium w-[58px] text-right shrink-0" style={{ color: 'rgba(92,64,51,.46)' }}>
+        {label}
+      </span>
+      <div className="flex-1 h-[3px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
         <div
           className="h-full rounded-full transition-all duration-[900ms] ease-out"
           style={{
             width: ready && score != null ? `${(score / 5) * 100}%` : '0%',
-            background: 'rgba(61,90,53,.65)',
+            background: 'rgba(61,90,53,.42)',
           }}
         />
       </div>
+      <span className="text-[10px] font-semibold w-[14px] text-right shrink-0 tabular-nums" style={{ color: 'rgba(59,47,47,.78)' }}>
+        {score != null ? score : '--'}
+      </span>
     </div>
   );
 }
@@ -152,13 +150,13 @@ function MetaRow({
   textStyle?: React.CSSProperties;
 }) {
   return (
-    <div className="flex items-center gap-[8px] mb-[7px]">
-      <div className="w-[13px] h-[13px] shrink-0 flex items-center justify-center">
-        <Icon className="w-full h-full" style={{ color: 'rgba(92,64,51,.50)' }} />
+    <div className="flex items-center gap-[7px] mb-[5px]">
+      <div className="w-[12px] h-[12px] shrink-0 flex items-center justify-center">
+        <Icon className="w-full h-full" style={{ color: 'rgba(92,64,51,.42)' }} />
       </div>
       <span
-        className="text-[11.5px] leading-none"
-        style={textStyle ?? { color: 'rgba(92,64,51,.64)' }}
+        className="text-[10.5px] leading-none"
+        style={textStyle ?? { color: 'rgba(92,64,51,.56)' }}
       >
         {text}
       </span>
@@ -498,9 +496,9 @@ export default function CaseDetailOverlay({
 
           {/* ── LEFT SIDEBAR ── */}
           <div
-            className="w-[210px] shrink-0 flex flex-col gap-[14px] overflow-y-auto"
+            className="w-[210px] shrink-0 flex flex-col gap-[11px] overflow-y-auto"
             style={{
-              padding: '16px 16px',
+              padding: '14px 15px',
               borderRight: '1px solid rgba(92,64,51,.06)',
               scrollbarWidth: 'none',
             }}
@@ -508,30 +506,30 @@ export default function CaseDetailOverlay({
             {/* Score ring */}
             <div
               className="text-center"
-              style={{ paddingBottom: '14px', borderBottom: '1px solid rgba(92,64,51,.06)' }}
+              style={{ paddingBottom: '11px', borderBottom: '1px solid rgba(92,64,51,.06)' }}
             >
               <div
-                className="w-[78px] h-[78px] rounded-full inline-flex flex-col items-center justify-center"
+                className="w-[64px] h-[64px] rounded-full inline-flex flex-col items-center justify-center"
                 style={{
-                  border: `3px solid ${scoreVal ? scoreColor(scoreVal) : 'rgba(61,90,53,.22)'}`,
-                  boxShadow: scoreVal ? `0 0 18px ${scoreColor(scoreVal)}26` : 'none',
+                  border: `1.5px solid ${scoreVal ? scoreColor(scoreVal) + '40' : 'rgba(61,90,53,.16)'}`,
+                  boxShadow: scoreVal ? `0 0 14px ${scoreColor(scoreVal)}12` : 'none',
                 }}
               >
-                <span className="font-serif text-[32px] font-[500] text-[#3B2F2F] leading-none tabular-nums">
+                <span className="font-serif text-[27px] font-[500] text-[#3B2F2F] leading-none tabular-nums">
                   {entry.isUnrated ? '--' : displayScore}
                 </span>
                 {!entry.isUnrated && (
-                  <span className="text-[9px] font-semibold uppercase tracking-[.08em] mt-[3px]" style={{ color: 'rgba(92,64,51,.50)' }}>
+                  <span className="text-[8px] font-medium mt-[2px]" style={{ color: 'rgba(92,64,51,.40)' }}>
                     Out of 5
                   </span>
                 )}
               </div>
-              <p className="text-[10px] font-semibold uppercase tracking-[.10em] mt-[8px]" style={{ color: 'rgba(92,64,51,.46)' }}>Overall Score</p>
+              <p className="text-[8.5px] font-medium uppercase tracking-[.10em] mt-[6px]" style={{ color: 'rgba(92,64,51,.40)' }}>Overall Score</p>
             </div>
 
             {/* Parameter bars */}
             {!entry.isUnrated && (
-              <div style={{ paddingBottom: '14px', borderBottom: '1px solid rgba(92,64,51,.06)' }}>
+              <div style={{ paddingBottom: '11px', borderBottom: '1px solid rgba(92,64,51,.06)' }}>
                 <SectionLabel>Parameters</SectionLabel>
                 <ParamBar label="Structure"  score={entry.structure}  ready={paramsReady} />
                 <ParamBar label="Delivery"   score={entry.delivery}   ready={paramsReady} />
@@ -542,7 +540,7 @@ export default function CaseDetailOverlay({
 
             {/* Session meta */}
             <div style={{
-              paddingBottom: localUrls.length > 0 ? '14px' : 0,
+              paddingBottom: localUrls.length > 0 ? '11px' : 0,
               borderBottom: localUrls.length > 0 ? '1px solid rgba(92,64,51,.06)' : 'none',
             }}>
               <SectionLabel>Session</SectionLabel>
@@ -551,15 +549,15 @@ export default function CaseDetailOverlay({
 
               {(transcriptStatus === 'completed' || transcriptStatus === 'partial') && (
                 <MetaRow icon={FileCheck} text="Transcript ready"
-                  textStyle={{ color: 'rgba(61,90,53,.74)', fontWeight: 500, fontSize: '11.5px' }} />
+                  textStyle={{ color: 'rgba(61,90,53,.66)', fontWeight: 500, fontSize: '10.5px' }} />
               )}
               {(transcriptStatus === 'processing' || transcriptStatus === 'pending') && (
                 <MetaRow icon={Clock} text="Generating..."
-                  textStyle={{ color: 'rgba(92,64,51,.55)', fontSize: '11.5px' }} />
+                  textStyle={{ color: 'rgba(92,64,51,.48)', fontSize: '10.5px' }} />
               )}
               {transcriptStatus === 'failed' && (
                 <MetaRow icon={AlertCircle} text="No transcript"
-                  textStyle={{ color: 'rgba(92,64,51,.50)', fontSize: '11.5px' }} />
+                  textStyle={{ color: 'rgba(92,64,51,.44)', fontSize: '10.5px' }} />
               )}
               {hasAudio && <MetaRow icon={Headphones} text="Recording available" />}
             </div>
