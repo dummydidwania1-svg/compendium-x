@@ -916,7 +916,44 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   if (!sessionSnap.exists) return
   const sessionData = sessionSnap.data() ?? {}
   const existingMergeStatus = sessionData.mergedTranscriptStatus as string | undefined
-  if (existingMergeStatus === 'completed' || existingMergeStatus === 'processing') return
+  if (existingMergeStatus === 'completed' || existingMergeStatus === 'processing') {
+    // Transcript merge is already done, so we'd normally stop here. But the
+    // audio merge can legitimately still be missing: it only runs in the single
+    // pass that first completes the transcript, and if both track audioUrls
+    // weren't present at that exact moment (or that pass errored/skipped), the
+    // audio never gets a second chance. Salvage it here — idempotent via the
+    // !mergedAudioUrl guard — so any later trigger (incl. the 30-min sweep)
+    // completes the combined audio without touching the transcript.
+    if (existingMergeStatus === 'completed' && MERGE_AUDIO_ENABLED && !sessionData.mergedAudioUrl) {
+      try {
+        const recCol = sessionRef.collection('recordings')
+        const [cSnap, iSnap] = await Promise.all([
+          recCol.doc('candidate').get(),
+          recCol.doc('interviewer').get(),
+        ])
+        const cData = cSnap.data() as TrackData | undefined
+        const iData = iSnap.data() as TrackData | undefined
+        if (cData?.audioUrl && iData?.audioUrl) {
+          const mergedAudioUrl = await mergeSessionAudio(
+            sessionId,
+            { audioUrl: cData.audioUrl, startOffsetMs: cData.startOffsetMs },
+            { audioUrl: iData.audioUrl, startOffsetMs: iData.startOffsetMs },
+          )
+          if (mergedAudioUrl) {
+            await sessionRef.set(
+              { mergedAudioUrl, mergedAudioCompletedAt: FieldValue.serverTimestamp() },
+              { merge: true },
+            )
+            logger.info('audio_merge_salvaged', { sessionId })
+          }
+        }
+      } catch (salvageErr) {
+        const m = salvageErr instanceof Error ? salvageErr.message : 'Unknown audio merge error.'
+        logger.warn('audio_merge_salvage_failed', { sessionId, message: m })
+      }
+    }
+    return
+  }
 
   const recordingsCol = sessionRef.collection('recordings')
   const [candidateSnap, interviewerSnap] = await Promise.all([
@@ -1402,7 +1439,18 @@ export const finalizePendingMerges = onSchedule(
     for (const sessionDoc of snapshot.docs) {
       const data = sessionDoc.data()
       const mergedStatus = data.mergedTranscriptStatus as string | undefined
-      if (mergedStatus === 'completed' || mergedStatus === 'processing') continue
+      // A session whose transcript is already merged but is still missing the
+      // combined audio needs evaluateAndMerge to run its audio-salvage path.
+      const needsAudioSalvage =
+        mergedStatus === 'completed' && MERGE_AUDIO_ENABLED && !data.mergedAudioUrl
+      if ((mergedStatus === 'completed' || mergedStatus === 'processing') && !needsAudioSalvage) {
+        continue
+      }
+      if (needsAudioSalvage) {
+        evaluated++
+        await evaluateAndMerge(sessionDoc.id)
+        continue
+      }
 
       const interviewerDeclined = data.interviewerAudioCaptured === false
       const completedAtMs = (
