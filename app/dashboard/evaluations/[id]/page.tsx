@@ -395,7 +395,7 @@ export default function EvaluationDetailPage() {
                           href={sessionRecording.mergedAudioUrl ?? sessionRecording.audioUrl ?? undefined}
                           className="rounded-full border border-emerald-400/40 bg-emerald-300/10 px-2.5 py-1 text-emerald-100 transition hover:border-emerald-300/80 hover:bg-emerald-300/20"
                         >
-                          {sessionRecording.mergedAudioUrl ? 'Open Combined Audio' : 'Open Session Audio'}
+                          Open Session Audio
                         </a>
                       )}
                     </div>

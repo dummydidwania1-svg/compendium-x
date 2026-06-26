@@ -234,9 +234,7 @@ const CaseDetailOverlay = ({ entry, onClose }: { entry: any; onClose: () => void
           {entry.hasAudio && (entry.mergedAudioUrl || entry.audioUrl) ? (
             <div className="rounded-lg border border-[#CFC2B1] bg-[#EEE6DA] p-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-[#5C4033]/70 italic">
-                  {entry.mergedAudioUrl ? 'Combined audio (both mics) available.' : 'Audio recording available.'}
-                </p>
+                <p className="text-xs text-[#5C4033]/70 italic">Audio recording available.</p>
                 <button
                   onClick={() => setShowAudioPlayer((current) => !current)}
                   className="shrink-0 rounded-full border border-[#D7CABA] bg-[#FBF6EF] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5C4033]/68 transition hover:border-[#B7A387] hover:bg-[#F3EBDF] hover:text-[#3D5A35]"
