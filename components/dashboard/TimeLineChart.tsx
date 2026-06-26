@@ -14,8 +14,17 @@ const formatChartDate = (dateStr: string): string => {
 };
 
 // ── Custom X-axis tick: "Oct 05" primary + "'24" dimmer below ──
-const CustomXTick = ({ x, y, payload }: any) => {
-  const [datePart, yearPart] = (payload.value as string).split('|');
+// When chartData is provided, payload.value is a numeric index into chartData.
+const CustomXTick = ({ x, y, payload, chartData }: any) => {
+  let datePart: string;
+  let yearPart: string | undefined;
+  if (chartData && typeof payload.value === 'number') {
+    const item = chartData[payload.value];
+    if (!item) return null;
+    [datePart, yearPart] = (item.date as string).split('|');
+  } else {
+    [datePart, yearPart] = (payload.value as string).split('|');
+  }
   return (
     <g transform={`translate(${x},${y})`}>
       <text dy={12} textAnchor="middle" fill={COLORS.warm} fontSize={10} opacity={0.6}>{datePart}</text>
@@ -287,7 +296,8 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
       if (workflow.forFilter.types.length > 0) cases = cases.filter((c: any) => workflow.forFilter.types.includes(c.type));
       if (workflow.forFilter.levels.length > 0) cases = cases.filter((c: any) => workflow.forFilter.levels.includes(c.level));
       const sorted = [...cases].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const data = sorted.map(c => ({
+      const data = sorted.map((c, idx) => ({
+        _idx: idx,
         date: formatChartDate(c.date),
         overall: c.score, structure: c.structure, delivery: c.delivery,
         analysis: c.analysis, creativity: c.creativity,
@@ -310,8 +320,8 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
       let activeCases   = cases.filter((c: any) => groups.includes(c.type));
       if (workflow.forFilter.levels.length > 0) activeCases = activeCases.filter((c: any) => workflow.forFilter.levels.includes(c.level));
       const sorted      = [...activeCases].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const data        = sorted.map(c => {
-        const row: any = { date: formatChartDate(c.date), caseName: c.name, caseType: c.type, caseLevel: c.level };
+      const data        = sorted.map((c, idx) => {
+        const row: any = { _idx: idx, date: formatChartDate(c.date), caseName: c.name, caseType: c.type, caseLevel: c.level };
         groups.forEach(g => { row[`t_${g}`] = c.type === g ? c[mk] : null; });
         return row;
       });
@@ -330,8 +340,8 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
       let activeCases   = cases.filter((c: any) => groups.includes(c.level));
       if (workflow.forFilter.types.length > 0) activeCases = activeCases.filter((c: any) => workflow.forFilter.types.includes(c.type));
       const sorted      = [...activeCases].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const data        = sorted.map(c => {
-        const row: any = { date: formatChartDate(c.date), caseName: c.name, caseType: c.type, caseLevel: c.level };
+      const data        = sorted.map((c, idx) => {
+        const row: any = { _idx: idx, date: formatChartDate(c.date), caseName: c.name, caseType: c.type, caseLevel: c.level };
         groups.forEach(g => { row[`l_${g}`] = c.level === g ? c[mk] : null; });
         return row;
       });
@@ -351,8 +361,8 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
       const mk          = workflow.metrics[0] === 'overall' ? 'score' : workflow.metrics[0];
       const activeCases = cases.filter((c: any) => segs.some(s => s.type === c.type && s.level === c.level));
       const sorted      = [...activeCases].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const data        = sorted.map(c => {
-        const row: any = { date: formatChartDate(c.date), caseName: c.name, caseType: c.type, caseLevel: c.level };
+      const data        = sorted.map((c, idx) => {
+        const row: any = { _idx: idx, date: formatChartDate(c.date), caseName: c.name, caseType: c.type, caseLevel: c.level };
         segs.forEach(s => { row[`seg_${s.type}_${s.level}`] = (c.type === s.type && c.level === s.level) ? c[mk] : null; });
         return row;
       });
@@ -388,9 +398,9 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
 
   const xTicks = useMemo(() => {
     if (n === 0) return [];
-    if (n <= 5)  return chartData.map((d: any) => d.date);
+    if (n <= 5)  return chartData.map((_: any, i: number) => i);
     const step = Math.ceil(n / 5);
-    return chartData.filter((_: any, i: number) => i % step === 0).map((d: any) => d.date);
+    return chartData.reduce((acc: number[], _: any, i: number) => { if (i % step === 0) acc.push(i); return acc; }, []);
   }, [chartData, n]);
 
   const chartKey = useMemo(
@@ -498,8 +508,8 @@ const TimeLineChart = ({ filters }: { filters: Filters }) => {
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <LineChart key={chartKey} data={chartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
               <XAxis
-                dataKey="date" tickLine={false} axisLine={false}
-                tick={<CustomXTick />} height={42} ticks={xTicks}
+                dataKey="_idx" tickLine={false} axisLine={false}
+                tick={(props: any) => <CustomXTick {...props} chartData={chartData} />} height={42} ticks={xTicks}
               />
               <YAxis
                 domain={yDomain} ticks={yTicks}

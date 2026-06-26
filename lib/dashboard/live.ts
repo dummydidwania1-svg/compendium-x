@@ -78,7 +78,11 @@ function asNumber(value: unknown): number | null {
 
 function timestampToDateString(value?: Timestamp): string {
   if (!value?.toDate) return ''
-  return value.toDate().toISOString().slice(0, 10)
+  const d = value.toDate()
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 function timestampToMillis(value?: Timestamp): number {
