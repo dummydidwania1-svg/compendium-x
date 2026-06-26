@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getDoc } from 'firebase/firestore'
+import { getDoc, onSnapshot } from 'firebase/firestore'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { auth } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
@@ -49,6 +49,10 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
   const [countdown, setCountdown] = useState(2)
   const requestedRef = useRef(false)
   const resolvedRef = useRef(false)
+  // Keep a stable ref to onResolved so the timer effect never puts it in its dep
+  // array (which would cause the timers to be torn down on every countdown tick).
+  const onResolvedRef = useRef(onResolved)
+  useEffect(() => { onResolvedRef.current = onResolved }, [onResolved])
 
   // On mount: skip if candidate opted out, else fire native mic prompt.
   useEffect(() => {
@@ -58,7 +62,7 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
       try {
         const snap = await getDoc(sessionDoc(lobbyId))
         if (snap.exists() && snap.data()?.candidateOptedOutRecording === true) {
-          onResolved()
+          onResolvedRef.current()
           return
         }
       } catch { /* best-effort; proceed to prompt */ }
@@ -80,6 +84,9 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
   }, [state, gateState])
 
   // 2.2s draining timer for granted and declined states.
+  // Deps: only gateState and lobbyId (both stable while the countdown runs).
+  // onResolved is NOT in deps -- it is read via onResolvedRef so adding it would
+  // cause the effect to re-run (and kill the timers) on every parent render.
   useEffect(() => {
     if (gateState !== 'granted' && gateState !== 'declined') return
     if (resolvedRef.current) return
@@ -93,9 +100,26 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
       setCountdown(count)
       if (count <= 0) clearInterval(interval)
     }, 1000)
-    const timer = setTimeout(() => onResolved(), GATE_DURATION_MS)
+    const timer = setTimeout(() => onResolvedRef.current(), GATE_DURATION_MS)
     return () => { clearInterval(interval); clearTimeout(timer) }
-  }, [gateState, lobbyId, onResolved])
+  }, [gateState, lobbyId])
+
+  // Race guard: watch for candidateOptedOutRecording arriving while still in the
+  // asking state. Covers the window between candidate lobby write and our getDoc.
+  useEffect(() => {
+    if (gateState !== 'asking') return
+    const unsub = onSnapshot(
+      sessionDoc(lobbyId),
+      (snap) => {
+        if (snap.exists() && snap.data()?.candidateOptedOutRecording === true) {
+          unsub()
+          onResolvedRef.current()
+        }
+      },
+      () => { /* ignore snapshot errors */ }
+    )
+    return () => unsub()
+  }, [gateState, lobbyId])
 
   // Re-query on focus/visibility so fixing mic in browser settings auto-advances.
   useEffect(() => {

@@ -733,9 +733,12 @@ export function InterviewerPageInner({
 				}
 				seedApplied = true
 				// Start the interviewer's mic recording now that the session is live.
+				// Skip silently when the candidate opted out -- no recording, no prompt.
 				if (!interviewerRecordingStartedRef.current) {
 					interviewerRecordingStartedRef.current = true
-					void startInterviewerRecording()
+					if (data.candidateOptedOutRecording !== true) {
+						void startInterviewerRecording()
+					}
 				}
 			}
 

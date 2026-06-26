@@ -10,7 +10,7 @@ import type { LobbyOverlayProps } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { InterviewerMicGate } from '@/components/permissions/InterviewerMicGate'
 import PlatformLoader from '@/components/PlatformLoader'
-import { signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
+import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
 import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
@@ -935,6 +935,11 @@ function InterviewerLobby({
     (typeof sessionStorage === 'undefined' || sessionStorage.getItem(micGateShownKey) !== '1')
   )
   const [micGuardShowing, setMicGuardShowing] = useState(false)
+  // Stable callback so the gate's timer effect never re-runs mid-countdown.
+  const handleMicGateResolved = useCallback(() => {
+    setMicGateVisible(false)
+    setHandoffVisible(false)
+  }, [])
   const [candidateTabClosed, setCandidateTabClosed] = useState(false)
   const candidateTabUrlRef = useRef<string | null>(null)
   // True once we've seen at least one fresh heartbeat — so a candidate tab that
@@ -1130,7 +1135,7 @@ function InterviewerLobby({
       {micGateVisible ? (
         <InterviewerMicGate
           lobbyId={lobbyId}
-          onResolved={() => { setMicGateVisible(false); setHandoffVisible(false) }}
+          onResolved={handleMicGateResolved}
         />
       ) : null}
 
@@ -1649,6 +1654,26 @@ export default function LobbyPage() {
           lobbyId,
           sessionMode: requestedSessionMode,
         })
+
+        // Remote: if the candidate opted out of recording at launch, persist it
+        // to the session doc so the interviewer gate can suppress itself (Case b).
+        if (!isInterviewer && requestedSessionMode !== 'local') {
+          let optedOut = false
+          try { optedOut = sessionStorage.getItem(`compendium-norecord-${lobbyId}`) === '1' } catch { /* quota */ }
+          if (optedOut) {
+            try {
+              const token = await auth.currentUser?.getIdToken()
+              if (token) {
+                void fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify({ role: 'candidate', active: true, candidateOptedOutRecording: true }),
+                  keepalive: true,
+                })
+              }
+            } catch { /* best-effort */ }
+          }
+        }
 
         setCheckingCandidate(false)
 
