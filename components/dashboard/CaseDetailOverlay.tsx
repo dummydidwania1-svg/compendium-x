@@ -214,7 +214,7 @@ export default function CaseDetailOverlay({
   const transcriptReason = entry.transcriptReason ?? null;
   const scoreVal         = entry.isUnrated ? null : (entry.score ?? null);
   // mergedAudioUrl is only written for dual-mic remote sessions
-  const sessionMode      = entry.mergedAudioUrl ? 'Remote' : 'Solo';
+  const sessionMode      = entry.mergedAudioUrl ? 'Remote' : 'Same Device';
   const playedCount      = duration > 0
     ? Math.floor((currentTime / duration) * WAVE_HEIGHTS.length)
     : 0;
