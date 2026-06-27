@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
 import { storage, waitForAuthUser } from '@/lib/firebase/config';
-import { apiPost } from '@/lib/api/client';
+import { apiPost, apiDelete } from '@/lib/api/client';
 import type { DashboardCaseEntry } from '@/lib/dashboard/live';
 import { COLORS } from '@/lib/constants';
 
@@ -198,6 +198,7 @@ export default function CaseDetailOverlay({
   // Audio
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying]       = useState(false);
+  const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
   const [currentTime, setCurrentTime]   = useState(0);
   const [duration, setDuration]         = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -220,7 +221,9 @@ export default function CaseDetailOverlay({
   const [uploadError, setUploadError] = useState('');
   const [dragging, setDragging]       = useState(false);
   const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
+  const [replaceIdx, setReplaceIdx]   = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
 
   // Click-to-zoom + pan for the expanded note image
   const [zoomed, setZoomed]       = useState(false);
@@ -229,6 +232,15 @@ export default function CaseDetailOverlay({
 
   // Reset zoom whenever we open a different image or leave the expanded view
   useEffect(() => { setZoomed(false); setZoomXY({ x: 50, y: 50 }); }, [expandedUrl]);
+
+  // Zoom hint: show for 3s after lightbox opens, then fade away
+  const [showZoomHint, setShowZoomHint] = useState(false);
+  useEffect(() => {
+    if (!expandedUrl) { setShowZoomHint(false); return; }
+    setShowZoomHint(true);
+    const t = window.setTimeout(() => setShowZoomHint(false), 3000);
+    return () => window.clearTimeout(t);
+  }, [expandedUrl]);
 
   // Lightbox: ESC closes the expanded photo, and we lock body scroll while it's
   // open so the page behind the frosted glass can't drift.
@@ -378,6 +390,7 @@ export default function CaseDetailOverlay({
   const togglePlay = () => {
     const a = audioRef.current;
     if (!a) return;
+    if (!hasPlayedOnce) setHasPlayedOnce(true);
     if (isPlaying) { a.pause(); setIsPlaying(false); }
     else           { void a.play(); setIsPlaying(true); }
   };
@@ -463,6 +476,38 @@ export default function CaseDetailOverlay({
     e.preventDefault();
     setDragging(false);
     void uploadFile(e.dataTransfer.files?.[0]);
+  };
+
+  // ── Remove photo ──
+  const removePhoto = async (idx: number) => {
+    const url = localUrls[idx];
+    if (!url) return;
+    setLocalUrls(prev => prev.filter((_, i) => i !== idx));
+    try {
+      await apiDelete(`/api/evaluations/${encodeURIComponent(entry.evaluationId)}/workspace-image`, {
+        workspaceImageUrl: url,
+      });
+    } catch {
+      setLocalUrls(prev => { const next = [...prev]; next.splice(idx, 0, url); return next; });
+    }
+  };
+
+  // ── Replace photo ──
+  const handleReplaceInput = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || replaceIdx === null) return;
+    const oldUrl = localUrls[replaceIdx];
+    await uploadFile(file);
+    if (oldUrl) {
+      try {
+        await apiDelete(`/api/evaluations/${encodeURIComponent(entry.evaluationId)}/workspace-image`, {
+          workspaceImageUrl: oldUrl,
+        });
+        setLocalUrls(prev => prev.filter(u => u !== oldUrl));
+      } catch { /* new image was already added; old one stays in Firestore but not shown */ }
+    }
+    setReplaceIdx(null);
   };
 
   // ─────────────────────────────────────────────────────────────
@@ -843,17 +888,41 @@ export default function CaseDetailOverlay({
                             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
                           >
                             <img src={url} alt={`Note ${i + 1}`} className="w-full h-full object-cover" />
-                            {/* gentle hover veil with an expand glyph so it reads as tappable */}
+
+                            {/* Replace veil — slides up from bottom on hover, click triggers replace */}
                             <div
-                              className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                              style={{ background: 'rgba(59,47,47,.26)', backdropFilter: 'blur(1px)' }}
+                              className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-[4px] py-[6px] opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0"
+                              style={{
+                                background: 'linear-gradient(to top, rgba(59,47,47,.62) 0%, rgba(59,47,47,.0) 100%)',
+                                backdropFilter: 'blur(2px)',
+                              }}
+                              onClick={e => { e.stopPropagation(); setReplaceIdx(i); replaceInputRef.current?.click(); }}
                             >
-                              <Images className="w-[16px] h-[16px] text-white/90" />
+                              <RefreshCw className="w-[11px] h-[11px] text-white/80" />
+                              <span className="text-[9px] font-semibold text-white/80 tracking-[.04em]">Replace</span>
                             </div>
+
+                            {/* Remove × — always visible, top-right corner */}
+                            <button
+                              onClick={e => { e.stopPropagation(); void removePhoto(i); }}
+                              aria-label="Remove photo"
+                              className="absolute top-[4px] right-[4px] w-[16px] h-[16px] rounded-full flex items-center justify-center transition-all duration-150"
+                              style={{
+                                background: 'rgba(255,248,240,.72)',
+                                border: '1px solid rgba(59,47,47,.12)',
+                                color: 'rgba(59,47,47,.55)',
+                                backdropFilter: 'blur(4px)',
+                              }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#3B2F2F'; (e.currentTarget as HTMLElement).style.color = '#F0EBE3'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,248,240,.72)'; (e.currentTarget as HTMLElement).style.color = 'rgba(59,47,47,.55)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                            >
+                              <X className="w-[8px] h-[8px]" />
+                            </button>
                           </div>
                         ))}
                       </div>
                     )}
+                    <input ref={replaceInputRef} type="file" accept="image/*" className="hidden" onChange={e => { void handleReplaceInput(e); }} />
 
                     <div
                       onDragEnter={() => setDragging(true)}
@@ -918,11 +987,11 @@ export default function CaseDetailOverlay({
             }}
           >
             <div className="flex items-center gap-[11px]">
-              {/* Soft play / pause */}
+              {/* Soft play / pause — pulses gently until first interaction */}
               <button
                 onClick={togglePlay}
                 aria-label={isPlaying ? 'Pause' : 'Play'}
-                className="w-[28px] h-[28px] rounded-full flex items-center justify-center shrink-0 transition-all duration-200"
+                className={`w-[28px] h-[28px] rounded-full flex items-center justify-center shrink-0 transition-all duration-200${!hasPlayedOnce ? ' animate-play-pulse' : ''}`}
                 style={{
                   background: isPlaying ? 'rgba(61,90,53,.13)' : 'rgba(92,64,51,.08)',
                   color: '#3D5A35',
@@ -1069,18 +1138,19 @@ export default function CaseDetailOverlay({
             Close
           </button>
 
-          {/* Zoom hint — floats bottom-centre, fades with the frame */}
+          {/* Zoom hint — floats bottom-centre, auto-fades after 3s */}
           <span
-            className={`absolute bottom-[20px] left-1/2 -translate-x-1/2 z-[2] rounded-full px-[12px] py-[5px] text-[10.5px] font-medium select-none ${lightboxExiting ? 'animate-lightbox-bg-out' : 'animate-lightbox-bg-in'}`}
+            className="absolute bottom-[20px] left-1/2 -translate-x-1/2 z-[2] rounded-full px-[12px] py-[5px] text-[10.5px] font-medium select-none pointer-events-none transition-all duration-500"
             style={{
               color: 'rgba(59,47,47,.62)',
               background: 'rgba(255,255,255,.5)',
               border: '1px solid rgba(92,64,51,.10)',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
+              opacity: showZoomHint && !lightboxExiting ? 1 : 0,
             }}
           >
-            {zoomed ? 'Move to look around · click to zoom out · Esc to close' : 'Click to zoom in · Esc to close'}
+            {zoomed ? 'Move to pan, click to zoom out' : 'Click to zoom in'}
           </span>
 
           {/* The image frame — springs in, holds the photo at full size */}

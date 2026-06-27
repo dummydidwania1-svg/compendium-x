@@ -30,6 +30,44 @@ async function getIdTokenOrThrow(): Promise<string> {
   return user.getIdToken()
 }
 
+export async function apiDelete<TResponse = unknown>(
+  path: string,
+  body: unknown,
+): Promise<TResponse> {
+  const token = await getIdTokenOrThrow()
+
+  let response: Response
+  try {
+    response = await fetch(path, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    })
+  } catch (err) {
+    throw new ApiError(
+      0,
+      'network_error',
+      err instanceof Error ? err.message : 'Network request failed.',
+    )
+  }
+
+  const payload = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    const errBody = payload as { error?: { code?: string; message?: string } } | null
+    throw new ApiError(
+      response.status,
+      errBody?.error?.code ?? 'request_failed',
+      errBody?.error?.message ?? `Request failed with status ${response.status}.`,
+    )
+  }
+
+  return payload as TResponse
+}
+
 export async function apiPost<TResponse = unknown>(
   path: string,
   body: unknown,
