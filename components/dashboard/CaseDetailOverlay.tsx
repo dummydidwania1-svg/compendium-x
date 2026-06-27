@@ -78,17 +78,23 @@ function safeExt(filename: string): string {
   return filename.toLowerCase().split('.').pop()?.replace(/[^a-z0-9]/g, '') || 'jpg';
 }
 
-// 80 bar heights; flex-1 bars stretch to fill any panel width
+// Calm, low-amplitude waveform profile. Fewer bars (44) and a gentle organic
+// envelope (max ~16px) so the player reads as a quiet audio control that blends
+// with the rest of the window instead of a loud, jagged equaliser.
 const WAVE_HEIGHTS = [
-  9,14,7,21,12,24,8,17,22,10,16,20,7,14,19,9,15,5,18,23,
-  11,16,21,26,13,8,20,15,7,21,10,17,23,11,18,6,14,20,25,10,
-  15,22,8,17,12,24,13,19,8,21,11,18,7,22,14,9,20,16,5,23,
-  10,17,13,26,8,19,15,21,6,14,24,12,20,9,16,22,11,18,25,7,
+  12,13,13,12,13,13,11,7,5,6,9,11,11,11,13,15,14,10,6,6,7,9,
+  8,9,11,14,16,13,10,8,8,8,7,6,8,12,15,15,12,10,10,10,8,5,
 ];
 
 // Section label used everywhere for consistent sizing
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-[9px] uppercase tracking-[.14em] font-semibold text-[#3D5A35] mb-[8px]">
+  // A tiny green tick before each label gives the headers a quiet, consistent
+  // brand-green rhythm through the window without adding any real "colour".
+  <p className="flex items-center gap-[6px] text-[9px] uppercase tracking-[.14em] font-semibold text-[#3D5A35] mb-[8px]">
+    <span
+      className="inline-block w-[3px] h-[9px] rounded-full shrink-0"
+      style={{ background: 'rgba(61,90,53,.42)' }}
+    />
     {children}
   </p>
 );
@@ -257,9 +263,9 @@ export default function CaseDetailOverlay({
   const scoreVal         = entry.isUnrated ? null : (entry.score ?? null);
   // mergedAudioUrl is only written for dual-mic remote sessions
   const sessionMode      = entry.mergedAudioUrl ? 'Remote' : 'Same Device';
-  const playedCount      = duration > 0
-    ? Math.floor((currentTime / duration) * WAVE_HEIGHTS.length)
-    : 0;
+  // Continuous played fraction (0..1) drives both the per-bar fill and the
+  // thin playhead, so the waveform doubles as the scrubber.
+  const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
 
   // ── Animate params on mount ──
   useEffect(() => {
@@ -400,11 +406,6 @@ export default function CaseDetailOverlay({
     seekTo((e.clientX - rect.left) / rect.width);
   };
 
-  const onScrubClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    seekTo((e.clientX - rect.left) / rect.width);
-  };
-
   // ── Retry transcript ──
   const handleRetry = async () => {
     if (!entry.lobbyId || retrying) return;
@@ -532,12 +533,17 @@ export default function CaseDetailOverlay({
         {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden min-h-0">
 
-          {/* ── LEFT SIDEBAR ── */}
+          {/* ── LEFT SIDEBAR ──
+              A whisper-soft warm wash sets the sidebar apart from the white
+              content pane so the window reads as two gentle panels instead of
+              one flat field. Still drawn only from the warm palette, very low
+              opacity — depth, not colour. */}
           <div
             className="w-[210px] shrink-0 flex flex-col gap-[11px] overflow-y-auto"
             style={{
               padding: '14px 15px',
-              borderRight: '1px solid rgba(92,64,51,.06)',
+              borderRight: '1px solid rgba(92,64,51,.07)',
+              background: 'linear-gradient(180deg, rgba(92,64,51,.025) 0%, rgba(92,64,51,.015) 100%)',
               scrollbarWidth: 'none',
             }}
           >
@@ -698,6 +704,10 @@ export default function CaseDetailOverlay({
                           )}
                           {turns.map((turn, i) => {
                             const isCandidate = turn.speaker === 'Candidate';
+                            // Warm vs cool split: the interviewer sits in a soft
+                            // green (cool, the question/authority side) and you
+                            // sit in warm brown. Two temperatures read instantly
+                            // apart while staying quiet and on-palette.
                             return (
                               <div
                                 key={i}
@@ -705,24 +715,44 @@ export default function CaseDetailOverlay({
                                 style={{ animationDelay: `${Math.min(i * 28, 260)}ms` }}
                               >
                                 <div
-                                  className="w-[24px] h-[24px] rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-[1px]"
+                                  className="w-[24px] h-[24px] rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-[16px]"
                                   style={
                                     isCandidate
-                                      ? { background: 'rgba(92,64,51,.14)', color: '#5C4033', border: '1px solid rgba(92,64,51,.22)' }
-                                      : { background: 'rgba(61,90,53,.14)', color: '#3D5A35', border: '1px solid rgba(61,90,53,.22)' }
+                                      ? { background: 'rgba(92,64,51,.13)', color: '#5C4033', border: '1px solid rgba(92,64,51,.24)' }
+                                      : { background: 'rgba(61,90,53,.16)', color: '#3D5A35', border: '1px solid rgba(61,90,53,.30)' }
                                   }
                                 >
                                   {isCandidate ? 'C' : 'I'}
                                 </div>
-                                <div
-                                  className="max-w-[78%] px-[12px] py-[9px] text-[12.5px] leading-[1.65] text-[#3B2F2F]"
-                                  style={
-                                    isCandidate
-                                      ? { background: 'rgba(217,208,196,.18)', border: '1px solid rgba(217,208,196,.40)', borderRadius: '11px 11px 3px 11px' }
-                                      : { background: 'rgba(61,90,53,.06)', border: '1px solid rgba(61,90,53,.10)', borderRadius: '11px 11px 11px 3px' }
-                                  }
-                                >
-                                  {turn.text}
+                                <div className={`flex flex-col max-w-[80%] ${isCandidate ? 'items-end' : 'items-start'}`}>
+                                  {/* subtle speaker micro-label */}
+                                  <span
+                                    className="text-[9px] font-semibold uppercase tracking-[.07em] mb-[3px] px-[2px]"
+                                    style={{ color: isCandidate ? 'rgba(92,64,51,.46)' : 'rgba(61,90,53,.60)' }}
+                                  >
+                                    {isCandidate ? 'You' : 'Interviewer'}
+                                  </span>
+                                  <div
+                                    className="px-[13px] py-[10px] text-[12.5px] leading-[1.65]"
+                                    style={
+                                      isCandidate
+                                        ? {
+                                            color: '#3B2F2F',
+                                            background: 'rgba(92,64,51,.055)',
+                                            border: '1px solid rgba(92,64,51,.13)',
+                                            borderRadius: '12px 12px 3px 12px',
+                                          }
+                                        : {
+                                            color: '#33402E',
+                                            background: 'rgba(61,90,53,.075)',
+                                            border: '1px solid rgba(61,90,53,.17)',
+                                            borderLeft: '2.5px solid rgba(61,90,53,.34)',
+                                            borderRadius: '4px 12px 12px 4px',
+                                          }
+                                    }
+                                  >
+                                    {turn.text}
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -791,18 +821,18 @@ export default function CaseDetailOverlay({
                 )}
 
                 {/* ── NOTES TAB ──
-                    Content is vertically centred in the available column so a
-                    short notes set (a few thumbnails + the upload zone) sits as
-                    a comfortable group instead of leaving a big void below.
-                    Tapping a thumbnail opens the full-screen lightbox. */}
+                    Top-anchored to match the Session tab's rhythm (centering
+                    broke that symmetry). A short notes set just leaves honest
+                    whitespace below, like any short page. Tapping a thumbnail
+                    opens the full-screen lightbox. */}
                 {activeTab === 'notes' && (
-                  <div className="min-h-full flex flex-col justify-center p-[18px_20px]">
-                    <p className="text-[12px] mb-[16px] text-center" style={{ color: 'rgba(92,64,51,.48)' }}>
+                  <div className="p-[18px_20px] pb-[40px]">
+                    <p className="text-[12px] mb-[16px]" style={{ color: 'rgba(92,64,51,.48)' }}>
                       Photos of your handwritten notes and frameworks from this case.
                     </p>
 
                     {localUrls.length > 0 && (
-                      <div className="flex flex-wrap justify-center gap-[9px] mb-[14px]">
+                      <div className="flex flex-wrap gap-[9px] mb-[14px]">
                         {localUrls.map((url, i) => (
                           <div
                             key={i}
@@ -831,7 +861,7 @@ export default function CaseDetailOverlay({
                       onDragLeave={() => setDragging(false)}
                       onDrop={handleDrop}
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center gap-[7px] rounded-[10px] py-[30px] cursor-pointer transition-all duration-200 w-full max-w-[460px] mx-auto"
+                      className="flex flex-col items-center justify-center gap-[7px] rounded-[10px] py-[30px] cursor-pointer transition-all duration-200 w-full"
                       style={{
                         border: `1.5px dashed ${dragging ? '#3D5A35' : 'rgba(61,90,53,.20)'}`,
                         background: dragging ? 'rgba(61,90,53,.04)' : 'transparent',
@@ -852,7 +882,7 @@ export default function CaseDetailOverlay({
                     </div>
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileInput} />
                     {uploadError && (
-                      <p className="text-[10.5px] mt-[10px] text-center" style={{ color: 'rgba(92,64,51,.62)' }}>{uploadError}</p>
+                      <p className="text-[10.5px] mt-[10px]" style={{ color: 'rgba(92,64,51,.62)' }}>{uploadError}</p>
                     )}
                   </div>
                 )}
@@ -873,87 +903,116 @@ export default function CaseDetailOverlay({
           </div>
         </div>
 
-        {/* ── AUDIO PLAYER ── */}
+        {/* ── AUDIO PLAYER ──
+            One quiet row: a soft play control, the waveform (which is itself
+            the scrubber — no separate track), the time, and tucked-away speed
+            pills. The waveform is low and calm, the played portion uses the
+            soft brand green so it blends with the section ticks and interviewer
+            bubbles, and a thin playhead marks the exact position. */}
         {hasAudio && (
           <div
-            className="flex-shrink-0 px-[14px] pt-[8px] pb-[9px] bg-[#fff8f0]"
-            style={{ borderTop: '1px solid rgba(92,64,51,.06)' }}
+            className="flex-shrink-0 px-[16px] pt-[9px] pb-[10px]"
+            style={{
+              borderTop: '1px solid rgba(92,64,51,.07)',
+              background: 'linear-gradient(180deg, rgba(92,64,51,.012) 0%, rgba(92,64,51,.028) 100%)',
+            }}
           >
-            {/* Play + waveform + time */}
-            <div className="flex items-center gap-[8px]">
+            <div className="flex items-center gap-[11px]">
+              {/* Soft play / pause */}
               <button
                 onClick={togglePlay}
-                className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0 transition-all duration-150"
-                style={{ background: '#3B2F2F', color: '#F0EBE3' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#5C4033'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.07)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#3B2F2F'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+                className="w-[28px] h-[28px] rounded-full flex items-center justify-center shrink-0 transition-all duration-200"
+                style={{
+                  background: isPlaying ? 'rgba(61,90,53,.13)' : 'rgba(92,64,51,.08)',
+                  color: '#3D5A35',
+                  border: `1px solid ${isPlaying ? 'rgba(61,90,53,.28)' : 'rgba(92,64,51,.16)'}`,
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(61,90,53,.18)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(61,90,53,.34)'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isPlaying ? 'rgba(61,90,53,.13)' : 'rgba(92,64,51,.08)'; (e.currentTarget as HTMLElement).style.borderColor = isPlaying ? 'rgba(61,90,53,.28)' : 'rgba(92,64,51,.16)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
-                {isPlaying ? <Pause className="w-[9px] h-[9px]" /> : <Play className="w-[9px] h-[9px] ml-[1px]" />}
+                {isPlaying ? <Pause className="w-[10px] h-[10px]" /> : <Play className="w-[10px] h-[10px] ml-[1.5px]" />}
               </button>
 
-              {/* Waveform: flex-1 bars fill full width */}
+              {/* Waveform = scrubber. Per-bar fill from the continuous played
+                  ratio, with a soft fade across the bar straddling the playhead
+                  so the boundary reads smoothly. A thin playhead line overlays. */}
               <div
-                className="flex items-end gap-[2px] flex-1 min-w-0 cursor-pointer"
-                style={{ height: '26px' }}
+                className="group relative flex items-center gap-[2.5px] flex-1 min-w-0 cursor-pointer"
+                style={{ height: '22px' }}
                 onClick={onWaveClick}
               >
-                {WAVE_HEIGHTS.map((h, i) => (
+                {WAVE_HEIGHTS.map((h, i) => {
+                  const barStart = i / WAVE_HEIGHTS.length;
+                  const barEnd = (i + 1) / WAVE_HEIGHTS.length;
+                  // fraction of THIS bar that is played (0..1) for a smooth edge
+                  const frac = playedRatio <= barStart ? 0
+                    : playedRatio >= barEnd ? 1
+                    : (playedRatio - barStart) / (barEnd - barStart);
+                  const played = `rgba(61,90,53,${0.30 + 0.18 * frac})`;
+                  const unplayed = 'rgba(92,64,51,.10)';
+                  return (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-full transition-all duration-300 ease-out"
+                      style={{
+                        height: `${h}px`,
+                        // blend played (green) over unplayed (warm) at the edge bar
+                        background: frac >= 1 ? played
+                          : frac <= 0 ? unplayed
+                          : `linear-gradient(to right, ${played} ${frac * 100}%, ${unplayed} ${frac * 100}%)`,
+                        transformOrigin: 'center',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scaleY(1.22)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; }}
+                    />
+                  );
+                })}
+
+                {/* Thin playhead line */}
+                {duration > 0 && (
                   <div
-                    key={i}
-                    className="flex-1 rounded-[1px] transition-all duration-150"
+                    className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
                     style={{
-                      height: `${h}px`,
-                      background: i < playedCount ? 'rgba(92,64,51,.30)' : i === playedCount ? 'rgba(92,64,51,.50)' : 'rgba(92,64,51,.08)',
-                      transformOrigin: 'bottom',
+                      left: `${playedRatio * 100}%`,
+                      width: '1.5px',
+                      height: '20px',
+                      borderRadius: '1px',
+                      background: 'rgba(61,90,53,.55)',
+                      boxShadow: '0 0 4px rgba(61,90,53,.25)',
+                      transition: 'left .1s linear',
                     }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scaleY(1.14)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; }}
                   />
-                ))}
+                )}
               </div>
 
-              {/* Duration display: shows ?? while loading so user knows it exists */}
-              <span className="text-[9px] tabular-nums whitespace-nowrap shrink-0" style={{ color: 'rgba(92,64,51,.34)' }}>
-                {fmtTime(currentTime)} / {duration > 0 ? fmtTime(duration) : '...'}
+              {/* Time */}
+              <span className="text-[9.5px] tabular-nums whitespace-nowrap shrink-0 font-medium" style={{ color: 'rgba(92,64,51,.42)' }}>
+                {fmtTime(currentTime)} <span style={{ color: 'rgba(92,64,51,.26)' }}>/</span> {duration > 0 ? fmtTime(duration) : '···'}
               </span>
-            </div>
 
-            {/* Scrubber: 34px left = play 26px + gap 8px */}
-            <div
-              className="relative rounded-[1px] cursor-pointer"
-              style={{ height: '1.5px', margin: '4px 0 0 34px', background: 'rgba(217,208,196,.38)' }}
-              onClick={onScrubClick}
-            >
-              <div
-                className="absolute inset-y-0 left-0 rounded-[1px]"
-                style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%', background: 'rgba(92,64,51,.28)' }}
-              />
-              <div
-                className="absolute w-[6px] h-[6px] rounded-full bg-[#3B2F2F]"
-                style={{
-                  top: '-2.5px',
-                  left: duration > 0 ? `calc(${(currentTime / duration) * 100}% - 3px)` : '-3px',
-                  transition: 'left .1s linear',
-                }}
-              />
-            </div>
-
-            {/* Speed pills */}
-            <div className="flex items-center gap-[2px] mt-[5px] ml-[34px]">
-              {[0.75, 1, 1.25, 1.5, 2].map(r => (
-                <button
-                  key={r}
-                  onClick={() => setSpeed(r)}
-                  className="text-[8.5px] px-[6px] py-[1.5px] rounded-[7px] font-medium transition-all duration-100"
-                  style={
-                    playbackRate === r
-                      ? { background: '#3B2F2F', color: '#F0EBE3', border: '1px solid #3B2F2F' }
-                      : { color: 'rgba(92,64,51,.33)', border: '1px solid rgba(92,64,51,.10)' }
-                  }
-                >
-                  {r}x
-                </button>
-              ))}
+              {/* Speed pills — quiet, tucked to the right */}
+              <div className="flex items-center gap-[2px] shrink-0">
+                {[1, 1.25, 1.5, 2].map(r => {
+                  const active = playbackRate === r;
+                  return (
+                    <button
+                      key={r}
+                      onClick={() => setSpeed(r)}
+                      className="text-[8.5px] px-[5.5px] py-[2px] rounded-full font-semibold transition-all duration-150"
+                      style={
+                        active
+                          ? { background: 'rgba(61,90,53,.12)', color: '#3D5A35', border: '1px solid rgba(61,90,53,.26)' }
+                          : { color: 'rgba(92,64,51,.34)', border: '1px solid transparent' }
+                      }
+                      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.color = 'rgba(92,64,51,.6)'; }}
+                      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = 'rgba(92,64,51,.34)'; }}
+                    >
+                      {r}x
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
