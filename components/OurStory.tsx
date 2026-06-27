@@ -441,7 +441,7 @@ onMouseLeave={() => setFocus(null)}
   </section>
 </section>
 
-<section className="pt-20 md:pt-28 pb-10 px-8">
+<section className="-mt-[279px] relative z-10 pt-20 md:pt-28 pb-10 px-8">
   <div className="max-w-3xl mx-auto text-center reveal">
     <h2 className="font-headline text-3xl md:text-4xl font-light text-[#453a2a] tracking-tight mb-6">Ready to start your journey?</h2>
     <Link
