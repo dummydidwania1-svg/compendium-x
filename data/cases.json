@@ -7877,6 +7877,416 @@
 
 
 
+{
+  "id": 28,
+  "docId": "case-28",
+  "title": "When Life Gives You Lemons",
+  "industry": "Food & Beverage",
+  "difficulty": "Easy",
+  "case_type": "Growth",
+  "company": "McKinsey & Co.",
+  "round": "Principal",
+  "prompt": "Hey, let's begin with a quick case. Your client is your nephew. He recently opened a lemonade stall for the summer holidays. However, his sales have been really poor. He has come to his favourite relative for increasing his revenue. How would you help him?",
+  "frameworkTree": {
+    "nodes": {
+      "revenue-growth": {
+        "id": "revenue-growth",
+        "label": "Revenue Growth",
+        "tone": "root",
+        "children": ["no-of-customers", "revenue-customer"]
+      },
+      "no-of-customers": {
+        "id": "no-of-customers",
+        "label": "No. of Customers",
+        "tone": "branch",
+        "children": ["time", "area", "quality", "marketing", "channel"]
+      },
+      "revenue-customer": {
+        "id": "revenue-customer",
+        "label": "Revenue / Customer",
+        "tone": "branch",
+        "children": ["price-customer", "volume-customer"]
+      },
+      "time": {
+        "id": "time",
+        "label": "Time",
+        "tone": "branch",
+        "children": ["increase-operating-hours", "optimise-time-brackets"]
+      },
+      "area": {
+        "id": "area",
+        "label": "Area",
+        "tone": "branch",
+        "children": ["identify-hotspots", "expand-neighbourhood-coverage"]
+      },
+      "quality": {
+        "id": "quality",
+        "label": "Quality",
+        "tone": "branch",
+        "children": ["improve-taste"]
+      },
+      "marketing": {
+        "id": "marketing",
+        "label": "Marketing",
+        "tone": "branch",
+        "children": ["pamphlets-and-banners", "parent-network"]
+      },
+      "channel": {
+        "id": "channel",
+        "label": "Channel",
+        "tone": "branch",
+        "children": ["home-delivery", "event-bookings"]
+      },
+      "increase-operating-hours": {
+        "id": "increase-operating-hours",
+        "label": "Increase operating hours",
+        "tone": "leaf",
+        "children": []
+      },
+      "optimise-time-brackets": {
+        "id": "optimise-time-brackets",
+        "label": "Optimise time brackets (peak demand windows)",
+        "tone": "leaf",
+        "children": []
+      },
+      "identify-hotspots": {
+        "id": "identify-hotspots",
+        "label": "Identify hotspots (schools, playgrounds)",
+        "tone": "leaf",
+        "children": []
+      },
+      "expand-neighbourhood-coverage": {
+        "id": "expand-neighbourhood-coverage",
+        "label": "Expand neighbourhood coverage",
+        "tone": "leaf",
+        "children": []
+      },
+      "improve-taste": {
+        "id": "improve-taste",
+        "label": "Improve taste -> word-of-mouth growth",
+        "tone": "leaf",
+        "children": []
+      },
+      "pamphlets-and-banners": {
+        "id": "pamphlets-and-banners",
+        "label": "Pamphlets & banners across neighbourhood",
+        "tone": "leaf",
+        "children": []
+      },
+      "parent-network": {
+        "id": "parent-network",
+        "label": "Parent network (friends of parents)",
+        "tone": "leaf",
+        "children": []
+      },
+      "home-delivery": {
+        "id": "home-delivery",
+        "label": "Home delivery",
+        "tone": "leaf",
+        "children": []
+      },
+      "event-bookings": {
+        "id": "event-bookings",
+        "label": "Event bookings (birthday parties, gatherings)",
+        "tone": "leaf",
+        "children": []
+      },
+      "price-customer": {
+        "id": "price-customer",
+        "label": "Price / Customer",
+        "tone": "branch",
+        "children": ["price-optimisation"]
+      },
+      "volume-customer": {
+        "id": "volume-customer",
+        "label": "Volume / Customer",
+        "tone": "branch",
+        "children": ["discounts", "cross-selling"]
+      },
+      "price-optimisation": {
+        "id": "price-optimisation",
+        "label": "Price optimisation Rs.20 -> Rs.25",
+        "tone": "leaf",
+        "children": []
+      },
+      "discounts": {
+        "id": "discounts",
+        "label": "Discounts on additional or larger purchases",
+        "tone": "leaf",
+        "children": []
+      },
+      "cross-selling": {
+        "id": "cross-selling",
+        "label": "Cross-selling (cookies combo)",
+        "tone": "leaf",
+        "children": []
+      }
+    },
+    "defaultExpanded": [
+      "revenue-growth",
+      "no-of-customers",
+      "revenue-customer",
+      "time",
+      "area",
+      "quality",
+      "marketing",
+      "channel",
+      "price-customer",
+      "volume-customer"
+    ],
+    "defaultFocusedId": "cross-selling",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "What are his working hours?",
+          "Location of his stall?",
+          "Different products that he offers?",
+          "Who are competitors / supply constraints?"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "Build your answer around the revenue equation first",
+          "Supply is not the issue, focus on demand levers",
+          "No fixed location makes time and area key levers"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Idea of how his mother and father can also help him push sales through their friends"
+        ]
+      }
+    ]
+  },
+  "framework": "Candidate: Oh wow, that's interesting! Anything for family. I'd like to understand a few things about my nephew's business. When did he start? What are his working hours like?\nInterviewer: He started last week. He works from 2 PM – 5 PM every day except Sunday.\nCandidate: Sure. Does he sell different types of lemonades or any other products? Where is his stall located?\nInterviewer: He sells only one type of lemonade. He has a small cart that he pushes around the neighbourhood to make his sales.\nCandidate: Sure. Who are his main competitors? Does he have supply-side constraints?\nInterviewer: There are no other lemonade vendors around him. However, there are quite a few corner shops and supermarkets that sell juices and other substitutes. No, he does not have supply-side constraints. He, in fact, has a lot of lemonade everyday that goes unsold.\nCandidate: Sure, I can begin now.\nTotal Revenue = Revenue per customer * Number of customers\nStarting with number of customers – There are 5 strategies he can use:\n1) Time - He can change the time he operates. This would require doing research on when there is maximum potential for tapping customers. Two strategies can be used - increase in hours worked and optimum time brackets chosen\n2) Area - His biggest advantage is that he can cover a large area through his cart. He can identify hotspots and be there at particular times. For example, near a school or playground. He can also cover a larger part of his neighbourhood.\n3) Quality - He needs to ensure that his lemonade is of good quality. The moment word spreads about its taste, he can be sure to garner more daily attention.\n4) Marketing - Distributing pamphlets and putting up small banners across his neighbourhood will definitely garner more attention. His mother and father can, in fact, inform all of their friends to purchase their son's lemonade.\n5) Different Channels - Instead of just relying on sales through his cart, he can also set up home delivery for his neighbourhood. He can also invite bookings for birthday parties and other gatherings.\nNext, we move on to increasing revenue per customer. There are two ways he can increase this - By increasing the price of his product or by increasing the volume sold. Do we have any information on the price he charges?\nInterviewer: He sells his lemonade at Rs. 20/glass of 200ml.\nCandidate: That seems like a reasonable price. In fact, keeping in mind that his only competition is established stores that have much higher prices, he can probably increase his price to Rs. 25 without seeing a dip in demand.\nTo increase his volume sold, he can do two things – First, he can offer discounts on every additional purchase or larger purchases. Second, he can increase the products available - Maybe, selling cookies would incentivise people to buy a combo and help him cross-sell.\nInterviewer: Brilliant. Seems like you've covered it all. Your nephew thanks you and offers you a free glass of lemonade.\nCandidate: Haha, thank you!\n\nWhen Life Gives You Lemons Framework & Recommendations\nINCREASING REVENUE OF LEMONADE STAND\nClarifying Questions: What are his working hours? Location of his stall? Different products that he offers?\nBrownie Points: Idea of how his mother and father can also help him push sales through their friends\nKeep In Mind: In such scenarios, it is always important to modify the structure depending on the type of situation. Visualizing the problem at hand always helps.\nRECOMMENDATIONS: [FLAG] No standalone RECOMMENDATIONS section/line is visible in the provided book screenshots, and the tracker subpage did not specify recommendations."
+},
+{
+  "id": 29,
+  "docId": "case-29",
+  "title": "When Chai Met Toast",
+  "industry": "Food & Beverage",
+  "difficulty": "Easy",
+  "case_type": "Growth",
+  "company": "Kearney",
+  "round": "Partner",
+  "prompt": "There's a tea-seller inside your college campus whose business is facing a threat from a new Nescafe stall with more attractive and diverse offerings. How can you help this business survive and grow?",
+  "frameworkTree": {
+    "nodes": {
+      "growth-strategy": {
+        "id": "growth-strategy",
+        "label": "Growth Strategy",
+        "tone": "root",
+        "children": ["self-driven-growth", "inorganic-growth"]
+      },
+      "self-driven-growth": {
+        "id": "self-driven-growth",
+        "label": "Self-Driven Growth",
+        "tone": "branch",
+        "children": ["existing-business", "new-business"]
+      },
+      "inorganic-growth": {
+        "id": "inorganic-growth",
+        "label": "Inorganic Growth",
+        "tone": "support",
+        "children": []
+      },
+      "existing-business": {
+        "id": "existing-business",
+        "label": "Existing Business",
+        "tone": "branch",
+        "children": ["no-of-items", "price"]
+      },
+      "new-business": {
+        "id": "new-business",
+        "label": "New Business",
+        "tone": "branch",
+        "children": ["new-products", "new-area", "new-customer-segments"]
+      },
+      "no-of-items": {
+        "id": "no-of-items",
+        "label": "No. of Items",
+        "tone": "branch",
+        "children": ["supply", "demand"]
+      },
+      "price": {
+        "id": "price",
+        "label": "Price",
+        "tone": "support",
+        "children": []
+      },
+      "supply": {
+        "id": "supply",
+        "label": "Supply",
+        "tone": "branch",
+        "children": ["ingredients", "working-hours", "capacity"]
+      },
+      "demand": {
+        "id": "demand",
+        "label": "Demand",
+        "tone": "branch",
+        "children": ["experience", "place"]
+      },
+      "ingredients": {
+        "id": "ingredients",
+        "label": "Ingredients",
+        "tone": "leaf",
+        "children": []
+      },
+      "working-hours": {
+        "id": "working-hours",
+        "label": "Working Hours",
+        "tone": "branch",
+        "children": ["extended-morning-hours"]
+      },
+      "capacity": {
+        "id": "capacity",
+        "label": "Capacity",
+        "tone": "leaf",
+        "children": []
+      },
+      "extended-morning-hours": {
+        "id": "extended-morning-hours",
+        "label": "Extended Morning Hours",
+        "tone": "leaf",
+        "children": []
+      },
+      "experience": {
+        "id": "experience",
+        "label": "Experience",
+        "tone": "branch",
+        "children": ["taste-and-quality", "heat-retention"]
+      },
+      "place": {
+        "id": "place",
+        "label": "Place",
+        "tone": "branch",
+        "children": ["relocation", "mobile-selling"]
+      },
+      "taste-and-quality": {
+        "id": "taste-and-quality",
+        "label": "Taste & Quality",
+        "tone": "leaf",
+        "children": []
+      },
+      "heat-retention": {
+        "id": "heat-retention",
+        "label": "Heat Retention (Insulating Cups)",
+        "tone": "leaf",
+        "children": []
+      },
+      "relocation": {
+        "id": "relocation",
+        "label": "Relocation (Away from Nescafe)",
+        "tone": "leaf",
+        "children": []
+      },
+      "mobile-selling": {
+        "id": "mobile-selling",
+        "label": "Mobile Selling (Classroom Rounds)",
+        "tone": "leaf",
+        "children": []
+      },
+      "new-products": {
+        "id": "new-products",
+        "label": "New Products",
+        "tone": "branch",
+        "children": ["coffee", "packet-food", "cool-drinks"]
+      },
+      "new-area": {
+        "id": "new-area",
+        "label": "New Area",
+        "tone": "support",
+        "children": []
+      },
+      "new-customer-segments": {
+        "id": "new-customer-segments",
+        "label": "New Customer Segments",
+        "tone": "branch",
+        "children": ["sugar-free-options", "elderly-faculty"]
+      },
+      "coffee": {
+        "id": "coffee",
+        "label": "Coffee (Sub-Nescafe Pricing)",
+        "tone": "leaf",
+        "children": []
+      },
+      "packet-food": {
+        "id": "packet-food",
+        "label": "Packet Food (Chips & Snacks)",
+        "tone": "leaf",
+        "children": []
+      },
+      "cool-drinks": {
+        "id": "cool-drinks",
+        "label": "Cool Drinks (Summers)",
+        "tone": "leaf",
+        "children": []
+      },
+      "sugar-free-options": {
+        "id": "sugar-free-options",
+        "label": "Sugar-Free Options",
+        "tone": "leaf",
+        "children": []
+      },
+      "elderly-faculty": {
+        "id": "elderly-faculty",
+        "label": "Elderly Faculty (Classroom Delivery)",
+        "tone": "leaf",
+        "children": []
+      }
+    },
+    "defaultExpanded": [
+      "growth-strategy",
+      "self-driven-growth",
+      "existing-business",
+      "new-business",
+      "no-of-items",
+      "supply",
+      "demand",
+      "working-hours",
+      "experience",
+      "place",
+      "new-products",
+      "new-customer-segments"
+    ],
+    "defaultFocusedId": "mobile-selling",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "What are the current offerings?",
+          "What is the time frame in which growth has to be achieved?"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "Focus on items sold, not price",
+          "Price new products below Nescafe to win customers",
+          "Look for non-obvious customer segments to score points",
+          "Filter every idea through short-term versus long-term"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Looking at moving around college to sell more tea under 'Place'"
+        ]
+      }
+    ]
+  },
+  "framework": "Candidate: Okay. I will first start by understanding the tea-seller's business and that of the new Nescafe stall. How long has the tea-seller been in the college? Does he sell anything other than tea? How much does he price these products? What is the new Nescafe stall offering? Are there any other food stalls in the campus?\nInterviewer: The tea-seller has been in the college for more than 20 years. He sells 3 items – Tea for Rs. 10, Patty for Rs. 20 and Samosa for Rs. 15. The Nescafe stall offers coffee for Rs. 30, Maggi for Rs. 50 and a variety of Sandwiches for Rs. 40 each. There are no other food stalls.\nCandidate: Understood. Do we have a specific objective as to how much we are looking to grow the business by and in what time frame?\nInterviewer: The tea-seller has suffered great revenue hits already and is looking at strategies he can employ immediately to face the threat. He would like to grow the business by as much as possible.\nCandidate: Got it. My approach is going to be divided into 2:\n1) Consolidating the existing business – Here, we will look at improving the way the tea seller operates and how he can increase the sales of his items.\n2) Venturing into new business – Here, we will explore new products he can introduce, new areas/colleges he can enter, new customer segments he can look at and finally, inorganic growth methods such as partnering with Nescafe, etc.\nIn addition, we can also look at ways to eliminate the Nescafe threat in a different way altogether. We can get the Principal to interfere in some way or threaten to close shop if Nescafe continues business. These are not very ethical but are options nevertheless.\nInterviewer: Hahaha. Let's concentrate on our stall for the time-being.\nCandidate: Sure. Let's first look at ways in which we can improve our revenues in our existing business. There are two components to revenue: Number of items sold and price. Any increase in the prices will further reduce demand. If prices are reduced, it will not matter much as the customers are turning to Nescafe even though it is more expensive. Therefore, changing our prices may not make sense. Let's look at how we can increase the number of items sold.\nHere, we can look at supply-side and demand-side constraints. Under supply-side, we can look at 3 things – Availability of ingredients, working hours and capacity. Can the tea-seller arrange enough ingredients, plates, etc. if we increase sales? How long is the stall open for? During peak hours, can the tea-seller cater to all customers or does he have to turn some away?\nInterviewer: The tea stall is open on all working days. It opens at 10 AM and closes by 5 PM. The tea seller is always able to cater to all customers, no matter the rush.\nCandidate: Maybe the tea seller can consider opening a little earlier as college classes usually start earlier and tea is most demanded in the morning.\nInterviewer: Makes sense. Let's move on to demand.\nCandidate: Sure. Here, I am interested in 2 things:\n1) Experience: Can we improve the taste of the items? Can they be served differently to appeal to more people? Perhaps, a cup that insulates the heat so that it is easy to hold the hot cup of tea.\n2) Place: The tea seller can consider changing the location of the stall as well. Somewhere with more seating area, shade, etc. can be explored. Locations that are at some distance from the Nescafe stall would also make sense. Can a person go around to classes and sell the tea inside these rooms as well?\nInterviewer: The tea seller likes your idea of going around the campus to sell tea. Is there anything else you want to look at?\nCandidate: Yes. We can now look at new products, new areas/campuses, new customer segments and inorganic growth possibilities. Since we are looking for strategies we can implement immediately, it will not make sense to expand to new areas. Under new products, we can look at offering coffee as well. Since our coffee will be cheaper than Nescafe's, price-sensitive customers will return to our stall. In addition, packet food such as chips, snacks, etc. can be introduced as well. During the summer, cool drinks are in demand. Maybe the tea-seller can buy or rent a refrigerator so that he can serve these as well.\nLooking at new customer segments, the seller can come up with sugar-free options and classroom delivery for elderly faculty.\nCandidate: Should we look at inorganic growth options as well?\nInterviewer: That won't be needed. We can end the case here.\n\nWhen Chai Met Toast Framework & Recommendations\nTEA-SELLER VS NESCAFE STALL\nClarifying Questions: What are the current offerings? What is the time frame in which growth has to be achieved?\nBrownie Points: Looking at moving around college to sell more tea under 'Place'\nKeep In Mind: A short-term growth strategy will differ significantly from a long-term one\nRECOMMENDATIONS: [FLAG] No standalone RECOMMENDATIONS section/line is visible in the provided book screenshots, and the tracker subpage did not specify recommendations."
+},
+
+
+
+
+
+
+
 
 
 
