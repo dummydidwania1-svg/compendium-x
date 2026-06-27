@@ -19,10 +19,10 @@ export const runtime = 'nodejs'
 
 const submitDraftInput = z.object({
   scores: z.object({
-    structure: z.number().int().min(1).max(5),
-    understanding: z.number().int().min(1).max(5),
-    delivery: z.number().int().min(1).max(5),
-    creativity: z.number().int().min(1).max(5),
+    structure: z.number().min(0.5).max(5),
+    understanding: z.number().min(0.5).max(5),
+    delivery: z.number().min(0.5).max(5),
+    creativity: z.number().min(0.5).max(5),
   }),
   notes: z.string().default(''),
 })

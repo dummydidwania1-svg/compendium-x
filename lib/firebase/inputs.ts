@@ -19,7 +19,7 @@ const lobbyId = z.string().min(4).max(128)
 const caseId = z.string().min(1).max(128)
 const sessionMode = z.enum(['remote', 'local'])
 const stopReason = z.string().min(1).max(64)
-const score = z.number().int().min(1).max(5)
+const score = z.number().min(0.5).max(5)
 const participantRole = z.enum(['candidate', 'interviewer'])
 
 /* -------------------------------------------------------------------------- */

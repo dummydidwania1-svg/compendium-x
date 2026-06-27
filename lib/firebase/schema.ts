@@ -34,7 +34,7 @@ const timestamp = z.custom<Timestamp>(
 const optionalString = z.string().nullable().optional()
 
 /** Score field used across all four evaluation dimensions. */
-const score = z.number().int().min(1).max(5)
+const score = z.number().min(0.5).max(5)
 
 /* -------------------------------------------------------------------------- */
 /* profiles/{uid}                                                             */
