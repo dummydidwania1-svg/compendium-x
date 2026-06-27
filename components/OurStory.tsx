@@ -331,10 +331,6 @@ s.style.setProperty('--gy', `${e.clientY}px`);
 </header>
 
 <section className="cst-stage" ref={stageRef}>
-              <div className="cst-helper-float" aria-hidden="true">
-      <span className="material-symbols-outlined">touch_app</span>
-      <span>tap any face to peek behind it</span>
-    </div>
   <section
     className={`cst-scene${live ? ' live' : ''}${focus !== null ? ' has-focus' : ''}`}
     ref={sceneRef}
