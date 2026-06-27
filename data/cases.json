@@ -7903,7 +7903,7 @@
       },
       "revenue-customer": {
         "id": "revenue-customer",
-        "label": "Revenue / Customer",
+        "label": "Revenue per Customer",
         "tone": "branch",
         "children": ["price-customer", "volume-customer"]
       },
@@ -7945,13 +7945,13 @@
       },
       "optimise-time-brackets": {
         "id": "optimise-time-brackets",
-        "label": "Optimise time brackets (peak demand windows)",
+        "label": "Optimise peak demand windows",
         "tone": "leaf",
         "children": []
       },
       "identify-hotspots": {
         "id": "identify-hotspots",
-        "label": "Identify hotspots (schools, playgrounds)",
+        "label": "Identify hotspots",
         "tone": "leaf",
         "children": []
       },
@@ -7963,19 +7963,19 @@
       },
       "improve-taste": {
         "id": "improve-taste",
-        "label": "Improve taste -> word-of-mouth growth",
+        "label": "Improve taste",
         "tone": "leaf",
         "children": []
       },
       "pamphlets-and-banners": {
         "id": "pamphlets-and-banners",
-        "label": "Pamphlets & banners across neighbourhood",
+        "label": "Pamphlets and banners",
         "tone": "leaf",
         "children": []
       },
       "parent-network": {
         "id": "parent-network",
-        "label": "Parent network (friends of parents)",
+        "label": "Parent network",
         "tone": "leaf",
         "children": []
       },
@@ -7987,37 +7987,31 @@
       },
       "event-bookings": {
         "id": "event-bookings",
-        "label": "Event bookings (birthday parties, gatherings)",
+        "label": "Event bookings",
         "tone": "leaf",
         "children": []
       },
       "price-customer": {
         "id": "price-customer",
-        "label": "Price / Customer",
+        "label": "Price per Customer",
         "tone": "branch",
-        "children": ["price-optimisation"]
+        "children": []
       },
       "volume-customer": {
         "id": "volume-customer",
-        "label": "Volume / Customer",
+        "label": "Volume per Customer",
         "tone": "branch",
         "children": ["discounts", "cross-selling"]
       },
-      "price-optimisation": {
-        "id": "price-optimisation",
-        "label": "Price optimisation Rs.20 -> Rs.25",
-        "tone": "leaf",
-        "children": []
-      },
       "discounts": {
         "id": "discounts",
-        "label": "Discounts on additional or larger purchases",
+        "label": "Discounts on larger purchases",
         "tone": "leaf",
         "children": []
       },
       "cross-selling": {
         "id": "cross-selling",
-        "label": "Cross-selling (cookies combo)",
+        "label": "Cross-selling",
         "tone": "leaf",
         "children": []
       }
@@ -8025,16 +8019,9 @@
     "defaultExpanded": [
       "revenue-growth",
       "no-of-customers",
-      "revenue-customer",
-      "time",
-      "area",
-      "quality",
-      "marketing",
-      "channel",
-      "price-customer",
-      "volume-customer"
+      "time"
     ],
-    "defaultFocusedId": "cross-selling",
+    "defaultFocusedId": "time",
     "notes": [
       {
         "title": "Questions",
@@ -8042,14 +8029,12 @@
           "What are his working hours?",
           "Location of his stall?",
           "Different products that he offers?",
-          "Who are competitors / supply constraints?"
+          "Are there any supply constraints?"
         ]
       },
       {
         "title": "Keep In Mind",
         "items": [
-          "Build your answer around the revenue equation first",
-          "Supply is not the issue, focus on demand levers",
           "No fixed location makes time and area key levers"
         ]
       },
@@ -8061,7 +8046,7 @@
       }
     ]
   },
-  "framework": "Candidate: Oh wow, that's interesting! Anything for family. I'd like to understand a few things about my nephew's business. When did he start? What are his working hours like?\nInterviewer: He started last week. He works from 2 PM – 5 PM every day except Sunday.\nCandidate: Sure. Does he sell different types of lemonades or any other products? Where is his stall located?\nInterviewer: He sells only one type of lemonade. He has a small cart that he pushes around the neighbourhood to make his sales.\nCandidate: Sure. Who are his main competitors? Does he have supply-side constraints?\nInterviewer: There are no other lemonade vendors around him. However, there are quite a few corner shops and supermarkets that sell juices and other substitutes. No, he does not have supply-side constraints. He, in fact, has a lot of lemonade everyday that goes unsold.\nCandidate: Sure, I can begin now.\nTotal Revenue = Revenue per customer * Number of customers\nStarting with number of customers – There are 5 strategies he can use:\n1) Time - He can change the time he operates. This would require doing research on when there is maximum potential for tapping customers. Two strategies can be used - increase in hours worked and optimum time brackets chosen\n2) Area - His biggest advantage is that he can cover a large area through his cart. He can identify hotspots and be there at particular times. For example, near a school or playground. He can also cover a larger part of his neighbourhood.\n3) Quality - He needs to ensure that his lemonade is of good quality. The moment word spreads about its taste, he can be sure to garner more daily attention.\n4) Marketing - Distributing pamphlets and putting up small banners across his neighbourhood will definitely garner more attention. His mother and father can, in fact, inform all of their friends to purchase their son's lemonade.\n5) Different Channels - Instead of just relying on sales through his cart, he can also set up home delivery for his neighbourhood. He can also invite bookings for birthday parties and other gatherings.\nNext, we move on to increasing revenue per customer. There are two ways he can increase this - By increasing the price of his product or by increasing the volume sold. Do we have any information on the price he charges?\nInterviewer: He sells his lemonade at Rs. 20/glass of 200ml.\nCandidate: That seems like a reasonable price. In fact, keeping in mind that his only competition is established stores that have much higher prices, he can probably increase his price to Rs. 25 without seeing a dip in demand.\nTo increase his volume sold, he can do two things – First, he can offer discounts on every additional purchase or larger purchases. Second, he can increase the products available - Maybe, selling cookies would incentivise people to buy a combo and help him cross-sell.\nInterviewer: Brilliant. Seems like you've covered it all. Your nephew thanks you and offers you a free glass of lemonade.\nCandidate: Haha, thank you!\n\nWhen Life Gives You Lemons Framework & Recommendations\nINCREASING REVENUE OF LEMONADE STAND\nClarifying Questions: What are his working hours? Location of his stall? Different products that he offers?\nBrownie Points: Idea of how his mother and father can also help him push sales through their friends\nKeep In Mind: In such scenarios, it is always important to modify the structure depending on the type of situation. Visualizing the problem at hand always helps.\nRECOMMENDATIONS: [FLAG] No standalone RECOMMENDATIONS section/line is visible in the provided book screenshots, and the tracker subpage did not specify recommendations."
+  "framework": "Candidate: Oh wow, that's interesting! Anything for family. I'd like to understand a few things about my nephew's business. When did he start? What are his working hours like?\nInterviewer: He started last week. He works from 2 PM – 5 PM every day except Sunday.\nCandidate: Sure. Does he sell different types of lemonades or any other products? Where is his stall located?\nInterviewer: He sells only one type of lemonade. He has a small cart that he pushes around the neighbourhood to make his sales.\nCandidate: Sure. Who are his main competitors? Does he have supply-side constraints?\nInterviewer: There are no other lemonade vendors around him. However, there are quite a few corner shops and supermarkets that sell juices and other substitutes. No, he does not have supply-side constraints. He, in fact, has a lot of lemonade everyday that goes unsold.\nCandidate: Sure, I can begin now.\nTotal Revenue = Revenue per customer * Number of customers\nStarting with number of customers – There are 5 strategies he can use:\n1) Time - He can change the time he operates. This would require doing research on when there is maximum potential for tapping customers. Two strategies can be used - increase in hours worked and optimum time brackets chosen\n2) Area - His biggest advantage is that he can cover a large area through his cart. He can identify hotspots and be there at particular times. For example, near a school or playground. He can also cover a larger part of his neighbourhood.\n3) Quality - He needs to ensure that his lemonade is of good quality. The moment word spreads about its taste, he can be sure to garner more daily attention.\n4) Marketing - Distributing pamphlets and putting up small banners across his neighbourhood will definitely garner more attention. His mother and father can, in fact, inform all of their friends to purchase their son's lemonade.\n5) Different Channels - Instead of just relying on sales through his cart, he can also set up home delivery for his neighbourhood. He can also invite bookings for birthday parties and other gatherings.\nNext, we move on to increasing revenue per customer. There are two ways he can increase this - By increasing the price of his product or by increasing the volume sold. Do we have any information on the price he charges?\nInterviewer: He sells his lemonade at Rs. 20/glass of 200ml.\nCandidate: That seems like a reasonable price. In fact, keeping in mind that his only competition is established stores that have much higher prices, he can probably increase his price to Rs. 25 without seeing a dip in demand.\nTo increase his volume sold, he can do two things – First, he can offer discounts on every additional purchase or larger purchases. Second, he can increase the products available - Maybe, selling cookies would incentivise people to buy a combo and help him cross-sell.\nInterviewer: Brilliant. Seems like you've covered it all. Your nephew thanks you and offers you a free glass of lemonade.\nCandidate: Haha, thank you!\n\nWhen Life Gives You Lemons Framework & Recommendations\nINCREASING REVENUE OF LEMONADE STAND\nClarifying Questions: What are his working hours? Location of his stall? Different products that he offers?\nBrownie Points: Idea of how his mother and father can also help him push sales through their friends\nKeep In Mind: In such scenarios, it is always important to modify the structure depending on the type of situation. Visualizing the problem at hand always helps."
 },
 {
   "id": 29,
@@ -8167,25 +8152,25 @@
       },
       "taste-and-quality": {
         "id": "taste-and-quality",
-        "label": "Taste & Quality",
+        "label": "Taste and Quality",
         "tone": "leaf",
         "children": []
       },
       "heat-retention": {
         "id": "heat-retention",
-        "label": "Heat Retention (Insulating Cups)",
+        "label": "Heat Retention",
         "tone": "leaf",
         "children": []
       },
       "relocation": {
         "id": "relocation",
-        "label": "Relocation (Away from Nescafe)",
+        "label": "Relocation",
         "tone": "leaf",
         "children": []
       },
       "mobile-selling": {
         "id": "mobile-selling",
-        "label": "Mobile Selling (Classroom Rounds)",
+        "label": "Mobile Selling",
         "tone": "leaf",
         "children": []
       },
@@ -8209,19 +8194,19 @@
       },
       "coffee": {
         "id": "coffee",
-        "label": "Coffee (Sub-Nescafe Pricing)",
+        "label": "Coffee",
         "tone": "leaf",
         "children": []
       },
       "packet-food": {
         "id": "packet-food",
-        "label": "Packet Food (Chips & Snacks)",
+        "label": "Packet Food",
         "tone": "leaf",
         "children": []
       },
       "cool-drinks": {
         "id": "cool-drinks",
-        "label": "Cool Drinks (Summers)",
+        "label": "Cool Drinks",
         "tone": "leaf",
         "children": []
       },
@@ -8233,7 +8218,7 @@
       },
       "elderly-faculty": {
         "id": "elderly-faculty",
-        "label": "Elderly Faculty (Classroom Delivery)",
+        "label": "Elderly Faculty",
         "tone": "leaf",
         "children": []
       }
@@ -8242,17 +8227,11 @@
       "growth-strategy",
       "self-driven-growth",
       "existing-business",
-      "new-business",
       "no-of-items",
       "supply",
-      "demand",
-      "working-hours",
-      "experience",
-      "place",
-      "new-products",
-      "new-customer-segments"
+      "working-hours"
     ],
-    "defaultFocusedId": "mobile-selling",
+    "defaultFocusedId": "extended-morning-hours",
     "notes": [
       {
         "title": "Questions",
@@ -8264,10 +8243,9 @@
       {
         "title": "Keep In Mind",
         "items": [
-          "Focus on items sold, not price",
           "Price new products below Nescafe to win customers",
           "Look for non-obvious customer segments to score points",
-          "Filter every idea through short-term versus long-term"
+          "Filter every growth idea through short-term versus long-term"
         ]
       },
       {
@@ -8278,7 +8256,261 @@
       }
     ]
   },
-  "framework": "Candidate: Okay. I will first start by understanding the tea-seller's business and that of the new Nescafe stall. How long has the tea-seller been in the college? Does he sell anything other than tea? How much does he price these products? What is the new Nescafe stall offering? Are there any other food stalls in the campus?\nInterviewer: The tea-seller has been in the college for more than 20 years. He sells 3 items – Tea for Rs. 10, Patty for Rs. 20 and Samosa for Rs. 15. The Nescafe stall offers coffee for Rs. 30, Maggi for Rs. 50 and a variety of Sandwiches for Rs. 40 each. There are no other food stalls.\nCandidate: Understood. Do we have a specific objective as to how much we are looking to grow the business by and in what time frame?\nInterviewer: The tea-seller has suffered great revenue hits already and is looking at strategies he can employ immediately to face the threat. He would like to grow the business by as much as possible.\nCandidate: Got it. My approach is going to be divided into 2:\n1) Consolidating the existing business – Here, we will look at improving the way the tea seller operates and how he can increase the sales of his items.\n2) Venturing into new business – Here, we will explore new products he can introduce, new areas/colleges he can enter, new customer segments he can look at and finally, inorganic growth methods such as partnering with Nescafe, etc.\nIn addition, we can also look at ways to eliminate the Nescafe threat in a different way altogether. We can get the Principal to interfere in some way or threaten to close shop if Nescafe continues business. These are not very ethical but are options nevertheless.\nInterviewer: Hahaha. Let's concentrate on our stall for the time-being.\nCandidate: Sure. Let's first look at ways in which we can improve our revenues in our existing business. There are two components to revenue: Number of items sold and price. Any increase in the prices will further reduce demand. If prices are reduced, it will not matter much as the customers are turning to Nescafe even though it is more expensive. Therefore, changing our prices may not make sense. Let's look at how we can increase the number of items sold.\nHere, we can look at supply-side and demand-side constraints. Under supply-side, we can look at 3 things – Availability of ingredients, working hours and capacity. Can the tea-seller arrange enough ingredients, plates, etc. if we increase sales? How long is the stall open for? During peak hours, can the tea-seller cater to all customers or does he have to turn some away?\nInterviewer: The tea stall is open on all working days. It opens at 10 AM and closes by 5 PM. The tea seller is always able to cater to all customers, no matter the rush.\nCandidate: Maybe the tea seller can consider opening a little earlier as college classes usually start earlier and tea is most demanded in the morning.\nInterviewer: Makes sense. Let's move on to demand.\nCandidate: Sure. Here, I am interested in 2 things:\n1) Experience: Can we improve the taste of the items? Can they be served differently to appeal to more people? Perhaps, a cup that insulates the heat so that it is easy to hold the hot cup of tea.\n2) Place: The tea seller can consider changing the location of the stall as well. Somewhere with more seating area, shade, etc. can be explored. Locations that are at some distance from the Nescafe stall would also make sense. Can a person go around to classes and sell the tea inside these rooms as well?\nInterviewer: The tea seller likes your idea of going around the campus to sell tea. Is there anything else you want to look at?\nCandidate: Yes. We can now look at new products, new areas/campuses, new customer segments and inorganic growth possibilities. Since we are looking for strategies we can implement immediately, it will not make sense to expand to new areas. Under new products, we can look at offering coffee as well. Since our coffee will be cheaper than Nescafe's, price-sensitive customers will return to our stall. In addition, packet food such as chips, snacks, etc. can be introduced as well. During the summer, cool drinks are in demand. Maybe the tea-seller can buy or rent a refrigerator so that he can serve these as well.\nLooking at new customer segments, the seller can come up with sugar-free options and classroom delivery for elderly faculty.\nCandidate: Should we look at inorganic growth options as well?\nInterviewer: That won't be needed. We can end the case here.\n\nWhen Chai Met Toast Framework & Recommendations\nTEA-SELLER VS NESCAFE STALL\nClarifying Questions: What are the current offerings? What is the time frame in which growth has to be achieved?\nBrownie Points: Looking at moving around college to sell more tea under 'Place'\nKeep In Mind: A short-term growth strategy will differ significantly from a long-term one\nRECOMMENDATIONS: [FLAG] No standalone RECOMMENDATIONS section/line is visible in the provided book screenshots, and the tracker subpage did not specify recommendations."
+  "framework": "Candidate: Okay. I will first start by understanding the tea-seller's business and that of the new Nescafe stall. How long has the tea-seller been in the college? Does he sell anything other than tea? How much does he price these products? What is the new Nescafe stall offering? Are there any other food stalls in the campus?\nInterviewer: The tea-seller has been in the college for more than 20 years. He sells 3 items – Tea for Rs. 10, Patty for Rs. 20 and Samosa for Rs. 15. The Nescafe stall offers coffee for Rs. 30, Maggi for Rs. 50 and a variety of Sandwiches for Rs. 40 each. There are no other food stalls.\nCandidate: Understood. Do we have a specific objective as to how much we are looking to grow the business by and in what time frame?\nInterviewer: The tea-seller has suffered great revenue hits already and is looking at strategies he can employ immediately to face the threat. He would like to grow the business by as much as possible.\nCandidate: Got it. My approach is going to be divided into 2:\n1) Consolidating the existing business – Here, we will look at improving the way the tea seller operates and how he can increase the sales of his items.\n2) Venturing into new business – Here, we will explore new products he can introduce, new areas/colleges he can enter, new customer segments he can look at and finally, inorganic growth methods such as partnering with Nescafe, etc.\nIn addition, we can also look at ways to eliminate the Nescafe threat in a different way altogether. We can get the Principal to interfere in some way or threaten to close shop if Nescafe continues business. These are not very ethical but are options nevertheless.\nInterviewer: Hahaha. Let's concentrate on our stall for the time-being.\nCandidate: Sure. Let's first look at ways in which we can improve our revenues in our existing business. There are two components to revenue: Number of items sold and price. Any increase in the prices will further reduce demand. If prices are reduced, it will not matter much as the customers are turning to Nescafe even though it is more expensive. Therefore, changing our prices may not make sense. Let's look at how we can increase the number of items sold.\nHere, we can look at supply-side and demand-side constraints. Under supply-side, we can look at 3 things – Availability of ingredients, working hours and capacity. Can the tea-seller arrange enough ingredients, plates, etc. if we increase sales? How long is the stall open for? During peak hours, can the tea-seller cater to all customers or does he have to turn some away?\nInterviewer: The tea stall is open on all working days. It opens at 10 AM and closes by 5 PM. The tea seller is always able to cater to all customers, no matter the rush.\nCandidate: Maybe the tea seller can consider opening a little earlier as college classes usually start earlier and tea is most demanded in the morning.\nInterviewer: Makes sense. Let's move on to demand.\nCandidate: Sure. Here, I am interested in 2 things:\n1) Experience: Can we improve the taste of the items? Can they be served differently to appeal to more people? Perhaps, a cup that insulates the heat so that it is easy to hold the hot cup of tea.\n2) Place: The tea seller can consider changing the location of the stall as well. Somewhere with more seating area, shade, etc. can be explored. Locations that are at some distance from the Nescafe stall would also make sense. Can a person go around to classes and sell the tea inside these rooms as well?\nInterviewer: The tea seller likes your idea of going around the campus to sell tea. Is there anything else you want to look at?\nCandidate: Yes. We can now look at new products, new areas/campuses, new customer segments and inorganic growth possibilities. Since we are looking for strategies we can implement immediately, it will not make sense to expand to new areas. Under new products, we can look at offering coffee as well. Since our coffee will be cheaper than Nescafe's, price-sensitive customers will return to our stall. In addition, packet food such as chips, snacks, etc. can be introduced as well. During the summer, cool drinks are in demand. Maybe the tea-seller can buy or rent a refrigerator so that he can serve these as well.\nLooking at new customer segments, the seller can come up with sugar-free options and classroom delivery for elderly faculty.\nCandidate: Should we look at inorganic growth options as well?\nInterviewer: That won't be needed. We can end the case here.\n\nWhen Chai Met Toast Framework & Recommendations\nTEA-SELLER VS NESCAFE STALL\nClarifying Questions: What are the current offerings? What is the time frame in which growth has to be achieved?\nBrownie Points: Looking at moving around college to sell more tea under 'Place'\nKeep In Mind: A short-term growth strategy will differ significantly from a long-term one"
+},
+{
+  "id": 30,
+  "docId": "case-30",
+  "title": "Netflix & Chill",
+  "industry": "OTT",
+  "difficulty": "Medium",
+  "case_type": "Growth",
+  "company": "McKinsey & Co.",
+  "round": "Partner",
+  "prompt": "You're the CEO of Netflix India and the company has grown by 5x over the previous year and they want to grow by 3x for each of the next 3 years. How will you go about this?",
+  "frameworkTree": {
+    "nodes": {
+      "growth": {
+        "id": "growth",
+        "label": "Growth",
+        "tone": "root",
+        "children": ["inorganic", "organic"]
+      },
+      "inorganic": {
+        "id": "inorganic",
+        "label": "Inorganic",
+        "tone": "support",
+        "children": []
+      },
+      "organic": {
+        "id": "organic",
+        "label": "Organic",
+        "tone": "branch",
+        "children": ["customers", "arpu"]
+      },
+      "customers": {
+        "id": "customers",
+        "label": "Number of Customers",
+        "tone": "branch",
+        "children": ["market-as-a-whole", "our-share"]
+      },
+      "arpu": {
+        "id": "arpu",
+        "label": "ARPU",
+        "tone": "branch",
+        "children": ["current-unlimited", "alternatives"]
+      },
+      "market-as-a-whole": {
+        "id": "market-as-a-whole",
+        "label": "Market as a Whole",
+        "tone": "branch",
+        "children": ["devices", "internet-network", "interest-inclination"]
+      },
+      "our-share": {
+        "id": "our-share",
+        "label": "Our Share",
+        "tone": "branch",
+        "children": ["current-verticals", "new-verticals"]
+      },
+      "devices": {
+        "id": "devices",
+        "label": "Devices",
+        "tone": "leaf",
+        "children": []
+      },
+      "internet-network": {
+        "id": "internet-network",
+        "label": "Internet Network",
+        "tone": "leaf",
+        "children": []
+      },
+      "interest-inclination": {
+        "id": "interest-inclination",
+        "label": "Interest",
+        "tone": "leaf",
+        "children": []
+      },
+      "current-verticals": {
+        "id": "current-verticals",
+        "label": "Current Verticals",
+        "tone": "branch",
+        "children": ["regional-languages", "individual-uploads"]
+      },
+      "new-verticals": {
+        "id": "new-verticals",
+        "label": "New Verticals",
+        "tone": "branch",
+        "children": ["content", "non-content"]
+      },
+      "regional-languages": {
+        "id": "regional-languages",
+        "label": "Regional Languages",
+        "tone": "leaf",
+        "children": []
+      },
+      "individual-uploads": {
+        "id": "individual-uploads",
+        "label": "Individual Uploads",
+        "tone": "leaf",
+        "children": []
+      },
+      "content": {
+        "id": "content",
+        "label": "Content",
+        "tone": "branch",
+        "children": ["podcasts", "music", "television"]
+      },
+      "non-content": {
+        "id": "non-content",
+        "label": "Non-Content",
+        "tone": "branch",
+        "children": ["merchandise", "nc-devices"]
+      },
+      "podcasts": {
+        "id": "podcasts",
+        "label": "Podcasts",
+        "tone": "leaf",
+        "children": []
+      },
+      "music": {
+        "id": "music",
+        "label": "Music",
+        "tone": "leaf",
+        "children": []
+      },
+      "television": {
+        "id": "television",
+        "label": "Television",
+        "tone": "branch",
+        "children": ["news-channels", "other-channels"]
+      },
+      "news-channels": {
+        "id": "news-channels",
+        "label": "News Channels",
+        "tone": "leaf",
+        "children": []
+      },
+      "other-channels": {
+        "id": "other-channels",
+        "label": "Other Channels",
+        "tone": "leaf",
+        "children": []
+      },
+      "merchandise": {
+        "id": "merchandise",
+        "label": "Merchandise",
+        "tone": "leaf",
+        "children": []
+      },
+      "nc-devices": {
+        "id": "nc-devices",
+        "label": "Devices",
+        "tone": "branch",
+        "children": ["ar-goggles", "vr-handsets"]
+      },
+      "ar-goggles": {
+        "id": "ar-goggles",
+        "label": "AR Goggles",
+        "tone": "leaf",
+        "children": []
+      },
+      "vr-handsets": {
+        "id": "vr-handsets",
+        "label": "VR Handsets",
+        "tone": "leaf",
+        "children": []
+      },
+      "current-unlimited": {
+        "id": "current-unlimited",
+        "label": "Current Plan",
+        "tone": "support",
+        "children": []
+      },
+      "alternatives": {
+        "id": "alternatives",
+        "label": "Alternatives",
+        "tone": "branch",
+        "children": ["thematic", "pay-per-view"]
+      },
+      "thematic": {
+        "id": "thematic",
+        "label": "Genre Bundles",
+        "tone": "leaf",
+        "children": []
+      },
+      "pay-per-view": {
+        "id": "pay-per-view",
+        "label": "Pay-Per-View",
+        "tone": "leaf",
+        "children": []
+      }
+    },
+    "defaultExpanded": [
+      "growth",
+      "organic",
+      "customers",
+      "our-share",
+      "new-verticals",
+      "content",
+      "television"
+    ],
+    "defaultFocusedId": "television",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "How do we define growth?",
+          "How is the competition doing?",
+          "Are there any constraints we have?"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "New verticals split into content and non-content revenue"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Regional language content in India",
+          "Government channels for new customers"
+        ]
+      }
+    ]
+  },
+      "additionalFrameworkTrees": [
+      {
+        "label": "Blank Cheque Ideas",
+        "nodes": {
+          "bci": { "id": "bci", "label": "Blank Cheque Ideas", "tone": "root", "children": ["netflix-tv", "govt-channel-acquisition", "exclusive-media-rights" ] },
+                "netflix-tv": {
+        "id": "netflix-tv",
+        "label": "Netflix TV",
+        "tone": "leaf",
+        "children": []
+      },
+      "govt-channel-acquisition": {
+        "id": "govt-channel-acquisition",
+        "label": "Govt. Channel Acquisition",
+        "tone": "leaf",
+        "children": []
+      },
+      "exclusive-media-rights": {
+        "id": "exclusive-media-rights",
+        "label": "Exclusive Media Rights",
+        "tone": "leaf",
+        "children": []
+      }
+        },
+        "defaultExpanded": [
+          "bci"
+        ],
+        "defaultFocusedId": "bci",
+        "notes": []
+      }
+    ],
+  "framework": "Candidate: I have a few preliminary questions; how are we defining growth here? Are there any budgetary or regulatory constraints for us to keep in mind? Also, I wanted to understand the market landscape better in terms of how competitors are performing and the trajectory they're on.\nInterviewer: Here, growth refers to the growth in terms of revenue. We can figure the rest out during the discussion, but generally, work without any limiting factors.\nCandidate: If we have grown 5x and then we want to go 3x, 3x and 3x, that is a total of 135x of growth over 4 years, which is massive. For this level of growth, we need to work on large-scale ideas and solutions.\nInterviewer: Yes. Why don't you jump right into the ideas?\nCandidate: Broadly, there are two ways for us to grow - organically and inorganically. Under organic growth, we would look at expanding the scale and scope of our own operations whereas inorganic growth would involve acquiring or partnering with other companies.\nInterviewer: Why don't you start off with the organic segment?\nCandidate: Sure. There are two primary levers that we can look at - increasing our number of customers or the average revenue per customer. Since this is a market which is quite far from saturation, there are two approaches here. The first would be growing the market as a whole and the second, to increase our own share of the market.\nInterviewer: What will you consider under the market?\nCandidate: If we look at the market as a whole, we need to understand the customer standpoint and solve the following 3 problems: availability of devices, accessibility of adequate internet and interest/inclination towards the content.\nInterviewer: Let's now focus on Netflix specifically and not on the market.\nCandidate: At the highest level, we can segment it into 'current business verticals' and 'new verticals', in terms of the content strategy since that also drives which audience we're catering to. There are two different focus areas we can adopt over here: regional language content and individual content. On the former, we can greatly expand content in regional languages, which is where a huge chunk of the Indian market demand lies and OTT still has sufficient scope for penetration. On the other hand, a YouTube-inspired structure where content can be uploaded more freely, similar to that of Amazon Prime, might help us attract fresh content from upcoming creators, with predefined quality controls.\nInterviewer: That sounds good for our current channels. What else can we do?\nCandidate: We can segment other sources into new content types and non-content revenue sources. In terms of new content types, we can consider podcasts, music and television channels, which can further be split into news & other channels. Offering these might bring Netflix closer to a content super-app if integrated well. On the other hand, we can consider two things: merchandise and new devices. Since Netflix features a lot of shows and movies with a massive fan following, there is an extremely high demand for souvenirs, memorabilia, fan items, gifts and the like, which is fulfilled by other companies altogether. By doing this under the Netflix brand itself, we might be able to attract many fans who look for authentic sources. In the case of new devices, AR goggles or VR handsets might be interesting to consider, especially if we can convert our content into compatible versions and make the customer viewing experience more immersive.\nInterviewer: Okay, what else?\nCandidate: Having looked at the number of customers, I'd also like to consider the average revenue per user, or more broadly, our payment model. Currently, Netflix offers various plans that all have an unlimited subscription, i.e. access to all of Netflix's content under one scheme. There are two alternate levels of disaggregation possible: thematic and individual. Under thematic, we could club a large number of titles under genres such as Sports, Reality Shows, etc and offer purchase bundles for these. In addition, specific events such as the IPL, Worldwide Wrestling Entertainment and Olympics or even individual movies & shows can be offered on a pay-per-view basis.\nInterviewer: Great. Now imagine your Board of Directors comes and tells you that you have a blank cheque. Give me 3 of the craziest ideas that you would like to implement.\nCandidate: First, we can launch Netflix T.V. on which only our content runs and we can push them at an extremely low price point. This way, we'll acquire an entirely new type of customer base who was out of the affordability net earlier, as they can't switch over to other competitors easily. Second, we can buy out all the government channels (like Doordarshan, Lok Sabha T.V, Rajya Sabha T.V, etc) as it will help to increase our reach within a demographic group that might not engage with Netflix currently - such as senior citizens, individuals disconnected from other styles of content, etc. Third, we can buy exclusive media rights to events which take place in arenas and stadiums. Then, whatever events happen there automatically work with exclusive streaming rights for Netflix and help us generate a huge repository of content.\nInterviewer: Lovely! Thanks for your input, have a great day ahead.\n\nNetflix & Chill Framework & Recommendations\nIDEA GENERATION FOR GROWTH\nClarifying Questions: How do we define growth? How is the competition doing? Are there any constraints we have?\nBrownie Points: Regional language content in India Government channels for new customers\nKeep In Mind: Avoid details unless asked about them. The interviewer wanted to test the range of ideas, and not the depth.\nRECOMMENDATIONS: [FLAG] No standalone RECOMMENDATIONS section/line is visible in the provided book screenshots."
 },
 
 
