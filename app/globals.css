@@ -416,7 +416,7 @@ display: inline-block;
 /* ---- Scene: full-bleed, no container box ---- */
 .cst-scene {
   position: relative; z-index: 0; width: 100%; margin: 3.5px 0 0;
-  height: 1100px;
+  height: 560px;
   --mx: 50%; --my: 36%; --px: 0; --py: 0;
 }
 .cst-aura {
@@ -602,7 +602,6 @@ opacity: 0.52;
 .cst-stage {
   position: relative;
   height: auto;
-  min-height: 1120px;
   padding-top: 2vh;
   box-sizing: border-box;
   overflow: clip;
@@ -823,7 +822,7 @@ opacity: 0.52;
 @media (max-width: 860px) {
 	.cst-hero { min-height: auto; padding: 110px 22px 50px; }
 	.cst-cta { padding: 56px 22px 64px; }
-  .cst-stage { height: auto; min-height: unset; padding-top: 0; overflow: visible; }
+  .cst-stage { height: auto; padding-top: 0; overflow: visible; }
 }
 
 /* ---- Reduced motion ---- */
