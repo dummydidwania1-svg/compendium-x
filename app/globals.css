@@ -137,14 +137,13 @@ body {
   animation: scale-out 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
-/* ── Audio play-button pulse — soft repeating ring before first interaction ── */
+/* ── Audio play-button idle glow — inner warmth breathes until first click ── */
 @keyframes play-pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(61,90,53,.38); }
-  60%  { box-shadow: 0 0 0 7px rgba(61,90,53,0); }
-  100% { box-shadow: 0 0 0 0   rgba(61,90,53,0); }
+  0%, 100% { box-shadow: inset 0 0 0px  0px rgba(61,90,53,.0); }
+  50%       { box-shadow: inset 0 0 10px 3px rgba(61,90,53,.22); }
 }
 .animate-play-pulse {
-  animation: play-pulse 2s ease-out infinite;
+  animation: play-pulse 2.4s ease-in-out infinite;
 }
 
 /* ── Photo lightbox ──
