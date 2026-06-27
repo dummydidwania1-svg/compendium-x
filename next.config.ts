@@ -4,6 +4,14 @@ import type { NextConfig } from "next";
 const { DefinePlugin } = require("webpack");
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/__/auth/:path*',
+        destination: 'https://compendium-x.firebaseapp.com/__/auth/:path*',
+      },
+    ]
+  },
   webpack: (config) => {
     config.plugins ??= [];
     config.plugins.push(
