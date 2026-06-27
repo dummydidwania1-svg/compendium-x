@@ -4,8 +4,9 @@ import React, {
   useState, useEffect, useRef, useMemo, useCallback,
   type ChangeEvent, type DragEvent,
 } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  X, RefreshCw, Upload, ChevronLeft, Loader2, Play, Pause,
+  X, RefreshCw, Upload, Loader2, Play, Pause,
   CalendarDays, Wifi, User, Headphones, Images, FileCheck,
   Clock, AlertCircle,
 } from 'lucide-react';
@@ -223,6 +224,23 @@ export default function CaseDetailOverlay({
   // Reset zoom whenever we open a different image or leave the expanded view
   useEffect(() => { setZoomed(false); setZoomXY({ x: 50, y: 50 }); }, [expandedUrl]);
 
+  // Lightbox: ESC closes the expanded photo, and we lock body scroll while it's
+  // open so the page behind the frosted glass can't drift.
+  const [lightboxExiting, setLightboxExiting] = useState(false);
+  const closeLightbox = useCallback(() => {
+    setLightboxExiting(true);
+    window.setTimeout(() => { setExpandedUrl(null); setLightboxExiting(false); }, 200);
+  }, []);
+
+  useEffect(() => {
+    if (!expandedUrl) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.stopPropagation(); closeLightbox(); }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [expandedUrl, closeLightbox]);
+
   const handleZoomMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!zoomed) return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -278,11 +296,13 @@ export default function CaseDetailOverlay({
   }, [onClose]);
 
   // ── Escape key ──
+  // When the photo lightbox is open it owns Escape (handled above in capture
+  // phase) so the first Escape closes the photo, not the whole modal.
   useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
+    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape' && !expandedUrl) handleClose(); };
     document.addEventListener('keydown', fn);
     return () => document.removeEventListener('keydown', fn);
-  }, [handleClose]);
+  }, [handleClose, expandedUrl]);
 
   // ── Audio events ──
   // Remote (merged) audio has proper MP4/WAV headers, so duration is
@@ -633,7 +653,7 @@ export default function CaseDetailOverlay({
 
                 {/* ── SESSION TAB ── */}
                 {activeTab === 'session' && (
-                  <div className="p-[18px_20px] flex flex-col gap-[20px] pb-[26px]">
+                  <div className="p-[18px_20px] flex flex-col gap-[20px] pb-[48px]">
 
                     {/* Interviewer feedback */}
                     <div>
@@ -770,99 +790,69 @@ export default function CaseDetailOverlay({
                   </div>
                 )}
 
-                {/* ── NOTES TAB ── */}
+                {/* ── NOTES TAB ──
+                    Content is vertically centred in the available column so a
+                    short notes set (a few thumbnails + the upload zone) sits as
+                    a comfortable group instead of leaving a big void below.
+                    Tapping a thumbnail opens the full-screen lightbox. */}
                 {activeTab === 'notes' && (
-                  <div className="p-[18px_20px]">
-                    <p className="text-[12px] mb-[14px]" style={{ color: 'rgba(92,64,51,.48)' }}>
+                  <div className="min-h-full flex flex-col justify-center p-[18px_20px]">
+                    <p className="text-[12px] mb-[16px] text-center" style={{ color: 'rgba(92,64,51,.48)' }}>
                       Photos of your handwritten notes and frameworks from this case.
                     </p>
 
-                    {expandedUrl ? (
-                      <div className="flex flex-col gap-[10px]">
-                        <div className="flex items-center justify-between">
-                          <button
-                            onClick={() => setExpandedUrl(null)}
-                            className="flex items-center gap-[5px] text-[10.5px] font-medium transition-colors duration-150 self-start"
-                            style={{ color: 'rgba(92,64,51,.46)' }}
-                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3B2F2F'}
-                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(92,64,51,.46)'}
+                    {localUrls.length > 0 && (
+                      <div className="flex flex-wrap justify-center gap-[9px] mb-[14px]">
+                        {localUrls.map((url, i) => (
+                          <div
+                            key={i}
+                            onClick={() => setExpandedUrl(url)}
+                            className="group relative w-[92px] h-[92px] rounded-[8px] overflow-hidden cursor-pointer transition-all duration-150"
+                            style={{ background: 'rgba(217,208,196,.18)', border: '1px solid rgba(217,208,196,.40)' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 16px rgba(59,47,47,.10)'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
                           >
-                            <ChevronLeft className="w-[12px] h-[12px]" />
-                            Back to all photos
-                          </button>
-                          <span className="text-[10px] font-medium" style={{ color: 'rgba(92,64,51,.40)' }}>
-                            {zoomed ? 'Move to look around, click to zoom out' : 'Click the image to zoom in'}
-                          </span>
-                        </div>
-                        <div
-                          className="rounded-[9px] overflow-hidden"
-                          style={{ border: '1px solid rgba(217,208,196,.45)', cursor: zoomed ? 'zoom-out' : 'zoom-in' }}
-                          onClick={() => setZoomed(z => !z)}
-                          onMouseMove={handleZoomMove}
-                          onMouseLeave={() => zoomed && setZoomXY({ x: 50, y: 50 })}
-                        >
-                          <img
-                            src={expandedUrl}
-                            alt="Case notes"
-                            draggable={false}
-                            className="w-full object-contain select-none transition-transform duration-200 ease-out"
-                            style={{
-                              maxHeight: '460px',
-                              transform: zoomed ? `scale(${ZOOM_SCALE})` : 'scale(1)',
-                              transformOrigin: `${zoomXY.x}% ${zoomXY.y}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {localUrls.length > 0 && (
-                          <div className="flex flex-wrap gap-[7px] mb-[10px]">
-                            {localUrls.map((url, i) => (
-                              <div
-                                key={i}
-                                onClick={() => setExpandedUrl(url)}
-                                className="w-[78px] h-[78px] rounded-[7px] overflow-hidden cursor-pointer transition-all duration-150"
-                                style={{ background: 'rgba(217,208,196,.18)', border: '1px solid rgba(217,208,196,.40)' }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(59,47,47,.09)'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
-                              >
-                                <img src={url} alt={`Note ${i + 1}`} className="w-full h-full object-cover" />
-                              </div>
-                            ))}
+                            <img src={url} alt={`Note ${i + 1}`} className="w-full h-full object-cover" />
+                            {/* gentle hover veil with an expand glyph so it reads as tappable */}
+                            <div
+                              className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                              style={{ background: 'rgba(59,47,47,.26)', backdropFilter: 'blur(1px)' }}
+                            >
+                              <Images className="w-[16px] h-[16px] text-white/90" />
+                            </div>
                           </div>
-                        )}
+                        ))}
+                      </div>
+                    )}
 
-                        <div
-                          onDragEnter={() => setDragging(true)}
-                          onDragOver={e => e.preventDefault()}
-                          onDragLeave={() => setDragging(false)}
-                          onDrop={handleDrop}
-                          onClick={() => fileInputRef.current?.click()}
-                          className="flex flex-col items-center justify-center gap-[6px] rounded-[9px] py-[22px] cursor-pointer transition-all duration-200"
-                          style={{
-                            border: `1.5px dashed ${dragging ? '#3D5A35' : 'rgba(61,90,53,.20)'}`,
-                            background: dragging ? 'rgba(61,90,53,.04)' : 'transparent',
-                          }}
-                          onMouseEnter={e => { if (!dragging) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(61,90,53,.34)'; (e.currentTarget as HTMLElement).style.background = 'rgba(61,90,53,.025)'; } }}
-                          onMouseLeave={e => { if (!dragging) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(61,90,53,.20)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; } }}
-                        >
-                          {uploading
-                            ? <Loader2 className="w-[17px] h-[17px] animate-spin" style={{ color: 'rgba(92,64,51,.38)' }} />
-                            : <Upload className="w-[15px] h-[15px]" style={{ color: 'rgba(92,64,51,.25)' }} />
-                          }
-                          <p className="text-[10.5px] font-medium" style={{ color: 'rgba(59,47,47,.62)' }}>
-                            {uploading ? 'Uploading...' : localUrls.length > 0 ? 'Add another photo' : 'Drop your photo here'}
-                          </p>
-                          <p className="text-[9.5px]" style={{ color: 'rgba(92,64,51,.32)' }}>
-                            {uploading ? 'Hang on a moment' : 'or click to browse. PNG, JPG, HEIC up to 10 MB.'}
-                          </p>
-                        </div>
-                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileInput} />
-                        {uploadError && (
-                          <p className="text-[10.5px] mt-[8px]" style={{ color: 'rgba(92,64,51,.62)' }}>{uploadError}</p>
-                        )}
-                      </>
+                    <div
+                      onDragEnter={() => setDragging(true)}
+                      onDragOver={e => e.preventDefault()}
+                      onDragLeave={() => setDragging(false)}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center gap-[7px] rounded-[10px] py-[30px] cursor-pointer transition-all duration-200 w-full max-w-[460px] mx-auto"
+                      style={{
+                        border: `1.5px dashed ${dragging ? '#3D5A35' : 'rgba(61,90,53,.20)'}`,
+                        background: dragging ? 'rgba(61,90,53,.04)' : 'transparent',
+                      }}
+                      onMouseEnter={e => { if (!dragging) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(61,90,53,.34)'; (e.currentTarget as HTMLElement).style.background = 'rgba(61,90,53,.025)'; } }}
+                      onMouseLeave={e => { if (!dragging) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(61,90,53,.20)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; } }}
+                    >
+                      {uploading
+                        ? <Loader2 className="w-[18px] h-[18px] animate-spin" style={{ color: 'rgba(92,64,51,.38)' }} />
+                        : <Upload className="w-[16px] h-[16px]" style={{ color: 'rgba(92,64,51,.25)' }} />
+                      }
+                      <p className="text-[11px] font-medium" style={{ color: 'rgba(59,47,47,.62)' }}>
+                        {uploading ? 'Uploading...' : localUrls.length > 0 ? 'Add another photo' : 'Drop your photo here'}
+                      </p>
+                      <p className="text-[10px]" style={{ color: 'rgba(92,64,51,.32)' }}>
+                        {uploading ? 'Hang on a moment' : 'or click to browse. PNG, JPG, HEIC up to 10 MB.'}
+                      </p>
+                    </div>
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileInput} />
+                    {uploadError && (
+                      <p className="text-[10.5px] mt-[10px] text-center" style={{ color: 'rgba(92,64,51,.62)' }}>{uploadError}</p>
                     )}
                   </div>
                 )}
@@ -875,7 +865,7 @@ export default function CaseDetailOverlay({
               <div
                 className={`absolute bottom-0 left-0 right-0 pointer-events-none transition-all duration-500 ${showScrollHint ? 'animate-scroll-hint' : ''}`}
                 style={{
-                  height: showScrollHint ? '40px' : '20px',
+                  height: showScrollHint ? '34px' : '16px',
                   background: 'linear-gradient(to bottom, rgba(255,248,240,0), #fff8f0)',
                 }}
               />
@@ -974,6 +964,94 @@ export default function CaseDetailOverlay({
           <audio ref={audioRef} src={audioUrl} preload="auto" className="hidden" />
         )}
       </div>
+
+      {/* ── PHOTO LIGHTBOX ──
+          Full-screen, portaled above everything. The whole screen behind it
+          (this modal AND the dashboard) gets a warm frosted-glass blur — never
+          a dark scrim — so the focus lands on the note while the palette stays
+          soft. The image springs in with a cushioned scale + drift, can be
+          click-to-zoomed with mouse-pan, and dismisses on Escape, the close
+          pill, or a click anywhere outside the frame. */}
+      {expandedUrl && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{ padding: '4vh 4vw' }}
+          onClick={closeLightbox}
+        >
+          {/* Frosted backdrop — light warm glass, not dark */}
+          <div
+            className={lightboxExiting ? 'animate-lightbox-bg-out' : 'animate-lightbox-bg-in'}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(255,248,240,.55)',
+              backdropFilter: 'blur(22px) saturate(115%)',
+              WebkitBackdropFilter: 'blur(22px) saturate(115%)',
+            }}
+          />
+
+          {/* Close pill — frosted, floats top-right */}
+          <button
+            onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
+            aria-label="Close photo"
+            className={`absolute top-[18px] right-[20px] z-[2] flex items-center gap-[6px] rounded-full px-[12px] py-[7px] text-[11px] font-semibold transition-all duration-150 ${lightboxExiting ? 'animate-lightbox-bg-out' : 'animate-lightbox-bg-in'}`}
+            style={{
+              color: 'rgba(59,47,47,.74)',
+              background: 'rgba(255,255,255,.55)',
+              border: '1px solid rgba(92,64,51,.14)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              boxShadow: '0 4px 16px rgba(59,47,47,.10)',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.8)'; (e.currentTarget as HTMLElement).style.color = '#3B2F2F'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.55)'; (e.currentTarget as HTMLElement).style.color = 'rgba(59,47,47,.74)'; }}
+          >
+            <X className="w-[13px] h-[13px]" />
+            Close
+          </button>
+
+          {/* Zoom hint — floats bottom-centre, fades with the frame */}
+          <span
+            className={`absolute bottom-[20px] left-1/2 -translate-x-1/2 z-[2] rounded-full px-[12px] py-[5px] text-[10.5px] font-medium select-none ${lightboxExiting ? 'animate-lightbox-bg-out' : 'animate-lightbox-bg-in'}`}
+            style={{
+              color: 'rgba(59,47,47,.62)',
+              background: 'rgba(255,255,255,.5)',
+              border: '1px solid rgba(92,64,51,.10)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
+          >
+            {zoomed ? 'Move to look around · click to zoom out · Esc to close' : 'Click to zoom in · Esc to close'}
+          </span>
+
+          {/* The image frame — springs in, holds the photo at full size */}
+          <div
+            className={`relative z-[1] ${lightboxExiting ? 'animate-lightbox-out' : 'animate-lightbox-in'}`}
+            style={{ cursor: zoomed ? 'zoom-out' : 'zoom-in', maxWidth: '92vw', maxHeight: '90vh' }}
+            onClick={(e) => { e.stopPropagation(); setZoomed(z => !z); }}
+            onMouseMove={handleZoomMove}
+            onMouseLeave={() => zoomed && setZoomXY({ x: 50, y: 50 })}
+          >
+            <img
+              src={expandedUrl}
+              alt="Case notes"
+              draggable={false}
+              className="block select-none transition-transform duration-200 ease-out rounded-[12px]"
+              style={{
+                maxWidth: '92vw',
+                maxHeight: '90vh',
+                objectFit: 'contain',
+                transform: zoomed ? `scale(${ZOOM_SCALE})` : 'scale(1)',
+                transformOrigin: `${zoomXY.x}% ${zoomXY.y}%`,
+                boxShadow: '0 24px 70px rgba(59,47,47,.22)',
+                border: '1px solid rgba(255,255,255,.6)',
+                background: '#fff8f0',
+              }}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
