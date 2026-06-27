@@ -1,7 +1,14 @@
 'use client'
 
 import { type CSSProperties, type FormEvent, useState } from 'react'
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
+import {
+  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+} from 'firebase/auth'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { auth, db, missingFirebaseClientConfig } from '@/lib/firebase/config'
@@ -40,6 +47,124 @@ const FIELD_WRAPPER_STYLE: CSSProperties = {
   overflow: 'hidden',
 }
 
+const PANEL_STYLE: CSSProperties = {
+  background: '#fff8f0',
+  border: '1px solid rgba(61,90,53,0.1)',
+  padding: '40px',
+  width: '400px',
+  maxWidth: '90vw',
+  boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+}
+
+const PANEL_STYLES = `
+  .marketing-auth-form {
+    position: relative;
+  }
+  .marketing-auth-input-wrap {
+    position: relative;
+    width: 100%;
+    min-height: 48px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .marketing-auth-input-wrap > :not(.marketing-auth-field) {
+    display: none !important;
+  }
+  /* All visible styling on the input lives here with !important so
+   * inline overrides injected by browser extensions (Temp Mail,
+   * password helpers, GTM trackers) can't strip the affordance away.
+   * Inline-style writes from extensions lose against !important
+   * class-level rules in the cascade. */
+  .marketing-auth-field {
+    display: block !important;
+    width: 100% !important;
+    height: 48px !important;
+    padding: 12px 16px !important;
+    border: 1px solid #c3c8bd !important;
+    background: #faf3e9 !important;
+    font-family: 'Work Sans', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 20px !important;
+    color: #1e1b15 !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    border-radius: 0 !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    position: relative !important;
+    z-index: 2 !important;
+    transition: border-color 0.2s !important;
+  }
+  .marketing-auth-field:focus {
+    border-color: #3D5A35 !important;
+  }
+  .marketing-auth-field::placeholder {
+    color: #9b8f81;
+    opacity: 1;
+  }
+  .marketing-auth-field::-webkit-contacts-auto-fill-button,
+  .marketing-auth-field::-webkit-credentials-auto-fill-button,
+  .marketing-auth-field::-webkit-clear-button,
+  .marketing-auth-field::-webkit-calendar-picker-indicator,
+  .marketing-auth-field::-webkit-inner-spin-button {
+    display: none !important;
+    -webkit-appearance: none;
+    opacity: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+  .marketing-auth-field::-ms-reveal,
+  .marketing-auth-field::-ms-clear {
+    display: none;
+  }
+  .marketing-auth-field:-webkit-autofill,
+  .marketing-auth-field:-webkit-autofill:hover,
+  .marketing-auth-field:-webkit-autofill:focus,
+  .marketing-auth-field:-webkit-autofill:active {
+    -webkit-text-fill-color: #1e1b15;
+    box-shadow: 0 0 0 1000px #faf3e9 inset !important;
+    transition: background-color 9999s ease-in-out 0s;
+    caret-color: #1e1b15;
+  }
+  .marketing-google-btn {
+    width: 100%;
+    padding: 13px 16px;
+    background: #faf3e9;
+    color: #453a2a;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 13px;
+    border: 1px solid #c3c8bd;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    transition: border-color 0.2s, background 0.15s;
+    letter-spacing: 0.01em;
+    box-sizing: border-box;
+  }
+  .marketing-google-btn:hover:not(:disabled) {
+    border-color: #3D5A35;
+    background: #f5eedd;
+  }
+  .marketing-google-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  )
+}
+
 export default function MarketingAuthPanel({
   redirectTarget,
   currentPath,
@@ -55,8 +180,11 @@ export default function MarketingAuthPanel({
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [messageTone, setMessageTone] = useState<'error' | 'info'>('error')
+  const [verificationSent, setVerificationSent] = useState(false)
+  const [verificationEmail, setVerificationEmail] = useState('')
 
   const isSignUp = mode === 'signup'
 
@@ -80,7 +208,6 @@ export default function MarketingAuthPanel({
       if (missingFirebaseClientConfig.length > 0) {
         return 'Firebase web config is missing in this client build. Restart the dev server after updating .env.local and try again.'
       }
-
       return 'Direct Firebase auth is being blocked in this browser. A fallback path should have been attempted automatically. If this message still appears, restart the dev server and retry.'
     }
     if (error.message.includes('auth/invalid-credential')) return 'Invalid email or password.'
@@ -94,19 +221,20 @@ export default function MarketingAuthPanel({
     if (error.message.includes('auth/too-many-requests')) {
       return 'Too many attempts. Please wait a bit and try again.'
     }
+    if (error.message.includes('auth/popup-blocked')) {
+      return 'Pop-up blocked by your browser. Please allow pop-ups for this site and try again.'
+    }
     return error.message
   }
 
   const validateForm = (): string | null => {
     const trimmedEmail = email.trim()
-
     if (isSignUp && !fullName.trim()) return 'Enter your full name.'
     if (!trimmedEmail) return 'Enter your email.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return 'Enter a valid email.'
     if (!password) return 'Enter your password.'
     if (password.length < 6) return 'Password must be at least 6 characters.'
     if (isSignUp && confirmPassword !== password) return 'Passwords do not match.'
-
     return null
   }
 
@@ -114,24 +242,66 @@ export default function MarketingAuthPanel({
     setMode(nextMode)
     setMessage('')
     setMessageTone('error')
+    setVerificationSent(false)
+    setVerificationEmail('')
   }
 
-  const finishAuth = async (uid: string) => {
+  const finishAuth = async (uid: string, newUser = false) => {
     onSuccess?.()
-
     const nextRoute = await getPostAuthRoute(uid, redirectTarget, {
-      fallbackRoute: isSignUp
+      fallbackRoute: newUser
         ? `/onboarding?redirect=${encodeURIComponent(redirectTarget)}`
         : redirectTarget,
     })
-
     if (currentPath && nextRoute === currentPath) {
       router.refresh()
       return
     }
-
     router.push(nextRoute)
     router.refresh()
+  }
+
+  const handleGoogleSignIn = async () => {
+    if (missingFirebaseClientConfig.length > 0) {
+      setMessage(
+        'Firebase web config is missing in this client build. Restart the dev server after updating .env.local and try again.'
+      )
+      setMessageTone('error')
+      return
+    }
+
+    setGoogleLoading(true)
+    setMessage('')
+    setMessageTone('error')
+
+    try {
+      const provider = new GoogleAuthProvider()
+      const result = await signInWithPopup(auth, provider)
+      const user = result.user
+
+      if (user.displayName) {
+        try {
+          await setDoc(
+            doc(db, 'profiles', user.uid),
+            { fullName: user.displayName, updatedAt: serverTimestamp() },
+            { merge: true }
+          )
+        } catch {
+          // profile prefill failure — onboarding will collect it
+        }
+      }
+
+      await finishAuth(user.uid, true)
+    } catch (error) {
+      // User dismissed the popup — no message needed
+      if (error instanceof Error && error.message.includes('auth/popup-closed-by-user')) {
+        return
+      }
+      setMessage(toFriendlyMessage(error, 'Unable to sign in with Google.'))
+      setMessageTone('error')
+    } finally {
+      setGoogleLoading(false)
+    }
   }
 
   const handleSubmit = async (event: FormEvent) => {
@@ -157,54 +327,106 @@ export default function MarketingAuthPanel({
 
     try {
       const normalizedEmail = email.trim().toLowerCase()
-      let credential: { user: { uid: string } }
       const preferFallback = shouldPreferFallback()
 
-      if (preferFallback) {
-        credential = await authenticateWithPasswordFallback(
-          isSignUp ? 'signup' : 'signin',
-          normalizedEmail,
-          password
-        )
-      } else {
+      if (isSignUp) {
+        if (preferFallback) {
+          // Fallback signup: verification email not possible via REST path; proceed to onboarding
+          const credential = await authenticateWithPasswordFallback('signup', normalizedEmail, password)
+          if (fullName.trim()) {
+            try {
+              await setDoc(
+                doc(db, 'profiles', credential.user.uid),
+                { fullName: fullName.trim(), updatedAt: serverTimestamp() },
+                { merge: true }
+              )
+            } catch {
+              // onboarding will collect it
+            }
+          }
+          setMessage('Account created. Redirecting to complete your profile...')
+          setMessageTone('info')
+          await finishAuth(credential.user.uid, true)
+          return
+        }
+
         try {
-          credential = isSignUp
-            ? await createUserWithEmailAndPassword(auth, normalizedEmail, password)
-            : await signInWithEmailAndPassword(auth, normalizedEmail, password)
+          const result = await createUserWithEmailAndPassword(auth, normalizedEmail, password)
+          await sendEmailVerification(result.user)
+          await signOut(auth)
           setPreferFallback(false)
+
+          if (fullName.trim()) {
+            try {
+              await setDoc(
+                doc(db, 'profiles', result.user.uid),
+                { fullName: fullName.trim(), updatedAt: serverTimestamp() },
+                { merge: true }
+              )
+            } catch {
+              // onboarding will collect it
+            }
+          }
+
+          setVerificationEmail(normalizedEmail)
+          setVerificationSent(true)
+          return
         } catch (error) {
           if (error instanceof Error && error.message.includes('auth/network-request-failed')) {
             setPreferFallback(true)
-            credential = await authenticateWithPasswordFallback(
-              isSignUp ? 'signup' : 'signin',
-              normalizedEmail,
-              password
-            )
-          } else {
-            throw error
+            const credential = await authenticateWithPasswordFallback('signup', normalizedEmail, password)
+            if (fullName.trim()) {
+              try {
+                await setDoc(
+                  doc(db, 'profiles', credential.user.uid),
+                  { fullName: fullName.trim(), updatedAt: serverTimestamp() },
+                  { merge: true }
+                )
+              } catch {
+                // onboarding will collect it
+              }
+            }
+            setMessage('Account created. Redirecting to complete your profile...')
+            setMessageTone('info')
+            await finishAuth(credential.user.uid, true)
+            return
           }
+          throw error
         }
-      }
+      } else {
+        // Sign in
+        if (preferFallback) {
+          // Fallback path: can't check emailVerified reliably, proceed
+          const credential = await authenticateWithPasswordFallback('signin', normalizedEmail, password)
+          await finishAuth(credential.user.uid)
+          return
+        }
 
-      if (isSignUp && fullName.trim()) {
         try {
-          await setDoc(
-            doc(db, 'profiles', credential.user.uid),
-            {
-              fullName: fullName.trim(),
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-          )
-        } catch {
-          // If profile prefill fails, onboarding will collect it next.
+          const result = await signInWithEmailAndPassword(auth, normalizedEmail, password)
+
+          if (!result.user.emailVerified) {
+            // Resend verification and block sign-in
+            await sendEmailVerification(result.user)
+            await signOut(auth)
+            setVerificationEmail(normalizedEmail)
+            setVerificationSent(true)
+            return
+          }
+
+          setPreferFallback(false)
+          await finishAuth(result.user.uid)
+          return
+        } catch (error) {
+          if (error instanceof Error && error.message.includes('auth/network-request-failed')) {
+            setPreferFallback(true)
+            const credential = await authenticateWithPasswordFallback('signin', normalizedEmail, password)
+            await finishAuth(credential.user.uid)
+            return
+          }
+          throw error
         }
-
-        setMessage('Account created. Redirecting to complete your profile...')
-        setMessageTone('info')
       }
-
-      await finishAuth(credential.user.uid)
     } catch (error) {
       console.error('Marketing auth failed', error)
       setMessage(
@@ -216,89 +438,95 @@ export default function MarketingAuthPanel({
     }
   }
 
+  // --- Verification sent state ---
+  if (verificationSent) {
+    return (
+      <div className="relative" style={PANEL_STYLE}>
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 text-[#73796f] text-2xl leading-none bg-transparent border-none cursor-pointer"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+
+        <h1
+          style={{
+            fontFamily: "'Newsreader', serif",
+            fontSize: '1.75rem',
+            color: '#453a2a',
+            marginBottom: '12px',
+          }}
+        >
+          Check your inbox
+        </h1>
+
+        <p
+          style={{
+            fontFamily: "'Work Sans', sans-serif",
+            fontSize: '14px',
+            color: '#73796f',
+            lineHeight: 1.6,
+            marginBottom: '8px',
+          }}
+        >
+          We sent a verification link to{' '}
+          <strong style={{ color: '#453a2a' }}>{verificationEmail}</strong>.
+        </p>
+
+        <p
+          style={{
+            fontFamily: "'Work Sans', sans-serif",
+            fontSize: '14px',
+            color: '#73796f',
+            lineHeight: 1.6,
+            marginBottom: '28px',
+          }}
+        >
+          Click the link in that email to verify your account, then come back and sign in.
+        </p>
+
+        <p
+          style={{
+            fontFamily: "'Work Sans', sans-serif",
+            fontSize: '12px',
+            color: '#9b8f81',
+            lineHeight: 1.5,
+            marginBottom: '28px',
+          }}
+        >
+          No email? Check your spam folder. The link expires in 24 hours. Trying to sign in while
+          unverified will automatically resend it.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => handleModeChange('signin')}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background: '#3D5A35',
+            color: '#fff',
+            fontFamily: "'Work Sans', sans-serif",
+            fontSize: '11px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.2em',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+          }}
+        >
+          Back to Sign In
+        </button>
+      </div>
+    )
+  }
+
+  // --- Main auth form ---
   return (
-    <div
-      className="relative"
-      style={{
-        background: '#fff8f0',
-        border: '1px solid rgba(61,90,53,0.1)',
-        padding: '40px',
-        width: '400px',
-        maxWidth: '90vw',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-      }}
-    >
-      <style>{`
-        .marketing-auth-form {
-          position: relative;
-        }
-        .marketing-auth-input-wrap {
-          position: relative;
-          width: 100%;
-          min-height: 48px;
-          margin-bottom: 16px;
-          overflow: hidden;
-        }
-        .marketing-auth-input-wrap > :not(.marketing-auth-field) {
-          display: none !important;
-        }
-        /* All visible styling on the input lives here with !important so
-         * inline overrides injected by browser extensions (Temp Mail,
-         * password helpers, GTM trackers) can't strip the affordance away.
-         * Inline-style writes from extensions lose against !important
-         * class-level rules in the cascade. */
-        .marketing-auth-field {
-          display: block !important;
-          width: 100% !important;
-          height: 48px !important;
-          padding: 12px 16px !important;
-          border: 1px solid #c3c8bd !important;
-          background: #faf3e9 !important;
-          font-family: 'Work Sans', sans-serif !important;
-          font-size: 14px !important;
-          line-height: 20px !important;
-          color: #1e1b15 !important;
-          outline: none !important;
-          box-sizing: border-box !important;
-          border-radius: 0 !important;
-          -webkit-appearance: none !important;
-          appearance: none !important;
-          position: relative !important;
-          z-index: 2 !important;
-          transition: border-color 0.2s !important;
-        }
-        .marketing-auth-field:focus {
-          border-color: #3D5A35 !important;
-        }
-        .marketing-auth-field::placeholder {
-          color: #9b8f81;
-          opacity: 1;
-        }
-        .marketing-auth-field::-webkit-contacts-auto-fill-button,
-        .marketing-auth-field::-webkit-credentials-auto-fill-button,
-        .marketing-auth-field::-webkit-clear-button,
-        .marketing-auth-field::-webkit-calendar-picker-indicator,
-        .marketing-auth-field::-webkit-inner-spin-button {
-          display: none !important;
-          -webkit-appearance: none;
-          opacity: 0;
-          margin: 0;
-          pointer-events: none;
-        }
-        .marketing-auth-field::-ms-reveal,
-        .marketing-auth-field::-ms-clear {
-          display: none;
-        }
-        .marketing-auth-field:-webkit-autofill,
-        .marketing-auth-field:-webkit-autofill:hover,
-        .marketing-auth-field:-webkit-autofill:focus,
-        .marketing-auth-field:-webkit-autofill:active {
-          -webkit-text-fill-color: #1e1b15;
-          box-shadow: 0 0 0 1000px #faf3e9 inset !important;
-          transition: background-color 9999s ease-in-out 0s;
-          caret-color: #1e1b15;
-        }
-      `}</style>
+    <div className="relative" style={PANEL_STYLE}>
+      <style>{PANEL_STYLES}</style>
 
       <button
         type="button"
@@ -319,6 +547,40 @@ export default function MarketingAuthPanel({
       >
         {isSignUp ? 'Create Account' : 'Sign In'}
       </h1>
+
+      {/* Google sign-in */}
+      <button
+        type="button"
+        className="marketing-google-btn"
+        onClick={handleGoogleSignIn}
+        disabled={googleLoading || loading}
+      >
+        <GoogleIcon />
+        {googleLoading ? 'Please wait...' : 'Continue with Google'}
+      </button>
+
+      {/* Divider */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '20px',
+        }}
+      >
+        <div style={{ flex: 1, height: '1px', background: '#c3c8bd' }} />
+        <span
+          style={{
+            fontFamily: "'Work Sans', sans-serif",
+            fontSize: '12px',
+            color: '#9b8f81',
+            letterSpacing: '0.05em',
+          }}
+        >
+          or
+        </span>
+        <div style={{ flex: 1, height: '1px', background: '#c3c8bd' }} />
+      </div>
 
       <form
         onSubmit={handleSubmit}
@@ -423,7 +685,7 @@ export default function MarketingAuthPanel({
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || googleLoading}
           style={{
             width: '100%',
             padding: '14px',
@@ -434,10 +696,10 @@ export default function MarketingAuthPanel({
             textTransform: 'uppercase',
             letterSpacing: '0.2em',
             border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
+            cursor: loading || googleLoading ? 'not-allowed' : 'pointer',
             transition: 'background 0.2s',
             marginTop: '8px',
-            opacity: loading ? 0.7 : 1,
+            opacity: loading || googleLoading ? 0.7 : 1,
           }}
         >
           {loading ? 'Please Wait...' : isSignUp ? 'Create Account' : 'Sign In'}

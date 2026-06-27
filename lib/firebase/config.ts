@@ -1,6 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app'
 import {
   browserLocalPersistence,
+  browserPopupRedirectResolver,
   browserSessionPersistence,
   connectAuthEmulator,
   getAuth,
@@ -32,8 +33,6 @@ export const missingFirebaseClientConfig = Object.entries(firebaseConfig)
   .filter(([, value]) => typeof value !== 'string' || value.trim().length === 0)
   .map(([key]) => key)
 
-// We only use email/password auth in the web app right now, so initialize Auth
-// with explicit browser persistence and no popup/redirect resolver.
 export const auth = (() => {
   try {
     return initializeAuth(app, {
@@ -42,6 +41,7 @@ export const auth = (() => {
         browserLocalPersistence,
         browserSessionPersistence,
       ],
+      popupRedirectResolver: browserPopupRedirectResolver,
     })
   } catch {
     return getAuth(app)
