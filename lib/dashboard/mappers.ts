@@ -15,8 +15,7 @@ function asStringArray(value: unknown): string[] {
 function asScore(value: unknown): number | null {
   if (typeof value !== 'number') return null
   if (!Number.isFinite(value)) return null
-  const rounded = Math.round(value)
-  return rounded >= 1 && rounded <= 5 ? rounded : null
+  return value >= 0.5 && value <= 5 ? value : null
 }
 
 export function mapEvaluationDoc(id: string, value: DocumentData): EvaluationRecord {
