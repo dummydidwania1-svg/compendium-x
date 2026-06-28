@@ -239,9 +239,9 @@ function buildBlocks(lines: TranscriptDisplayLine[]): WalkthroughBlock[] {
 
     if (/^=\s/.test(n)) return [{ key: `ind-${i}`, kind: 'indent', text: fmtEquation(n), speaker: e.speaker, level }]
     if (isEquation(n)) return [{ key: `eq-${i}`, kind: 'equation', text: fmtEquation(n), speaker: e.speaker, level }]
-const bm = n.match(/^(\d+[\).]|[a-zA-Z]\)|[-•])\s*(.+)$/)
+const bm = n.match(/^(\d+[\).]|[a-zA-Z]+\)|[-•])\s*(.+)$/)
 if (bm) {
-  const letterIndent = /^[a-zA-Z]\)/.test(bm[1]) ? 1 : 0
+  const letterIndent = /^[a-zA-Z]+\)/.test(bm[1]) ? 1 : 0
   return [{ key: `b-${i}`, kind: 'bullet', marker: bm[1], text: bm[2], speaker: e.speaker, level: level + letterIndent }]
 }
     return [{ key: `l-${i}`, kind: 'line', text: n, speaker: e.speaker, level }]
