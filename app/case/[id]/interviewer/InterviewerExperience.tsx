@@ -817,6 +817,10 @@ export function InterviewerPageInner({
 	const [notes, setNotes] = useState('')
 	const [submitting, setSubmitting] = useState(false)
 
+	// ── Eval overlay hover state ──
+	const [evalHoverScore, setEvalHoverScore] = useState<{ id: string; value: number } | null>(null)
+	const evalClickCooldownRef = useRef<Record<string, number>>({})
+
 	// ── Eval overlay (replaces full-page feedback view for the End Case button) ──
 	const [showEvalOverlay, setShowEvalOverlay] = useState(false)
 	const [editingOverlay, setEditingOverlay] = useState(false)
@@ -2316,21 +2320,74 @@ if (previewMode && !forcePreview) {
 									<div style={{ padding: '14px 22px 22px' }}>
 										<div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 											{LIVE_EVALUATION_CRITERIA.map(c => {
-												const score = scores[c.id]
-												const rated = score > 0
-												const pct = (score / 5) * 100
+												const committed = scores[c.id]
+												const isHovering = evalHoverScore?.id === c.id
+												const preview = isHovering ? evalHoverScore!.value : null
+												const displayVal = preview ?? committed
+												const rated = committed > 0
+												const pct = (displayVal / 5) * 100
+												const isPreviewing = isHovering && preview !== committed
 												return (
 													<div key={c.id}>
-														<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '1px' }}>
+														<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
 															<span style={{ fontSize: '12.5px', fontWeight: 600, color: '#2e2318' }}>{c.label}</span>
-															<span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', color: rated ? '#3D5A35' : '#b8a898' }}>{rated ? `${score}/5` : 'NR'}</span>
+															{(rated || isHovering) && (
+																<span style={{
+																	fontSize: '10px', fontWeight: 700, letterSpacing: '0.04em',
+																	padding: '1px 7px', borderRadius: '999px',
+																	transition: 'all 0.15s ease',
+																	border: isPreviewing ? '1px dashed rgba(61,90,53,0.4)' : '1px solid rgba(61,90,53,0.35)',
+																	background: isPreviewing ? 'transparent' : 'rgba(174,208,161,0.22)',
+																	color: isPreviewing ? 'rgba(61,90,53,0.55)' : '#3D5A35',
+																}}>
+																	{displayVal}/5
+																</span>
+															)}
+															{!rated && !isHovering && (
+																<span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', color: '#b8a898' }}>NR</span>
+															)}
 														</div>
-														<input
-															type="range" min="0" max="5" step="0.5" value={score}
-															onChange={e => setScores({ ...scores, [c.id]: parseFloat(e.target.value) })}
-															className={`eo-range${rated ? '' : ' eo-nr'}`}
-															style={rated ? { background: `linear-gradient(90deg,#3D5A35 ${pct}%,rgba(92,64,51,0.15) ${pct}%)`, height: '3px', borderRadius: '2px' } : undefined}
-														/>
+														<div
+															style={{ position: 'relative', height: '16px', cursor: 'pointer', width: '100%' }}
+															onMouseMove={e => {
+																const now = Date.now()
+																if ((evalClickCooldownRef.current[c.id] ?? 0) > now) return
+																const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+																const raw = (e.clientX - rect.left) / rect.width
+																const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
+																setEvalHoverScore({ id: c.id, value: snapped })
+															}}
+															onMouseLeave={() => setEvalHoverScore(null)}
+															onClick={e => {
+																const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+																const raw = (e.clientX - rect.left) / rect.width
+																const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
+																setScores({ ...scores, [c.id]: snapped })
+																setEvalHoverScore(null)
+																evalClickCooldownRef.current[c.id] = Date.now() + 900
+															}}
+														>
+															{/* Track */}
+															<div style={{ position: 'absolute', inset: '0 0 auto', top: '6px', height: '3px', borderRadius: '2px', background: 'rgba(92,64,51,0.16)' }} />
+															{displayVal > 0 && (
+																<div style={{
+																	position: 'absolute', top: '6px', left: 0, height: '3px', borderRadius: '2px',
+																	width: `${pct}%`,
+																	background: isPreviewing ? 'rgba(61,90,53,0.38)' : '#3D5A35',
+																	transition: 'width 0.08s ease, background 0.15s ease',
+																}} />
+															)}
+															{displayVal > 0 && (
+																<div style={{
+																	position: 'absolute', top: '3px', width: '10px', height: '10px', borderRadius: '50%',
+																	left: `calc(${pct}% - 5px)`,
+																	background: isPreviewing ? 'rgba(61,90,53,0.45)' : '#3D5A35',
+																	boxShadow: isPreviewing ? 'none' : '0 0 0 3px rgba(61,90,53,0.13)',
+																	transition: 'left 0.08s ease, background 0.15s ease, box-shadow 0.15s ease',
+																	pointerEvents: 'none',
+																}} />
+															)}
+														</div>
 														<div style={{ marginTop: '2px', display: 'flex', justifyContent: 'space-between', fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#b8a898' }}>
 															<span style={{ fontStyle: 'italic' }}>NR</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
 														</div>
