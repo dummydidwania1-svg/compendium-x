@@ -4521,50 +4521,59 @@ export function CaseInterviewerMaster({
     return () => { document.removeEventListener('click', close); document.removeEventListener('contextmenu', close) }
   }, [notesCtxMenu])
 
-  // Auto-grow textarea to content
-  useEffect(() => {
-    const ta = notesTaRef.current
-    if (!ta) return
-    ta.style.height = 'auto'
-    ta.style.height = ta.scrollHeight + 'px'
-  }, [notes])
-
   function nextRoman(s: string): string { return toRoman(fromRoman(s) + 1) }
 
-  function isEmptyListLine(line: string): boolean {
-    return /^(\s*)([-•–]|\d+[.):-]|[a-z]+[).]|[ivxlcdm]+[).:])\s*$/.test(line)
+  // Indent hierarchy per level: 0=number, 1=roman, 2=letter, 3=bullet, 4+=sub-bullet
+  // Tab promotes current marker to the next level's marker type.
+  // Shift+Tab demotes back.
+
+  type MarkerKind = 'number' | 'roman' | 'letter' | 'bullet'
+
+  function kindForLevel(level: number): MarkerKind {
+    if (level === 0) return 'number'
+    if (level === 1) return 'roman'
+    if (level === 2) return 'letter'
+    return 'bullet'
   }
 
-  // Detect indent level (2 spaces per level)
-  function getIndentLevel(line: string): number {
-    return Math.floor((line.match(/^( *)/)?.[1].length ?? 0) / 2)
+  function makeFirstMarker(kind: MarkerKind, sep: string): string {
+    if (kind === 'number') return '1' + sep + ' '
+    if (kind === 'roman') return 'i' + sep + ' '
+    if (kind === 'letter') return 'a' + sep + ' '
+    return '• '
   }
 
-  // Get the list continuation for the next line based on current line
-  function getListContinuation(line: string): string | null {
-    const indent = (line.match(/^( *)/)?.[1] ?? '')
-    const rest = line.slice(indent.length)
-
-    // Numbered: 1. 1) 1: 1-
-    const numM = rest.match(/^(\d+)([.):-])\s+\S/)
-    if (numM) return indent + (parseInt(numM[1]) + 1) + numM[2] + ' '
-
-    // Letter: a) a.
-    const letM = rest.match(/^([a-z])([).:])\s+\S/)
-    if (letM) {
-      const next = String.fromCharCode(letM[1].charCodeAt(0) + 1)
-      return indent + next + letM[2] + ' '
-    }
-
-    // Roman: i. i) i:
-    const romM = rest.match(/^([ivxlcdm]+)([.):])\s+\S/)
-    if (romM) return indent + nextRoman(romM[1]) + romM[2] + ' '
-
-    // Bullet: • – -
-    const bulM = rest.match(/^([•–-])\s+\S/)
-    if (bulM) return indent + bulM[1] + ' '
-
+  // Detect what type and value a line's marker is
+  function parseMarker(rest: string): { kind: MarkerKind; sep: string; body: string; marker: string } | null {
+    // number: 1. 1) 1:
+    const numM = rest.match(/^(\d+)([.):])\s(.*)/)
+    if (numM) return { kind: 'number', sep: numM[2], body: numM[3], marker: numM[1] + numM[2] + ' ' }
+    // roman: i. i) i: — must come before letter to avoid 'i' matching as letter
+    const romM = rest.match(/^([ivxlcdm]+)([.):])\s(.*)/)
+    if (romM && fromRoman(romM[1]) > 0) return { kind: 'roman', sep: romM[2], body: romM[3], marker: romM[1] + romM[2] + ' ' }
+    // letter: a. a) a:
+    const letM = rest.match(/^([a-z])([.):])\s(.*)/)
+    if (letM) return { kind: 'letter', sep: letM[2], body: letM[3], marker: letM[1] + letM[2] + ' ' }
+    // bullet: • – -
+    const bulM = rest.match(/^([•–-])\s(.*)/)
+    if (bulM) return { kind: 'bullet', sep: '', body: bulM[2], marker: bulM[1] + ' ' }
     return null
+  }
+
+  function nextMarker(parsed: { kind: MarkerKind; sep: string; marker: string }): string {
+    if (parsed.kind === 'number') {
+      const n = parseInt(parsed.marker)
+      return (n + 1) + parsed.sep + ' '
+    }
+    if (parsed.kind === 'roman') {
+      const base = parsed.marker.replace(/[.):\s]/g, '')
+      return nextRoman(base) + parsed.sep + ' '
+    }
+    if (parsed.kind === 'letter') {
+      const base = parsed.marker[0]
+      return String.fromCharCode(base.charCodeAt(0) + 1) + parsed.sep + ' '
+    }
+    return parsed.marker // bullet stays same
   }
 
   function handleNotesKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -4578,6 +4587,8 @@ export function CaseInterviewerMaster({
     const fullLine = val.slice(lineStart, eol)
     const indent = (fullLine.match(/^( *)/)?.[1] ?? '')
     const level = Math.floor(indent.length / 2)
+    const rest = fullLine.slice(indent.length)
+    const parsed = parseMarker(rest)
 
     // Auto-convert dash+space to bullet
     if (e.key === ' ' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
@@ -4585,8 +4596,7 @@ export function CaseInterviewerMaster({
       if (/^(\s*)-$/.test(lineUpToCursor)) {
         e.preventDefault()
         const ind = (lineUpToCursor.match(/^( *)/)?.[1] ?? '')
-        const newVal = val.slice(0, lineStart) + ind + '• ' + val.slice(cur)
-        setNotes(newVal)
+        setNotes(val.slice(0, lineStart) + ind + '• ' + val.slice(cur))
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + ind.length + 2 })
         return
       }
@@ -4595,49 +4605,51 @@ export function CaseInterviewerMaster({
     if (e.key === 'Tab') {
       e.preventDefault()
       if (!e.shiftKey) {
-        // Indent: increase level by 2 spaces
-        const rest = fullLine.slice(indent.length)
-        const newIndent = indent + '  '
-        // When indenting a numbered list item, convert to roman if going deeper
-        const numM = rest.match(/^(\d+)([.):-])\s+(.*)/)
-        if (numM && level === 0) {
-          // L0 number → L1 roman
-          const nl = newIndent + 'i' + numM[2] + ' ' + numM[3]
-          setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
-          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + newIndent.length + ('i' + numM[2] + ' ').length })
-          return
-        }
-        const bulM = rest.match(/^([•–-])\s+(.*)/)
-        if (bulM) {
-          const nl = newIndent + bulM[1] + ' ' + bulM[2]
-          setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
-          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + newIndent.length + (bulM[1] + ' ').length })
-          return
-        }
-        // Generic: just add 2 spaces
-        setNotes(val.slice(0, lineStart) + newIndent + rest + val.slice(eol))
-        requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = cur + 2 })
+        // Tab: go one level deeper
+        const newLevel = level + 1
+        const newIndent = '  '.repeat(newLevel)
+        const sep = parsed?.sep || '.'
+        const newKind = kindForLevel(newLevel)
+        const newMarker = makeFirstMarker(newKind, sep)
+        const body = parsed?.body ?? rest
+        const nl = newIndent + newMarker + body
+        setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
+        requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + newIndent.length + newMarker.length })
       } else {
-        // Shift+Tab: remove 2 spaces of indent
-        if (indent.length >= 2) {
-          const newIndent = indent.slice(2)
-          const rest = fullLine.slice(indent.length)
-          // When unindenting a roman → convert back to number
-          const romM = rest.match(/^([ivxlcdm]+)([.):])\s+(.*)/)
-          if (romM && level === 1) {
-            const above = val.slice(0, lineStart).split('\n')
-            let pn = 1
-            for (let i = above.length - 1; i >= 0; i--) {
-              const pm = above[i].match(/^(\d+)[.):-]\s/); if (pm) { pn = parseInt(pm[1]) + 1; break }
+        // Shift+Tab: go one level up
+        if (level > 0) {
+          const newLevel = level - 1
+          const newIndent = '  '.repeat(newLevel)
+          const sep = parsed?.sep || '.'
+          const newKind = kindForLevel(newLevel)
+          // Find what number/letter we should be at by scanning above lines at this new level
+          const aboveLines = val.slice(0, lineStart).split('\n')
+          let startVal = 1
+          for (let i = aboveLines.length - 1; i >= 0; i--) {
+            const aboveIndent = (aboveLines[i].match(/^( *)/)?.[1] ?? '')
+            const aboveLevel = Math.floor(aboveIndent.length / 2)
+            if (aboveLevel < newLevel) break // crossed into a parent level
+            if (aboveLevel === newLevel) {
+              const aboveRest = aboveLines[i].slice(aboveIndent.length)
+              const aboveParsed = parseMarker(aboveRest)
+              if (aboveParsed && aboveParsed.kind === newKind) {
+                if (newKind === 'number') startVal = parseInt(aboveParsed.marker) + 1
+                else if (newKind === 'roman') startVal = fromRoman(aboveParsed.marker.replace(/[.):\s]/g, '')) + 1
+                else if (newKind === 'letter') startVal = aboveParsed.marker.charCodeAt(0) - 96 + 1
+                break
+              }
+              break
             }
-            const nl = newIndent + pn + romM[2] + ' ' + romM[3]
-            setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
-            requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + nl.length })
-            return
           }
-          const nl = newIndent + rest
+          let newMarker: string
+          if (newKind === 'number') newMarker = startVal + sep + ' '
+          else if (newKind === 'roman') newMarker = toRoman(startVal) + sep + ' '
+          else if (newKind === 'letter') newMarker = String.fromCharCode(96 + startVal) + sep + ' '
+          else newMarker = '• '
+          const body = parsed?.body ?? rest
+          const nl = newIndent + newMarker + body
           setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
-          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = Math.max(lineStart + newIndent.length, cur - 2) })
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + nl.length })
         }
       }
       return
@@ -4645,17 +4657,21 @@ export function CaseInterviewerMaster({
 
     if (e.key === 'Enter' && !e.shiftKey) {
       const lineUpToCursor = val.slice(lineStart, cur)
-      if (isEmptyListLine(lineUpToCursor)) {
-        // Empty list line: escape the list
+      const upIndent = (lineUpToCursor.match(/^( *)/)?.[1] ?? '')
+      const upRest = lineUpToCursor.slice(upIndent.length)
+      const upParsed = parseMarker(upRest)
+
+      if (upParsed) {
         e.preventDefault()
-        setNotes(val.slice(0, lineStart) + indent + val.slice(cur))
-        requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + indent.length })
-        return
-      }
-      const cont = getListContinuation(lineUpToCursor)
-      if (cont !== null) {
-        e.preventDefault()
-        const ins = '\n' + cont
+        // If body is empty (user typed `1. ` then Enter with no text) — escape list
+        if (!upParsed.body.trim()) {
+          // Remove the marker, leave just the indent (or blank line if at L0)
+          setNotes(val.slice(0, lineStart) + val.slice(cur))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart })
+          return
+        }
+        // Continue list
+        const ins = '\n' + upIndent + nextMarker(upParsed)
         setNotes(val.slice(0, cur) + ins + val.slice(curEnd))
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = cur + ins.length })
         return
@@ -5293,6 +5309,10 @@ export function CaseInterviewerMaster({
               .eval-range.is-nr::-webkit-slider-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
               .eval-range.is-nr::-moz-range-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
               .eval-range.is-nr::-moz-range-progress { background:transparent; }
+              .notes-ta::-webkit-scrollbar { width:4px; }
+              .notes-ta::-webkit-scrollbar-track { background:transparent; }
+              .notes-ta::-webkit-scrollbar-thumb { background:rgba(92,64,51,0.18); border-radius:4px; }
+              .notes-ta::-webkit-scrollbar-thumb:hover { background:rgba(92,64,51,0.32); }
             `}</style>
 
             {/* Single unified panel — no internal scroll */}
@@ -5315,9 +5335,9 @@ export function CaseInterviewerMaster({
                   onChange={e => setNotes(e.target.value)}
                   onKeyDown={handleNotesKeyDown}
                   onContextMenu={e => { e.preventDefault(); setNotesCtxMenu({ x: e.clientX, y: e.clientY }) }}
-                  placeholder={"Jot observations here…\n1.  numbered  •  bulleted  –  dashed\nTab to indent · Shift+Tab to outdent"}
-                  className="w-full resize-none rounded-[10px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all overflow-hidden"
-                  style={{ fontFamily: "'Work Sans', sans-serif", minHeight: '80px' }}
+                  placeholder={"Jot observations here…\n1. numbered  •/– bulleted  Tab to sub-indent\nShift+Tab to outdent  Enter continues list"}
+                  className="notes-ta flex-1 min-h-0 w-full resize-none rounded-[10px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all overflow-y-auto"
+                  style={{ fontFamily: "'Work Sans', sans-serif" }}
                 />
                 {notesCtxMenu && (
                   <div
