@@ -5161,29 +5161,6 @@ export function CaseInterviewerMaster({
                         )}
 
 
-                        {/* Notes — brownie points + questions below recommendations */}
-                        {NOTES.length > 0 && (
-                          <div className="mt-10 hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(NOTES.length, 3)}, 1fr)` }}>
-                            {NOTES.map((n, idx) => (
-                              <div
-                                key={n.title}
-                                className="rounded-[4px] border border-[rgba(61,90,53,0.10)] bg-[rgba(255,248,240,0.80)] px-3 py-3 transition-all duration-300 hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
-                                style={{ animation: `cpm-sidebar-card-in 0.45s cubic-bezier(0.22,1,0.36,1) ${idx * 80}ms both` }}
-                              >
-                                <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 text-center pb-2 shrink-0">{n.title}</p>
-                                <ul>
-                                  {n.items.map(item => (
-                                    <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
-                                      <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                      <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
                         {/* Sentinel for bottom-border visibility detection */}
                         <div ref={drilldownBottomRef2} className="h-px w-full" />
                       </div>
@@ -5191,6 +5168,29 @@ export function CaseInterviewerMaster({
                   </div>
                 </div>
               </div>
+
+              {/* Notes — brownie points + questions (outside the card, same as preview) */}
+              {NOTES.length > 0 && (
+                <div className="mt-4 hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(NOTES.length, 3)}, 1fr)` }}>
+                  {NOTES.map((n, idx) => (
+                    <div
+                      key={n.title}
+                      className="rounded-[4px] border border-[rgba(61,90,53,0.10)] bg-[rgba(255,248,240,0.80)] px-3 py-3 transition-all duration-300 hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
+                      style={{ animation: `cpm-sidebar-card-in 0.45s cubic-bezier(0.22,1,0.36,1) ${idx * 80}ms both` }}
+                    >
+                      <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5C4033]/50 text-center pb-2 shrink-0">{n.title}</p>
+                      <ul>
+                        {n.items.map(item => (
+                          <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
+                            <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
+                            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Mobile drill down */}
               <div className="lg:hidden">
