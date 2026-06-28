@@ -4540,19 +4540,20 @@ export function CaseInterviewerMaster({
   }
 
   // Detect what type and value a line's marker is.
-  // Order matters: number first, then single-char letter (a-z), then multi-char roman,
-  // then bullet. Single roman chars (i, v, x, c, d, m) are treated as letters when
-  // they appear alone — only multi-char sequences like "ii", "iv", "ix" are roman.
+  // Special case: single "i" is treated as roman numeral 1 (not letter i),
+  // because users type "i." to start a roman list. All other single chars are letters.
+  // Multi-char [ivxlcdm]+ sequences are always roman (ii, iv, ix, xiii, etc.).
   function parseMarker(rest: string): { kind: MarkerKind; sep: string; body: string; marker: string } | null {
     // number: 1. 1) 1:
     const numM = rest.match(/^(\d+)([.):])\s(.*)/)
     if (numM) return { kind: 'number', sep: numM[2], body: numM[3], marker: numM[1] + numM[2] + ' ' }
-    // single letter a-z (covers a. b. ... z. including i, c, v etc. when single char)
+    // roman: 2+ chars OR single "i" (i. is unambiguously roman 1)
+    const romM = rest.match(/^([ivxlcdm]+)([.):])\s(.*)/)
+    if (romM && (romM[1].length > 1 || romM[1] === 'i') && fromRoman(romM[1]) > 0)
+      return { kind: 'roman', sep: romM[2], body: romM[3], marker: romM[1] + romM[2] + ' ' }
+    // single letter a-z (excluding i which is caught above)
     const letM = rest.match(/^([a-z])([.):])\s(.*)/)
     if (letM) return { kind: 'letter', sep: letM[2], body: letM[3], marker: letM[1] + letM[2] + ' ' }
-    // roman: must be 2+ chars so "i." doesn't match here (caught above as letter)
-    const romM = rest.match(/^([ivxlcdm]{2,})([.):])\s(.*)/)
-    if (romM && fromRoman(romM[1]) > 0) return { kind: 'roman', sep: romM[2], body: romM[3], marker: romM[1] + romM[2] + ' ' }
     // bullet: • – -
     const bulM = rest.match(/^([•–-])\s(.*)/)
     if (bulM) return { kind: 'bullet', sep: '', body: bulM[2], marker: bulM[1] + ' ' }
