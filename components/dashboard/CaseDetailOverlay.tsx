@@ -746,7 +746,14 @@ export default function CaseDetailOverlay({
                 className="absolute inset-0 overflow-y-auto animate-tab-in"
                 style={{ scrollbarWidth: 'none' }}
               >
-                <style>{`div::-webkit-scrollbar{display:none}`}</style>
+                <style>{`
+                  div::-webkit-scrollbar{display:none}
+                  .cdo-notes::-webkit-scrollbar{display:block;width:3px}
+                  .cdo-notes::-webkit-scrollbar-track{background:transparent}
+                  .cdo-notes::-webkit-scrollbar-thumb{background:rgba(92,64,51,0.15);border-radius:9px}
+                  .cdo-notes::-webkit-scrollbar-thumb:hover{background:rgba(92,64,51,0.28)}
+                  .cdo-notes{scrollbar-width:thin;scrollbar-color:rgba(92,64,51,0.15) transparent}
+                `}</style>
 
                 {/* ── SESSION TAB ── */}
                 {activeTab === 'session' && (
@@ -757,11 +764,13 @@ export default function CaseDetailOverlay({
                       <SectionLabel>Interviewer Feedback</SectionLabel>
                       {entry.notes?.trim() ? (
                         <div
-                          className="text-[12.5px] leading-[1.75] rounded-r-[7px] px-[14px] py-[12px]"
+                          className="cdo-notes text-[12.5px] leading-[1.75] rounded-r-[7px] px-[14px] py-[12px]"
                           style={{
                             color: 'rgba(92,64,51,.82)',
                             background: 'rgba(61,90,53,.05)',
                             borderLeft: '3px solid rgba(61,90,53,.30)',
+                            maxHeight: '180px',
+                            overflowY: 'auto',
                           }}
                         >
                           {renderNotesLines(entry.notes.trim())}
