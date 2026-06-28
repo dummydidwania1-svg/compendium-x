@@ -40,7 +40,7 @@ type WorkspaceToast = {
   message: string
 }
 
-const MIME_TYPE_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
+const MIME_TYPE_CANDIDATES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
 
 function pickSupportedMimeType(): string | null {
   if (typeof MediaRecorder === 'undefined') return null
@@ -359,7 +359,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setRecordingState('uploading')
       setRecordingError('')
 
-      const mimeType = blob.type || pickSupportedMimeType() || 'audio/webm'
+      const mimeType = blob.type || pickSupportedMimeType() || 'audio/mp4'
       const extension = fileExtensionFromType(mimeType)
 
       // Warm up auth before the first Storage upload. On a brand-new account's
@@ -496,7 +496,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           'stop',
           () => {
             const blob = new Blob(chunksRef.current, {
-              type: recorder.mimeType || pickSupportedMimeType() || 'audio/webm',
+              type: recorder.mimeType || pickSupportedMimeType() || 'audio/mp4',
             })
             resolve(blob)
           },

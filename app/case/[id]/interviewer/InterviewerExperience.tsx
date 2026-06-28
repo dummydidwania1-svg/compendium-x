@@ -572,7 +572,7 @@ function DefaultFramework({ framework }: { framework: ParsedFramework }) {
 	)
 }
 
-const INTERVIEWER_MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
+const INTERVIEWER_MIME_CANDIDATES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
 function pickInterviewerMimeType(): string | null {
   if (typeof MediaRecorder === 'undefined') return null
   for (const candidate of INTERVIEWER_MIME_CANDIDATES) {
@@ -977,7 +977,7 @@ export function InterviewerPageInner({
 			return
 		}
 
-		const mimeType = recorder?.mimeType || pickInterviewerMimeType() || 'audio/webm'
+		const mimeType = recorder?.mimeType || pickInterviewerMimeType() || 'audio/mp4'
 		// Always build from ALL chunks — cumulative blob is always decodable from the start
 		const blob = new Blob(chunks, { type: mimeType })
 

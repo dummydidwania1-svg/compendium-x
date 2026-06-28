@@ -28,11 +28,14 @@
  */
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore'
+import { getAuth } from 'firebase-admin/auth'
 import { getStorage } from 'firebase-admin/storage'
 import { onDocumentWritten } from 'firebase-functions/v2/firestore'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { defineSecret } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/v2'
+import * as functionsV1 from 'firebase-functions/v1'
+import { google } from 'googleapis'
 import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
@@ -99,9 +102,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 function normalizeMimeType(value: string | null | undefined): string {
-  if (!value || value.trim().length === 0) return 'audio/webm'
+  if (!value || value.trim().length === 0) return 'audio/mp4'
   const clean = value.split(';')[0]?.trim()
-  return clean && clean.startsWith('audio/') ? clean : 'audio/webm'
+  return clean && clean.startsWith('audio/') ? clean : 'audio/mp4'
 }
 
 function extractGeminiErrorMessage(payload: unknown): string {
@@ -226,7 +229,7 @@ async function elevenLabsWords(
     form.append('timestamps_granularity', 'word')
     form.append(
       'file',
-      new Blob([audioBytes], { type: mimeType || 'audio/webm' }),
+      new Blob([audioBytes], { type: mimeType || 'audio/mp4' }),
       'audio.webm',
     )
     const response = await fetch(ELEVENLABS_STT_URL, {
@@ -1422,3 +1425,206 @@ export const finalizePendingMerges = onSchedule(
 )
 
 export type _TimestampShape = Timestamp
+
+/* -------------------------------------------------------------------------- */
+/* sendWelcomeEmail — fires on every new user, sends custom HTML email        */
+/* -------------------------------------------------------------------------- */
+
+function buildWelcomeEmailHtml(displayName: string | null, verificationLink: string | null): string {
+  const firstName = displayName ? displayName.split(' ')[0] : 'there'
+  const verificationBlock = verificationLink
+    ? `
+      <tr>
+        <td style="padding:0 0 28px 0;">
+          <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4a4a4a;">
+            Before you get started, please verify your email address so we know it's really you.
+          </p>
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="border-radius:6px;background:#2d5a27;">
+                <a href="${verificationLink}"
+                   style="display:inline-block;padding:14px 32px;font-family:Georgia,serif;font-size:15px;color:#faf3e9;text-decoration:none;font-weight:bold;border-radius:6px;">
+                  Verify my email
+                </a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:20px 0 0 0;font-size:13px;color:#888;line-height:1.5;">
+            This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.
+          </p>
+        </td>
+      </tr>`
+    : ''
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f0e9de;font-family:Georgia,serif;">
+  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background:#f0e9de;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" border="0" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+          <!-- Header -->
+          <tr>
+            <td style="background:#2d5a27;border-radius:10px 10px 0 0;padding:32px 40px;text-align:center;">
+              <p style="margin:0;font-size:22px;font-weight:bold;color:#faf3e9;letter-spacing:0.5px;">
+                Compendium X
+              </p>
+              <p style="margin:6px 0 0 0;font-size:12px;color:#b8d4b5;letter-spacing:1.5px;text-transform:uppercase;">
+                Case Interview Platform
+              </p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="background:#faf3e9;padding:40px 40px 8px 40px;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:0 0 24px 0;">
+                    <h1 style="margin:0;font-size:24px;color:#1a2e18;font-weight:normal;">
+                      Welcome, ${firstName}!
+                    </h1>
+                  </td>
+                </tr>
+                ${verificationBlock}
+                <tr>
+                  <td style="padding:0 0 20px 0;border-top:1px solid #e8ddd0;">
+                    <p style="margin:20px 0 12px 0;font-size:15px;line-height:1.6;color:#4a4a4a;">
+                      You now have access to everything on Compendium X:
+                    </p>
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="padding:8px 0;font-size:14px;color:#4a4a4a;">
+                          <span style="color:#2d5a27;font-size:16px;margin-right:10px;">&#10003;</span>
+                          Practice with real-world case studies
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;font-size:14px;color:#4a4a4a;">
+                          <span style="color:#2d5a27;font-size:16px;margin-right:10px;">&#10003;</span>
+                          Live mock interviews with AI-powered feedback
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;font-size:14px;color:#4a4a4a;">
+                          <span style="color:#2d5a27;font-size:16px;margin-right:10px;">&#10003;</span>
+                          Track your progress and session history
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px 0 32px 0;text-align:center;">
+                    <a href="https://www.casecompendiumx.in"
+                       style="display:inline-block;padding:13px 28px;background:#faf3e9;border:2px solid #2d5a27;border-radius:6px;font-family:Georgia,serif;font-size:14px;color:#2d5a27;text-decoration:none;font-weight:bold;">
+                      Go to Compendium X
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background:#e8ddd0;border-radius:0 0 10px 10px;padding:20px 40px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#888;line-height:1.5;">
+                You're receiving this because you signed up at
+                <a href="https://www.casecompendiumx.in" style="color:#2d5a27;text-decoration:none;">casecompendiumx.in</a>.<br>
+                &copy; ${new Date().getFullYear()} Compendium X. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+}
+
+function buildRawEmail(opts: {
+  from: string
+  to: string
+  subject: string
+  html: string
+}): string {
+  const boundary = `boundary_${randomUUID().replace(/-/g, '')}`
+  const message = [
+    `From: ${opts.from}`,
+    `To: ${opts.to}`,
+    `Subject: ${opts.subject}`,
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    '',
+    opts.html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
+    '',
+    `--${boundary}`,
+    'Content-Type: text/html; charset=UTF-8',
+    '',
+    opts.html,
+    '',
+    `--${boundary}--`,
+  ].join('\r\n')
+
+  return Buffer.from(message).toString('base64url')
+}
+
+export const sendWelcomeEmail = functionsV1
+  .runWith({ secrets: ['GMAIL_SA_KEY'], timeoutSeconds: 60, memory: '256MB' })
+  .auth.user()
+  .onCreate(async (user) => {
+    if (!user.email) return
+
+    const saKeyJson = process.env.GMAIL_SA_KEY
+    if (!saKeyJson) {
+      logger.error('sendWelcomeEmail: GMAIL_SA_KEY secret missing')
+      return
+    }
+
+    try {
+      console.log('[sendWelcomeEmail] parsing SA key...')
+      const saKey = JSON.parse(saKeyJson) as {
+        client_email: string
+        private_key: string
+      }
+      console.log('[sendWelcomeEmail] SA key parsed, client_email:', saKey.client_email)
+
+      const jwtClient = new google.auth.JWT({
+        email: saKey.client_email,
+        key: saKey.private_key,
+        scopes: ['https://www.googleapis.com/auth/gmail.send'],
+        subject: 'contact@casecompendiumx.in',
+      })
+      console.log('[sendWelcomeEmail] JWT client created, authorizing...')
+      await jwtClient.authorize()
+      console.log('[sendWelcomeEmail] authorized, generating verification link...')
+
+      const gmail = google.gmail({ version: 'v1', auth: jwtClient })
+
+      const verificationLink = user.emailVerified
+        ? null
+        : await getAuth().generateEmailVerificationLink(user.email).catch((e) => {
+            console.error('[sendWelcomeEmail] generateEmailVerificationLink failed:', String(e))
+            return null
+          })
+      console.log('[sendWelcomeEmail] verification link generated, sending email...')
+
+      const html = buildWelcomeEmailHtml(user.displayName ?? null, verificationLink)
+
+      const raw = buildRawEmail({
+        from: 'Compendium X <contact@casecompendiumx.in>',
+        to: user.email,
+        subject: 'Welcome to Compendium X',
+        html,
+      })
+
+      await gmail.users.messages.send({ userId: 'me', requestBody: { raw } })
+      console.log('[sendWelcomeEmail] email sent to', user.email)
+    } catch (err) {
+      console.error('[sendWelcomeEmail] FAILED uid=' + user.uid, err instanceof Error ? err.message : String(err), err instanceof Error ? err.stack : '')
+    }
+  })
