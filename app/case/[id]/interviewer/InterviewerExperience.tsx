@@ -651,24 +651,6 @@ function NotesEditor({
 }) {
 	const ref = useRef<HTMLTextAreaElement>(null)
 
-	useEffect(() => {
-		const el = ref.current
-		if (!el) return
-		const sel = el.selectionStart
-		const selEnd = el.selectionEnd
-		const prevScrollTop = el.scrollTop
-		el.style.height = 'auto'
-		const next = Math.min(Math.max(120, el.scrollHeight), 200)
-		el.style.height = `${next}px`
-		const capped = el.scrollHeight > 200
-		el.style.overflowY = capped ? 'auto' : 'hidden'
-		if (capped && document.activeElement === el) {
-			// Restore selection then let browser scroll cursor into view
-			el.setSelectionRange(sel, selEnd)
-		} else {
-			el.scrollTop = prevScrollTop
-		}
-	}, [value])
 
 	function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
 		const el = ref.current
@@ -782,10 +764,8 @@ function NotesEditor({
 			style={{
 				...style,
 				resize: 'none',
-				minHeight: '120px',
-				height: 'auto',
-				maxHeight: '200px',
-				overflowY: 'hidden',
+				height: '160px',
+				overflowY: 'auto',
 			}}
 		/>
 	)
