@@ -2289,7 +2289,7 @@ if (previewMode && !forcePreview) {
 											))}
 										</div>
 										<p style={{ margin: '0 0 16px', fontSize: '12px', color: 'rgba(92,64,51,0.6)', lineHeight: 1.55 }}>
-											Since not all parameters are rated, this case will show up as <span style={{ fontWeight: 600, color: '#2e2318' }}>unrated</span> on the candidate's dashboard — they won't see a score. You can go back and fill in the missing ratings, or submit as-is.
+											Since not all parameters are rated, this case will show up as unrated on the candidate's dashboard and they won't see a score. You can go back and fill in the missing ratings, or submit as-is.
 										</p>
 										<div style={{ display: 'flex', gap: '8px' }}>
 											<button
