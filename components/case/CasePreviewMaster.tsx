@@ -4539,17 +4539,20 @@ export function CaseInterviewerMaster({
     return '• '
   }
 
-  // Detect what type and value a line's marker is
+  // Detect what type and value a line's marker is.
+  // Order matters: number first, then single-char letter (a-z), then multi-char roman,
+  // then bullet. Single roman chars (i, v, x, c, d, m) are treated as letters when
+  // they appear alone — only multi-char sequences like "ii", "iv", "ix" are roman.
   function parseMarker(rest: string): { kind: MarkerKind; sep: string; body: string; marker: string } | null {
     // number: 1. 1) 1:
     const numM = rest.match(/^(\d+)([.):])\s(.*)/)
     if (numM) return { kind: 'number', sep: numM[2], body: numM[3], marker: numM[1] + numM[2] + ' ' }
-    // roman: i. i) i: — must come before letter to avoid 'i' matching as letter
-    const romM = rest.match(/^([ivxlcdm]+)([.):])\s(.*)/)
-    if (romM && fromRoman(romM[1]) > 0) return { kind: 'roman', sep: romM[2], body: romM[3], marker: romM[1] + romM[2] + ' ' }
-    // letter: a. a) a:
+    // single letter a-z (covers a. b. ... z. including i, c, v etc. when single char)
     const letM = rest.match(/^([a-z])([.):])\s(.*)/)
     if (letM) return { kind: 'letter', sep: letM[2], body: letM[3], marker: letM[1] + letM[2] + ' ' }
+    // roman: must be 2+ chars so "i." doesn't match here (caught above as letter)
+    const romM = rest.match(/^([ivxlcdm]{2,})([.):])\s(.*)/)
+    if (romM && fromRoman(romM[1]) > 0) return { kind: 'roman', sep: romM[2], body: romM[3], marker: romM[1] + romM[2] + ' ' }
     // bullet: • – -
     const bulM = rest.match(/^([•–-])\s(.*)/)
     if (bulM) return { kind: 'bullet', sep: '', body: bulM[2], marker: bulM[1] + ' ' }
@@ -4558,7 +4561,8 @@ export function CaseInterviewerMaster({
 
   function nextMarker(parsed: { kind: MarkerKind; sep: string; marker: string }): string {
     if (parsed.kind === 'number') {
-      const n = parseInt(parsed.marker)
+      // marker is e.g. "3. " — extract the number
+      const n = parseInt(parsed.marker.match(/^(\d+)/)?.[1] ?? '1')
       return (n + 1) + parsed.sep + ' '
     }
     if (parsed.kind === 'roman') {
@@ -4610,7 +4614,9 @@ export function CaseInterviewerMaster({
         }
         const newKind = childKind(parsed.kind)
         const newIndent = indent + '  '
-        const newMarker = makeFirstMarker(newKind, parsed.sep)
+        // Use parent's separator if non-empty, else default to '.' for new list types
+        const childSep = parsed.sep || '.'
+        const newMarker = makeFirstMarker(newKind, newKind === 'bullet' ? '' : childSep)
         const nl = newIndent + newMarker + parsed.body
         setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + newIndent.length + newMarker.length })
@@ -4620,10 +4626,10 @@ export function CaseInterviewerMaster({
         const newLevel = level - 1
         const newIndent = '  '.repeat(newLevel)
         const newKind = parentKind(parsed.kind)
-        const sep = parsed.sep || '.'
-        // Scan above lines to find continuation value at the new indent level
+        // Scan above lines to find the most recent sibling at the target level
         const aboveLines = val.slice(0, lineStart).split('\n')
         let startVal = 1
+        let foundSep = parsed.sep || '.'
         for (let i = aboveLines.length - 1; i >= 0; i--) {
           const aboveIndent = (aboveLines[i].match(/^( *)/)?.[1] ?? '')
           const aboveLevel = Math.floor(aboveIndent.length / 2)
@@ -4632,7 +4638,8 @@ export function CaseInterviewerMaster({
             const aboveRest = aboveLines[i].slice(aboveIndent.length)
             const aboveParsed = parseMarker(aboveRest)
             if (aboveParsed && aboveParsed.kind === newKind) {
-              if (newKind === 'number') startVal = parseInt(aboveParsed.marker) + 1
+              foundSep = aboveParsed.sep || '.'
+              if (newKind === 'number') startVal = parseInt(aboveParsed.marker.match(/^(\d+)/)?.[1] ?? '1') + 1
               else if (newKind === 'roman') startVal = fromRoman(aboveParsed.marker.replace(/[.):\s]/g, '')) + 1
               else if (newKind === 'letter') startVal = aboveParsed.marker.charCodeAt(0) - 96 + 1
             }
@@ -4640,9 +4647,9 @@ export function CaseInterviewerMaster({
           }
         }
         let newMarker: string
-        if (newKind === 'number') newMarker = startVal + sep + ' '
-        else if (newKind === 'roman') newMarker = toRoman(startVal) + sep + ' '
-        else if (newKind === 'letter') newMarker = String.fromCharCode(96 + startVal) + sep + ' '
+        if (newKind === 'number') newMarker = startVal + foundSep + ' '
+        else if (newKind === 'roman') newMarker = toRoman(startVal) + foundSep + ' '
+        else if (newKind === 'letter') newMarker = String.fromCharCode(96 + startVal) + foundSep + ' '
         else newMarker = '• '
         const nl = newIndent + newMarker + parsed.body
         setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
