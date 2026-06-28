@@ -2444,7 +2444,7 @@ if (previewMode && !forcePreview) {
 									</div>
 								) : (
 									/* ── State 1: Review (locked) ── */
-									<div style={{ padding: '14px 22px 22px' }}>
+									<div style={{ padding: '14px 22px 22px', maxHeight: 'min(80vh, 560px)', overflowY: 'auto' }}>
 										<div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
 											<button
 												type="button"
@@ -2476,7 +2476,7 @@ if (previewMode && !forcePreview) {
 
 										<div style={{ marginTop: '16px', borderTop: '1px solid rgba(92,64,51,0.09)', paddingTop: '13px' }}>
 											<p style={{ margin: '0 0 6px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.22em', color: 'rgba(92,64,51,0.45)' }}>Detailed Notes</p>
-											<div style={{ borderRadius: '10px', border: '1px solid rgba(92,64,51,0.1)', background: 'rgba(255,249,242,0.65)', padding: '9px 12px', fontSize: '12px', lineHeight: 1.55, color: '#2e2318', minHeight: '42px' }}>
+											<div className="ne-ta" style={{ borderRadius: '10px', border: '1px solid rgba(92,64,51,0.1)', background: 'rgba(255,249,242,0.65)', padding: '9px 12px', fontSize: '12px', lineHeight: 1.55, color: '#2e2318', minHeight: '42px', maxHeight: '160px', overflowY: 'auto' }}>
 												{notes.trim() ? <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{notes}</p> : <p style={{ margin: 0, fontStyle: 'italic', color: 'rgba(92,64,51,0.35)' }}>No notes added.</p>}
 											</div>
 										</div>
