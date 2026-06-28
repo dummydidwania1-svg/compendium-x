@@ -35,7 +35,9 @@ export function mapEvaluationDoc(id: string, value: DocumentData): EvaluationRec
     workspaceImageUrls.push(workspaceImageUrl)
   }
 
-  const isUnrated = value.isUnrated === true
+  const scoredCount = [value.structureScore, value.understandingScore ?? value.quantScore, value.deliveryScore ?? value.businessSenseScore, value.creativityScore ?? value.communicationScore]
+    .filter((s) => typeof s === 'number' && s > 0).length
+  const isUnrated = value.isUnrated === true || scoredCount < 4
 
   return {
     id,

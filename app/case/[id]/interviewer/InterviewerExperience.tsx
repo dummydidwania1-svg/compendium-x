@@ -2286,17 +2286,21 @@ if (previewMode && !forcePreview) {
 									/* ── Unrated confirmation state ── */
 									<div style={{ padding: '16px 22px 22px' }}>
 										<p style={{ margin: '12px 0 6px', fontSize: '14px', fontWeight: 600, color: '#2e2318', lineHeight: 1.35 }}>
-											{unratedCriteria.length === 1 ? '1 criterion hasn\'t been rated.' : `${unratedCriteria.length} criteria haven't been rated.`}
+											{unratedCriteria.length === LIVE_EVALUATION_CRITERIA.length
+												? 'No parameters have been rated.'
+												: `${unratedCriteria.length} of ${LIVE_EVALUATION_CRITERIA.length} parameters ${unratedCriteria.length === 1 ? 'hasn\'t' : 'haven\'t'} been rated.`}
 										</p>
-										<div style={{ marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+										<div style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
 											{unratedCriteria.map(c => (
 												<div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-													<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(146,64,14,0.55)', flexShrink: 0, display: 'inline-block' }} />
-													<span style={{ fontSize: '12px', color: 'rgba(92,64,51,0.75)' }}>{c.label}</span>
+													<span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(146,64,14,0.45)', flexShrink: 0, display: 'inline-block' }} />
+													<span style={{ fontSize: '12px', color: 'rgba(92,64,51,0.7)' }}>{c.label}</span>
 												</div>
 											))}
 										</div>
-										<p style={{ margin: '0 0 16px', fontSize: '12px', color: 'rgba(92,64,51,0.6)', lineHeight: 1.5 }}>Do you still want to submit? Unrated criteria will be left blank.</p>
+										<p style={{ margin: '0 0 16px', fontSize: '12px', color: 'rgba(92,64,51,0.6)', lineHeight: 1.55 }}>
+											Since not all parameters are rated, this case will show up as <span style={{ fontWeight: 600, color: '#2e2318' }}>unrated</span> on the candidate's dashboard — they won't see a score. You can go back and fill in the missing ratings, or submit as-is.
+										</p>
 										<div style={{ display: 'flex', gap: '8px' }}>
 											<button
 												type="button"

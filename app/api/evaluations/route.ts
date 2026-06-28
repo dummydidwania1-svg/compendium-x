@@ -93,6 +93,9 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
   const evaluationRef = adminDb.collection('evaluations').doc()
   const batch = adminDb.batch()
 
+  const scoredCount = [input.scores.structure, input.scores.understanding, input.scores.delivery, input.scores.creativity]
+    .filter((s) => s !== undefined).length
+
   batch.set(evaluationRef, {
     caseId: input.caseId,
     caseTitle,
@@ -107,6 +110,7 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
     ...(input.scores.understanding !== undefined && { understandingScore: input.scores.understanding }),
     ...(input.scores.delivery !== undefined && { deliveryScore: input.scores.delivery }),
     ...(input.scores.creativity !== undefined && { creativityScore: input.scores.creativity }),
+    ...(scoredCount < 4 && { isUnrated: true }),
     notes: input.notes,
     interviewerObservations: input.notes,
     createdAt: FieldValue.serverTimestamp(),
