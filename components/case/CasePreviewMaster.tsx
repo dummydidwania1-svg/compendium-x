@@ -4511,7 +4511,7 @@ export function CaseInterviewerMaster({
 
   // ─── Hover-interactive eval scores ────────────────────────
   const [hoverScore, setHoverScore] = useState<{ id: string; value: number } | null>(null)
-  const evalClickCooldown = useRef<Record<string, number>>({})
+  const evalClickCooldown = useRef<number>(0)
 
   // ─── Notes textarea smart-formatting ───────────────────────
   const notesTaRef = useRef<HTMLTextAreaElement>(null)
@@ -5445,7 +5445,7 @@ export function CaseInterviewerMaster({
                             style={{ height: '16px', cursor: 'pointer' }}
                             onMouseMove={e => {
                               const now = Date.now()
-                              if ((evalClickCooldown.current[c.id] ?? 0) > now) return
+                              if (rated && evalClickCooldown.current > now) return
                               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                               const raw = (e.clientX - rect.left) / rect.width
                               const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
@@ -5458,7 +5458,7 @@ export function CaseInterviewerMaster({
                               const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
                               setScores({ ...scores, [c.id]: snapped })
                               setHoverScore(null)
-                              evalClickCooldown.current[c.id] = Date.now() + 3000
+                              evalClickCooldown.current = Date.now() + 4000
                             }}
                           >
                             {/* Track background */}

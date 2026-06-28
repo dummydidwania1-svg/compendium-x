@@ -821,7 +821,7 @@ export function InterviewerPageInner({
 
 	// ── Eval overlay hover state ──
 	const [evalHoverScore, setEvalHoverScore] = useState<{ id: string; value: number } | null>(null)
-	const evalClickCooldownRef = useRef<Record<string, number>>({})
+	const evalClickCooldownRef = useRef<number>(0)
 
 	// ── Eval overlay (replaces full-page feedback view for the End Case button) ──
 	const [showEvalOverlay, setShowEvalOverlay] = useState(false)
@@ -2362,7 +2362,7 @@ if (previewMode && !forcePreview) {
 															style={{ position: 'relative', height: '16px', cursor: 'pointer', width: '100%' }}
 															onMouseMove={e => {
 																const now = Date.now()
-																if ((evalClickCooldownRef.current[c.id] ?? 0) > now) return
+																if (rated && evalClickCooldownRef.current > now) return
 																const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
 																const raw = (e.clientX - rect.left) / rect.width
 																const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
@@ -2375,7 +2375,7 @@ if (previewMode && !forcePreview) {
 																const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
 																setScores({ ...scores, [c.id]: snapped })
 																setEvalHoverScore(null)
-																evalClickCooldownRef.current[c.id] = Date.now() + 3000
+																evalClickCooldownRef.current = Date.now() + 4000
 															}}
 														>
 															{/* Track */}
