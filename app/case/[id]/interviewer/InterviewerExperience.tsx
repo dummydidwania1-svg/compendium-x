@@ -823,26 +823,6 @@ export function InterviewerPageInner({
 	const showEvalOverlayRef = useRef(false)
 	useEffect(() => { showEvalOverlayRef.current = showEvalOverlay }, [showEvalOverlay])
 
-	// When overlay is in success state, start a 3s auto-close countdown once
-	// audio upload is no longer in progress (uploaded, failed, not captured, or idle).
-	useEffect(() => {
-		if (!overlaySuccess) return
-		if (interviewerUploadState === 'uploading') return
-		setOverlayAutoClose(3)
-		const iv = setInterval(() => {
-			setOverlayAutoClose(prev => {
-				if (prev <= 1) {
-					clearInterval(iv)
-					window.open('', '_self')
-					window.close()
-					return 0
-				}
-				return prev - 1
-			})
-		}, 1000)
-		return () => clearInterval(iv)
-	}, [overlaySuccess, interviewerUploadState])
-
 	const closeEvalOverlay = useCallback(() => {
 		setShowEvalOverlay(false)
 		setEditingOverlay(false)
@@ -873,6 +853,27 @@ export function InterviewerPageInner({
 	const [interviewerUploadState, setInterviewerUploadState] = useState<
 		'idle' | 'uploading' | 'uploaded' | 'upload_failed' | 'not_captured'
 	>('idle')
+
+	// When overlay is in success state, start a 3s auto-close countdown once
+	// audio upload is no longer in progress (uploaded, failed, not captured, or idle).
+	useEffect(() => {
+		if (!overlaySuccess) return
+		if (interviewerUploadState === 'uploading') return
+		setOverlayAutoClose(3)
+		const iv = setInterval(() => {
+			setOverlayAutoClose(prev => {
+				if (prev <= 1) {
+					clearInterval(iv)
+					window.open('', '_self')
+					window.close()
+					return 0
+				}
+				return prev - 1
+			})
+		}, 1000)
+		return () => clearInterval(iv)
+	}, [overlaySuccess, interviewerUploadState])
+
 	// Remote mode: candidate and interviewer are on separate devices, separate browsers.
 	// No localStorage sharing — all cross-device coordination goes through Firestore.
 	const isRemoteMode = !isLocalMode
