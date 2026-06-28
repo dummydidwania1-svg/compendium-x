@@ -4525,10 +4525,12 @@ export function CaseInterviewerMaster({
 
   type MarkerKind = 'number' | 'roman' | 'letter' | 'bullet'
 
-  // Hierarchy chain: Tab moves right, Shift+Tab moves left
+  // Hierarchy cycles: 1 -> i -> a -> • -> 1 -> i -> a -> • ...
+  // Starting at the current marker's position in the chain, Tab advances, Shift+Tab retreats.
+  // The cycle is determined by where in the chain the TOPMOST marker on this indented block sits.
   const KIND_CHAIN: MarkerKind[] = ['number', 'roman', 'letter', 'bullet']
-  function childKind(k: MarkerKind): MarkerKind { const i = KIND_CHAIN.indexOf(k); return KIND_CHAIN[Math.min(i + 1, KIND_CHAIN.length - 1)] }
-  function parentKind(k: MarkerKind): MarkerKind { const i = KIND_CHAIN.indexOf(k); return KIND_CHAIN[Math.max(i - 1, 0)] }
+  function childKind(k: MarkerKind): MarkerKind { const i = KIND_CHAIN.indexOf(k); return KIND_CHAIN[(i + 1) % KIND_CHAIN.length] }
+  function parentKind(k: MarkerKind): MarkerKind { const i = KIND_CHAIN.indexOf(k); return KIND_CHAIN[(i - 1 + KIND_CHAIN.length) % KIND_CHAIN.length] }
 
   function makeFirstMarker(kind: MarkerKind, sep: string): string {
     if (kind === 'number') return '1' + sep + ' '
@@ -4987,6 +4989,16 @@ export function CaseInterviewerMaster({
               </p>
             </section>
 
+            {/* Step indicator — same as preview mode */}
+            <div
+              className="sticky z-40 flex items-center gap-3 py-2"
+              style={{ top: '70px', background: '#fff8f0' }}
+            >
+              <div className="flex-1">
+                <StepIndicator steps={STEPS} activeStep={activeStep} onStepClick={handleStepClick} />
+              </div>
+            </div>
+
             {/* Walkthrough */}
             <section ref={walkthroughRef2} className="relative z-10 pt-6">
               <p className="mb-6 text-[12px] text-[#5C4033]/55 tracking-wide lg:hidden">
@@ -5329,7 +5341,7 @@ export function CaseInterviewerMaster({
                   onChange={e => setNotes(e.target.value)}
                   onKeyDown={handleNotesKeyDown}
                   onContextMenu={e => { e.preventDefault(); setNotesCtxMenu({ x: e.clientX, y: e.clientY }) }}
-                  placeholder={"Jot observations here…\nTab ↓ indent  ·  Shift+Tab ↑ outdent  ·  Enter continues list\n1.  i.  a.  •  –  all supported"}
+                  placeholder={"Jot observations here...\nTab down  Shift+Tab up  Enter continues list\n1.  i.  a.  -  all supported"}
                   className="notes-ta flex-1 min-h-0 w-full resize-none rounded-[10px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all overflow-y-auto"
                   style={{ fontFamily: "'Work Sans', sans-serif" }}
                 />

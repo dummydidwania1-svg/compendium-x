@@ -744,48 +744,21 @@ function NotesEditor({
 	}
 
 	return (
-		<div style={{ position: 'relative' }}>
-			<textarea
-				ref={ref}
-				value={value}
-				onChange={handleChange}
-				onKeyDown={handleKeyDown}
-				placeholder={placeholder}
-				className={className}
-				style={{
-					...style,
-					overflow: 'hidden',
-					resize: 'none',
-					minHeight: '120px',
-					height: 'auto',
-				}}
-			/>
-			<div style={{
-				marginTop: '6px',
-				fontSize: '10.5px',
-				lineHeight: 1.6,
-				color: 'rgba(92,64,51,0.42)',
-				userSelect: 'none',
-			}}>
-				<span style={{ display: 'inline-block', marginRight: '24px' }}>
-					<span style={{ color: 'rgba(92,64,51,0.58)', fontWeight: 600 }}>Tab / Shift+Tab</span>
-					{' '}→ indent · de-indent
-				</span>
-				<span>
-					<span style={{ color: 'rgba(92,64,51,0.58)', fontWeight: 600 }}>Enter</span>
-					{' '}→ continue list
-				</span>
-				<br />
-				<span style={{ display: 'inline-block', marginRight: '24px' }}>
-					<span style={{ color: 'rgba(92,64,51,0.58)' }}>1.&nbsp;&nbsp;a)&nbsp;&nbsp;i)&nbsp;&nbsp;•&nbsp;&nbsp;–</span>
-					{' '}start a list at any level
-				</span>
-				<span>
-					<span style={{ color: 'rgba(92,64,51,0.58)' }}>-</span>
-					{' '}→ auto-converts to bullet •
-				</span>
-			</div>
-		</div>
+		<textarea
+			ref={ref}
+			value={value}
+			onChange={handleChange}
+			onKeyDown={handleKeyDown}
+			placeholder={placeholder}
+			className={className}
+			style={{
+				...style,
+				overflow: 'hidden',
+				resize: 'none',
+				minHeight: '120px',
+				height: 'auto',
+			}}
+		/>
 	)
 }
 
