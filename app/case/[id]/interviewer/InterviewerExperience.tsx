@@ -610,6 +610,21 @@ export function InterviewerPageInner({
 	const [notes, setNotes] = useState('')
 	const [submitting, setSubmitting] = useState(false)
 
+	// ── Eval overlay (replaces full-page feedback view for the End Case button) ──
+	const [showEvalOverlay, setShowEvalOverlay] = useState(false)
+	const [editingOverlay, setEditingOverlay] = useState(false)
+	const [showUnratedConfirm, setShowUnratedConfirm] = useState(false)
+	const [overlaySubmitError, setOverlaySubmitError] = useState('')
+	const [overlaySuccess, setOverlaySuccess] = useState(false)
+	const showEvalOverlayRef = useRef(false)
+	useEffect(() => { showEvalOverlayRef.current = showEvalOverlay }, [showEvalOverlay])
+
+	const closeEvalOverlay = useCallback(() => {
+		setShowEvalOverlay(false)
+		setEditingOverlay(false)
+		setShowUnratedConfirm(false)
+	}, [])
+
 	// ── Replace / Cancel / Back guard state ─────────────────────────────────────
 	const [showReplaceCaseConfirm, setShowReplaceCaseConfirm] = useState(false)
 	const [showCancelConfirm, setShowCancelConfirm] = useState(false)
@@ -1178,7 +1193,7 @@ export function InterviewerPageInner({
 	// Auto-submit helper shared by both triggers
 	const autoEndSession = useCallback(async () => {
 		if (autoEndFiredRef.current || !lobbyId || !resolvedCaseId) return
-		if (Object.values(scores).some((v) => v < 1)) return
+		if (Object.values(scores).some((v) => v === 0)) return
 		autoEndFiredRef.current = true
 
 		try {
@@ -1482,7 +1497,11 @@ export function InterviewerPageInner({
 		const onPopstate = (e: PopStateEvent) => {
 			// Re-push so the user stays on this page until they confirm
 			history.pushState({ backGuard: true }, '', window.location.href)
-			// Only intercept our own guard entry, not programmatic pops
+			// If the eval overlay is open, back button just closes it
+			if (showEvalOverlayRef.current) {
+				closeEvalOverlay()
+				return
+			}
 			if (e.state && typeof e.state === 'object' && 'backGuard' in e.state) {
 				setShowBackGuardToast(true)
 			} else {
@@ -1584,19 +1603,26 @@ useEffect(() => {
   router.replace(repoUrl)
 }, [loading, loadError, caseData, notFound, lobbyId, searchParams, router])
 
-	const handleSubmitFeedback = async () => {
+	const handleSubmitFeedback = async (opts?: { force?: boolean }) => {
 		if (!resolvedCaseId || !caseData) return
-		if (Object.values(scores).some((value) => value < 1)) {
+		if (!opts?.force && Object.values(scores).some((value) => value === 0)) {
 			setSubmitError('Please rate all 4 criteria before submitting.')
 			return
 		}
 		setSubmitting(true)
 		setSubmitError('')
-		const interviewerUser = await waitForAuthUser()
-		if (!interviewerUser) {
-			setSubmitting(false)
-			router.push(`/login?redirect=${encodeURIComponent(`/case/${resolvedCaseId}/interviewer`)}`)
-			return
+		setOverlaySubmitError('')
+
+		// For the overlay flow, skip the client-side auth check entirely —
+		// the API validates auth on its own. waitForAuthUser() can time out
+		// mid-session and block the submit silently.
+		if (!showEvalOverlay) {
+			const interviewerUser = await waitForAuthUser()
+			if (!interviewerUser) {
+				setSubmitting(false)
+				router.push(`/login?redirect=${encodeURIComponent(`/case/${resolvedCaseId}/interviewer`)}`)
+				return
+			}
 		}
 
 		try {
@@ -1604,15 +1630,20 @@ useEffect(() => {
 				lobbyId: lobbyId ?? null,
 				caseId: resolvedCaseId,
 				scores: {
-					structure: scores.structure,
-					understanding: scores.understanding,
-					delivery: scores.delivery,
-					creativity: scores.creativity,
+					structure: scores.structure === 0 ? undefined : scores.structure,
+					understanding: scores.understanding === 0 ? undefined : scores.understanding,
+					delivery: scores.delivery === 0 ? undefined : scores.delivery,
+					creativity: scores.creativity === 0 ? undefined : scores.creativity,
 				},
 				notes,
 			})
 		} catch (error) {
-			setSubmitError(error instanceof Error ? error.message : 'Unable to save feedback.')
+			const msg = error instanceof Error ? error.message : 'Unable to save feedback.'
+			if (showEvalOverlay) {
+				setOverlaySubmitError(msg)
+			} else {
+				setSubmitError(msg)
+			}
 			setSubmitting(false)
 			return
 		}
@@ -1636,6 +1667,18 @@ useEffect(() => {
 		// Fire-and-forget: the upload writes to the subcollection independently
 		// of the eval submission; the Cloud Function merges both tracks after.
 		void stopInterviewerRecordingAndUpload()
+
+		// Overlay submits: try to close the tab; fall back to a success state
+		// if the browser blocks window.close() (e.g. manually-opened tab in dev)
+		if (showEvalOverlay) {
+			window.open('', '_self')
+			window.close()
+			setTimeout(() => {
+				setSubmitting(false)
+				setOverlaySuccess(true)
+			}, 400)
+			return
+		}
 
 		if (lobbyId) {
 			setCurrentView('success')
@@ -1738,7 +1781,7 @@ if (previewMode && !forcePreview) {
 					setNotes={setNotes}
 					scores={scores}
 					setScores={setScores}
-					onEndCase={() => setCurrentView('feedback')}
+					onEndCase={() => { setShowEvalOverlay(true); setEditingOverlay(false) }}
 					onReplaceCase={lobbyId && !previewMode ? () => setShowReplaceCaseConfirm(true) : undefined}
 					onCancelSession={lobbyId && !previewMode ? () => setShowCancelConfirm(true) : undefined}
 				/>
@@ -1971,6 +2014,225 @@ if (previewMode && !forcePreview) {
 						</div>
 					</div>
 				)}
+
+				{/* ── End Case & Evaluate overlay ── */}
+				{showEvalOverlay && (() => {
+					const unratedCriteria = LIVE_EVALUATION_CRITERIA.filter(c => scores[c.id] === 0)
+					const hasUnrated = unratedCriteria.length > 0
+					return (
+						<div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif" }}>
+							{/* Scrim — clicking closes only in review state, not during edit or confirm */}
+							<div
+								style={{ position: 'absolute', inset: 0, background: 'rgba(36,26,16,0.48)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', animation: 'ixo-scrim-in 0.3s ease forwards' }}
+								onClick={() => { if (!editingOverlay && !showUnratedConfirm) setShowEvalOverlay(false) }}
+							/>
+							{/* Card */}
+							<div style={{ position: 'relative', zIndex: 1, width: 'min(420px, calc(100vw - 32px))', borderRadius: '22px', border: '1px solid rgba(61,90,53,0.18)', background: 'rgba(255,250,243,0.96)', backdropFilter: 'blur(40px) saturate(1.9)', WebkitBackdropFilter: 'blur(40px) saturate(1.9)', boxShadow: '0 12px 48px rgba(36,26,16,0.18), 0 2px 8px rgba(36,26,16,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', overflow: 'hidden', animation: 'ixo-card-in 0.32s cubic-bezier(0.22,1,0.36,1) forwards' }}>
+								{/* Green top accent */}
+								<div style={{ height: '3px', background: 'linear-gradient(90deg, #3D5A35 0%, rgba(61,90,53,0.15) 100%)' }} />
+
+								<style>{`
+									.eo-range{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;cursor:pointer}
+									.eo-range:focus{outline:none}
+									.eo-range::-webkit-slider-runnable-track{height:3px;border-radius:1px;background:rgba(92,64,51,0.15)}
+									.eo-range::-moz-range-track{height:3px;border-radius:2px;background:rgba(92,64,51,0.15)}
+									.eo-range::-moz-range-progress{height:3px;border-radius:2px;background:#3D5A35}
+									.eo-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;margin-top:-6px;width:15px;height:15px;border-radius:50%;background:#3D5A35;box-shadow:0 1px 4px rgba(61,90,53,0.35),0 0 0 3px rgba(61,90,53,0.12)}
+									.eo-range::-moz-range-thumb{width:15px;height:15px;border:none;border-radius:50%;background:#3D5A35;box-shadow:0 1px 4px rgba(61,90,53,0.35),0 0 0 3px rgba(61,90,53,0.12)}
+									.eo-range.eo-nr::-webkit-slider-thumb{background:#efe8de;box-shadow:0 0 0 1.5px rgba(92,64,51,0.25)}
+									.eo-range.eo-nr::-moz-range-thumb{background:#efe8de;box-shadow:0 0 0 1.5px rgba(92,64,51,0.25)}
+									.eo-range.eo-nr::-moz-range-progress{background:transparent}
+								`}</style>
+
+								{/* Shared heading */}
+								<div style={{ padding: '18px 22px 0' }}>
+									<p style={{ margin: 0, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.26em', color: '#3D5A35' }}>Final Evaluation</p>
+								</div>
+
+								{overlaySubmitError && (
+									<div style={{ margin: '10px 22px 0', padding: '8px 12px', borderRadius: '8px', background: 'rgba(146,64,14,0.07)', border: '1px solid rgba(146,64,14,0.18)' }}>
+										<p style={{ margin: 0, fontSize: '11.5px', color: '#92400e', lineHeight: 1.4 }}>{overlaySubmitError}</p>
+									</div>
+								)}
+
+								{overlaySuccess ? (
+									/* ── Success state (tab couldn't be closed by browser) ── */
+									<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+										<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+											<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+										</div>
+										<p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>Evaluation submitted.</p>
+										<p style={{ margin: 0, fontSize: '12px', color: 'rgba(92,64,51,0.6)', lineHeight: 1.5 }}>You can close this tab.</p>
+									</div>
+								) : showUnratedConfirm ? (
+									/* ── Unrated confirmation state ── */
+									<div style={{ padding: '16px 22px 22px' }}>
+										<p style={{ margin: '12px 0 6px', fontSize: '14px', fontWeight: 600, color: '#2e2318', lineHeight: 1.35 }}>
+											{unratedCriteria.length === 1 ? '1 criterion hasn\'t been rated.' : `${unratedCriteria.length} criteria haven't been rated.`}
+										</p>
+										<div style={{ marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+											{unratedCriteria.map(c => (
+												<div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+													<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(146,64,14,0.55)', flexShrink: 0, display: 'inline-block' }} />
+													<span style={{ fontSize: '12px', color: 'rgba(92,64,51,0.75)' }}>{c.label}</span>
+												</div>
+											))}
+										</div>
+										<p style={{ margin: '0 0 16px', fontSize: '12px', color: 'rgba(92,64,51,0.6)', lineHeight: 1.5 }}>Do you still want to submit? Unrated criteria will be left blank.</p>
+										<div style={{ display: 'flex', gap: '8px' }}>
+											<button
+												type="button"
+												disabled={submitting}
+												onClick={() => void handleSubmitFeedback({ force: true })}
+												style={{ flex: 1, borderRadius: '12px', background: '#3D5A35', color: '#efe8de', border: 'none', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.22em', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: "'Work Sans', sans-serif" }}
+											>
+												{submitting ? 'Submitting…' : 'Yes, Submit'}
+											</button>
+											<button
+												type="button"
+												onClick={() => { setShowUnratedConfirm(false); setEditingOverlay(true) }}
+												style={{ flexShrink: 0, borderRadius: '12px', background: 'transparent', color: 'rgba(92,64,51,0.65)', border: '1px solid rgba(92,64,51,0.2)', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+											>
+												Go Back &amp; Edit
+											</button>
+										</div>
+										<button
+											type="button"
+											onClick={closeEvalOverlay}
+											style={{ marginTop: '10px', width: '100%', background: 'none', border: 'none', padding: '4px', fontSize: '11px', color: 'rgba(92,64,51,0.4)', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+										>
+											← Back to session
+										</button>
+									</div>
+								) : editingOverlay ? (
+									/* ── State 2: Editing ── */
+									<div style={{ padding: '14px 22px 22px' }}>
+										<div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+											{LIVE_EVALUATION_CRITERIA.map(c => {
+												const score = scores[c.id]
+												const rated = score > 0
+												const pct = (score / 5) * 100
+												return (
+													<div key={c.id}>
+														<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '1px' }}>
+															<span style={{ fontSize: '12.5px', fontWeight: 600, color: '#2e2318' }}>{c.label}</span>
+															<span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', color: rated ? '#3D5A35' : '#b8a898' }}>{rated ? `${score}/5` : 'NR'}</span>
+														</div>
+														<input
+															type="range" min="0" max="5" step="0.5" value={score}
+															onChange={e => setScores({ ...scores, [c.id]: parseFloat(e.target.value) })}
+															className={`eo-range${rated ? '' : ' eo-nr'}`}
+															style={rated ? { background: `linear-gradient(90deg,#3D5A35 ${pct}%,rgba(92,64,51,0.15) ${pct}%)`, height: '3px', borderRadius: '2px' } : undefined}
+														/>
+														<div style={{ marginTop: '2px', display: 'flex', justifyContent: 'space-between', fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#b8a898' }}>
+															<span style={{ fontStyle: 'italic' }}>NR</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+														</div>
+													</div>
+												)
+											})}
+										</div>
+
+										<div style={{ marginTop: '14px', borderTop: '1px solid rgba(92,64,51,0.09)', paddingTop: '12px' }}>
+											<p style={{ margin: '0 0 6px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.22em', color: 'rgba(92,64,51,0.45)' }}>Detailed Notes</p>
+											<textarea
+												value={notes}
+												onChange={e => setNotes(e.target.value)}
+												placeholder="What did they do well? What should they improve?"
+												style={{ width: '100%', height: '72px', resize: 'none', borderRadius: '10px', border: '1px solid rgba(92,64,51,0.13)', background: 'rgba(255,248,238,0.7)', padding: '9px 12px', fontSize: '12px', lineHeight: 1.5, color: '#2e2318', fontFamily: "'Work Sans', sans-serif", outline: 'none', boxSizing: 'border-box' }}
+											/>
+										</div>
+
+										<div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+											<button
+												type="button"
+												disabled={submitting}
+												onClick={() => {
+													if (LIVE_EVALUATION_CRITERIA.some(c => scores[c.id] === 0)) {
+														setShowUnratedConfirm(true)
+													} else {
+														void handleSubmitFeedback()
+													}
+												}}
+												style={{ flex: 1, borderRadius: '12px', background: '#3D5A35', color: '#efe8de', border: 'none', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.24em', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: "'Work Sans', sans-serif" }}
+											>
+												{submitting ? 'Submitting…' : 'Save & Submit'}
+											</button>
+											<button
+												type="button"
+												onClick={() => setEditingOverlay(false)}
+												style={{ flexShrink: 0, borderRadius: '12px', background: 'transparent', color: 'rgba(92,64,51,0.65)', border: '1px solid rgba(92,64,51,0.2)', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+											>
+												Cancel
+											</button>
+										</div>
+										<p style={{ marginTop: '7px', textAlign: 'center', fontSize: '9.5px', color: 'rgba(92,64,51,0.35)' }}>Save &amp; Submit closes the case · Cancel returns to the review</p>
+									</div>
+								) : (
+									/* ── State 1: Review (locked) ── */
+									<div style={{ padding: '14px 22px 22px' }}>
+										<div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
+											<button
+												type="button"
+												onClick={() => setEditingOverlay(true)}
+												style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', borderRadius: '999px', border: '1px solid rgba(92,64,51,0.18)', background: 'rgba(255,248,238,0.8)', color: 'rgba(92,64,51,0.62)', padding: '4px 13px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+											>
+												<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+													<path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+												</svg>
+												Edit
+											</button>
+										</div>
+
+										<div>
+											{LIVE_EVALUATION_CRITERIA.map((c, idx) => {
+												const score = scores[c.id]
+												const isLast = idx === LIVE_EVALUATION_CRITERIA.length - 1
+												return (
+													<div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 0', borderBottom: isLast ? 'none' : '1px solid rgba(92,64,51,0.07)' }}>
+														<span style={{ fontSize: '13px', fontWeight: 600, color: '#2e2318', flexShrink: 0 }}>{c.label}</span>
+														<span style={{ flex: 1, display: 'block', borderBottom: '1px dashed rgba(92,64,51,0.16)', height: 0 }} />
+														<span style={{ flexShrink: 0, fontSize: '14px', fontWeight: 700, color: score > 0 ? '#3D5A35' : '#b8a898' }}>
+															{score > 0 ? <>{score}<span style={{ fontSize: '10px', fontWeight: 500, color: 'rgba(92,64,51,0.4)' }}>/5</span></> : 'NR'}
+														</span>
+													</div>
+												)
+											})}
+										</div>
+
+										<div style={{ marginTop: '16px', borderTop: '1px solid rgba(92,64,51,0.09)', paddingTop: '13px' }}>
+											<p style={{ margin: '0 0 6px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.22em', color: 'rgba(92,64,51,0.45)' }}>Detailed Notes</p>
+											<div style={{ borderRadius: '10px', border: '1px solid rgba(92,64,51,0.1)', background: 'rgba(255,249,242,0.65)', padding: '9px 12px', fontSize: '12px', lineHeight: 1.55, color: '#2e2318', minHeight: '42px' }}>
+												{notes.trim() ? <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{notes}</p> : <p style={{ margin: 0, fontStyle: 'italic', color: 'rgba(92,64,51,0.35)' }}>No notes added.</p>}
+											</div>
+										</div>
+
+										<button
+											type="button"
+											disabled={submitting}
+											onClick={() => {
+												if (hasUnrated) {
+													setShowUnratedConfirm(true)
+												} else {
+													void handleSubmitFeedback()
+												}
+											}}
+											style={{ marginTop: '16px', width: '100%', borderRadius: '12px', background: '#3D5A35', color: '#efe8de', border: 'none', padding: '13px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.28em', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.6 : 1, fontFamily: "'Work Sans', sans-serif", boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(61,90,53,0.25), inset 0 1px 0 rgba(255,255,255,0.12)' }}
+										>
+											{submitting ? 'Submitting…' : 'Submit & Close Case'}
+										</button>
+										<button
+											type="button"
+											onClick={closeEvalOverlay}
+											style={{ marginTop: '10px', width: '100%', background: 'none', border: 'none', padding: '4px', fontSize: '11px', color: 'rgba(92,64,51,0.4)', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+										>
+											← Back to session
+										</button>
+									</div>
+								)}
+							</div>
+						</div>
+					)
+				})()}
 			</>
 		)
 
@@ -2343,7 +2605,7 @@ if (previewMode && !forcePreview) {
 		)
 	}
 
-	const allScored = LIVE_EVALUATION_CRITERIA.every((c) => scores[c.id] >= 1)
+	const allScored = LIVE_EVALUATION_CRITERIA.every((c) => scores[c.id] > 0)
 
 	return (
 		<div
@@ -2525,7 +2787,7 @@ if (previewMode && !forcePreview) {
 				) : null}
 
 				<button
-					onClick={handleSubmitFeedback}
+					onClick={() => void handleSubmitFeedback()}
 					disabled={submitting || !allScored}
 					className="mt-6 w-full rounded-full bg-[#3D5A35] px-4 py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-[#34502d] disabled:cursor-not-allowed disabled:opacity-55"
 					style={{ boxShadow: '0 6px 16px rgba(61,90,53,0.18), inset 0 1px 0 rgba(255,255,255,0.18)' }}

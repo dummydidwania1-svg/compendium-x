@@ -4451,6 +4451,20 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
   )
 }
 
+/* ── Notes textarea formatting helpers ─────────────────────── */
+function toRoman(n: number): string {
+  const map: [number, string][] = [[10,'x'],[9,'ix'],[5,'v'],[4,'iv'],[1,'i']]
+  let r = ''
+  for (const [v, s] of map) { while (n >= v) { r += s; n -= v } }
+  return r
+}
+function fromRoman(s: string): number {
+  const m: Record<string,number> = { i:1, v:5, x:10, l:50, c:100, d:500, m:1000 }
+  let r = 0, prev = 0
+  for (const ch of [...s].reverse()) { const v = m[ch] ?? 0; r += v < prev ? -v : v; prev = v }
+  return r
+}
+
 /* ═══════════════════════════════════════════════════════════
    CaseInterviewerMaster — same UI as preview, no forum,
    with sticky notes/ratings panel on the right
@@ -4494,6 +4508,152 @@ export function CaseInterviewerMaster({
     sync(); mq.addEventListener('change', sync)
     return () => mq.removeEventListener('change', sync)
   }, [])
+
+  // ─── Notes textarea smart-formatting ───────────────────────
+  const notesTaRef = useRef<HTMLTextAreaElement>(null)
+  const [notesCtxMenu, setNotesCtxMenu] = useState<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    if (!notesCtxMenu) return
+    const close = () => setNotesCtxMenu(null)
+    document.addEventListener('click', close)
+    document.addEventListener('contextmenu', close)
+    return () => { document.removeEventListener('click', close); document.removeEventListener('contextmenu', close) }
+  }, [notesCtxMenu])
+
+  function handleNotesKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    const ta = e.currentTarget
+    const val = ta.value
+    const cur = ta.selectionStart
+    const curEnd = ta.selectionEnd
+    const lineStart = val.lastIndexOf('\n', cur - 1) + 1
+    const lineEndIdx = val.indexOf('\n', cur)
+    const eol = lineEndIdx === -1 ? val.length : lineEndIdx
+
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      const line = val.slice(lineStart, eol)
+      if (!e.shiftKey) {
+        const numM = line.match(/^(\d+)\. (.*)/)
+        if (numM) {
+          const nl = '  i. ' + numM[2]
+          setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + '  i. '.length })
+          return
+        }
+        const bulM = line.match(/^([-•*]) (.*)/)
+        if (bulM) {
+          const nl = '  - ' + bulM[2]
+          setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + '  - '.length + bulM[2].length })
+          return
+        }
+        setNotes(val.slice(0, cur) + '  ' + val.slice(curEnd))
+        requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = cur + 2 })
+      } else {
+        const romM = line.match(/^  ([ivxlcdm]+)\. (.*)/)
+        const subBulM = line.match(/^  ([-•*]) (.*)/)
+        if (romM) {
+          const above = val.slice(0, lineStart).split('\n')
+          let pn = 1
+          for (let i = above.length - 1; i >= 0; i--) {
+            const pm = above[i].match(/^(\d+)\. /); if (pm) { pn = parseInt(pm[1]) + 1; break }
+          }
+          const nl = `${pn}. ` + romM[2]
+          setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + nl.length })
+        } else if (subBulM) {
+          const nl = '- ' + subBulM[2]
+          setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + nl.length })
+        }
+      }
+      return
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const line = val.slice(lineStart, cur)
+      const numM = line.match(/^(\d+)\. (.*)/)
+      const romM = !numM && line.match(/^  ([ivxlcdm]+)\. (.*)/)
+      const bulM = !numM && !romM && line.match(/^([-•*]) (.*)/)
+      const subBulM = !numM && !romM && !bulM && line.match(/^  ([-•*]) (.*)/)
+
+      if (numM) {
+        e.preventDefault()
+        if (!numM[2].trim()) {
+          setNotes(val.slice(0, lineStart) + val.slice(cur))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart })
+        } else {
+          const ins = '\n' + (parseInt(numM[1]) + 1) + '. '
+          setNotes(val.slice(0, cur) + ins + val.slice(curEnd))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = cur + ins.length })
+        }
+        return
+      }
+      if (romM) {
+        e.preventDefault()
+        if (!romM[2].trim()) {
+          const above = val.slice(0, lineStart).split('\n')
+          let pn = 1
+          for (let i = above.length - 1; i >= 0; i--) {
+            const pm = above[i].match(/^(\d+)\. /); if (pm) { pn = parseInt(pm[1]) + 1; break }
+          }
+          const nl = `${pn}. `
+          setNotes(val.slice(0, lineStart) + nl + val.slice(cur))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + nl.length })
+        } else {
+          const ins = '\n  ' + toRoman(fromRoman(romM[1]) + 1) + '. '
+          setNotes(val.slice(0, cur) + ins + val.slice(curEnd))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = cur + ins.length })
+        }
+        return
+      }
+      if (bulM) {
+        e.preventDefault()
+        if (!bulM[2].trim()) {
+          setNotes(val.slice(0, lineStart) + val.slice(cur))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart })
+        } else {
+          const ins = '\n- '
+          setNotes(val.slice(0, cur) + ins + val.slice(curEnd))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = cur + ins.length })
+        }
+        return
+      }
+      if (subBulM) {
+        e.preventDefault()
+        if (!subBulM[2].trim()) {
+          setNotes(val.slice(0, lineStart) + val.slice(cur))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart })
+        } else {
+          const ins = '\n  - '
+          setNotes(val.slice(0, cur) + ins + val.slice(curEnd))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = cur + ins.length })
+        }
+        return
+      }
+    }
+  }
+
+  function applyNotesFormat(format: 'bullet' | 'numbered' | 'clear') {
+    const ta = notesTaRef.current
+    if (!ta) { setNotesCtxMenu(null); return }
+    const val = ta.value
+    const cur = ta.selectionStart
+    const lineStart = val.lastIndexOf('\n', cur - 1) + 1
+    const lineEndIdx = val.indexOf('\n', cur)
+    const eol = lineEndIdx === -1 ? val.length : lineEndIdx
+    const line = val.slice(lineStart, eol)
+    const clean = line.replace(/^(\d+\. |  [ivxlcdm]+\. |[-•*] |  [-•*] )/, '')
+    const newLine = format === 'bullet' ? '- ' + clean : format === 'numbered' ? '1. ' + clean : clean
+    if (newLine !== line) {
+      const delta = newLine.length - line.length
+      setNotes(val.slice(0, lineStart) + newLine + val.slice(eol))
+      requestAnimationFrame(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = Math.max(lineStart, cur + delta) })
+    }
+    setNotesCtxMenu(null)
+  }
+  // ────────────────────────────────────────────────────────────
 
   const revealDepth = maxTreeDepth
   const treeFullyRevealed = true
@@ -5085,7 +5245,7 @@ export function CaseInterviewerMaster({
           <aside
             className="hidden lg:flex flex-col flex-shrink-0"
             style={{
-              width: '280px',
+              width: '300px',
               position: 'sticky',
               top: '70px',
               height: 'calc(100vh - 70px)',
@@ -5107,53 +5267,94 @@ export function CaseInterviewerMaster({
               .eval-range.is-nr::-moz-range-progress { background:transparent; }
             `}</style>
 
-            {/* Scrollable content */}
-            <div className="flex flex-col gap-3 flex-1 overflow-y-auto min-h-0">
-              <p className="text-center text-[10px]" style={{ color: '#5C4033', textShadow: '0 0 10px rgba(61,90,53,0.6), 0 0 24px rgba(61,90,53,0.25)', letterSpacing: '0.01em' }}>
+            {/* Single unified panel — no internal scroll */}
+            <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] overflow-hidden">
+
+              {/* "Please pair with verbal feedback" at top of box */}
+              <p className="text-center text-[10px] px-4 py-2.5" style={{ color: '#5C4033', textShadow: '0 0 10px rgba(61,90,53,0.6), 0 0 24px rgba(61,90,53,0.25)', letterSpacing: '0.01em' }}>
                 Please pair with verbal feedback
               </p>
 
-              {/* Notes */}
-              <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-3">
+              {/* Notes section — grows to fill space above evaluation */}
+              <div className="px-4 pt-3 pb-3 flex flex-col gap-2 flex-1 min-h-0">
                 <div className="flex items-center gap-2">
-                  <span className="h-[7px] w-[7px] rounded-full bg-[#5C4033]" style={{ animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
+                  <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full" style={{ background: '#3D5A35', boxShadow: '0 0 7px rgba(61,90,53,0.75), 0 0 14px rgba(61,90,53,0.35)', animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Interviewer Notes</p>
                 </div>
                 <textarea
+                  ref={notesTaRef}
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder="Record observations..."
-                  className="w-full resize-none rounded-[12px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all"
-                  style={{ height: '110px', fontFamily: "'Work Sans', sans-serif" }}
+                  onKeyDown={handleNotesKeyDown}
+                  onContextMenu={e => { e.preventDefault(); setNotesCtxMenu({ x: e.clientX, y: e.clientY }) }}
+                  placeholder="Record observations... (type '1. ' for numbered list, '- ' for bullets, Tab to sub-indent)"
+                  className="flex-1 min-h-0 w-full resize-none rounded-[10px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all"
+                  style={{ fontFamily: "'Work Sans', sans-serif" }}
                 />
+                {notesCtxMenu && (
+                  <div
+                    onMouseDown={e => e.preventDefault()}
+                    style={{ position: 'fixed', top: notesCtxMenu.y, left: notesCtxMenu.x, zIndex: 9500, background: '#fffdf9', borderRadius: '9px', boxShadow: '0 4px 18px rgba(59,47,47,0.13), 0 0 0 1px rgba(92,64,51,0.1)', padding: '4px', minWidth: '168px', fontFamily: "'Work Sans', sans-serif" }}
+                  >
+                    {([
+                      { label: '•  Bullet list', action: 'bullet' as const },
+                      { label: '1.  Numbered list', action: 'numbered' as const },
+                      { label: '   i.  Sub-item  (Tab)', action: null },
+                      null,
+                      { label: '✕  Clear formatting', action: 'clear' as const },
+                    ] as const).map((item, idx) =>
+                      item === null ? (
+                        <div key={idx} style={{ height: '1px', background: 'rgba(92,64,51,0.1)', margin: '3px 6px' }} />
+                      ) : (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onMouseDown={e => { e.preventDefault(); if (item.action) applyNotesFormat(item.action) }}
+                          disabled={!item.action}
+                          style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '6px 10px', fontSize: '12px', borderRadius: '5px', color: item.action ? '#2e2318' : 'rgba(92,64,51,0.38)', cursor: item.action ? 'pointer' : 'default', fontFamily: "'Work Sans', sans-serif" }}
+                          onMouseEnter={e => { if (item.action) (e.currentTarget as HTMLElement).style.background = 'rgba(61,90,53,0.08)' }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none' }}
+                        >
+                          {item.label}
+                        </button>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Ratings */}
-              <div className="rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] p-4 flex flex-col gap-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Evaluation</p>
-                <div className="space-y-5">
+              {/* Divider */}
+              <div className="mx-4 h-px bg-[#5C4033]/10" />
+
+              {/* Evaluation section */}
+              <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full" style={{ background: '#3D5A35', boxShadow: '0 0 7px rgba(61,90,53,0.75), 0 0 14px rgba(61,90,53,0.35)', animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Evaluation</p>
+                </div>
+                <div className="space-y-3">
                   {EVAL_CRITERIA.map(c => {
                     const score = scores[c.id]
                     const rated = score > 0
                     const pct = (score / 5) * 100
                     return (
                       <div key={c.id}>
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-[13px] font-semibold leading-5 text-[#5C4033]">{c.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="flex-1 text-[12px] font-semibold leading-5 text-[#5C4033] whitespace-nowrap">{c.label}</span>
                           {rated && (
-                            <span className="rounded-full border border-[#3D5A35]/35 bg-[rgba(174,208,161,0.22)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#3D5A35]">
+                            <span className="flex-shrink-0 rounded-full border border-[#3D5A35]/35 bg-[rgba(174,208,161,0.22)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#3D5A35] whitespace-nowrap">
                               {score}/5
                             </span>
                           )}
                         </div>
-                        <div className="pb-1 pt-3">
+                        <div className="pb-0.5 pt-2">
                           <input
                             type="range" min="0" max="5" step="0.5" value={score}
                             onChange={e => setScores({ ...scores, [c.id]: parseFloat(e.target.value) })}
                             className={`eval-range${rated ? '' : ' is-nr'}`}
                             style={rated ? { background: `linear-gradient(90deg, #3D5A35 ${pct}%, rgba(92,64,51,0.16) ${pct}%)`, height: '3px', borderRadius: '2px' } : undefined}
                           />
-                          <div className="mt-2 flex justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-[#a99a87]">
+                          <div className="mt-1.5 flex justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-[#a99a87]">
                             <span className="italic">NR</span>
                             <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
                           </div>
@@ -5168,7 +5369,7 @@ export function CaseInterviewerMaster({
             {/* End case — always visible at bottom */}
             <button
               onClick={onEndCase}
-              className="mt-3 w-full flex-shrink-0 rounded-[18px] bg-[#3D5A35] py-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#efe8de] transition hover:bg-[#34502d]"
+              className="mt-2 w-full flex-shrink-0 rounded-[18px] bg-[#3D5A35] py-3.5 text-[10px] font-bold uppercase tracking-[0.3em] text-[#efe8de] transition hover:bg-[#34502d]"
             >
               End Case & Evaluate
             </button>

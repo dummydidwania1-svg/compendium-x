@@ -121,10 +121,10 @@ export const submitEvaluationInput = z.object({
   lobbyId: lobbyId.nullable(),
   caseId,
   scores: z.object({
-    structure: score,
-    understanding: score,
-    delivery: score,
-    creativity: score,
+    structure: score.optional(),
+    understanding: score.optional(),
+    delivery: score.optional(),
+    creativity: score.optional(),
   }),
   notes: z.string().max(10000),
 })

@@ -1227,50 +1227,42 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
   top: 70px;
   z-index: 42;
   margin: 0;
-  padding: 14px 20px 12px;
+  padding: 10px 20px 10px;
   background: transparent;
   transition: background 320ms cubic-bezier(0.22,1,0.36,1);
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 @media (min-width: 768px) {
-  .repo-chiprail { padding-left: 28px; padding-right: 28px; }
+  .repo-chiprail { padding-left: 28px; padding-right: 28px; gap: 22px; }
 }
 [data-stuck='true'] .repo-chiprail {
   background: #fff8f0;
 }
 
-/* ===== Hint: "Know your frameworks" - canopies the right end of the chip row ===== */
-.repo-coachmark {
-  position: absolute;
-  top: -28px;
-  right: 20px;
-  z-index: 44;
-  pointer-events: none;
-  white-space: nowrap;
-  padding: 0;
-  background: none;
-  border: none;
-  box-shadow: none;
+/* ===== Permanent "Frameworks" label left of chip row ===== */
+.repo-frameworks-label {
+  flex-shrink: 0;
   font-family: 'Newsreader', serif;
   font-style: italic;
   font-weight: 400;
-  font-size: 13px;
+  font-size: 17px;
   letter-spacing: 0.015em;
   color: rgba(92,64,51,0.58);
   text-shadow: 0 1px 0 rgba(255,252,247,0.9);
+  white-space: nowrap;
+  position: relative;
+  padding-bottom: 5px;
   opacity: 0;
-  transform: translateY(6px) rotate(-1.2deg);
-  transform-origin: right bottom;
-  animation: repo-coachmark-life 5s cubic-bezier(0.22,1,0.36,1) 650ms forwards;
+  animation: repo-frameworks-pop 0.65s cubic-bezier(0.16, 1, 0.3, 1) 180ms forwards;
 }
-@media (min-width: 768px) {
-  .repo-coachmark { right: 28px; }
-}
-.repo-coachmark::after {
+.repo-frameworks-label::after {
   content: '';
   position: absolute;
   left: 2px;
   right: 2px;
-  bottom: -4px;
+  bottom: 0;
   height: 2px;
   border-radius: 2px;
   background: linear-gradient(90deg,
@@ -1278,52 +1270,14 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
     rgba(150,116,86,0.42) 30%,
     rgba(196,168,130,0.6) 60%,
     rgba(196,168,130,0) 100%);
-  transform: scaleX(0);
-  transform-origin: left center;
-  animation: repo-coachmark-underline 5s cubic-bezier(0.22,1,0.36,1) 650ms forwards;
 }
-.repo-coachmark::before {
-  content: '';
-  position: absolute;
-  right: 14px;
-  bottom: -10px;
-  width: 1px;
-  height: 6px;
-  background: linear-gradient(180deg, rgba(92,64,51,0.32), rgba(92,64,51,0));
-  opacity: 0;
-  animation: repo-coachmark-tick 5s ease 650ms forwards;
-}
-@keyframes repo-coachmark-life {
-  0%   { opacity: 0; transform: translateY(6px) rotate(-1.2deg); filter: blur(1px); }
-  16%  { opacity: 1; transform: translateY(0)   rotate(-1.2deg); filter: blur(0); }
-  72%  { opacity: 1; transform: translateY(0)   rotate(-1.2deg); filter: blur(0); }
-  100% { opacity: 0; transform: translateY(-5px) rotate(-1.2deg); filter: blur(1px); }
-}
-@keyframes repo-coachmark-underline {
-  0%   { transform: scaleX(0); opacity: 0; }
-  20%  { transform: scaleX(1); opacity: 1; }
-  72%  { transform: scaleX(1); opacity: 1; }
-  100% { transform: scaleX(0.92); opacity: 0; transform-origin: right center; }
-}
-@keyframes repo-coachmark-tick {
-  0%   { opacity: 0; }
-  20%  { opacity: 1; }
-  72%  { opacity: 1; }
-  100% { opacity: 0; }
+@keyframes repo-frameworks-pop {
+  0%   { opacity: 0; transform: translateY(8px) rotate(-1.2deg); filter: blur(1px); }
+  60%  { opacity: 1; transform: translateY(-2px) rotate(-1.2deg); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) rotate(-1.2deg); filter: blur(0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .repo-coachmark,
-  .repo-coachmark::after,
-  .repo-coachmark::before { animation: repo-coachmark-fade 5s linear 650ms forwards; }
-}
-@keyframes repo-coachmark-fade {
-  0%   { opacity: 0; }
-  16%  { opacity: 1; }
-  72%  { opacity: 1; }
-  100% { opacity: 0; }
-}
-@media (max-width: 900px) {
-  .repo-coachmark { display: none; }
+  .repo-frameworks-label { animation: none; opacity: 1; }
 }
 
 .repo-chiprow {
@@ -1551,8 +1505,10 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
           {/* Framework chips - standalone, above the case table container */}
           {!selectionMode && !loading && (
             <div className="repo-chiprail">
-              <FrameworkChips activeSlug={activeFramework} />
-              <span className="repo-coachmark" aria-hidden="true">Know your frameworks</span>
+              <span className="repo-frameworks-label">Frameworks</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <FrameworkChips activeSlug={activeFramework} />
+              </div>
             </div>
           )}
 
