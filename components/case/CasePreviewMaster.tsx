@@ -4509,6 +4509,9 @@ export function CaseInterviewerMaster({
     return () => mq.removeEventListener('change', sync)
   }, [])
 
+  // ─── Hover-interactive eval scores ────────────────────────
+  const [hoverScore, setHoverScore] = useState<{ id: string; value: number } | null>(null)
+
   // ─── Notes textarea smart-formatting ───────────────────────
   const notesTaRef = useRef<HTMLTextAreaElement>(null)
   const [notesCtxMenu, setNotesCtxMenu] = useState<{ x: number; y: number } | null>(null)
@@ -5397,27 +5400,85 @@ export function CaseInterviewerMaster({
                 </div>
                 <div className="space-y-3">
                   {EVAL_CRITERIA.map(c => {
-                    const score = scores[c.id]
-                    const rated = score > 0
-                    const pct = (score / 5) * 100
+                    const committed = scores[c.id]
+                    const isHovering = hoverScore?.id === c.id
+                    const preview = isHovering ? hoverScore!.value : null
+                    const displayVal = preview ?? committed
+                    const rated = committed > 0
+                    const pct = (displayVal / 5) * 100
+                    const isPreviewing = isHovering && preview !== committed
+
                     return (
                       <div key={c.id}>
                         <div className="flex items-center gap-2">
                           <span className="flex-1 text-[12px] font-semibold leading-5 text-[#5C4033] whitespace-nowrap">{c.label}</span>
-                          {rated && (
-                            <span className="flex-shrink-0 rounded-full border border-[#3D5A35]/35 bg-[rgba(174,208,161,0.22)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#3D5A35] whitespace-nowrap">
-                              {score}/5
+                          {(rated || isHovering) && (
+                            <span
+                              className="flex-shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] whitespace-nowrap transition-all duration-150"
+                              style={isPreviewing ? {
+                                border: '1px dashed rgba(61,90,53,0.4)',
+                                background: 'transparent',
+                                color: 'rgba(61,90,53,0.55)',
+                              } : {
+                                border: '1px solid rgba(61,90,53,0.35)',
+                                background: 'rgba(174,208,161,0.22)',
+                                color: '#3D5A35',
+                              }}
+                            >
+                              {displayVal}/5
                             </span>
                           )}
                         </div>
                         <div className="pb-0.5 pt-2">
-                          <input
-                            type="range" min="0" max="5" step="0.5" value={score}
-                            onChange={e => setScores({ ...scores, [c.id]: parseFloat(e.target.value) })}
-                            className={`eval-range${rated ? '' : ' is-nr'}`}
-                            style={rated ? { background: `linear-gradient(90deg, #3D5A35 ${pct}%, rgba(92,64,51,0.16) ${pct}%)`, height: '3px', borderRadius: '2px' } : undefined}
-                          />
-                          <div className="mt-1.5 flex justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-[#a99a87]">
+                          {/* Custom hover-interactive track */}
+                          <div
+                            className="relative w-full"
+                            style={{ height: '16px', cursor: 'pointer' }}
+                            onMouseMove={e => {
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                              const raw = (e.clientX - rect.left) / rect.width
+                              const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
+                              setHoverScore({ id: c.id, value: snapped })
+                            }}
+                            onMouseLeave={() => setHoverScore(null)}
+                            onClick={e => {
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                              const raw = (e.clientX - rect.left) / rect.width
+                              const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
+                              setScores({ ...scores, [c.id]: snapped })
+                              setHoverScore(null)
+                            }}
+                          >
+                            {/* Track background */}
+                            <div className="absolute inset-x-0" style={{ top: '6px', height: '3px', borderRadius: '2px', background: 'rgba(92,64,51,0.16)' }} />
+                            {/* Filled portion */}
+                            {displayVal > 0 && (
+                              <div
+                                className="absolute"
+                                style={{
+                                  top: '6px', left: 0, height: '3px', borderRadius: '2px',
+                                  width: `${pct}%`,
+                                  background: isPreviewing ? 'rgba(61,90,53,0.38)' : '#3D5A35',
+                                  transition: 'width 0.08s ease, background 0.15s ease',
+                                }}
+                              />
+                            )}
+                            {/* Thumb dot */}
+                            {displayVal > 0 && (
+                              <div
+                                className="absolute"
+                                style={{
+                                  top: '3px', width: '10px', height: '10px', borderRadius: '50%',
+                                  left: `calc(${pct}% - 5px)`,
+                                  background: isPreviewing ? 'rgba(61,90,53,0.45)' : '#3D5A35',
+                                  boxShadow: isPreviewing ? 'none' : '0 0 0 3px rgba(61,90,53,0.13)',
+                                  transition: 'left 0.08s ease, background 0.15s ease, box-shadow 0.15s ease',
+                                  pointerEvents: 'none',
+                                }}
+                              />
+                            )}
+                          </div>
+                          <div className="mt-1 flex justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-[#a99a87]">
                             <span className="italic">NR</span>
                             <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
                           </div>
