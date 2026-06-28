@@ -4523,18 +4523,12 @@ export function CaseInterviewerMaster({
 
   function nextRoman(s: string): string { return toRoman(fromRoman(s) + 1) }
 
-  // Indent hierarchy per level: 0=number, 1=roman, 2=letter, 3=bullet, 4+=sub-bullet
-  // Tab promotes current marker to the next level's marker type.
-  // Shift+Tab demotes back.
-
   type MarkerKind = 'number' | 'roman' | 'letter' | 'bullet'
 
-  function kindForLevel(level: number): MarkerKind {
-    if (level === 0) return 'number'
-    if (level === 1) return 'roman'
-    if (level === 2) return 'letter'
-    return 'bullet'
-  }
+  // Hierarchy chain: Tab moves right, Shift+Tab moves left
+  const KIND_CHAIN: MarkerKind[] = ['number', 'roman', 'letter', 'bullet']
+  function childKind(k: MarkerKind): MarkerKind { const i = KIND_CHAIN.indexOf(k); return KIND_CHAIN[Math.min(i + 1, KIND_CHAIN.length - 1)] }
+  function parentKind(k: MarkerKind): MarkerKind { const i = KIND_CHAIN.indexOf(k); return KIND_CHAIN[Math.max(i - 1, 0)] }
 
   function makeFirstMarker(kind: MarkerKind, sep: string): string {
     if (kind === 'number') return '1' + sep + ' '
@@ -4605,52 +4599,52 @@ export function CaseInterviewerMaster({
     if (e.key === 'Tab') {
       e.preventDefault()
       if (!e.shiftKey) {
-        // Tab: go one level deeper
-        const newLevel = level + 1
-        const newIndent = '  '.repeat(newLevel)
-        const sep = parsed?.sep || '.'
-        const newKind = kindForLevel(newLevel)
-        const newMarker = makeFirstMarker(newKind, sep)
-        const body = parsed?.body ?? rest
-        const nl = newIndent + newMarker + body
+        // Tab: child kind is relative to current marker type, not absolute level
+        if (!parsed) {
+          // Plain text line — just add 2 spaces of indent
+          setNotes(val.slice(0, lineStart) + indent + '  ' + rest + val.slice(eol))
+          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = cur + 2 })
+          return
+        }
+        const newKind = childKind(parsed.kind)
+        const newIndent = indent + '  '
+        const newMarker = makeFirstMarker(newKind, parsed.sep)
+        const nl = newIndent + newMarker + parsed.body
         setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + newIndent.length + newMarker.length })
       } else {
-        // Shift+Tab: go one level up
-        if (level > 0) {
-          const newLevel = level - 1
-          const newIndent = '  '.repeat(newLevel)
-          const sep = parsed?.sep || '.'
-          const newKind = kindForLevel(newLevel)
-          // Find what number/letter we should be at by scanning above lines at this new level
-          const aboveLines = val.slice(0, lineStart).split('\n')
-          let startVal = 1
-          for (let i = aboveLines.length - 1; i >= 0; i--) {
-            const aboveIndent = (aboveLines[i].match(/^( *)/)?.[1] ?? '')
-            const aboveLevel = Math.floor(aboveIndent.length / 2)
-            if (aboveLevel < newLevel) break // crossed into a parent level
-            if (aboveLevel === newLevel) {
-              const aboveRest = aboveLines[i].slice(aboveIndent.length)
-              const aboveParsed = parseMarker(aboveRest)
-              if (aboveParsed && aboveParsed.kind === newKind) {
-                if (newKind === 'number') startVal = parseInt(aboveParsed.marker) + 1
-                else if (newKind === 'roman') startVal = fromRoman(aboveParsed.marker.replace(/[.):\s]/g, '')) + 1
-                else if (newKind === 'letter') startVal = aboveParsed.marker.charCodeAt(0) - 96 + 1
-                break
-              }
-              break
+        // Shift+Tab: parent kind is relative to current marker type, not absolute level
+        if (level === 0 || !parsed) return
+        const newLevel = level - 1
+        const newIndent = '  '.repeat(newLevel)
+        const newKind = parentKind(parsed.kind)
+        const sep = parsed.sep || '.'
+        // Scan above lines to find continuation value at the new indent level
+        const aboveLines = val.slice(0, lineStart).split('\n')
+        let startVal = 1
+        for (let i = aboveLines.length - 1; i >= 0; i--) {
+          const aboveIndent = (aboveLines[i].match(/^( *)/)?.[1] ?? '')
+          const aboveLevel = Math.floor(aboveIndent.length / 2)
+          if (aboveLevel < newLevel) break
+          if (aboveLevel === newLevel) {
+            const aboveRest = aboveLines[i].slice(aboveIndent.length)
+            const aboveParsed = parseMarker(aboveRest)
+            if (aboveParsed && aboveParsed.kind === newKind) {
+              if (newKind === 'number') startVal = parseInt(aboveParsed.marker) + 1
+              else if (newKind === 'roman') startVal = fromRoman(aboveParsed.marker.replace(/[.):\s]/g, '')) + 1
+              else if (newKind === 'letter') startVal = aboveParsed.marker.charCodeAt(0) - 96 + 1
             }
+            break
           }
-          let newMarker: string
-          if (newKind === 'number') newMarker = startVal + sep + ' '
-          else if (newKind === 'roman') newMarker = toRoman(startVal) + sep + ' '
-          else if (newKind === 'letter') newMarker = String.fromCharCode(96 + startVal) + sep + ' '
-          else newMarker = '• '
-          const body = parsed?.body ?? rest
-          const nl = newIndent + newMarker + body
-          setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
-          requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + nl.length })
         }
+        let newMarker: string
+        if (newKind === 'number') newMarker = startVal + sep + ' '
+        else if (newKind === 'roman') newMarker = toRoman(startVal) + sep + ' '
+        else if (newKind === 'letter') newMarker = String.fromCharCode(96 + startVal) + sep + ' '
+        else newMarker = '• '
+        const nl = newIndent + newMarker + parsed.body
+        setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
+        requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + nl.length })
       }
       return
     }
@@ -5335,7 +5329,7 @@ export function CaseInterviewerMaster({
                   onChange={e => setNotes(e.target.value)}
                   onKeyDown={handleNotesKeyDown}
                   onContextMenu={e => { e.preventDefault(); setNotesCtxMenu({ x: e.clientX, y: e.clientY }) }}
-                  placeholder={"Jot observations here…\n1. numbered  •/– bulleted  Tab to sub-indent\nShift+Tab to outdent  Enter continues list"}
+                  placeholder={"Jot observations here…\nTab ↓ indent  ·  Shift+Tab ↑ outdent  ·  Enter continues list\n1.  i.  a.  •  –  all supported"}
                   className="notes-ta flex-1 min-h-0 w-full resize-none rounded-[10px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all overflow-y-auto"
                   style={{ fontFamily: "'Work Sans', sans-serif" }}
                 />
