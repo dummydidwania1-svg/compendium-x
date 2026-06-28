@@ -4622,37 +4622,38 @@ export function CaseInterviewerMaster({
         setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + newIndent.length + newMarker.length })
       } else {
-        // Shift+Tab: parent kind is relative to current marker type, not absolute level
-        if (level === 0 || !parsed) return
+        // Shift+Tab: scan upward to find what the parent level actually looks like,
+        // then continue that exact list (same kind, same sep, next value).
+        if (level === 0) return
         const newLevel = level - 1
         const newIndent = '  '.repeat(newLevel)
-        const newKind = parentKind(parsed.kind)
-        // Scan above lines to find the most recent sibling at the target level
         const aboveLines = val.slice(0, lineStart).split('\n')
-        let startVal = 1
-        let foundSep = parsed.sep || '.'
+        // Find the nearest line at newLevel (scanning upward, stopping if we cross above newLevel)
+        let parentParsed: ReturnType<typeof parseMarker> = null
         for (let i = aboveLines.length - 1; i >= 0; i--) {
           const aboveIndent = (aboveLines[i].match(/^( *)/)?.[1] ?? '')
           const aboveLevel = Math.floor(aboveIndent.length / 2)
-          if (aboveLevel < newLevel) break
+          if (aboveLevel < newLevel) break  // crossed above parent level — stop
           if (aboveLevel === newLevel) {
             const aboveRest = aboveLines[i].slice(aboveIndent.length)
-            const aboveParsed = parseMarker(aboveRest)
-            if (aboveParsed && aboveParsed.kind === newKind) {
-              foundSep = aboveParsed.sep || '.'
-              if (newKind === 'number') startVal = parseInt(aboveParsed.marker.match(/^(\d+)/)?.[1] ?? '1') + 1
-              else if (newKind === 'roman') startVal = fromRoman(aboveParsed.marker.replace(/[.):\s]/g, '')) + 1
-              else if (newKind === 'letter') startVal = aboveParsed.marker.charCodeAt(0) - 96 + 1
-            }
+            parentParsed = parseMarker(aboveRest)
             break
           }
         }
         let newMarker: string
-        if (newKind === 'number') newMarker = startVal + foundSep + ' '
-        else if (newKind === 'roman') newMarker = toRoman(startVal) + foundSep + ' '
-        else if (newKind === 'letter') newMarker = String.fromCharCode(96 + startVal) + foundSep + ' '
-        else newMarker = '• '
-        const nl = newIndent + newMarker + parsed.body
+        if (parentParsed) {
+          // Continue the parent's list: next value after what we found
+          newMarker = nextMarker(parentParsed)
+        } else if (parsed) {
+          // No parent line found — fall back to first marker of parent kind in chain
+          const newKind = parentKind(parsed.kind)
+          const sep = parsed.sep || '.'
+          newMarker = makeFirstMarker(newKind, newKind === 'bullet' ? '' : sep)
+        } else {
+          return
+        }
+        const body = parsed?.body ?? rest
+        const nl = newIndent + newMarker + body
         setNotes(val.slice(0, lineStart) + nl + val.slice(eol))
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + nl.length })
       }
