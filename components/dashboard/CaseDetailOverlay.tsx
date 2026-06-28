@@ -241,6 +241,11 @@ export default function CaseDetailOverlay({
   const [showScrollHint, setShowScrollHint] = useState(false);
   const [hasScrolled, setHasScrolled]       = useState(false);
 
+  // Notes-box overflow hint
+  const notesBoxRef = useRef<HTMLDivElement>(null);
+  const [notesOverflows, setNotesOverflows] = useState(false);
+  const [notesScrolled, setNotesScrolled]   = useState(false);
+
   // Audio
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying]       = useState(false);
@@ -351,6 +356,20 @@ export default function CaseDetailOverlay({
       setHasScrolled(true);
       setShowScrollHint(false);
     }
+  };
+
+  useEffect(() => {
+    const el = notesBoxRef.current;
+    if (!el) return;
+    const t = setTimeout(() => {
+      setNotesOverflows(el.scrollHeight - el.clientHeight > 8);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [entry.notes]);
+
+  const handleNotesScroll = () => {
+    const el = notesBoxRef.current;
+    if (el && el.scrollTop > 4) setNotesScrolled(true);
   };
 
   // ── Close with exit animation ──
@@ -753,6 +772,8 @@ export default function CaseDetailOverlay({
                   .cdo-notes::-webkit-scrollbar-thumb{background:rgba(92,64,51,0.15);border-radius:9px}
                   .cdo-notes::-webkit-scrollbar-thumb:hover{background:rgba(92,64,51,0.28)}
                   .cdo-notes{scrollbar-width:thin;scrollbar-color:rgba(92,64,51,0.15) transparent}
+                  @keyframes cdo-hint-fade-in{from{opacity:0}to{opacity:1}}
+                  @keyframes cdo-hint-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
                 `}</style>
 
                 {/* ── SESSION TAB ── */}
@@ -763,17 +784,43 @@ export default function CaseDetailOverlay({
                     <div>
                       <SectionLabel>Interviewer Feedback</SectionLabel>
                       {entry.notes?.trim() ? (
-                        <div
-                          className="cdo-notes text-[12.5px] leading-[1.75] rounded-r-[7px] px-[14px] py-[12px]"
-                          style={{
-                            color: 'rgba(92,64,51,.82)',
-                            background: 'rgba(61,90,53,.05)',
-                            borderLeft: '3px solid rgba(61,90,53,.30)',
-                            maxHeight: '180px',
-                            overflowY: 'auto',
-                          }}
-                        >
-                          {renderNotesLines(entry.notes.trim())}
+                        <div style={{ position: 'relative' }}>
+                          <div
+                            ref={notesBoxRef}
+                            onScroll={handleNotesScroll}
+                            className="cdo-notes text-[12.5px] leading-[1.75] rounded-r-[7px] px-[14px] py-[12px]"
+                            style={{
+                              color: 'rgba(92,64,51,.82)',
+                              background: 'rgba(61,90,53,.05)',
+                              borderLeft: '3px solid rgba(61,90,53,.30)',
+                              maxHeight: '180px',
+                              overflowY: 'auto',
+                            }}
+                          >
+                            {renderNotesLines(entry.notes.trim())}
+                          </div>
+                          {/* Scroll hint: bottom fade + chevron, fades once user scrolls */}
+                          {notesOverflows && !notesScrolled && (
+                            <div
+                              style={{
+                                position: 'absolute', bottom: 0, left: '3px', right: 0,
+                                height: '40px', borderRadius: '0 0 7px 0', pointerEvents: 'none',
+                                background: 'linear-gradient(to bottom, rgba(245,250,244,0), rgba(245,250,244,0.92))',
+                                display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                                paddingBottom: '5px',
+                                animation: 'cdo-hint-fade-in 0.6s ease forwards',
+                              }}
+                            >
+                              <svg
+                                width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                stroke="rgba(61,90,53,0.4)" strokeWidth="2.5"
+                                strokeLinecap="round" strokeLinejoin="round"
+                                style={{ animation: 'cdo-hint-bob 1.6s ease-in-out infinite' }}
+                              >
+                                <polyline points="6 9 12 15 18 9" />
+                              </svg>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="text-[12px] leading-[1.65] italic" style={{ color: 'rgba(92,64,51,.44)' }}>

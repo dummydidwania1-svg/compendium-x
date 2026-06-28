@@ -819,8 +819,29 @@ export function InterviewerPageInner({
 	const [showUnratedConfirm, setShowUnratedConfirm] = useState(false)
 	const [overlaySubmitError, setOverlaySubmitError] = useState('')
 	const [overlaySuccess, setOverlaySuccess] = useState(false)
+	const [overlayAutoClose, setOverlayAutoClose] = useState(0) // countdown seconds remaining
 	const showEvalOverlayRef = useRef(false)
 	useEffect(() => { showEvalOverlayRef.current = showEvalOverlay }, [showEvalOverlay])
+
+	// When overlay is in success state, start a 3s auto-close countdown once
+	// audio upload is no longer in progress (uploaded, failed, not captured, or idle).
+	useEffect(() => {
+		if (!overlaySuccess) return
+		if (interviewerUploadState === 'uploading') return
+		setOverlayAutoClose(3)
+		const iv = setInterval(() => {
+			setOverlayAutoClose(prev => {
+				if (prev <= 1) {
+					clearInterval(iv)
+					window.open('', '_self')
+					window.close()
+					return 0
+				}
+				return prev - 1
+			})
+		}, 1000)
+		return () => clearInterval(iv)
+	}, [overlaySuccess, interviewerUploadState])
 
 	const closeEvalOverlay = useCallback(() => {
 		setShowEvalOverlay(false)
@@ -2235,6 +2256,7 @@ if (previewMode && !forcePreview) {
 								<div style={{ height: '3px', background: 'linear-gradient(90deg, #3D5A35 0%, rgba(61,90,53,0.15) 100%)' }} />
 
 								<style>{`
+									@keyframes ixo-spin{to{transform:rotate(360deg)}}
 									.eo-range{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;cursor:pointer}
 									.eo-range:focus{outline:none}
 									.eo-range::-webkit-slider-runnable-track{height:3px;border-radius:1px;background:rgba(92,64,51,0.15)}
@@ -2265,13 +2287,42 @@ if (previewMode && !forcePreview) {
 
 								{overlaySuccess ? (
 									/* ── Success state (tab couldn't be closed by browser) ── */
-									<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-										<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-											<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+									interviewerUploadState === 'uploading' ? (
+										/* Uploading — wait before closing */
+										<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+											<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+												<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'ixo-spin 1.2s linear infinite' }}>
+													<path d="M21 12a9 9 0 1 1-6.219-8.56" />
+												</svg>
+											</div>
+											<div>
+												<p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#2e2318' }}>Evaluation saved.</p>
+												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>Uploading your recording — keep this tab open for a moment.</p>
+											</div>
 										</div>
-										<p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>Evaluation submitted.</p>
-										<p style={{ margin: 0, fontSize: '12px', color: 'rgba(92,64,51,0.6)', lineHeight: 1.5 }}>You can close this tab.</p>
-									</div>
+									) : (
+										/* Upload done (or no recording) — show countdown */
+										<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+											<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+												<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+											</div>
+											<div>
+												<p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>All done.</p>
+												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>
+													{interviewerUploadState === 'uploaded' ? 'Recording uploaded.' : ''}{' '}
+													{overlayAutoClose > 0 ? `Closing in ${overlayAutoClose}s…` : 'Closing…'}
+												</p>
+											</div>
+											{/* Countdown bar */}
+											<div style={{ width: '100%', height: '2px', borderRadius: '1px', background: 'rgba(92,64,51,0.1)', overflow: 'hidden' }}>
+												<div style={{
+													height: '100%', borderRadius: '1px', background: 'rgba(61,90,53,0.35)',
+													width: `${(overlayAutoClose / 3) * 100}%`,
+													transition: 'width 0.95s linear',
+												}} />
+											</div>
+										</div>
+									)
 								) : showUnratedConfirm ? (
 									/* ── Unrated confirmation state ── */
 									<div style={{ padding: '16px 22px 22px' }}>
