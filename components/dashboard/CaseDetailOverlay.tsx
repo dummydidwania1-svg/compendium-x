@@ -100,6 +100,52 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 );
 
 // ─────────────────────────────────────────────────────────────
+// Notes line renderer — parses indentation + bullet markers
+// ─────────────────────────────────────────────────────────────
+function renderNotesLines(notes: string): React.ReactNode {
+  const lines = notes.split('\n');
+  return lines.map((line, i) => {
+    // Blank line → spacer
+    if (line.trim() === '') {
+      return <div key={i} style={{ height: '0.5em' }} />;
+    }
+
+    const indent = (line.match(/^( *)/)?.[1] ?? '').length;
+    const level = Math.floor(indent / 2);
+    const marginLeft = level * 16;
+    const rest = line.slice(indent);
+
+    // Detect bullet type
+    const numMatch = rest.match(/^(\d+[.):\-])\s(.*)$/);
+    const letterMatch = rest.match(/^([a-z]\))\s(.*)$/);
+    const romanMatch = rest.match(/^((?:i{1,3}|iv|vi{0,3}|ix|xi{0,3})\))\s(.*)$/i);
+    const bulletMatch = rest.match(/^([•–])\s(.*)$/);
+    const dashMatch = rest.match(/^([-])\s(.*)$/);
+
+    if (numMatch || letterMatch || romanMatch || bulletMatch || dashMatch) {
+      const m = (numMatch || letterMatch || romanMatch || bulletMatch || dashMatch)!;
+      const marker = m[1];
+      const text = m[2];
+      return (
+        <div key={i} style={{ display: 'flex', gap: '4px', marginLeft }}>
+          <span style={{ flexShrink: 0, minWidth: '20px', fontVariantNumeric: 'tabular-nums', color: 'rgba(92,64,51,.6)' }}>
+            {marker}
+          </span>
+          <span>{text}</span>
+        </div>
+      );
+    }
+
+    // Plain line with indent
+    return (
+      <div key={i} style={{ marginLeft }}>
+        {rest}
+      </div>
+    );
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
 // Score count-up hook
 // ─────────────────────────────────────────────────────────────
 function useCountUp(target: number | null): number {
@@ -710,16 +756,16 @@ export default function CaseDetailOverlay({
                     <div>
                       <SectionLabel>Interviewer Feedback</SectionLabel>
                       {entry.notes?.trim() ? (
-                        <p
-                          className="text-[12.5px] leading-[1.75] rounded-r-[7px] px-[14px] py-[12px] whitespace-pre-line"
+                        <div
+                          className="text-[12.5px] leading-[1.75] rounded-r-[7px] px-[14px] py-[12px]"
                           style={{
                             color: 'rgba(92,64,51,.82)',
                             background: 'rgba(61,90,53,.05)',
                             borderLeft: '3px solid rgba(61,90,53,.30)',
                           }}
                         >
-                          {entry.notes.trim()}
-                        </p>
+                          {renderNotesLines(entry.notes.trim())}
+                        </div>
                       ) : (
                         <p className="text-[12px] leading-[1.65] italic" style={{ color: 'rgba(92,64,51,.44)' }}>
                           Your interviewer didn&apos;t jot down any written feedback for this one.

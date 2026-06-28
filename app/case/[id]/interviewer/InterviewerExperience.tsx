@@ -572,6 +572,223 @@ function DefaultFramework({ framework }: { framework: ParsedFramework }) {
 	)
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   NotesEditor — rich textarea with smart list continuation, indent/de-indent
+   ───────────────────────────────────────────────────────────────────────── */
+function nextRoman(r: string): string {
+	const seq = ['i','ii','iii','iv','v','vi','vii','viii','ix','x']
+	const lower = r.toLowerCase()
+	const idx = seq.indexOf(lower)
+	if (idx === -1 || idx >= seq.length - 1) {
+		// beyond x: just repeat
+		return lower + 'i'
+	}
+	return seq[idx + 1]
+}
+
+function isEmptyListLine(line: string): boolean {
+	// Line contains only a list marker and optional trailing spaces — no real text
+	return /^\s*(\d+[.):\-]|[a-z]\)|(?:i{1,3}|iv|vi{0,3}|ix|xi{0,3})\)|[•–\-])\s*$/i.test(line)
+}
+
+function getListContinuation(line: string): string | null {
+	// Returns the string to insert after newline, or null for plain newline
+	const indent = line.match(/^(\s*)/)?.[1] ?? ''
+
+	// Numbered bullet: 1. or 1) or 1: or 1-
+	const numMatch = line.match(/^\s*(\d+)([.):\-])\s/)
+	if (numMatch) {
+		if (isEmptyListLine(line)) return null
+		const next = parseInt(numMatch[1], 10) + 1
+		return `${indent}${next}${numMatch[2]} `
+	}
+
+	// Letter bullet: a)
+	const letterMatch = line.match(/^\s*([a-z])\)\s/)
+	if (letterMatch) {
+		if (isEmptyListLine(line)) return null
+		const next = String.fromCharCode(letterMatch[1].charCodeAt(0) + 1)
+		return `${indent}${next}) `
+	}
+
+	// Roman numeral bullet: i) ii) etc.
+	const romanMatch = line.match(/^\s*(i{1,3}|iv|vi{0,3}|ix|xi{0,3})\)\s/i)
+	if (romanMatch) {
+		if (isEmptyListLine(line)) return null
+		const next = nextRoman(romanMatch[1])
+		return `${indent}${next}) `
+	}
+
+	// Bullet character • or –
+	const bulletMatch = line.match(/^\s*([•–])\s/)
+	if (bulletMatch) {
+		if (isEmptyListLine(line)) return null
+		return `${indent}${bulletMatch[1]} `
+	}
+
+	// Dash bullet: -
+	const dashMatch = line.match(/^\s*[-]\s/)
+	if (dashMatch) {
+		if (isEmptyListLine(line)) return null
+		return `${indent}• `
+	}
+
+	return null
+}
+
+function NotesEditor({
+	value,
+	onChange,
+	placeholder,
+	className,
+	style,
+}: {
+	value: string
+	onChange: (v: string) => void
+	placeholder?: string
+	className?: string
+	style?: React.CSSProperties
+}) {
+	const ref = useRef<HTMLTextAreaElement>(null)
+
+	// Auto-resize
+	useEffect(() => {
+		const el = ref.current
+		if (!el) return
+		el.style.height = 'auto'
+		const next = Math.max(120, el.scrollHeight)
+		el.style.height = `${next}px`
+	}, [value])
+
+	function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+		let val = e.target.value
+		// Dash auto-convert: `- ` or `-. ` at start of a line → `• `
+		val = val.replace(/(^|\n)(\s*)-\.? /g, (_m, nl, sp) => `${nl}${sp}• `)
+		onChange(val)
+	}
+
+	function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+		const el = ref.current
+		if (!el) return
+		const { selectionStart, selectionEnd, value: v } = el
+
+		if (e.key === 'Tab') {
+			e.preventDefault()
+			const lineStart = v.lastIndexOf('\n', selectionStart - 1) + 1
+			if (e.shiftKey) {
+				// De-indent: remove up to 2 leading spaces from current line
+				const leading = v.slice(lineStart).match(/^( {1,2})/)?.[1] ?? ''
+				if (leading.length === 0) return
+				const newVal = v.slice(0, lineStart) + v.slice(lineStart + leading.length)
+				onChange(newVal)
+				requestAnimationFrame(() => {
+					const pos = Math.max(lineStart, selectionStart - leading.length)
+					el.setSelectionRange(pos, pos)
+				})
+			} else {
+				// Indent: insert 2 spaces at start of current line
+				const newVal = v.slice(0, lineStart) + '  ' + v.slice(lineStart)
+				onChange(newVal)
+				requestAnimationFrame(() => {
+					el.setSelectionRange(selectionStart + 2, selectionEnd + 2)
+				})
+			}
+			return
+		}
+
+		if (e.key === 'Enter' && !e.shiftKey) {
+			const lineStart = v.lastIndexOf('\n', selectionStart - 1) + 1
+			const lineEnd = v.indexOf('\n', selectionStart)
+			const line = v.slice(lineStart, lineEnd === -1 ? undefined : lineEnd)
+
+			const indent = line.match(/^(\s*)/)?.[1] ?? ''
+
+			// Check if it's an empty list line (escape from list)
+			if (isEmptyListLine(line)) {
+				e.preventDefault()
+				// Replace the empty list marker line with a plain newline
+				const before = v.slice(0, lineStart)
+				const after = lineEnd === -1 ? '' : v.slice(lineEnd)
+				const newVal = before + '\n' + after
+				onChange(newVal)
+				requestAnimationFrame(() => {
+					const pos = lineStart + 1
+					el.setSelectionRange(pos, pos)
+				})
+				return
+			}
+
+			const continuation = getListContinuation(line)
+			if (continuation !== null) {
+				e.preventDefault()
+				const newVal = v.slice(0, selectionStart) + '\n' + continuation + v.slice(selectionEnd)
+				onChange(newVal)
+				requestAnimationFrame(() => {
+					const pos = selectionStart + 1 + continuation.length
+					el.setSelectionRange(pos, pos)
+				})
+				return
+			}
+
+			// Plain newline preserving indent
+			if (indent.length > 0) {
+				e.preventDefault()
+				const newVal = v.slice(0, selectionStart) + '\n' + indent + v.slice(selectionEnd)
+				onChange(newVal)
+				requestAnimationFrame(() => {
+					const pos = selectionStart + 1 + indent.length
+					el.setSelectionRange(pos, pos)
+				})
+			}
+		}
+	}
+
+	return (
+		<div style={{ position: 'relative' }}>
+			<textarea
+				ref={ref}
+				value={value}
+				onChange={handleChange}
+				onKeyDown={handleKeyDown}
+				placeholder={placeholder}
+				className={className}
+				style={{
+					...style,
+					overflow: 'hidden',
+					resize: 'none',
+					minHeight: '120px',
+					height: 'auto',
+				}}
+			/>
+			<div style={{
+				marginTop: '6px',
+				fontSize: '10.5px',
+				lineHeight: 1.6,
+				color: 'rgba(92,64,51,0.42)',
+				userSelect: 'none',
+			}}>
+				<span style={{ display: 'inline-block', marginRight: '24px' }}>
+					<span style={{ color: 'rgba(92,64,51,0.58)', fontWeight: 600 }}>Tab / Shift+Tab</span>
+					{' '}→ indent · de-indent
+				</span>
+				<span>
+					<span style={{ color: 'rgba(92,64,51,0.58)', fontWeight: 600 }}>Enter</span>
+					{' '}→ continue list
+				</span>
+				<br />
+				<span style={{ display: 'inline-block', marginRight: '24px' }}>
+					<span style={{ color: 'rgba(92,64,51,0.58)' }}>1.&nbsp;&nbsp;a)&nbsp;&nbsp;i)&nbsp;&nbsp;•&nbsp;&nbsp;–</span>
+					{' '}start a list at any level
+				</span>
+				<span>
+					<span style={{ color: 'rgba(92,64,51,0.58)' }}>-</span>
+					{' '}→ auto-converts to bullet •
+				</span>
+			</div>
+		</div>
+	)
+}
+
 const INTERVIEWER_MIME_CANDIDATES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
 function pickInterviewerMimeType(): string | null {
   if (typeof MediaRecorder === 'undefined') return null
@@ -2134,11 +2351,11 @@ if (previewMode && !forcePreview) {
 
 										<div style={{ marginTop: '14px', borderTop: '1px solid rgba(92,64,51,0.09)', paddingTop: '12px' }}>
 											<p style={{ margin: '0 0 6px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.22em', color: 'rgba(92,64,51,0.45)' }}>Detailed Notes</p>
-											<textarea
+											<NotesEditor
 												value={notes}
-												onChange={e => setNotes(e.target.value)}
+												onChange={setNotes}
 												placeholder="What did they do well? What should they improve?"
-												style={{ width: '100%', height: '72px', resize: 'none', borderRadius: '10px', border: '1px solid rgba(92,64,51,0.13)', background: 'rgba(255,248,238,0.7)', padding: '9px 12px', fontSize: '12px', lineHeight: 1.5, color: '#2e2318', fontFamily: "'Work Sans', sans-serif", outline: 'none', boxSizing: 'border-box' }}
+												style={{ width: '100%', minHeight: '72px', borderRadius: '10px', border: '1px solid rgba(92,64,51,0.13)', background: 'rgba(255,248,238,0.7)', padding: '9px 12px', fontSize: '12px', lineHeight: 1.5, color: '#2e2318', fontFamily: "'Work Sans', sans-serif", outline: 'none', boxSizing: 'border-box' }}
 											/>
 										</div>
 
@@ -2444,11 +2661,11 @@ if (previewMode && !forcePreview) {
 												Interviewer Notes
 											</h3>
 										</div>
-										<textarea
+										<NotesEditor
 											value={notes}
-											onChange={(e) => setNotes(e.target.value)}
+											onChange={setNotes}
 											placeholder="Record observations..."
-											className="h-40 w-full resize-none rounded-[18px] border border-[#d5cabd] bg-[#f6efe5] p-4 text-[14px] italic leading-7 text-[#4a3f38] shadow-[inset_0_1px_2px_rgba(95,72,52,0.05)] transition-all placeholder:text-[#a09385] focus:border-[#4a3627] focus:outline-none focus:ring-2 focus:ring-[#4a3627]/10"
+											className="w-full rounded-[18px] border border-[#d5cabd] bg-[#f6efe5] p-4 text-[14px] italic leading-7 text-[#4a3f38] shadow-[inset_0_1px_2px_rgba(95,72,52,0.05)] transition-all placeholder:text-[#a09385] focus:border-[#4a3627] focus:outline-none focus:ring-2 focus:ring-[#4a3627]/10"
 										/>
 									</section>
 
@@ -2736,10 +2953,9 @@ if (previewMode && !forcePreview) {
 								Detailed Notes
 							</label>
 							{editingFeedback ? (
-								<textarea
-									rows={6}
+								<NotesEditor
 									value={notes}
-									onChange={(e) => setNotes(e.target.value)}
+									onChange={setNotes}
 									placeholder="Provide specific feedback. What did they do well? What should they improve?"
 									className="mt-3 w-full rounded-xl border border-[#b48a57]/22 bg-[rgba(255,249,242,0.78)] px-4 py-3 text-[13px] leading-relaxed text-[#1e1b15] outline-none transition placeholder:text-[#5c4033]/40 focus:border-[#3D5A35]/40 focus:ring-2 focus:ring-[#3D5A35]/15"
 								/>
