@@ -4543,20 +4543,27 @@ export function CaseInterviewerMaster({
   }
 
   // Detect what type and value a line's marker is.
-  // Special case: single "i" is treated as roman numeral 1 (not letter i),
-  // because users type "i." to start a roman list. All other single chars are letters.
-  // Multi-char [ivxlcdm]+ sequences are always roman (ii, iv, ix, xiii, etc.).
+  // Supports lowercase and uppercase letters and Roman numerals.
+  // Single "i" or "I" = roman 1. Multi-char [ivxlcdm]+ or [IVXLCDM]+ = roman.
+  // All other single letters (a-z, A-Z) = letter. Case is preserved throughout.
   function parseMarker(rest: string): { kind: MarkerKind; sep: string; body: string; marker: string } | null {
     // number: 1. 1) 1:
     const numM = rest.match(/^(\d+)([.):])\s(.*)/)
     if (numM) return { kind: 'number', sep: numM[2], body: numM[3], marker: numM[1] + numM[2] + ' ' }
-    // roman: 2+ chars OR single "i" (i. is unambiguously roman 1)
-    const romM = rest.match(/^([ivxlcdm]+)([.):])\s(.*)/)
-    if (romM && (romM[1].length > 1 || romM[1] === 'i') && fromRoman(romM[1]) > 0)
-      return { kind: 'roman', sep: romM[2], body: romM[3], marker: romM[1] + romM[2] + ' ' }
-    // single letter a-z (excluding i which is caught above)
-    const letM = rest.match(/^([a-z])([.):])\s(.*)/)
-    if (letM) return { kind: 'letter', sep: letM[2], body: letM[3], marker: letM[1] + letM[2] + ' ' }
+    // lowercase roman: 2+ chars OR single "i"
+    const romLoM = rest.match(/^([ivxlcdm]+)([.):])\s(.*)/)
+    if (romLoM && (romLoM[1].length > 1 || romLoM[1] === 'i') && fromRoman(romLoM[1]) > 0)
+      return { kind: 'roman', sep: romLoM[2], body: romLoM[3], marker: romLoM[1] + romLoM[2] + ' ' }
+    // uppercase roman: 2+ chars OR single "I"
+    const romUpM = rest.match(/^([IVXLCDM]+)([.):])\s(.*)/)
+    if (romUpM && (romUpM[1].length > 1 || romUpM[1] === 'I') && fromRoman(romUpM[1].toLowerCase()) > 0)
+      return { kind: 'roman', sep: romUpM[2], body: romUpM[3], marker: romUpM[1] + romUpM[2] + ' ' }
+    // lowercase letter a-z (excluding i caught above)
+    const letLoM = rest.match(/^([a-z])([.):])\s(.*)/)
+    if (letLoM) return { kind: 'letter', sep: letLoM[2], body: letLoM[3], marker: letLoM[1] + letLoM[2] + ' ' }
+    // uppercase letter A-Z (excluding I caught above)
+    const letUpM = rest.match(/^([A-Z])([.):])\s(.*)/)
+    if (letUpM) return { kind: 'letter', sep: letUpM[2], body: letUpM[3], marker: letUpM[1] + letUpM[2] + ' ' }
     // bullet: • – -
     const bulM = rest.match(/^([•–-])\s(.*)/)
     if (bulM) return { kind: 'bullet', sep: '', body: bulM[2], marker: bulM[1] + ' ' }
@@ -4565,19 +4572,20 @@ export function CaseInterviewerMaster({
 
   function nextMarker(parsed: { kind: MarkerKind; sep: string; marker: string }): string {
     if (parsed.kind === 'number') {
-      // marker is e.g. "3. " — extract the number
       const n = parseInt(parsed.marker.match(/^(\d+)/)?.[1] ?? '1')
       return (n + 1) + parsed.sep + ' '
     }
     if (parsed.kind === 'roman') {
       const base = parsed.marker.replace(/[.):\s]/g, '')
-      return nextRoman(base) + parsed.sep + ' '
+      const isUpper = base === base.toUpperCase()
+      const next = nextRoman(base.toLowerCase())
+      return (isUpper ? next.toUpperCase() : next) + parsed.sep + ' '
     }
     if (parsed.kind === 'letter') {
-      const base = parsed.marker[0]
-      return String.fromCharCode(base.charCodeAt(0) + 1) + parsed.sep + ' '
+      // charCodeAt(0)+1 works for both a-z (97-122) and A-Z (65-90)
+      return String.fromCharCode(parsed.marker.charCodeAt(0) + 1) + parsed.sep + ' '
     }
-    return parsed.marker // bullet stays same
+    return parsed.marker
   }
 
   function handleNotesKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {

@@ -598,12 +598,20 @@ function ne_fromRoman(s: string): number {
 function ne_parseMarker(rest: string): { kind: NE_MarkerKind; sep: string; body: string; marker: string } | null {
 	const numM = rest.match(/^(\d+)([.):])\s(.*)/)
 	if (numM) return { kind: 'number', sep: numM[2], body: numM[3], marker: numM[1] + numM[2] + ' ' }
-	// single 'i' = roman 1; multi-char [ivxlcdm]+ = roman; other single letters = letter
-	const romM = rest.match(/^([ivxlcdm]+)([.):])\s(.*)/)
-	if (romM && (romM[1].length > 1 || romM[1] === 'i') && ne_fromRoman(romM[1]) > 0)
-		return { kind: 'roman', sep: romM[2], body: romM[3], marker: romM[1] + romM[2] + ' ' }
-	const letM = rest.match(/^([a-z])([.):])\s(.*)/)
-	if (letM) return { kind: 'letter', sep: letM[2], body: letM[3], marker: letM[1] + letM[2] + ' ' }
+	// lowercase roman: 2+ chars OR single "i"
+	const romLoM = rest.match(/^([ivxlcdm]+)([.):])\s(.*)/)
+	if (romLoM && (romLoM[1].length > 1 || romLoM[1] === 'i') && ne_fromRoman(romLoM[1]) > 0)
+		return { kind: 'roman', sep: romLoM[2], body: romLoM[3], marker: romLoM[1] + romLoM[2] + ' ' }
+	// uppercase roman: 2+ chars OR single "I"
+	const romUpM = rest.match(/^([IVXLCDM]+)([.):])\s(.*)/)
+	if (romUpM && (romUpM[1].length > 1 || romUpM[1] === 'I') && ne_fromRoman(romUpM[1].toLowerCase()) > 0)
+		return { kind: 'roman', sep: romUpM[2], body: romUpM[3], marker: romUpM[1] + romUpM[2] + ' ' }
+	// lowercase letter a-z (excluding i caught above)
+	const letLoM = rest.match(/^([a-z])([.):])\s(.*)/)
+	if (letLoM) return { kind: 'letter', sep: letLoM[2], body: letLoM[3], marker: letLoM[1] + letLoM[2] + ' ' }
+	// uppercase letter A-Z (excluding I caught above)
+	const letUpM = rest.match(/^([A-Z])([.):])\s(.*)/)
+	if (letUpM) return { kind: 'letter', sep: letUpM[2], body: letUpM[3], marker: letUpM[1] + letUpM[2] + ' ' }
 	const bulM = rest.match(/^([•–-])\s(.*)/)
 	if (bulM) return { kind: 'bullet', sep: '', body: bulM[2], marker: bulM[1] + ' ' }
 	return null
@@ -611,7 +619,12 @@ function ne_parseMarker(rest: string): { kind: NE_MarkerKind; sep: string; body:
 
 function ne_nextMarker(parsed: { kind: NE_MarkerKind; sep: string; marker: string }): string {
 	if (parsed.kind === 'number') { const n = parseInt(parsed.marker.match(/^(\d+)/)?.[1] ?? '1'); return (n + 1) + parsed.sep + ' ' }
-	if (parsed.kind === 'roman') { const base = parsed.marker.replace(/[.):\s]/g, ''); return ne_toRoman(ne_fromRoman(base) + 1) + parsed.sep + ' ' }
+	if (parsed.kind === 'roman') {
+		const base = parsed.marker.replace(/[.):\s]/g, '')
+		const isUpper = base === base.toUpperCase()
+		const next = ne_toRoman(ne_fromRoman(base.toLowerCase()) + 1)
+		return (isUpper ? next.toUpperCase() : next) + parsed.sep + ' '
+	}
 	if (parsed.kind === 'letter') { return String.fromCharCode(parsed.marker.charCodeAt(0) + 1) + parsed.sep + ' ' }
 	return parsed.marker
 }
