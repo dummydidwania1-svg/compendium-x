@@ -5362,7 +5362,7 @@ export function CaseInterviewerMaster({
                   onChange={e => setNotes(e.target.value)}
                   onKeyDown={handleNotesKeyDown}
                   onContextMenu={e => { e.preventDefault(); setNotesCtxMenu({ x: e.clientX, y: e.clientY }) }}
-                  placeholder={"Jot observations here...\nTab = indent  |  Shift+Tab = outdent  |  Enter = continue list\n1.  i.  A.  a.  - (auto-bullet)  all work"}
+                  placeholder={"Jot observations here...\nTab = indent  ·  Shift+Tab = outdent  ·  Enter = continue list\n1.  i.  A.  a.  - (auto-bullet)  all work"}
                   className="notes-ta flex-1 min-h-0 w-full resize-none rounded-[10px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all overflow-y-auto"
                   style={{ fontFamily: "'Work Sans', sans-serif" }}
                 />
@@ -5458,7 +5458,7 @@ export function CaseInterviewerMaster({
                               const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
                               setScores({ ...scores, [c.id]: snapped })
                               setHoverScore(null)
-                              evalClickCooldown.current[c.id] = Date.now() + 900
+                              evalClickCooldown.current[c.id] = Date.now() + 3000
                             }}
                           >
                             {/* Track background */}

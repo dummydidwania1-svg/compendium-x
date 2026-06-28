@@ -655,8 +655,9 @@ function NotesEditor({
 		const el = ref.current
 		if (!el) return
 		el.style.height = 'auto'
-		const next = Math.max(120, el.scrollHeight)
+		const next = Math.min(Math.max(120, el.scrollHeight), 200)
 		el.style.height = `${next}px`
+		el.style.overflowY = el.scrollHeight > 200 ? 'auto' : 'hidden'
 	}, [value])
 
 	function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -767,13 +768,14 @@ function NotesEditor({
 			onChange={e => onChange(e.target.value)}
 			onKeyDown={handleKeyDown}
 			placeholder={placeholder}
-			className={className}
+			className={`ne-ta${className ? ` ${className}` : ''}`}
 			style={{
 				...style,
-				overflow: 'hidden',
 				resize: 'none',
 				minHeight: '120px',
 				height: 'auto',
+				maxHeight: '200px',
+				overflowY: 'hidden',
 			}}
 		/>
 	)
@@ -2253,6 +2255,11 @@ if (previewMode && !forcePreview) {
 									.eo-range.eo-nr::-webkit-slider-thumb{background:#efe8de;box-shadow:0 0 0 1.5px rgba(92,64,51,0.25)}
 									.eo-range.eo-nr::-moz-range-thumb{background:#efe8de;box-shadow:0 0 0 1.5px rgba(92,64,51,0.25)}
 									.eo-range.eo-nr::-moz-range-progress{background:transparent}
+									.ne-ta::-webkit-scrollbar{width:4px}
+									.ne-ta::-webkit-scrollbar-track{background:transparent}
+									.ne-ta::-webkit-scrollbar-thumb{background:rgba(92,64,51,0.18);border-radius:9px}
+									.ne-ta::-webkit-scrollbar-thumb:hover{background:rgba(92,64,51,0.32)}
+									.ne-ta{scrollbar-width:thin;scrollbar-color:rgba(92,64,51,0.18) transparent}
 								`}</style>
 
 								{/* Shared heading */}
@@ -2317,7 +2324,7 @@ if (previewMode && !forcePreview) {
 									</div>
 								) : editingOverlay ? (
 									/* ── State 2: Editing ── */
-									<div style={{ padding: '14px 22px 22px' }}>
+									<div style={{ padding: '14px 22px 22px', maxHeight: 'min(80vh, 560px)', overflowY: 'auto' }}>
 										<div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 											{LIVE_EVALUATION_CRITERIA.map(c => {
 												const committed = scores[c.id]
@@ -2364,7 +2371,7 @@ if (previewMode && !forcePreview) {
 																const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
 																setScores({ ...scores, [c.id]: snapped })
 																setEvalHoverScore(null)
-																evalClickCooldownRef.current[c.id] = Date.now() + 900
+																evalClickCooldownRef.current[c.id] = Date.now() + 3000
 															}}
 														>
 															{/* Track */}
