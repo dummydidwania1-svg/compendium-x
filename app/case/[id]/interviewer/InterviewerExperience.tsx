@@ -820,6 +820,7 @@ export function InterviewerPageInner({
 	const [overlaySubmitError, setOverlaySubmitError] = useState('')
 	const [overlaySuccess, setOverlaySuccess] = useState(false)
 	const [overlayAutoClose, setOverlayAutoClose] = useState(0) // countdown seconds remaining
+	const [successAutoClose, setSuccessAutoClose] = useState(0) // same for currentView='success'
 	const showEvalOverlayRef = useRef(false)
 	useEffect(() => { showEvalOverlayRef.current = showEvalOverlay }, [showEvalOverlay])
 
@@ -866,13 +867,35 @@ export function InterviewerPageInner({
 					clearInterval(iv)
 					window.open('', '_self')
 					window.close()
+					// Fallback: if browser blocked window.close(), navigate to home
+					setTimeout(() => { if (!document.hidden) router.replace('/') }, 300)
 					return 0
 				}
 				return prev - 1
 			})
 		}, 1000)
 		return () => clearInterval(iv)
-	}, [overlaySuccess, interviewerUploadState])
+	}, [overlaySuccess, interviewerUploadState, router])
+
+	// Same auto-close for the full-page success view (currentView === 'success').
+	useEffect(() => {
+		if (currentView !== 'success') return
+		if (interviewerUploadState === 'uploading') return
+		setSuccessAutoClose(3)
+		const iv = setInterval(() => {
+			setSuccessAutoClose(prev => {
+				if (prev <= 1) {
+					clearInterval(iv)
+					window.open('', '_self')
+					window.close()
+					setTimeout(() => { if (!document.hidden) router.replace('/') }, 300)
+					return 0
+				}
+				return prev - 1
+			})
+		}, 1000)
+		return () => clearInterval(iv)
+	}, [currentView, interviewerUploadState, router])
 
 	// Remote mode: candidate and interviewer are on separate devices, separate browsers.
 	// No localStorage sharing — all cross-device coordination goes through Firestore.
@@ -2012,7 +2035,7 @@ if (previewMode && !forcePreview) {
 				/>
 
 				{/* Back-button guard toast (top-right LobbyOverlay) */}
-				{showBackGuardToast && !micGuardShowing && (
+				{showBackGuardToast && !micGuardShowing && !overlaySuccess && (
 					<LobbyOverlay
 						type="warning"
 						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>}
@@ -2027,7 +2050,7 @@ if (previewMode && !forcePreview) {
 				)}
 
 				{/* Candidate tab closed (split-screen) */}
-				{candidateTabClosed && !micGuardShowing && lobbyId && (
+				{candidateTabClosed && !micGuardShowing && lobbyId && !overlaySuccess && (
 					<LobbyOverlay
 						type="warning"
 						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><line x1="2" y1="2" x2="22" y2="22"/></svg>}
@@ -2050,7 +2073,7 @@ if (previewMode && !forcePreview) {
 
 				{/* Window close — timed top-right toast shown after the user cancels
 				    the native beforeunload dialog and returns to the page. */}
-				{showCloseWarning && !micGuardShowing && (
+				{showCloseWarning && !micGuardShowing && !overlaySuccess && (
 					<LobbyOverlay
 						type="warning"
 						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
@@ -2074,7 +2097,7 @@ if (previewMode && !forcePreview) {
 				{/* Interviewer mic recovery -- only for mic LOSS after a previously-granted
 				    mic drops mid-session. Not shown for the initial decision (the gate
 				    handles that). Guard disengages once upload has begun. */}
-				{isRemoteMode && interviewerMicBannerVisible && !micGuardShowing && interviewerUploadState === 'idle' && (
+				{isRemoteMode && interviewerMicBannerVisible && !micGuardShowing && interviewerUploadState === 'idle' && !overlaySuccess && (
 					<LobbyOverlay
 						type="warning"
 						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>}
@@ -2111,7 +2134,7 @@ if (previewMode && !forcePreview) {
 				{/* A3/D10 — Remote mode: candidate ended the session.
 				    Firestore status:'completed' detected via onSnapshot while the
 				    interviewer hasn't submitted feedback yet. Prompt to submit now. */}
-				{isRemoteMode && candidateEndedSession && !micGuardShowing && (
+				{isRemoteMode && candidateEndedSession && !micGuardShowing && !overlaySuccess && (
 					<LobbyOverlay
 						type="warning"
 						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
@@ -2846,77 +2869,46 @@ if (previewMode && !forcePreview) {
 	if (previewMode) return null
 
 	if (currentView === 'success') {
-		const uploadDone =
-			!isRemoteMode ||
-			interviewerUploadState === 'uploaded' ||
-			interviewerUploadState === 'upload_failed' ||
-			interviewerUploadState === 'not_captured' ||
-			interviewerUploadState === 'idle'
-		const sessionRanWithoutRecording = candidateOptedOutRef.current
-		const uploadStatusMessage = sessionRanWithoutRecording
-			? 'Heads up - this session ran without recording, so there is no audio to upload. Your feedback is saved and that is all that is needed here.'
-			: interviewerUploadState === 'uploading'
-				? 'Uploading your recording - please keep this tab open for a moment.'
-				: interviewerUploadState === 'uploaded'
-					? 'Your recording uploaded successfully. The transcript will be ready in your dashboard shortly.'
-					: interviewerUploadState === 'upload_failed'
-						? "Your recording couldn't be uploaded. Only the candidate's audio will be available in the transcript."
-						: interviewerUploadState === 'not_captured'
-							? "Your microphone wasn't captured during this session. Only the candidate's audio will be available in the transcript."
-							: null
-
+		const uploading = interviewerUploadState === 'uploading'
 		return (
 			<div
-				className="relative flex min-h-screen flex-col items-center justify-center bg-[#fff8f0] p-4 text-center antialiased"
-				style={{ fontFamily: "'Work Sans', sans-serif", color: '#1e1b15' }}
+				style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif", background: 'rgba(36,26,16,0.48)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)' }}
 			>
-				<div className="pointer-events-none absolute inset-0">
-					<div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(61,90,53,0.08),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(92,64,51,0.08),transparent_32%),linear-gradient(180deg,#fff8f0_0%,#fbf4ea_100%)]" />
-				</div>
-				<div className="relative z-10 w-full max-w-md rounded-2xl border border-[#b48a57]/16 bg-[rgba(255,248,240,0.78)] px-8 py-12 backdrop-blur" style={{ boxShadow: '0 6px 22px rgba(59,47,47,0.05)' }}>
-					<div
-						className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-[#3D5A35]/25 bg-[rgba(174,208,161,0.18)] text-[#3D5A35]"
-					>
-						<svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-						</svg>
+				<style>{`@keyframes ixo-spin{to{transform:rotate(360deg)}}`}</style>
+				<div style={{ position: 'relative', zIndex: 1, width: 'min(420px, calc(100vw - 32px))', borderRadius: '22px', border: '1px solid rgba(61,90,53,0.18)', background: 'rgba(255,250,243,0.96)', backdropFilter: 'blur(40px) saturate(1.9)', WebkitBackdropFilter: 'blur(40px) saturate(1.9)', boxShadow: '0 12px 48px rgba(36,26,16,0.18), 0 2px 8px rgba(36,26,16,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', overflow: 'hidden' }}>
+					<div style={{ height: '3px', background: 'linear-gradient(90deg, #3D5A35 0%, rgba(61,90,53,0.15) 100%)' }} />
+					<div style={{ padding: '10px 22px 6px' }}>
+						<p style={{ margin: 0, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.26em', color: '#3D5A35' }}>Final Evaluation</p>
 					</div>
-					<h2 style={{ fontFamily: "'Newsreader', serif" }} className="text-4xl font-light tracking-tight text-[#453a2a]">
-						Thank you
-					</h2>
-					<p className="mt-3 text-[13px] leading-relaxed text-[#5c4033]/68">
-						Feedback submitted successfully.{' '}
-						{uploadDone ? 'You can close this tab now.' : null}
-					</p>
-
-					{/* Remote-mode upload status */}
-					{isRemoteMode && uploadStatusMessage && (
-						<div className={`mt-4 rounded-xl border px-4 py-3 text-left text-[12px] leading-relaxed ${
-							interviewerUploadState === 'uploading'
-								? 'border-[#3D5A35]/20 bg-[rgba(174,208,161,0.12)] text-[#3D5A35]'
-								: interviewerUploadState === 'uploaded'
-									? 'border-[#3D5A35]/20 bg-[rgba(174,208,161,0.12)] text-[#3D5A35]'
-									: 'border-[#b48a57]/22 bg-[rgba(180,138,87,0.07)] text-[#5c4033]/78'
-						}`}>
-							{interviewerUploadState === 'uploading' && (
-								<span className="mb-1.5 flex items-center gap-2 font-semibold">
-									<svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-										<path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round" />
-									</svg>
-									Uploading recording&hellip;
-								</span>
-							)}
-							{uploadStatusMessage}
+					{uploading ? (
+						<div style={{ padding: '20px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+							<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'ixo-spin 1.2s linear infinite' }}>
+									<path d="M21 12a9 9 0 1 1-6.219-8.56" />
+								</svg>
+							</div>
+							<div>
+								<p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#2e2318' }}>Evaluation saved.</p>
+								<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>Uploading your recording. Keep this tab open for a moment.</p>
+							</div>
+						</div>
+					) : (
+						<div style={{ padding: '20px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+							<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+							</div>
+							<div>
+								<p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>All done.</p>
+								<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>
+									{interviewerUploadState === 'uploaded' ? 'Recording uploaded. ' : ''}
+									{successAutoClose > 0 ? `Closing in ${successAutoClose}s…` : 'Closing…'}
+								</p>
+							</div>
+							<div style={{ width: '100%', height: '2px', borderRadius: '1px', background: 'rgba(92,64,51,0.1)', overflow: 'hidden' }}>
+								<div style={{ height: '100%', borderRadius: '1px', background: 'rgba(61,90,53,0.35)', width: `${(successAutoClose / 3) * 100}%`, transition: 'width 0.95s linear' }} />
+							</div>
 						</div>
 					)}
-
-					<button
-						onClick={closeOrExit}
-						className="mt-8 w-full rounded-full bg-[#3D5A35] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-[#34502d]"
-						style={{ boxShadow: '0 6px 16px rgba(61,90,53,0.18), inset 0 1px 0 rgba(255,255,255,0.18)' }}
-					>
-						{interviewerUploadState === 'uploading' ? 'Please wait…' : 'Close Window'}
-					</button>
 				</div>
 			</div>
 		)
