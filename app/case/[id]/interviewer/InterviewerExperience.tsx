@@ -574,66 +574,53 @@ function DefaultFramework({ framework }: { framework: ParsedFramework }) {
 
 /* ─────────────────────────────────────────────────────────────────────────
    NotesEditor — rich textarea with smart list continuation, indent/de-indent
+   Same logic as CasePreviewMaster handleNotesKeyDown.
    ───────────────────────────────────────────────────────────────────────── */
-function nextRoman(r: string): string {
-	const seq = ['i','ii','iii','iv','v','vi','vii','viii','ix','x']
-	const lower = r.toLowerCase()
-	const idx = seq.indexOf(lower)
-	if (idx === -1 || idx >= seq.length - 1) {
-		// beyond x: just repeat
-		return lower + 'i'
-	}
-	return seq[idx + 1]
+
+type NE_MarkerKind = 'number' | 'roman' | 'letter' | 'bullet'
+const NE_KIND_CHAIN: NE_MarkerKind[] = ['number', 'roman', 'letter', 'bullet']
+function ne_childKind(k: NE_MarkerKind): NE_MarkerKind { const i = NE_KIND_CHAIN.indexOf(k); return NE_KIND_CHAIN[(i + 1) % NE_KIND_CHAIN.length] }
+function ne_parentKind(k: NE_MarkerKind): NE_MarkerKind { const i = NE_KIND_CHAIN.indexOf(k); return NE_KIND_CHAIN[(i - 1 + NE_KIND_CHAIN.length) % NE_KIND_CHAIN.length] }
+
+function ne_toRoman(n: number): string {
+	const map: [number, string][] = [[10,'x'],[9,'ix'],[5,'v'],[4,'iv'],[1,'i']]
+	let r = ''
+	for (const [v, s] of map) { while (n >= v) { r += s; n -= v } }
+	return r
+}
+function ne_fromRoman(s: string): number {
+	const m: Record<string,number> = { i:1, v:5, x:10, l:50, c:100, d:500, m:1000 }
+	let r = 0, prev = 0
+	for (const ch of [...s].reverse()) { const v = m[ch] ?? 0; r += v < prev ? -v : v; prev = v }
+	return r
 }
 
-function isEmptyListLine(line: string): boolean {
-	// Line contains only a list marker and optional trailing spaces — no real text
-	return /^\s*(\d+[.):\-]|[a-z]\)|(?:i{1,3}|iv|vi{0,3}|ix|xi{0,3})\)|[•–\-])\s*$/i.test(line)
-}
-
-function getListContinuation(line: string): string | null {
-	// Returns the string to insert after newline, or null for plain newline
-	const indent = line.match(/^(\s*)/)?.[1] ?? ''
-
-	// Numbered bullet: 1. or 1) or 1: or 1-
-	const numMatch = line.match(/^\s*(\d+)([.):\-])\s/)
-	if (numMatch) {
-		if (isEmptyListLine(line)) return null
-		const next = parseInt(numMatch[1], 10) + 1
-		return `${indent}${next}${numMatch[2]} `
-	}
-
-	// Letter bullet: a)
-	const letterMatch = line.match(/^\s*([a-z])\)\s/)
-	if (letterMatch) {
-		if (isEmptyListLine(line)) return null
-		const next = String.fromCharCode(letterMatch[1].charCodeAt(0) + 1)
-		return `${indent}${next}) `
-	}
-
-	// Roman numeral bullet: i) ii) etc.
-	const romanMatch = line.match(/^\s*(i{1,3}|iv|vi{0,3}|ix|xi{0,3})\)\s/i)
-	if (romanMatch) {
-		if (isEmptyListLine(line)) return null
-		const next = nextRoman(romanMatch[1])
-		return `${indent}${next}) `
-	}
-
-	// Bullet character • or –
-	const bulletMatch = line.match(/^\s*([•–])\s/)
-	if (bulletMatch) {
-		if (isEmptyListLine(line)) return null
-		return `${indent}${bulletMatch[1]} `
-	}
-
-	// Dash bullet: -
-	const dashMatch = line.match(/^\s*[-]\s/)
-	if (dashMatch) {
-		if (isEmptyListLine(line)) return null
-		return `${indent}• `
-	}
-
+function ne_parseMarker(rest: string): { kind: NE_MarkerKind; sep: string; body: string; marker: string } | null {
+	const numM = rest.match(/^(\d+)([.):])\s(.*)/)
+	if (numM) return { kind: 'number', sep: numM[2], body: numM[3], marker: numM[1] + numM[2] + ' ' }
+	// single 'i' = roman 1; multi-char [ivxlcdm]+ = roman; other single letters = letter
+	const romM = rest.match(/^([ivxlcdm]+)([.):])\s(.*)/)
+	if (romM && (romM[1].length > 1 || romM[1] === 'i') && ne_fromRoman(romM[1]) > 0)
+		return { kind: 'roman', sep: romM[2], body: romM[3], marker: romM[1] + romM[2] + ' ' }
+	const letM = rest.match(/^([a-z])([.):])\s(.*)/)
+	if (letM) return { kind: 'letter', sep: letM[2], body: letM[3], marker: letM[1] + letM[2] + ' ' }
+	const bulM = rest.match(/^([•–-])\s(.*)/)
+	if (bulM) return { kind: 'bullet', sep: '', body: bulM[2], marker: bulM[1] + ' ' }
 	return null
+}
+
+function ne_nextMarker(parsed: { kind: NE_MarkerKind; sep: string; marker: string }): string {
+	if (parsed.kind === 'number') { const n = parseInt(parsed.marker.match(/^(\d+)/)?.[1] ?? '1'); return (n + 1) + parsed.sep + ' ' }
+	if (parsed.kind === 'roman') { const base = parsed.marker.replace(/[.):\s]/g, ''); return ne_toRoman(ne_fromRoman(base) + 1) + parsed.sep + ' ' }
+	if (parsed.kind === 'letter') { return String.fromCharCode(parsed.marker.charCodeAt(0) + 1) + parsed.sep + ' ' }
+	return parsed.marker
+}
+
+function ne_makeFirstMarker(kind: NE_MarkerKind, sep: string): string {
+	if (kind === 'number') return '1' + sep + ' '
+	if (kind === 'roman') return 'i' + sep + ' '
+	if (kind === 'letter') return 'a' + sep + ' '
+	return '• '
 }
 
 function NotesEditor({
@@ -651,7 +638,6 @@ function NotesEditor({
 }) {
 	const ref = useRef<HTMLTextAreaElement>(null)
 
-	// Auto-resize
 	useEffect(() => {
 		const el = ref.current
 		if (!el) return
@@ -660,85 +646,103 @@ function NotesEditor({
 		el.style.height = `${next}px`
 	}, [value])
 
-	function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-		let val = e.target.value
-		// Dash auto-convert: `- ` or `-. ` at start of a line → `• `
-		val = val.replace(/(^|\n)(\s*)-\.? /g, (_m, nl, sp) => `${nl}${sp}• `)
-		onChange(val)
-	}
-
 	function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
 		const el = ref.current
 		if (!el) return
-		const { selectionStart, selectionEnd, value: v } = el
+		const val = el.value
+		const cur = el.selectionStart
+		const curEnd = el.selectionEnd
+		const lineStart = val.lastIndexOf('\n', cur - 1) + 1
+		const lineEndIdx = val.indexOf('\n', cur)
+		const eol = lineEndIdx === -1 ? val.length : lineEndIdx
+		const fullLine = val.slice(lineStart, eol)
+		const indent = (fullLine.match(/^( *)/)?.[1] ?? '')
+		const level = Math.floor(indent.length / 2)
+		const rest = fullLine.slice(indent.length)
+		const parsed = ne_parseMarker(rest)
+
+		// Auto-convert dash+space to bullet
+		if (e.key === ' ' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+			const lineUpToCursor = val.slice(lineStart, cur)
+			if (/^(\s*)-$/.test(lineUpToCursor)) {
+				e.preventDefault()
+				const ind = (lineUpToCursor.match(/^( *)/)?.[1] ?? '')
+				const newVal = val.slice(0, lineStart) + ind + '• ' + val.slice(cur)
+				onChange(newVal)
+				requestAnimationFrame(() => { el.setSelectionRange(lineStart + ind.length + 2, lineStart + ind.length + 2) })
+				return
+			}
+		}
 
 		if (e.key === 'Tab') {
 			e.preventDefault()
-			const lineStart = v.lastIndexOf('\n', selectionStart - 1) + 1
-			if (e.shiftKey) {
-				// De-indent: remove up to 2 leading spaces from current line
-				const leading = v.slice(lineStart).match(/^( {1,2})/)?.[1] ?? ''
-				if (leading.length === 0) return
-				const newVal = v.slice(0, lineStart) + v.slice(lineStart + leading.length)
-				onChange(newVal)
-				requestAnimationFrame(() => {
-					const pos = Math.max(lineStart, selectionStart - leading.length)
-					el.setSelectionRange(pos, pos)
-				})
+			if (!e.shiftKey) {
+				if (!parsed) {
+					const newVal = val.slice(0, lineStart) + indent + '  ' + rest + val.slice(eol)
+					onChange(newVal)
+					requestAnimationFrame(() => { el.setSelectionRange(cur + 2, cur + 2) })
+					return
+				}
+				const newKind = ne_childKind(parsed.kind)
+				const newIndent = indent + '  '
+				const childSep = parsed.sep || '.'
+				const newMarker = ne_makeFirstMarker(newKind, newKind === 'bullet' ? '' : childSep)
+				const nl = newIndent + newMarker + parsed.body
+				onChange(val.slice(0, lineStart) + nl + val.slice(eol))
+				const pos = lineStart + newIndent.length + newMarker.length
+				requestAnimationFrame(() => { el.setSelectionRange(pos, pos) })
 			} else {
-				// Indent: insert 2 spaces at start of current line
-				const newVal = v.slice(0, lineStart) + '  ' + v.slice(lineStart)
-				onChange(newVal)
-				requestAnimationFrame(() => {
-					el.setSelectionRange(selectionStart + 2, selectionEnd + 2)
-				})
+				// Shift+Tab: find nearest line at level-1 and continue that list
+				if (level === 0) return
+				const newLevel = level - 1
+				const newIndent = '  '.repeat(newLevel)
+				const aboveLines = val.slice(0, lineStart).split('\n')
+				let parentParsed: ReturnType<typeof ne_parseMarker> = null
+				for (let i = aboveLines.length - 1; i >= 0; i--) {
+					const aboveIndent = (aboveLines[i].match(/^( *)/)?.[1] ?? '')
+					const aboveLevel = Math.floor(aboveIndent.length / 2)
+					if (aboveLevel < newLevel) break
+					if (aboveLevel === newLevel) { parentParsed = ne_parseMarker(aboveLines[i].slice(aboveIndent.length)); break }
+				}
+				let newMarker: string
+				if (parentParsed) {
+					newMarker = ne_nextMarker(parentParsed)
+				} else if (parsed) {
+					const newKind = ne_parentKind(parsed.kind)
+					newMarker = ne_makeFirstMarker(newKind, newKind === 'bullet' ? '' : (parsed.sep || '.'))
+				} else { return }
+				const body = parsed?.body ?? rest
+				const nl = newIndent + newMarker + body
+				onChange(val.slice(0, lineStart) + nl + val.slice(eol))
+				requestAnimationFrame(() => { el.setSelectionRange(lineStart + nl.length, lineStart + nl.length) })
 			}
 			return
 		}
 
 		if (e.key === 'Enter' && !e.shiftKey) {
-			const lineStart = v.lastIndexOf('\n', selectionStart - 1) + 1
-			const lineEnd = v.indexOf('\n', selectionStart)
-			const line = v.slice(lineStart, lineEnd === -1 ? undefined : lineEnd)
-
-			const indent = line.match(/^(\s*)/)?.[1] ?? ''
-
-			// Check if it's an empty list line (escape from list)
-			if (isEmptyListLine(line)) {
+			const lineUpToCursor = val.slice(lineStart, cur)
+			const upIndent = (lineUpToCursor.match(/^( *)/)?.[1] ?? '')
+			const upRest = lineUpToCursor.slice(upIndent.length)
+			const upParsed = ne_parseMarker(upRest)
+			if (upParsed) {
 				e.preventDefault()
-				// Replace the empty list marker line with a plain newline
-				const before = v.slice(0, lineStart)
-				const after = lineEnd === -1 ? '' : v.slice(lineEnd)
-				const newVal = before + '\n' + after
-				onChange(newVal)
-				requestAnimationFrame(() => {
-					const pos = lineStart + 1
-					el.setSelectionRange(pos, pos)
-				})
+				if (!upParsed.body.trim()) {
+					// Empty list line — escape
+					onChange(val.slice(0, lineStart) + val.slice(cur))
+					requestAnimationFrame(() => { el.setSelectionRange(lineStart, lineStart) })
+					return
+				}
+				const ins = '\n' + upIndent + ne_nextMarker(upParsed)
+				onChange(val.slice(0, cur) + ins + val.slice(curEnd))
+				requestAnimationFrame(() => { el.setSelectionRange(cur + ins.length, cur + ins.length) })
 				return
 			}
-
-			const continuation = getListContinuation(line)
-			if (continuation !== null) {
-				e.preventDefault()
-				const newVal = v.slice(0, selectionStart) + '\n' + continuation + v.slice(selectionEnd)
-				onChange(newVal)
-				requestAnimationFrame(() => {
-					const pos = selectionStart + 1 + continuation.length
-					el.setSelectionRange(pos, pos)
-				})
-				return
-			}
-
 			// Plain newline preserving indent
-			if (indent.length > 0) {
+			if (upIndent.length > 0) {
 				e.preventDefault()
-				const newVal = v.slice(0, selectionStart) + '\n' + indent + v.slice(selectionEnd)
-				onChange(newVal)
-				requestAnimationFrame(() => {
-					const pos = selectionStart + 1 + indent.length
-					el.setSelectionRange(pos, pos)
-				})
+				const ins = '\n' + upIndent
+				onChange(val.slice(0, cur) + ins + val.slice(curEnd))
+				requestAnimationFrame(() => { el.setSelectionRange(cur + ins.length, cur + ins.length) })
 			}
 		}
 	}
@@ -747,7 +751,7 @@ function NotesEditor({
 		<textarea
 			ref={ref}
 			value={value}
-			onChange={handleChange}
+			onChange={e => onChange(e.target.value)}
 			onKeyDown={handleKeyDown}
 			placeholder={placeholder}
 			className={className}
