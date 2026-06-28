@@ -2297,7 +2297,7 @@ if (previewMode && !forcePreview) {
 											</div>
 											<div>
 												<p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#2e2318' }}>Evaluation saved.</p>
-												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>Uploading your recording — keep this tab open for a moment.</p>
+												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>Uploading your recording. Keep this tab open for a moment.</p>
 											</div>
 										</div>
 									) : (
