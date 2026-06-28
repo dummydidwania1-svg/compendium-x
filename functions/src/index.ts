@@ -1581,7 +1581,7 @@ export const sendWelcomeEmail = functionsV1
 
     const saKeyJson = process.env.GMAIL_SA_KEY
     if (!saKeyJson) {
-      logger.error('sendWelcomeEmail: GMAIL_SA_KEY secret missing')
+      console.error('[sendWelcomeEmail] GMAIL_SA_KEY secret missing')
       return
     }
 

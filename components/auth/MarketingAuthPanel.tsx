@@ -352,7 +352,6 @@ export default function MarketingAuthPanel({
 
         try {
           const result = await createUserWithEmailAndPassword(auth, normalizedEmail, password)
-          await sendEmailVerification(result.user)
           await signOut(auth)
           setPreferFallback(false)
 
