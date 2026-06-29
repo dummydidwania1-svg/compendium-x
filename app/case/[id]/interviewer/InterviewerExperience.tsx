@@ -855,14 +855,16 @@ export function InterviewerPageInner({
 		'idle' | 'uploading' | 'uploaded' | 'upload_failed' | 'not_captured'
 	>('idle')
 
+	// Remote mode: candidate and interviewer are on separate devices, separate browsers.
+	// No localStorage sharing — all cross-device coordination goes through Firestore.
+	const isRemoteMode = !isLocalMode
+
 	// When overlay is in success state and upload is done, start the 3s countdown.
 	// Local/split-screen: window.close() works (tab opened by script) — fires at 0.
-	// Remote: window.close() is blocked — countdown still shows as heads-up, then
-	// we just leave the "close this tab" card visible (no forced navigation).
+	// Remote: window.close() is blocked — show manual-close card instead.
 	useEffect(() => {
 		if (!overlaySuccess) return
 		if (interviewerUploadState === 'uploading') return
-		// Remote mode: don't auto-close, show the manual-close card instead
 		if (isRemoteMode) return
 		setOverlayAutoClose(3)
 		const iv = setInterval(() => {
@@ -899,10 +901,6 @@ export function InterviewerPageInner({
 		}, 1000)
 		return () => clearInterval(iv)
 	}, [currentView, interviewerUploadState, isRemoteMode])
-
-	// Remote mode: candidate and interviewer are on separate devices, separate browsers.
-	// No localStorage sharing — all cross-device coordination goes through Firestore.
-	const isRemoteMode = !isLocalMode
 	const [micGuardShowing, setMicGuardShowing] = useState(false)
 
 	// ── Interviewer mic recording (remote mode, dual-mic architecture) ────────────
@@ -2329,7 +2327,9 @@ if (previewMode && !forcePreview) {
 									) : isRemoteMode ? (
 										/* Remote: upload done — friendly manual-close prompt */
 										<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-											<div style={{ fontSize: '28px', lineHeight: 1 }}>👋</div>
+											<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+												<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+											</div>
 											<div>
 												<p style={{ margin: '0 0 5px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>That's a wrap!</p>
 												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.6 }}>
