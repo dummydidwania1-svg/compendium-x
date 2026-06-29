@@ -9918,98 +9918,8 @@
   ],
   "framework": "Candidate: Alright. So, our objective is to determine the number of mini-trucks the Professor will require in order to transport €2.4 billion. Am I right?\nInterviewer: Yes.\nCandidate: I have a couple of questions before I begin. How many trips is the money going to be transported in? What denomination are the notes in? How are they packed?\nInterviewer: The money has to be transported in a single trip. You can assume that the currency notes are in €100 denomination. They are to be loosely transported.\nCandidate: Got it. I will first estimate the volume of 1 note of €100 and the number of such notes. Next, I estimate the volume of 1 mini truck. The following formula will help us arrive at the number of mini-trucks:\n^ Number of mini-trucks required = (Number of notes * Volume of 1 note) / (Volume of 1 mini-truck * Number of trips)\nThis is based on 2 assumptions:\n1) The mini-truck can work at full capacity and will not have a problem carrying the weight of the money.\n2) There is no wastage of space when the trucks are loaded.\nInterviewer: Sounds good.\nCandidate: To calculate the volume of 1 note, we will need its length, width and thickness. A currency note is usually as long as a 15 cm ruler. The ratio of length to width is approximately 2:1. This means we can take the width to be about 7 cm. Calculating the thickness of a single note will be difficult. It will be easier to imagine a bunch of 100 notes. A bunch of 100 notes will be about 1 cm thick. Thus, the thickness of 1 note will be about 0.1 mm or 0.01 cm. We now have enough information to calculate the volume of 1 note.\n^ Volume of 1 note = Length * Width * Thickness\n^ = 15 cm * 7 cm * 0.01 cm\n^ = 1 cm³ (approx.)\nCandidate: Let's now calculate the number of notes.\n^ Number of notes = Total amount / Denomination of 1 note\n^ = €2.4 billion / €100\n^ = (2.4 * 10⁹) / 10²\n^ = 2.4 * 10⁷\nCandidate: We must now estimate the volume of each mini-truck, specifically its cargo body. Can I assume the mini-truck to be similar to a Tata Ace which is commonly used in India?\nInterviewer: Sure.\nCandidate: Okay. Again, we need to estimate the length, breadth and height of the cargo body of the truck. The breadth of the body is approximately equal to 5 feet or 150 cm and the length is about twice of this, i.e., 300 cm. The height of the cargo body will not be more than 6 feet, i.e., 180 cm (approx.)\n^ Volume of 1 truck = Length * Breadth * Height\n^ = 300 cm * 150 cm * 180 cm\n^ = 8 * 10⁶ cm³ (approx.)\nCandidate: We can now substitute the values in the original formula.\n^ Number of mini-trucks required = ((2.4 * 10⁷) * 1) / (8 * 10⁶)\n^ = 3\nCandidate: Therefore, 3 mini-trucks are required.\nInterviewer: Great work.\n\nMoney Heist Framework\nTRANSPORTING THE LOOT\nClarifying Questions: Number of trips the money will be transported in. Denomination of the notes. How the notes are packed.\nBrownie Points: Confirming that the mini-truck can bear the weight of the load. Stating the full-capacity and no-wasted-space assumptions before calculating.\nKeep In Mind: Visualise the problem before calculating. Keep every measurement in one unit. Anchor unknown sizes to familiar objects."
 },
-{
-  "id": 58,
-  "docId": "case-58",
-  "title": "Hala Madrid!",
-  "industry": "Industry Agnostic",
-  "difficulty": "Easy",
-  "case_type": "Guesstimate",
-  "company": "Kearney",
-  "round": "Buddy",
-  "prompt": "You spoke about your passion for football. Which is your favourite football club?",
-  "abbreviations": [
-    "BPL: Below Poverty Line",
-    "LMC: Lower Middle Class",
-    "UMC: Upper Middle Class",
-    "UC: Upper Class"
-  ],
-  "frameworkTree": {
-    "nodes": {
-      "population": { "id": "population", "label": "Indian Population", "tone": "root", "children": ["urban", "rural"] },
-      "urban": { "id": "urban", "label": "Urban", "tone": "branch", "children": ["bpl", "lmc", "umc", "uc"] },
-      "rural": { "id": "rural", "label": "Rural", "tone": "support", "children": [] },
-      "bpl": { "id": "bpl", "label": "BPL", "tone": "support", "children": [] },
-      "lmc": { "id": "lmc", "label": "LMC", "tone": "support", "children": [] },
-      "umc": { "id": "umc", "label": "UMC", "tone": "support", "children": [] },
-      "uc": { "id": "uc", "label": "UC", "tone": "branch", "children": [] }
-    },
-    "defaultExpanded": ["population", "urban"],
-    "defaultFocusedId": "uc",
-    "notes": [
-      { "title": "Questions", "items": ["Official jerseys only or replicas too?", "What time period are we considering?", "New jerseys only or resale too?"] },
-      { "title": "Keep In Mind", "items": ["Round figures to simplify the math", "Eliminate non-buyers with clear logic", "Anchor ratios to personal observation"] },
-      { "title": "Brownie Points", "items": ["Splitting fans across eight popular clubs", "Grounding ratios in personal experience"] }
-    ]
-  },
-  "visualisations": [
-    {
-      "id": "urban-income-segmentation",
-      "type": "table",
-      "inlineOnly": true,
-      "title": "Urban Population by Income",
-      "header": "Urban Population by Income",
-      "noTitle": true,
-      "columns": ["Category", "Income", "Population percentage", "Population"],
-      "columnWidths": ["28%", "32%", "20%", "20%"],
-      "summaryRows": [3],
-      "rows": [
-        ["Below Poverty Line", "< Rs 10,000/month", "30%", "120 million"],
-        ["Lower Middle Class", "Rs 10,000 - Rs 20,000/month", "30%", "120 million"],
-        ["Upper Middle Class", "Rs 20,000 - Rs 80,000/month", "30%", "120 million"],
-        ["Upper Class", "> Rs 80,000/month", "10%", "40 million"]
-      ],
-      "insight": "Only the Upper Class (40 million) can comfortably afford the ~Rs 6,000 official jersey; the rest opt for cheaper replicas and are eliminated."
-    },
-    {
-      "id": "football-following-by-age",
-      "type": "table",
-      "inlineOnly": true,
-      "title": "Football Following by Age and Gender",
-      "header": "Football Following by Age and Gender",
-      "noTitle": true,
-      "columns": ["Age Group", "Population percentage", "Population", "Category", "% following football", "Number of people"],
-      "columnWidths": ["15%", "18%", "15%", "20%", "16%", "16%"],
-      "summaryRows": [6],
-      "rows": [
-        ["< 18", "40%", "16 million", "Male (8 million)", "25%", "2,000,000"],
-        ["", "", "", "Female (8 million)", "5%", "400,000"],
-        ["18 - 40", "30%", "12 million", "Male (6 million)", "10%", "600,000"],
-        ["", "", "", "Female (6 million)", "2%", "120,000"],
-        ["40+", "30%", "12 million", "Male (6 million)", "0%", "0"],
-        ["", "", "", "Female (6 million)", "0%", "0"],
-        ["Total", "", "", "", "", "3 million (approx.)"]
-      ],
-      "insight": "Splitting the 40 million Upper Class by age and gender and applying football-following rates (highest among young males, negligible above 40) gives about 3 million fans who can afford the official jersey."
-    }
-  ],
-  "additionalFrameworkTrees": [
-    {
-      "label": "Football Fans to Jerseys Sold",
-      "nodes": {
-        "football-fans": { "id": "football-fans", "label": "Football Fans", "tone": "root", "children": ["real-madrid", "other-clubs"] },
-        "real-madrid": { "id": "real-madrid", "label": "Real Madrid Fans", "tone": "branch", "children": ["jersey-owners"] },
-        "other-clubs": { "id": "other-clubs", "label": "Other Clubs", "tone": "support", "children": [] },
-        "jersey-owners": { "id": "jersey-owners", "label": "Jersey Owners", "tone": "branch", "children": ["jerseys-year"] },
-        "jerseys-year": { "id": "jerseys-year", "label": "Jerseys Per Year", "tone": "branch", "children": [] }
-      },
-      "defaultExpanded": ["football-fans", "real-madrid", "jersey-owners"],
-      "defaultFocusedId": "jerseys-year",
-      "notes": []
-    }
-  ],
-  "framework": "Candidate: Yes. I'm a die-hard supporter of Real Madrid.\nInterviewer: That's great. How many Real Madrid jerseys do you think are sold in India?\nCandidate: Are we talking about the official jersey which costs about Rs 6,000 or are we including replicas as well? Also, what duration are we talking about?\nInterviewer: I am talking about official jerseys sold in a year.\nCandidate: Got it. A good place to start is India's population. Then, we can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. The demand for jerseys in the rural areas will be negligible due to lower income as well as lower exposure to international football. Even the ones who buy jerseys would probably buy replicas. Therefore, I would like to eliminate this section. That leaves us with about 400 million people.\nInterviewer: Makes sense.\nCandidate: Next, we can slice the urban population according to different income levels:\n[VIS:0]\nSince the official jerseys are quite costly, I believe only the upper class would be able to afford it. Other football fans may opt for the replica which is considerably cheaper. This leaves us with 40 million people. In our country, the people that watch football are young. Therefore, we divide the population into different age groups and look at how many people follow football from each age group. While doing this, we will also keep in mind that boys are more interested than girls when it comes to football.\nInterviewer: Sure. Go ahead!\n[VIS:1]\nCandidate: We have now arrived at the number of people who follow football closely in India and can afford to buy the official jersey. We must keep in mind that there are multiple football clubs that people follow and are usually loyal to one of these. There are 2 majorly followed leagues, the Premier League and the La Liga. Let's say that each of these leagues has 4 teams which enjoy popular support in our country and the fans are equally divided across these teams. That means about one-eighth of the 3 million people will be Real Madrid supporters, i.e., 375,000 supporters.\nCandidate: Out of these, maybe one in five would like to own an official jersey of the team. This is based on what I've seen in my own friends' circle. That gives us a number of 75,000 official Real Madrid jerseys that are sold in our country.\nCandidate: We are left with one final step.\n^ Number of jerseys sold in a year = Total number of jerseys sold / Life of one jersey\nCandidate: One jersey would last about 5 years. Therefore, the total number of official Real Madrid jerseys sold in India every year is equal to 15,000!\nInterviewer: Lovely.\n\nHala Madrid! Framework\nREAL MADRID JERSEYS SOLD IN INDIA IN ONE YEAR\nClarifying Questions: Only official jerseys? What duration?\nBrownie Points: Dividing football followers into 8 clubs. Drawing insight from personal experience.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers required."
-},
+
+
 {
   "id": 59,
   "docId": "case-59",
@@ -10391,16 +10301,15 @@
   "prompt": "You need to estimate the number of people who visit Khan Market in a day.",
   "frameworkTree": {
     "nodes": {
-      "khan-market": { "id": "khan-market", "label": "People Visiting Khan Market", "tone": "root", "children": ["restaurant-diners", "shoppers", "overlap-adjustment"] },
+      "khan-market": { "id": "khan-market", "label": "People Visiting Khan Market", "tone": "root", "children": ["restaurant-diners", "shoppers"] },
       "restaurant-diners": { "id": "restaurant-diners", "label": "Restaurant Diners", "tone": "branch", "children": [] },
-      "shoppers": { "id": "shoppers", "label": "Shoppers", "tone": "branch", "children": [] },
-      "overlap-adjustment": { "id": "overlap-adjustment", "label": "Overlap Adjustment", "tone": "support", "children": [] }
+      "shoppers": { "id": "shoppers", "label": "Exclusive Shoppers", "tone": "branch", "children": [] }
     },
     "defaultExpanded": ["khan-market"],
     "defaultFocusedId": "restaurant-diners",
     "notes": [
       { "title": "Questions", "items": ["Which day, weekday, weekend or festival?", "Do we include employees and casual walkers?", "Which purposes of visit should we count?"] },
-      { "title": "Keep In Mind", "items": ["State every assumption explicitly", "Avoid double-counting shoppers who also dine", "Use turnover to convert seats into daily visits"] },
+      { "title": "Keep In Mind", "items": ["State every assumption explicitly",  "Use turnover to convert seats into daily visits"] },
       { "title": "Brownie Points", "items": ["Identifying the shopping-and-dining overlap", "Splitting the day into demand bands"] }
     ]
   },
@@ -10465,10 +10374,10 @@
         ["Exclusive shoppers", "1,800 − (1,800 ÷ 4 who also dine)", "1,350"],
         ["Total daily visitors", "8,400 + 1,350", "~9,750"]
       ],
-      "insight": "The 8,400 diners already include the shoppers who also eat, so only the exclusive shoppers are added back. With 1 in 4 shoppers also dining, 1,350 of the ~1,800 shoppers come only to shop, giving roughly 9,750 visitors a day."
+      "insight": "The 8,400 diners already include the shoppers who also eat, so only the exclusive shoppers are added back."
     }
   ],
-  "framework": "Candidate: Sure, I have some clarifying questions. What day are we talking about? Weekend/Weekday/Festival etc.\nInterviewer: You can assume it to be a weekend.\nCandidate: Alright. What do we mean by number of people? Will we include the employees and casual walkers as well?\nInterviewer: Good question. We mean the number of people visiting with a purpose.\nCandidate: Sure, thank you. From what I know, people visit Khan Market for shopping and its restaurants. Is there any other purpose I should be aware of?\nInterviewer: No, you can look at these two.\nCandidate: Sure. We can analyse this problem by identifying bottlenecks from the supply side.\nStep 1: Estimating the number of restaurants\nStep 2: Distribution of occupancy rates across the day\nStep 3: Estimating the number of shops\nStep 4: Distribution of footfall across the day\nStep 5: Subtraction of overlap of people eating as well as shopping\nDoes this process seem okay to you or should I look at something else?\nInterviewer: You can proceed with this structure.\nCandidate: Sure.\nStep 1: Estimating the number of restaurants\nKhan Market has 2 inner lanes and 2 outer lanes. Assuming 10 restaurants per inner lane and assuming 15 restaurants per outer lane gives us 50 restaurants.\nStep 2: Distribution of occupancy rates across the day\nAssuming every restaurant is equally popular (it averages out), we do not have to categorise the restaurants according to popularity.\n[VIS:0]\nTotal number of people visiting a single restaurant = 168\nTotal = 168 * 50 = 8,400\nAssumption: Turnaround time of every table is 1 hour.\nStep 3: Estimating the number of shops\nKhan Market has 2 inner lanes and 2 outer lanes. Assuming 10 shops per inner lane and assuming 10 shops per outer lane gives us 40 shops.\nStep 4: Distribution of footfall across the day\n[VIS:1]\nTotal number of visits per shop = 134\nTotal number of visits in all shops in Khan Market = 134 * 40 = 5,360\nOn an average a person visits 3 stores.\nTotal number of people shopping at Khan Market = 5360 / 3 = 1,800 (approx.)\nStep 5: Subtraction of overlap\nOn an average, we can assume 1 in every 4 people that go shopping in Khan Market will eat at restaurants. This is based on my personal experience going shopping to any place.\nPeople exclusively coming for shopping = 1,800 - (1,800 / 4) = 1,350.\nTotal number of people coming to Khan market everyday = 8,400 + 1,350 = 9,750.\nInterviewer: Good job. We can close the case now.\n\nMy Name is Khan Framework\nNUMBER OF PEOPLE WHO VISIT KHAN MARKET IN A DAY\nClarifying Questions: Whether employees are included in footfall? Which day? Why do people visit Khan Market?\nBrownie Points: Avoiding double counting by identification of overlap of people who visit for shopping as well as dining.\nKeep In Mind: It is important to state all assumptions explicitly."
+  "framework": "Candidate: Sure, I have some clarifying questions. What day are we talking about? Weekend/Weekday/Festival etc.\nInterviewer: You can assume it to be a weekend.\nCandidate: Alright. What do we mean by number of people? Will we include the employees and casual walkers as well?\nInterviewer: Good question. We mean the number of people visiting with a purpose.\nCandidate: Sure, thank you. From what I know, people visit Khan Market for shopping and its restaurants. Is there any other purpose I should be aware of?\nInterviewer: No, you can look at these two.\nCandidate: Sure. We can analyse this problem by identifying bottlenecks from the supply side.\nStep 1: Estimating the number of restaurants\nStep 2: Distribution of occupancy rates across the day\nStep 3: Estimating the number of shops\nStep 4: Distribution of footfall across the day\nStep 5: Subtraction of overlap of people eating as well as shopping\nDoes this process seem okay to you or should I look at something else?\nInterviewer: You can proceed with this structure.\nCandidate: Sure.\nStep 1: Estimating the number of restaurants\nKhan Market has 2 inner lanes and 2 outer lanes. Assuming 10 restaurants per inner lane and assuming 15 restaurants per outer lane gives us 50 restaurants.\nStep 2: Distribution of occupancy rates across the day\nAssuming every restaurant is equally popular (it averages out), we do not have to categorise the restaurants according to popularity.\n[VIS:0]\nTotal number of people visiting a single restaurant = 168\n~ Total = 168 * 50 = 8,400\nAssumption: Turnaround time of every table is 1 hour.\nStep 3: Estimating the number of shops\nKhan Market has 2 inner lanes and 2 outer lanes. Assuming 10 shops per inner lane and assuming 10 shops per outer lane gives us 40 shops.\nStep 4: Distribution of footfall across the day\n[VIS:1]\nTotal number of visits per shop = 134\n~ Total number of visits in all shops in Khan Market = 134 * 40 = 5,360\nOn an average a person visits 3 stores.\n~ Total number of people shopping at Khan Market = 5360 / 3 = 1,800 (approx.)\nStep 5: Subtraction of overlap\nOn an average, we can assume 1 in every 4 people that go shopping in Khan Market will eat at restaurants. This is based on my personal experience going shopping to any place.\n~ People exclusively coming for shopping = 1,800 - (1,800 / 4) = 1,350.\nTotal number of people coming to Khan market everyday = 8,400 + 1,350 = 9,750.\nInterviewer: Good job. We can close the case now.\n\nMy Name is Khan Framework\nNUMBER OF PEOPLE WHO VISIT KHAN MARKET IN A DAY\nClarifying Questions: Whether employees are included in footfall? Which day? Why do people visit Khan Market?\nBrownie Points: Avoiding double counting by identification of overlap of people who visit for shopping as well as dining.\nKeep In Mind: It is important to state all assumptions explicitly."
 },
 
 
