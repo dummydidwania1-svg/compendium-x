@@ -932,6 +932,7 @@ export function InterviewerPageInner({
 	const lastInterviewerFlushMimeTypeRef = useRef<string>('audio/webm')
 	const recordingFinalizedRef = useRef(false)
 	const cachedAuthTokenRef = useRef<string | null>(null)
+	const selectingGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	// Mid-session mic-LOSS recovery (manual block). Raises the recovery banner when
 	// a previously-granted mic flips to 'denied'. Hard-suppressed when the interviewer
@@ -1033,8 +1034,11 @@ export function InterviewerPageInner({
 			// D9: Seed inactivity clocks from server timestamps on the first snapshot.
 			// Also capture selectedAt for dual-mic startOffsetMs calculation.
 			if (!seedApplied && status === 'in_progress') {
-				// Clear the optimistic-navigation marker set by the repository's
-				// handleSelectCase — we're confirmed in the session now.
+				// select-case confirmed — cancel the fallback redirect timer and clear marker.
+				if (selectingGraceTimerRef.current) {
+					clearTimeout(selectingGraceTimerRef.current)
+					selectingGraceTimerRef.current = null
+				}
 				if (lobbyId) {
 					try { localStorage.removeItem(`compendium-selecting-${lobbyId}`) } catch { /* ignore */ }
 				}
@@ -1080,14 +1084,29 @@ export function InterviewerPageInner({
 			if (status === 'waiting' || status === 'abandoned') {
 				if (view !== 'success') {
 					// If the interviewer just navigated here from the case picker before
-					// select-case finished, suppress the redirect for up to 12 s so the
-					// in-flight API call has time to transition the session to in_progress.
+					// select-case finished, suppress the immediate redirect and schedule a
+					// fallback instead. When select-case writes in_progress the snapshot
+					// fires again and cancels the timer. If it never arrives (API error,
+					// network failure), the timer fires and returns the interviewer to lobby.
 					if (status === 'waiting' && lobbyId) {
 						try {
 							const raw = localStorage.getItem(`compendium-selecting-${lobbyId}`)
 							if (raw) {
 								const marker = JSON.parse(raw) as { ts?: number }
-								if (Date.now() - (marker.ts ?? 0) < 12_000) return
+								const age = Date.now() - (marker.ts ?? 0)
+								if (age < 12_000) {
+									if (!selectingGraceTimerRef.current) {
+										const lobbyMode = searchParams.get('sessionMode') ?? 'remote'
+										selectingGraceTimerRef.current = setTimeout(() => {
+											selectingGraceTimerRef.current = null
+											try { localStorage.removeItem(`compendium-selecting-${lobbyId}`) } catch { /* ignore */ }
+											if (currentViewRef.current !== 'success') {
+												router.replace(`/lobby/${encodeURIComponent(lobbyId)}?role=interviewer&mode=${lobbyMode}`)
+											}
+										}, 12_000 - age + 500)
+									}
+									return
+								}
 								localStorage.removeItem(`compendium-selecting-${lobbyId}`)
 							}
 						} catch { /* ignore */ }
@@ -1123,7 +1142,14 @@ export function InterviewerPageInner({
 			},
 		)
 
-		return () => { unsubscribe(); clearPoll() }
+		return () => {
+			unsubscribe()
+			clearPoll()
+			if (selectingGraceTimerRef.current) {
+				clearTimeout(selectingGraceTimerRef.current)
+				selectingGraceTimerRef.current = null
+			}
+		}
 	// isRemoteMode, lobbyId, previewMode are stable for the session lifetime
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isRemoteMode, lobbyId, previewMode])
