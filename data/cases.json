@@ -9850,7 +9850,7 @@
 
 
 
-  {
+{
   "id": 57,
   "docId": "case-57",
   "title": "Money Heist",
@@ -9870,9 +9870,9 @@
     "defaultExpanded": ["mini-trucks"],
     "defaultFocusedId": "mini-trucks",
     "notes": [
-      { "title": "Questions", "items": ["Number of trips", "Denomination of the notes", "How the notes are packed"] },
+      { "title": "Questions", "items": ["How many trips will the money be transported in?", "What denomination are the notes in?", "How are the notes packed?"] },
       { "title": "Keep In Mind", "items": ["Visualise the problem before calculating", "Keep every measurement in one unit", "Anchor unknown sizes to familiar objects"] },
-      { "title": "Brownie Points", "items": ["Confirming the truck can bear the load", "Stating assumptions before calculating"] }
+      { "title": "Brownie Points", "items": ["Confirming the truck can bear the load"] }
     ]
   },
   "visualisations": [
@@ -9916,7 +9916,7 @@
       "insight": "All dimensions are kept in centimetres so the volumes divide cleanly. With a single trip, and assuming the truck runs at full capacity with no wasted space, the loot needs 3 mini-trucks."
     }
   ],
-  "framework": "Interviewer: Your client is the professor from Money Heist. His team has just robbed the Royal Mint of Spain to the tune of €2.4 billion in cash. He needs your help in transporting this to their safe-house located 15 km away. How many mini-trucks will he need to buy?\nCandidate: Alright. So, our objective is to determine the number of mini-trucks the Professor will require in order to transport €2.4 billion. Am I right?\nInterviewer: Yes.\nCandidate: I have a couple of questions before I begin. How many trips is the money going to be transported in? What denomination are the notes in? How are they packed?\nInterviewer: The money has to be transported in a single trip. You can assume that the currency notes are in €100 denomination. They are to be loosely transported.\nCandidate: Got it. I will first estimate the volume of 1 note of €100 and the number of such notes. Next, I estimate the volume of 1 mini truck. The following formula will help us arrive at the number of mini-trucks:\n^Number of mini-trucks required = (Number of notes * Volume of 1 note) / (Volume of 1 mini-truck * Number of trips)\nThis is based on 2 assumptions:\n1) The mini-truck can work at full capacity and will not have a problem carrying the weight of the money.\n2) There is no wastage of space when the trucks are loaded.\nInterviewer: Sounds good.\nCandidate: To calculate the volume of 1 note, we will need its length, width and thickness. A currency note is usually as long as a 15 cm ruler. The ratio of length to width is approximately 2:1. This means we can take the width to be about 7 cm. Calculating the thickness of a single note will be difficult. It will be easier to imagine a bunch of 100 notes. A bunch of 100 notes will be about 1 cm thick. Thus, the thickness of 1 note will be about 0.1 mm or 0.01 cm. We now have enough information to calculate the volume of 1 note.\n^Volume of 1 note = Length * Width * Thickness\n^= 15 cm * 7 cm * 0.01 cm\n^= 1 cm³ (approx.)\nCandidate: Let's now calculate the number of notes.\n^Number of notes = Total amount / Denomination of 1 note\n^= €2.4 billion / €100\n^= (2.4 * 10⁹) / 10²\n^= 2.4 * 10⁷\nCandidate: We must now estimate the volume of each mini-truck, specifically its cargo body. Can I assume the mini-truck to be similar to a Tata Ace which is commonly used in India?\nInterviewer: Sure.\nCandidate: Okay. Again, we need to estimate the length, breadth and height of the cargo body of the truck. The breadth of the body is approximately equal to 5 feet or 150 cm and the length is about twice of this, i.e., 300 cm. The height of the cargo body will not be more than 6 feet, i.e., 180 cm (approx.)\n^Volume of 1 truck = Length * Breadth * Height\n^= 300 cm * 150 cm * 180 cm\n^= 8 * 10⁶ cm³ (approx.)\nCandidate: We can now substitute the values in the original formula.\n^Number of mini-trucks required = ((2.4 * 10⁷) * 1) / (8 * 10⁶)\n^= 3\nCandidate: Therefore, 3 mini-trucks are required.\nInterviewer: Great work.\n\nMoney Heist Framework\nTRANSPORTING THE LOOT\nClarifying Questions: Number of trips the money will be transported in. Denomination of the notes. How the notes are packed.\nBrownie Points: Confirming that the mini-truck can bear the weight of the load. Stating the full-capacity and no-wasted-space assumptions before calculating.\nKeep In Mind: Visualise the problem before calculating. Keep every measurement in one unit. Anchor unknown sizes to familiar objects."
+  "framework": "Candidate: Alright. So, our objective is to determine the number of mini-trucks the Professor will require in order to transport €2.4 billion. Am I right?\nInterviewer: Yes.\nCandidate: I have a couple of questions before I begin. How many trips is the money going to be transported in? What denomination are the notes in? How are they packed?\nInterviewer: The money has to be transported in a single trip. You can assume that the currency notes are in €100 denomination. They are to be loosely transported.\nCandidate: Got it. I will first estimate the volume of 1 note of €100 and the number of such notes. Next, I estimate the volume of 1 mini truck. The following formula will help us arrive at the number of mini-trucks:\n^ Number of mini-trucks required = (Number of notes * Volume of 1 note) / (Volume of 1 mini-truck * Number of trips)\nThis is based on 2 assumptions:\n1) The mini-truck can work at full capacity and will not have a problem carrying the weight of the money.\n2) There is no wastage of space when the trucks are loaded.\nInterviewer: Sounds good.\nCandidate: To calculate the volume of 1 note, we will need its length, width and thickness. A currency note is usually as long as a 15 cm ruler. The ratio of length to width is approximately 2:1. This means we can take the width to be about 7 cm. Calculating the thickness of a single note will be difficult. It will be easier to imagine a bunch of 100 notes. A bunch of 100 notes will be about 1 cm thick. Thus, the thickness of 1 note will be about 0.1 mm or 0.01 cm. We now have enough information to calculate the volume of 1 note.\n^ Volume of 1 note = Length * Width * Thickness\n^ = 15 cm * 7 cm * 0.01 cm\n^ = 1 cm³ (approx.)\nCandidate: Let's now calculate the number of notes.\n^ Number of notes = Total amount / Denomination of 1 note\n^ = €2.4 billion / €100\n^ = (2.4 * 10⁹) / 10²\n^ = 2.4 * 10⁷\nCandidate: We must now estimate the volume of each mini-truck, specifically its cargo body. Can I assume the mini-truck to be similar to a Tata Ace which is commonly used in India?\nInterviewer: Sure.\nCandidate: Okay. Again, we need to estimate the length, breadth and height of the cargo body of the truck. The breadth of the body is approximately equal to 5 feet or 150 cm and the length is about twice of this, i.e., 300 cm. The height of the cargo body will not be more than 6 feet, i.e., 180 cm (approx.)\n^ Volume of 1 truck = Length * Breadth * Height\n^ = 300 cm * 150 cm * 180 cm\n^ = 8 * 10⁶ cm³ (approx.)\nCandidate: We can now substitute the values in the original formula.\n^ Number of mini-trucks required = ((2.4 * 10⁷) * 1) / (8 * 10⁶)\n^ = 3\nCandidate: Therefore, 3 mini-trucks are required.\nInterviewer: Great work.\n\nMoney Heist Framework\nTRANSPORTING THE LOOT\nClarifying Questions: Number of trips the money will be transported in. Denomination of the notes. How the notes are packed.\nBrownie Points: Confirming that the mini-truck can bear the weight of the load. Stating the full-capacity and no-wasted-space assumptions before calculating.\nKeep In Mind: Visualise the problem before calculating. Keep every measurement in one unit. Anchor unknown sizes to familiar objects."
 },
 {
   "id": 58,
@@ -9927,7 +9927,7 @@
   "case_type": "Guesstimate",
   "company": "Kearney",
   "round": "Buddy",
-  "prompt": "You're a die-hard Real Madrid supporter. How many Real Madrid jerseys do you think are sold in India? We are talking about official jerseys (which cost about Rs 6,000) sold in one year.",
+  "prompt": "You spoke about your passion for football. Which is your favourite football club?",
   "abbreviations": [
     "BPL: Below Poverty Line",
     "LMC: Lower Middle Class",
@@ -9947,7 +9947,7 @@
     "defaultExpanded": ["population", "urban"],
     "defaultFocusedId": "uc",
     "notes": [
-      { "title": "Questions", "items": ["Official jersey or replicas", "Time period in scope", "New or resale jerseys"] },
+      { "title": "Questions", "items": ["Official jerseys only or replicas too?", "What time period are we considering?", "New jerseys only or resale too?"] },
       { "title": "Keep In Mind", "items": ["Round figures to simplify the math", "Eliminate non-buyers with clear logic", "Anchor ratios to personal observation"] },
       { "title": "Brownie Points", "items": ["Splitting fans across eight popular clubs", "Grounding ratios in personal experience"] }
     ]
@@ -10023,7 +10023,7 @@
       "notes": []
     }
   ],
-  "framework": "Interviewer: You spoke about your passion for football. Which is your favourite football club?\nCandidate: Yes Sir. I'm a die-hard supporter of Real Madrid.\nInterviewer: That's great. How many Real Madrid jerseys do you think are sold in India?\nCandidate: Are we talking about the official jersey which costs about Rs 6,000 or are we including replicas as well? Also, what duration are we talking about?\nInterviewer: I am talking about official jerseys sold in a year.\nCandidate: Got it. A good place to start is India's population. Then, we can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. The demand for jerseys in the rural areas will be negligible due to lower income as well as lower exposure to international football. Even the ones who buy jerseys would probably buy replicas. Therefore, I would like to eliminate this section. That leaves us with about 400 million people.\nInterviewer: Makes sense.\nCandidate: Next, we can slice the urban population according to different income levels: Below Poverty Line, Lower Middle Class, Upper Middle Class and Upper Class. Since the official jerseys are quite costly, I believe only the upper class would be able to afford it. Other football fans may opt for the replica which is considerably cheaper. This leaves us with 40 million people. In our country, the people that watch football are young. Therefore, we divide the population into different age groups and look at how many people follow football from each age group. While doing this, we will also keep in mind that boys are more interested than girls when it comes to football.\nInterviewer: Sure. Go ahead!\nCandidate: Splitting the 40 million by age (under 18 at 40%, 18 to 40 at 30%, and above 40 at 30%) and then by gender, I apply the share of each group that follows football. Young males have the highest following while almost no one above 40 follows it closely. Adding up the segments, we arrive at about 3 million people who follow football closely and can afford the official jersey.\nInterviewer: Makes sense.\nCandidate: We must keep in mind that there are multiple football clubs that people follow and are usually loyal to one of these. There are 2 majorly followed leagues, the Premier League and the La Liga. Let's say each league has 4 teams which enjoy popular support in our country and the fans are equally divided across these teams. That means about one-eighth of the 3 million people will be Real Madrid supporters, i.e., 375,000 supporters.\nCandidate: Out of these, maybe one in five would like to own an official jersey of the team. This is based on what I've seen in my own friends' circle. That gives us about 75,000 official Real Madrid jerseys owned in our country.\nCandidate: We are left with one final step.\n^Number of jerseys sold in a year = Total jerseys owned / Life of one jersey\nOne jersey would last about 5 years. Therefore, the number of official Real Madrid jerseys sold in India every year is:\n^= 75,000 / 5\n^= 15,000\nInterviewer: Lovely.\n\nHala Madrid! Framework\nREAL MADRID JERSEYS SOLD IN INDIA IN ONE YEAR\nClarifying Questions: Official jersey only or replicas too? What time duration are we considering?\nBrownie Points: Dividing football followers across 8 popular clubs. Drawing insight from personal experience.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers wherever required."
+  "framework": "Candidate: Yes sir. I’m a die-hard supporter of Real Madrid.\nInterviewer: That’s great. How many Real Madrid jerseys do you think are sold in India?\nCandidate: Are we talking about the official jersey which costs about Rs 6,000 or are we including replicas as well? Also, what duration are we talking about?\nInterviewer: I am talking about official jerseys sold in a year.\nCandidate: Got it. A good place to start is India's population. Then, we can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. The demand for jerseys in the rural areas will be negligible due to lower income as well as lower exposure to international football. Even the ones who buy jerseys would probably buy replicas. Therefore, I would like to eliminate this section. That leaves us with about 400 million people.\nInterviewer: Makes sense.\nCandidate: Next, we can slice the urban population according to different income levels: Below Poverty Line, Lower Middle Class, Upper Middle Class and Upper Class. Since the official jerseys are quite costly, I believe only the upper class would be able to afford it. Other football fans may opt for the replica which is considerably cheaper. This leaves us with 40 million people. In our country, the people that watch football are young. Therefore, we divide the population into different age groups and look at how many people follow football from each age group. While doing this, we will also keep in mind that boys are more interested than girls when it comes to football.\nInterviewer: Sure. Go ahead!\nCandidate: Splitting the 40 million by age (under 18 at 40%, 18 to 40 at 30%, and above 40 at 30%) and then by gender, I apply the share of each group that follows football. Young males have the highest following while almost no one above 40 follows it closely. Adding up the segments, we arrive at about 3 million people who follow football closely and can afford the official jersey.\nInterviewer: Makes sense.\nCandidate: We must keep in mind that there are multiple football clubs that people follow and are usually loyal to one of these. There are 2 majorly followed leagues, the Premier League and the La Liga. Let's say each league has 4 teams which enjoy popular support in our country and the fans are equally divided across these teams. That means about one-eighth of the 3 million people will be Real Madrid supporters, i.e., 375,000 supporters.\nCandidate: Out of these, maybe one in five would like to own an official jersey of the team. This is based on what I've seen in my own friends' circle. That gives us about 75,000 official Real Madrid jerseys owned in our country.\nCandidate: We are left with one final step.\n^ Number of jerseys sold in a year = Total jerseys owned / Life of one jersey\nOne jersey would last about 5 years. Therefore, the number of official Real Madrid jerseys sold in India every year is:\n^ = 75,000 / 5\n^ = 15,000\nInterviewer: Lovely.\n\nHala Madrid! Framework\nREAL MADRID JERSEYS SOLD IN INDIA IN ONE YEAR\nClarifying Questions: Official jersey only or replicas too? What time duration are we considering?\nBrownie Points: Dividing football followers across 8 popular clubs. Drawing insight from personal experience.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers wherever required."
 },
 {
   "id": 59,
@@ -10047,7 +10047,7 @@
     "defaultExpanded": ["num-trains", "trains-per-line"],
     "defaultFocusedId": "trains-per-line",
     "notes": [
-      { "title": "Questions", "items": ["Definition of fleet size", "Active fleet or yard included", "Peak-hour or average frequency"] },
+      { "title": "Questions", "items": ["What do we mean by fleet size?", "Active fleet only or include the yard?", "Peak-hour or average frequency?"] },
       { "title": "Keep In Mind", "items": ["Visualise the problem before calculating", "Use peak-hour frequency for max fleet", "Count trains in both directions"] },
       { "title": "Brownie Points", "items": ["Using personal commute for assumptions", "Adjusting for the longer yellow line"] }
     ]
@@ -10083,9 +10083,304 @@
       "insight": "Peak-hour frequency is used because it captures the maximum number of trains running at once, which equals the active fleet. Doubling for both directions and multiplying across all 10 lines gives an active fleet of about 300 trains."
     }
   ],
-  "framework": "Interviewer: I'm assuming you travel to college by metro. What if you had to estimate the fleet size of the Delhi metro? How would you go about it?\nCandidate: Yes, I commute by metro almost everyday. What exactly do we mean by fleet size?\nInterviewer: Fleet size means the number of trains in the network at a given point in time.\nCandidate: Are we talking about the active fleet of trains in the network or are we also including those which are in the yard and are not in use currently?\nInterviewer: Good question. We are only concerned with the active fleet.\nCandidate: Understood. The active fleet can be calculated using the following formula:\n^Number of trains = Number of metro lines * Number of trains/line\nCandidate: I know that there are 10 metro lines in Delhi. To calculate the number of trains/line, we can look at the frequency of trains and make an estimate of the time it takes the train to complete the trip from the first station to the last station on the line.\nCandidate: I travel to college on the yellow line. There is one train which comes every 4 minutes in peak hours. We are only concerned by the frequency in peak hours since our objective is to find the maximum number of trains in use at any point during the day. This will essentially give us the fleet size. The journey from the first stop to the last stop of the yellow line takes about 80 minutes. However, I think the yellow line is one of the longer lines in the metro network. After adjusting for this, we can say that the average metro route can be covered in about 60 minutes.\n^Number of trains/line = Total time taken to complete journey / Frequency of trains\n^= 60 / 4\n^= 15\nCandidate: Therefore, the number of trains/line is about 15. However, we still have to take one thing into consideration. These 15 trains are going in one direction. There are another 15 which will be going in the opposite direction at the same time. Thus, we are left with 30 trains/line. Finally, we can multiply it with the total number of lines in Delhi, i.e., 10.\n^Active fleet size of Delhi metro = 10 * 30\n^= 300\nInterviewer: Good job.\n\nSubway Surfers Framework\nFLEET SIZE OF DELHI METRO\nClarifying Questions: What do we mean by fleet size? Are we concerned only with the active fleet?\nBrownie Points: Incorporating own travelling experience to make more accurate assumptions.\nKeep In Mind: It is easier to solve guesstimates if you can visualise the problem at hand. Account for only peak hours while calculating the fleet size."
+  "framework": "Candidate: Yes, I commute by metro almost everyday. What exactly do we mean by fleet size?\nInterviewer: Fleet size means the number of trains in the network at a given point in time.\nCandidate: Are we talking about the active fleet of trains in the network or are we also including those which are in the yard and are not in use currently?\nInterviewer: Good question. We are only concerned with the active fleet.\nCandidate: Understood. The active fleet can be calculated using the following formula:\n^ Number of trains = Number of metro lines * Number of trains/line\nCandidate: I know that there are 10 metro lines in Delhi. To calculate the number of trains/line, we can look at the frequency of trains and make an estimate of the time it takes the train to complete the trip from the first station to the last station on the line.\nCandidate: I travel to college on the yellow line. There is one train which comes every 4 minutes in peak hours. We are only concerned by the frequency in peak hours since our objective is to find the maximum number of trains in use at any point during the day. This will essentially give us the fleet size. The journey from the first stop to the last stop of the yellow line takes about 80 minutes. However, I think the yellow line is one of the longer lines in the metro network. After adjusting for this, we can say that the average metro route can be covered in about 60 minutes.\n^ Number of trains/line = Total time taken to complete journey / Frequency of trains\n^ = 60 / 4\n^ = 15\nCandidate: Therefore, the number of trains/line is about 15. However, we still have to take one thing into consideration. These 15 trains are going in one direction. There are another 15 which will be going in the opposite direction at the same time. Thus, we are left with 30 trains/line. Finally, we can multiply it with the total number of lines in Delhi, i.e., 10.\n^ Active fleet size of Delhi metro = 10 * 30\n^ = 300\nInterviewer: Good job.\n\nSubway Surfers Framework\nFLEET SIZE OF DELHI METRO\nClarifying Questions: What do we mean by fleet size? Are we concerned only with the active fleet?\nBrownie Points: Incorporating own travelling experience to make more accurate assumptions.\nKeep In Mind: It is easier to solve guesstimates if you can visualise the problem at hand. Account for only peak hours while calculating the fleet size."
 },
-
+{
+  "id": 60,
+  "docId": "case-60",
+  "title": "Don't Do Coke",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Guesstimate",
+  "company": "BCG",
+  "round": "Principal",
+  "prompt": "Estimate the volume of Pepsi sold in a cricket game at the Wankhede stadium, Mumbai. Assume an IPL match between Royal Challengers Bangalore and Mumbai Indians in 2019, pre-covid with crowds allowed, on a pleasant evening.",
+  "frameworkTree": {
+    "nodes": {
+      "pepsi-sold": { "id": "pepsi-sold", "label": "Pepsi Sold", "tone": "root", "children": ["total-seats", "occupancy", "buy-soft-drink", "buy-pepsi", "volume-per-person"] },
+      "total-seats": { "id": "total-seats", "label": "Total Seats", "tone": "leaf", "children": [] },
+      "occupancy": { "id": "occupancy", "label": "Match Occupancy", "tone": "leaf", "children": [] },
+      "buy-soft-drink": { "id": "buy-soft-drink", "label": "Buy a Soft Drink", "tone": "branch", "children": [] },
+      "buy-pepsi": { "id": "buy-pepsi", "label": "Buy Pepsi", "tone": "leaf", "children": [] },
+      "volume-per-person": { "id": "volume-per-person", "label": "Volume per Person", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["pepsi-sold"],
+    "defaultFocusedId": "buy-soft-drink",
+    "notes": [
+      { "title": "Questions", "items": ["What type of cricket match is it?", "Are crowds allowed (pre-covid)?", "What is the weather on match day?"] },
+      { "title": "Keep In Mind", "items": ["Filter buyers by income, health and mood", "Skew uniform splits toward the popular brand", "Exact stadium facts are not expected"] },
+      { "title": "Brownie Points", "items": ["Filtering soft-drink buyers on three factors", "Asking about the weather"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "title": "Pepsi Volume Formula",
+      "type": "formula",
+      "lhs": "Volume of Pepsi Sold",
+      "rhs": "Total Seats × % Occupancy × % Buying a Soft Drink × % Buying Pepsi × Volume per Person",
+      "derivations": [
+        { "lhs": "Total Seats", "rhs": "Number of Stands × Seats per Stand" },
+        { "lhs": "% Buying a Soft Drink", "rhs": "% Affording × % Not Health-Averse × % In the Mood" },
+        { "lhs": "Volume per Person", "rhs": "Average Glasses × Volume per Glass" }
+      ],
+      "content": "Volume of Pepsi Sold = Total Seats × % Occupancy × % Buying a Soft Drink × % Buying Pepsi × Volume per Person. The soft-drink rate is itself filtered by income, health and mood, and each person's volume reflects an average of 1.25 glasses of 300 ml."
+    },
+    {
+      "id": "soft-drink-filter",
+      "type": "table",
+      "title": "Soft-Drink Purchase Filters",
+      "header": "Soft-Drink Purchase Filters",
+      "noTitle": true,
+      "columns": ["Filter", "Logic", "Share"],
+      "columnWidths": ["26%", "52%", "22%"],
+      "summaryRows": [3],
+      "rows": [
+        ["Income", "~4 of 8 stands are budget seats; like a cinema, they skip the costly drink", "50%"],
+        ["Health", "some avoid soft drinks for health reasons", "70%"],
+        ["Mood", "some who can and do drink are simply not in the mood today", "80%"],
+        ["Combined", "50% × 70% × 80%", "≈ 30%"]
+      ],
+      "insight": "Three independent filters — income, health and mood — compound to roughly 30% of attendees actually buying a soft drink."
+    },
+    {
+      "id": "pepsi-volume-calculation",
+      "type": "table",
+      "title": "Pepsi Volume Estimation",
+      "header": "Pepsi Volume Estimation",
+      "noTitle": true,
+      "columns": ["Factor", "Breakdown / Assumption", "Value"],
+      "columnWidths": ["34%", "43%", "23%"],
+      "summaryRows": [2, 5, 6],
+      "rows": [
+        ["Total seats (A)", "8 stands × 4,000 seats", "32,000"],
+        ["Occupancy (B)", "high-profile IPL match", "90%"],
+        ["Buy a soft drink (C)", "income × health × mood (50% × 70% × 80%)", "30%"],
+        ["Buy Pepsi (D)", "4 popular drinks, skewed up for Pepsi", "40%"],
+        ["Volume per person (E)", "1.25 glasses × 300 ml", "375 ml"],
+        ["People buying Pepsi", "A × B × C × D", "3,456"],
+        ["Volume of Pepsi sold", "× E", "1,296 L ≈ 1,300 L"]
+      ],
+      "insight": "Of 32,000 seats at 90% occupancy, about 30% buy a soft drink and 40% of those pick Pepsi — roughly 3,456 buyers. At 375 ml each, that is about 1,300 litres of Pepsi sold in the match."
+    }
+  ],
+  "framework": "Candidate: Oh wow, that's interesting! Are we talking about an international match, IPL match or Ranji Trophy/domestic tournament match? Also, can I make the assumption that this is pre-covid when crowds were allowed in stadiums? How is the weather during the match?\nInterviewer: It is an IPL match between Royal Challengers Bangalore and Mumbai Indians. Yes, assume the year is 2019. It is a pleasant evening - not too cold and not too hot.\nCandidate: Okay. I can begin now. My formula would be as follows:\n^ Total volume of Pepsi sold = Total number of seats * % occupancy * % that purchase a soft drink * % that purchase Pepsi * Volume purchased by each person\nCandidate: I would first estimate the total number of people that can be accommodated by the stadium. Wankhede is an average-sized stadium in India. By my understanding, it has around 8 stands and an average of 4,000 seats in each stand. This would give us a total capacity of 32,000 seats in the stadium.\nCandidate: Considering it is a high-profile match with popular players on both sides, it would be reasonable to assume a 90% occupancy rate.\nCandidate: To estimate the percentage that would buy a soft drink, I would like to look at 3 filters – Income, Health, Mood. Since around 4 out of the 8 stands have affordable tickets, we can assume that these are people that are budget conscious and considering a glass of Pepsi is expensive inside a stadium, we can rule them out from purchasing the drink. The logic is similar to a movie theatre where middle class consumers are reluctant to spend on soft drinks. There also exists a percentage of people that avoid soft drinks for health reasons. We can assume this percentage to be around 30%. Lastly, among the people that can afford and do drink soft drinks, we can assume around 20% to not be interested in a soft drink on the given day. This gives us 50% * 70% * 80% = 30% (approx.).\nCandidate: Next, there are around 4 popular soft drinks. If the preference was uniform, we would get 25% per drink. However, adjusting for the fact that Pepsi is more popular, we can assume around 40% would purchase Pepsi.\nCandidate: Lastly, we can assume an average of 1.25 glasses consumed per person (around 1 glass per person and accounting for 1 in 4 people buying 2 glasses). Each glass is around 300ml, so this gives us 375 ml on an average.\nCandidate: Putting the numbers into the formula we get:\n^ Total volume of Pepsi sold = 32,000 * 90% * 30% * 40% * 375ml\n^ = 1296 litres\nCandidate: Therefore, we can assume approximately 1,300 litres of Pepsi is sold in an IPL match in the Wankhede stadium.\n\nDon't Do Coke Framework\nAMOUNT OF PEPSI SOLD\nClarifying Questions: What type of cricket match is it?\nBrownie Points: Accounting for different factors while arriving at the % of people that purchase soft drinks at the stadium. Asking about the weather.\nKeep In Mind: Such a guesstimate came about after discussion with the interviewer. You would not be required to know intricate details about stadiums and cricket in general."
+},
+{
+  "id": 61,
+  "docId": "case-61",
+  "title": "It's Lights Out and Away We Go",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Guesstimate",
+  "company": "Curated by the Authors",
+  "round": "Pratham Kalra",
+  "prompt": "Guesstimate the number of unique people present during a Formula 1 race weekend. It is the season-deciding final race of the 2021 championship in Abu Dhabi, where Max Verstappen and Lewis Hamilton are tied on points.",
+  "frameworkTree": {
+    "nodes": {
+      "people-present": { "id": "people-present", "label": "People at a Race Weekend", "tone": "root", "children": ["teams", "organising", "third-party", "spectators"] },
+      "teams": { "id": "teams", "label": "Participating Teams", "tone": "leaf", "children": [] },
+      "organising": { "id": "organising", "label": "Organising Staff", "tone": "leaf", "children": [] },
+      "third-party": { "id": "third-party", "label": "Third-Party Providers", "tone": "leaf", "children": [] },
+      "spectators": { "id": "spectators", "label": "Spectators", "tone": "branch", "children": [] }
+    },
+    "defaultExpanded": ["people-present"],
+    "defaultFocusedId": "spectators",
+    "notes": [
+      { "title": "Questions", "items": ["Formula 1 only or F2 as well?", "Spectators only or everyone present?", "Any specific race context or stakes?"] },
+      { "title": "Keep In Mind", "items": ["State every assumption explicitly", "Count each person only once", "Adjust for multi-day attendance overlap"] },
+      { "title": "Brownie Points", "items": ["Removing overlap across the three days", "Splitting teams by budget tier"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "title": "People at a Race Weekend",
+      "type": "formula",
+      "lhs": "Total People",
+      "rhs": "Participating Teams + Organising Staff + Third-Party Providers + Spectators",
+      "derivations": [
+        { "lhs": "Participating Teams", "rhs": "Teams × Employees per Team × % On-Ground (by budget tier)" },
+        { "lhs": "Organising Staff", "rhs": "(Stands + Paddock Teams) × People Each × % On-Ground" },
+        { "lhs": "Third-Party Providers", "rhs": "Media + Food & Beverage Outlets" },
+        { "lhs": "Spectators", "rhs": "Total Capacity × Occupancy across 3 Days × (1 − Overlap)" }
+      ],
+      "content": "Every unique person at the race weekend is counted across four categories — participating teams, organising and support staff, third-party service providers and spectators — each estimated separately and then summed."
+    },
+    {
+      "id": "participating-teams",
+      "type": "table",
+      "title": "Participating Teams",
+      "header": "Participating Teams",
+      "noTitle": true,
+      "columns": ["Particulars", "High Budget", "Medium Budget", "Low Budget", "Total"],
+      "columnWidths": ["32%", "17%", "18%", "17%", "16%"],
+      "summaryRows": [3],
+      "rows": [
+        ["Number of teams", "4", "4", "2", "10"],
+        ["Employees per team", "1,000", "800", "700", "—"],
+        ["% on-ground", "20%", "20%", "20%", "—"],
+        ["On-ground employees", "800", "640", "280", "1,720"]
+      ],
+      "insight": "Splitting the 10 teams by budget and taking 20% of staff on-ground gives about 1,720 (~1,700) people from participating teams."
+    },
+    {
+      "id": "third-party-providers",
+      "type": "table",
+      "title": "Third-Party Service Providers",
+      "header": "Third-Party Service Providers",
+      "noTitle": true,
+      "columns": ["Provider", "Calculation", "People"],
+      "columnWidths": ["28%", "50%", "22%"],
+      "summaryRows": [2],
+      "rows": [
+        ["Media", "5 continents × 2 broadcasters × 20 people", "200"],
+        ["Food & beverage", "6 stands × 5 outlets × 20 people", "600"],
+        ["Total", "200 + 600", "800"]
+      ],
+      "insight": "Global media crews and food & beverage outlets across the track together account for about 800 people."
+    },
+    {
+      "id": "spectator-estimate",
+      "type": "table",
+      "title": "Spectator Estimate",
+      "header": "Spectator Estimate",
+      "noTitle": true,
+      "columns": ["Particulars", "Calculation", "Value"],
+      "columnWidths": ["34%", "43%", "23%"],
+      "summaryRows": [1, 5, 6],
+      "rows": [
+        ["Capacity per stand (A)", "240 columns × 50 rows", "12,000"],
+        ["Total capacity (B)", "A × 6 stands", "72,000"],
+        ["Friday (practice)", "B × 90%", "~65,000"],
+        ["Saturday (qualifying)", "B × 90%", "~65,000"],
+        ["Sunday (race)", "B × 100%", "72,000"],
+        ["Spectator-days (C)", "Friday + Saturday + Sunday", "2,02,000"],
+        ["Unique spectators", "C × 80% (20% attend all 3 days)", "1,61,600"]
+      ],
+      "insight": "Each stand holds about 12,000 people, so 6 stands give a capacity of 72,000. Summing occupancy across the three days gives 2,02,000 spectator-days; removing the 20% who attend all three days leaves about 1,61,600 unique spectators."
+    },
+    {
+      "id": "total-people-summary",
+      "type": "table",
+      "title": "Total People Present",
+      "header": "Total People Present",
+      "noTitle": true,
+      "columns": ["Category", "Calculation", "People"],
+      "columnWidths": ["32%", "45%", "23%"],
+      "summaryRows": [3, 4],
+      "rows": [
+        ["Participating teams", "by budget tier (see Participating Teams table)", "~1,700"],
+        ["Organising & support staff", "(6 stands + 10 paddock teams) × 50 × 70%", "~550"],
+        ["Third-party providers", "media 200 + food & beverage 600", "800"],
+        ["Spectators (unique)", "2,02,000 spectator-days × 80% overlap", "1,61,600"],
+        ["Total people present", "sum of the four categories", "~1,64,650"]
+      ],
+      "insight": "Summing the four categories gives about 1,64,650 unique people. Note: the book states 2,03,050, which does not reconcile with its own components — it effectively treats spectators as ~2,00,000 rather than the overlap-adjusted 1,61,600. The internally consistent figure is ~1,64,650."
+    }
+  ],
+  "framework": "Candidate: Just to clarify, are we only talking about Formula 1 here? I am asking because Formula 2 and the likes also take place on the same track during a race weekend.\nInterviewer: That is a good question. Let's just focus on Formula 1 here and ignore the rest.\nCandidate: Are we only looking at spectators since they will account for the maximum share of people present or do we also take into account other people like participating team members, organisers and the likes?\nInterviewer: Let's include every unique person who visits the race venue during the weekend.\nCandidate: Is this a general race weekend or is there some specific context attached to it in terms of venue, current standings, number of races left and the likes? This will determine the audience's interest.\nInterviewer: The stakes have never been higher! It is the last race of the 2021 Formula One World Championship taking place in Abu Dhabi. Both Max Verstappen and Lewis Hamilton are tied at 369.5 championship points. The outcome of this race will decide the winner of the Drivers' Championship.\nCandidate: Sounds really interesting. There are several categories of people that are present during any race weekend. These include participating teams, organising and support staff, third-party service providers and spectators. I would like to individually account for all of them.\nInterviewer: That sounds like a good approach. Please proceed further.\nCandidate: I would first like to calculate the total number of people associated with participating teams. I would bifurcate the 10 teams based on their financial status: high budget, medium budget and low budget. The number of people they employ will vary accordingly. As only a specific percentage of staff will be operating on-field, I would like to take that into consideration as well.\n^ Total people from participating teams = Number of teams * Employees per team * Percentage on-ground\nUsing the budget split shown in the Participating Teams table, the total number of people associated with the participating teams is equal to ~ 1,700.\nInterviewer: Sounds alright! Let's do this for other categories of people as well.\nCandidate: Using the same method to determine the number of organizing staff, their presence on the ground will be significantly more as a percentage of total strength during a race weekend. These would include security personnel, support staff, cleaners, race control officials, etc.\n^ Total organizing staff = (Number of stands + Number of teams in the paddock) * Average number of people in each * Percentage on-ground\nAssuming 6 stands and 10 teams in the paddock, along with an average of 50 people in each with 70% of them on the ground, we get ~ 550 people from the organizing team present during a race weekend.\nCandidate: For third-party service providers, we can look at the global media and several food and beverage outlets. For media, most coverage takes place via leading network providers in 5 continents: Asia, North America, South America, Europe and Africa. Assuming two lead broadcasters from each continent with a team of 20 present on ground, the total number comes out to be 200 people. For food and beverage outlets, assuming 6 stands spread across the track and 5 major outlets near each employing 20 people each, the total number comes out to be 600 people. Therefore, third-party service providers account for 800 people.\nInterviewer: Okay, go ahead.\nCandidate: For calculating the number of spectators, the context of this race will be crucial. Assuming 240 columns and 50 rows per stand, we can get a number equal to 12,000 people per stand. We have assumed 6 stands on the race track. This number will then be equal to 72,000.\nCandidate: A normal race weekend comprises practice, qualifying and the final race. During practice, free practice sessions take place for teams to get familiarised with the track. Qualifying on a Saturday is then held to determine how the cars line up and who will start at which position. The final day is reserved for the main race.\nCandidate: However, occupancy across three days will vary. Since this is the final race of the season, we can assume both practice and qualifying days to operate on 90% occupancy and the final race to operate on a 100% occupancy. That leaves us with ~ 65,000 people on Friday and Saturday and 72,000 people on Sunday. The total number of spectators is equal to 2,02,000. Assuming an intersection of 20% for people who come to spectate on all three days, we get a number equal to 1,61,600 (2,02,000 * 80%).\nTherefore, the total number of people present on a race weekend in F1 will be equal to 2,03,050.\nInterviewer: That sounds great! Thank you for your time.\n\nIt's Lights Out and Away We Go Framework\nNUMBER OF PEOPLE PRESENT DURING A RACE WEEKEND IN FORMULA 1\nClarifying Questions: Only Formula 1 or Formula 2 and the likes as well? Specific context that could impact the attendance of spectators?\nBrownie Points: Avoiding double counting of the overlap of people who would attend on all three days.\nKeep In Mind: It is important to state all assumptions explicitly."
+},
+{
+  "id": 62,
+  "docId": "case-62",
+  "title": "Lights Will Guide You Home",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Guesstimate",
+  "company": "L.E.K. Consulting",
+  "round": "Buddy",
+  "prompt": "Guesstimate the number of traffic lights in Delhi.",
+  "frameworkTree": {
+    "nodes": {
+      "traffic-lights": { "id": "traffic-lights", "label": "Traffic Lights in Delhi", "tone": "root", "children": ["eligible-length", "dist-between", "lights-per-junction"] },
+      "eligible-length": { "id": "eligible-length", "label": "Eligible Road Length", "tone": "branch", "children": ["road-area", "road-width", "usable-share"] },
+      "road-area": { "id": "road-area", "label": "Road Area", "tone": "branch", "children": ["total-area", "road-share"] },
+      "total-area": { "id": "total-area", "label": "Total Area of Delhi", "tone": "leaf", "children": [] },
+      "road-share": { "id": "road-share", "label": "Public Road Share", "tone": "leaf", "children": [] },
+      "road-width": { "id": "road-width", "label": "Road Width", "tone": "leaf", "children": [] },
+      "usable-share": { "id": "usable-share", "label": "Pucca & Signalled Share", "tone": "leaf", "children": [] },
+      "dist-between": { "id": "dist-between", "label": "Distance Between Lights", "tone": "leaf", "children": [] },
+      "lights-per-junction": { "id": "lights-per-junction", "label": "Lights per Junction", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["traffic-lights", "eligible-length", "road-area"],
+    "defaultFocusedId": "eligible-length",
+    "notes": [
+      { "title": "Questions", "items": ["Installed lights only, or manufactured ones too?", "Include lights in gated societies?", "Count each light or each junction signal?"] },
+      { "title": "Keep In Mind", "items": ["Account for multiple lights at each junction", "Convert road area to length using width", "Exclude non-motorable and private roads"] },
+      { "title": "Brownie Points", "items": ["Eliminating non-motorable roads", "Limiting signals to pucca roads"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "title": "Traffic Lights Formula",
+      "type": "formula",
+      "lhs": "Number of Traffic Lights",
+      "rhs": "(Eligible Road Length ÷ Distance Between Lights) × Lights per Junction",
+      "derivations": [
+        { "lhs": "Eligible Road Length", "rhs": "Road Length × % Pucca × % with Signals" },
+        { "lhs": "Road Length", "rhs": "Road Area ÷ Road Width" },
+        { "lhs": "Road Area", "rhs": "Total Area of Delhi × Road Share × Public-Road Share" }
+      ],
+      "content": "Number of Traffic Lights = (Eligible Road Length ÷ Distance Between Lights) × Lights per Junction. Eligible road length is built up from Delhi's total area, narrowed to public roads, converted from area to length using road width, and finally limited to pucca, signalled stretches. Each road type (highways, main roads, connecting roads) is computed separately and summed."
+    },
+    {
+      "id": "delhi-road-area",
+      "type": "table",
+      "title": "Delhi Road Area",
+      "header": "Delhi Road Area",
+      "noTitle": true,
+      "columns": ["Particulars", "Calculation", "Value"],
+      "columnWidths": ["40%", "37%", "23%"],
+      "summaryRows": [1, 4],
+      "rows": [
+        ["Metro line diagonal", "30 stations × 2 km between stations", "60 km"],
+        ["Total area of Delhi", "½ × diagonal × diagonal", "1,800 sq km"],
+        ["Roads (% of area)", "land-use split (see note)", "20%"],
+        ["Total road area", "1,800 × 20%", "~360 sq km"],
+        ["Public roads only", "remove ~30% society & service roads", "~250 sq km"]
+      ],
+      "insight": "Delhi is approximated as a square whose diagonals are the ~60 km yellow and blue metro lines, giving an area of 1,800 sq km. Roads occupy about 20% (~360 sq km, which the book rounds to ~350); removing ~30% of municipal society and service roads leaves about 250 sq km of public road area. Land-use split: residential 30%, commercial 25%, roads 20%, forest 15%, miscellaneous 10%."
+    },
+    {
+      "id": "road-type-calculation",
+      "type": "table",
+      "title": "Road-Type Calculation",
+      "header": "Road-Type Calculation",
+      "noTitle": true,
+      "columns": ["Particulars", "Highways", "Main Roads", "Connecting Roads"],
+      "columnWidths": ["40%", "20%", "20%", "20%"],
+      "summaryRows": [6, 8],
+      "rows": [
+        ["A. % of total road area", "30%", "30%", "40%"],
+        ["B. Area covered (250 × A)", "75 sq km", "75 sq km", "100 sq km"],
+        ["C. Road width", "20 m (0.02 km)", "15 m (0.015 km)", "10 m (0.010 km)"],
+        ["D. Road length (B ÷ C)", "3,750 km", "5,000 km", "10,000 km"],
+        ["E. % pucca", "100%", "100%", "70%"],
+        ["F. % with traffic lights", "100%", "80%", "40%"],
+        ["G. Eligible road length (D × E × F)", "3,750 km", "4,000 km", "2,800 km"],
+        ["H. Distance between lights", "40 km", "5 km", "4 km"],
+        ["Junctions (G ÷ H)", "~90", "~800", "~700"]
+      ],
+      "insight": "Each road type is converted from area to length using its width, trimmed to pucca and signalled stretches, then divided by the spacing between lights to get the number of junctions: highways ~90, main roads ~800 and connecting roads ~700 — about 1,590 junctions in total."
+    },
+    {
+      "id": "total-traffic-lights",
+      "type": "table",
+      "title": "Total Traffic Lights",
+      "header": "Total Traffic Lights",
+      "noTitle": true,
+      "columns": ["Particulars", "Calculation", "Value"],
+      "columnWidths": ["42%", "35%", "23%"],
+      "summaryRows": [2],
+      "rows": [
+        ["Total junctions", "~90 + ~800 + ~700", "~1,590"],
+        ["Lights per junction", "one for each direction", "4"],
+        ["Total traffic lights", "1,590 × 4", "~6,000"]
+      ],
+      "insight": "Each junction carries about four lights, one per direction, so the ~1,590 junctions translate to roughly 6,000 traffic lights across Delhi."
+    }
+  ],
+  "framework": "Candidate: Are we talking about installed and operational traffic lights only or should I also include the ones that have been manufactured but not yet installed?\nInterviewer: Focus on the installed traffic lights for now.\nCandidate: Do I also take into account the traffic lights that exist in gated communities like societies?\nInterviewer: No, only take into account those lights which are accessible to the general public.\nCandidate: Got it. I would like to solve this problem by calculating the total road length and placing traffic lights on these roads at an appropriate distance as per the road type.\n^ Number of traffic lights in Delhi = Total eligible road length / Average distance between two lights\nCandidate: To calculate the eligible road length, I would like to first calculate the total area of Delhi and break that number down further.\nInterviewer: Alright.\nCandidate: We can assume Delhi to be a square with both yellow and blue lines of the metro forming one diagonal each. If there are 30 stations in total on each line with a distance of two stations between any two stations, the area comes out to be 1800 square kilometers (Area of a square = ½ * diagonal * diagonal).\nCandidate: Splitting Delhi's area by land use — residential 30%, commercial 25%, roads 20%, forest 15% and miscellaneous 10% — roads occupy about 20% of the area. Therefore, the total road area of Delhi comes out to ~ 350 square kilometers (1800 * 20%).\nInterviewer: Yes.\nCandidate: Roads can either be run by the Central or State Government or by Municipal Corporations. The latter often include the likes of society roads and service roads which we are not including in our analysis. These account for ~ 30% of such roads, leaving ~ 250 square kilometers of road area.\nCandidate: Different government road types will have different widths. We can assume that Highways and Main Roads comprise 30% area each respectively and other connecting roads account for the rest. (Refer to the Road-Type Calculation table.)\nCandidate: Here, it is important to note that the traffic lights installed at every stop will be more than one depending upon the entries and exits at that junction. Normally, we see four lights, one for each direction at a junction. Should I proceed with that assumption for all road types?\nInterviewer: That sounds fair, you can use that number for calculation purposes.\nCandidate: Thank you! The total number of traffic lights in Delhi then comes out to be approximately 6,000 (4 * 1590).\nInterviewer: We can end the guesstimate now. Thank you for your time.\n\nLights Will Guide You Home Framework\nNUMBER OF TRAFFIC LIGHTS IN DELHI\nClarifying Questions: Do we account for all manufactured lights or only the ones installed and operational? Do we include lights in gated communities like societies?\nBrownie Points: Eliminating non-motorable roads. Clarifying that traffic lights will be present on pucca roads only.\nKeep In Mind: It is important to know that at every junction, multiple lights will be present."
+},
 
 
 
