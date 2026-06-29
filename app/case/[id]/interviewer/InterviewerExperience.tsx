@@ -1033,6 +1033,11 @@ export function InterviewerPageInner({
 			// D9: Seed inactivity clocks from server timestamps on the first snapshot.
 			// Also capture selectedAt for dual-mic startOffsetMs calculation.
 			if (!seedApplied && status === 'in_progress') {
+				// Clear the optimistic-navigation marker set by the repository's
+				// handleSelectCase — we're confirmed in the session now.
+				if (lobbyId) {
+					try { localStorage.removeItem(`compendium-selecting-${lobbyId}`) } catch { /* ignore */ }
+				}
 				const selectedAt = (data.selectedAt as { toDate: () => Date; toMillis: () => number } | undefined)
 				if (selectedAt) {
 					const age = Date.now() - selectedAt.toDate().getTime()
@@ -1074,6 +1079,19 @@ export function InterviewerPageInner({
 			// D10: Session cancelled by candidate or expired — return interviewer to lobby.
 			if (status === 'waiting' || status === 'abandoned') {
 				if (view !== 'success') {
+					// If the interviewer just navigated here from the case picker before
+					// select-case finished, suppress the redirect for up to 12 s so the
+					// in-flight API call has time to transition the session to in_progress.
+					if (status === 'waiting' && lobbyId) {
+						try {
+							const raw = localStorage.getItem(`compendium-selecting-${lobbyId}`)
+							if (raw) {
+								const marker = JSON.parse(raw) as { ts?: number }
+								if (Date.now() - (marker.ts ?? 0) < 12_000) return
+								localStorage.removeItem(`compendium-selecting-${lobbyId}`)
+							}
+						} catch { /* ignore */ }
+					}
 					router.replace(`/lobby/${encodeURIComponent(lobbyId)}?role=interviewer&mode=${searchParams.get('sessionMode') ?? 'remote'}`)
 				}
 			}

@@ -846,42 +846,43 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
     setPendingCaseId(caseId)
 
     if (selectionMode && lobbyId) {
+      const destination = `/case/${caseId}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`
       const eventData = { lobbyId, caseId, caseName: caseTitle ?? '', mode: sessionMode }
       localStorage.setItem('compendium-session-start', JSON.stringify(eventData))
 
-      try {
-        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/select-case`, {
-          caseId,
-          sessionMode,
-          ...(caseTitle ? { caseName: caseTitle } : {}),
-        })
+      // Mark selection in-flight. The interviewer page suppresses its
+      // "waiting → lobby" redirect for up to 12 s while this marker exists,
+      // giving select-case time to transition the session to in_progress.
+      localStorage.setItem(
+        `compendium-selecting-${lobbyId}`,
+        JSON.stringify({ caseId, ts: Date.now() }),
+      )
 
-        router.push(
-          `/case/${caseId}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`
-        )
-        // Intentionally do NOT clear pendingCaseId — the navigation is in
-        // flight and the next page's loading state takes over from here.
-        // Clearing now would let the button flicker back to "Select" right
-        // before the route changes.
-      } catch (error) {
+      // Navigate immediately — don't wait for the API round-trip.
+      // select-case runs in parallel; the interviewer page's Firestore
+      // listener picks up the in_progress transition as soon as it lands.
+      router.push(destination)
+
+      apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/select-case`, {
+        caseId,
+        sessionMode,
+        ...(caseTitle ? { caseName: caseTitle } : {}),
+      }).catch((error) => {
+        // API failed — clear the marker so the interviewer page's grace
+        // window expires and it redirects back to the lobby on next snapshot.
+        localStorage.removeItem(`compendium-selecting-${lobbyId}`)
         const message = error instanceof Error ? error.message : 'Unable to start this session right now.'
         setActionError(message)
-        // If a case is already running, fetch the session to get the active caseId
-        // so we can offer a "Go to session" CTA instead of "Try again".
         if (lobbyId && message.includes('already running')) {
-          try {
-            const snap = await getDoc(doc(db, 'sessions', lobbyId))
-            const data = snap.data()
-            setActiveSessionCaseId(data?.caseId ?? null)
-          } catch {
-            setActiveSessionCaseId(null)
-          }
+          getDoc(doc(db, 'sessions', lobbyId))
+            .then((snap) => setActiveSessionCaseId(snap.data()?.caseId ?? null))
+            .catch(() => setActiveSessionCaseId(null))
         } else {
           setActiveSessionCaseId(null)
           setFailedCase({ id: caseId, title: caseTitle ?? '' })
         }
         setPendingCaseId(null)
-      }
+      })
 
       return
     }
