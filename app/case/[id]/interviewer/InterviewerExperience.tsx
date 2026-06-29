@@ -855,11 +855,15 @@ export function InterviewerPageInner({
 		'idle' | 'uploading' | 'uploaded' | 'upload_failed' | 'not_captured'
 	>('idle')
 
-	// When overlay is in success state, start a 3s auto-close countdown once
-	// audio upload is no longer in progress (uploaded, failed, not captured, or idle).
+	// When overlay is in success state and upload is done, start the 3s countdown.
+	// Local/split-screen: window.close() works (tab opened by script) — fires at 0.
+	// Remote: window.close() is blocked — countdown still shows as heads-up, then
+	// we just leave the "close this tab" card visible (no forced navigation).
 	useEffect(() => {
 		if (!overlaySuccess) return
 		if (interviewerUploadState === 'uploading') return
+		// Remote mode: don't auto-close, show the manual-close card instead
+		if (isRemoteMode) return
 		setOverlayAutoClose(3)
 		const iv = setInterval(() => {
 			setOverlayAutoClose(prev => {
@@ -867,20 +871,20 @@ export function InterviewerPageInner({
 					clearInterval(iv)
 					window.open('', '_self')
 					window.close()
-					// Fallback: if browser blocked window.close(), navigate to home
-					setTimeout(() => { if (!document.hidden) router.replace('/') }, 300)
 					return 0
 				}
 				return prev - 1
 			})
 		}, 1000)
 		return () => clearInterval(iv)
-	}, [overlaySuccess, interviewerUploadState, router])
+	}, [overlaySuccess, interviewerUploadState, isRemoteMode])
 
-	// Same auto-close for the full-page success view (currentView === 'success').
+	// Auto-close for currentView='success' (non-overlay path, e.g. skip-to-success).
+	// Only fires in local mode — remote tab can't be closed by script.
 	useEffect(() => {
 		if (currentView !== 'success') return
 		if (interviewerUploadState === 'uploading') return
+		if (isRemoteMode) return
 		setSuccessAutoClose(3)
 		const iv = setInterval(() => {
 			setSuccessAutoClose(prev => {
@@ -888,14 +892,13 @@ export function InterviewerPageInner({
 					clearInterval(iv)
 					window.open('', '_self')
 					window.close()
-					setTimeout(() => { if (!document.hidden) router.replace('/') }, 300)
 					return 0
 				}
 				return prev - 1
 			})
 		}, 1000)
 		return () => clearInterval(iv)
-	}, [currentView, interviewerUploadState, router])
+	}, [currentView, interviewerUploadState, isRemoteMode])
 
 	// Remote mode: candidate and interviewer are on separate devices, separate browsers.
 	// No localStorage sharing — all cross-device coordination goes through Firestore.
@@ -1916,15 +1919,14 @@ useEffect(() => {
 		// of the eval submission; the Cloud Function merges both tracks after.
 		void stopInterviewerRecordingAndUpload()
 
-		// Overlay submits: try to close the tab; fall back to a success state
-		// if the browser blocks window.close() (e.g. manually-opened tab in dev)
+		// Overlay submits: show the success card immediately (with countdown).
+		// In local/split-screen mode window.close() works (tab opened by script),
+		// so the countdown fires and closes the tab. In remote mode the interviewer
+		// opened the tab manually so window.close() is blocked — the card instead
+		// shows a friendly "you're done, close this tab" prompt after upload.
 		if (showEvalOverlay) {
-			window.open('', '_self')
-			window.close()
-			setTimeout(() => {
-				setSubmitting(false)
-				setOverlaySuccess(true)
-			}, 400)
+			setSubmitting(false)
+			setOverlaySuccess(true)
 			return
 		}
 
@@ -2310,9 +2312,9 @@ if (previewMode && !forcePreview) {
 								)}
 
 								{overlaySuccess ? (
-									/* ── Success state (tab couldn't be closed by browser) ── */
+									/* ── Success state ── */
 									interviewerUploadState === 'uploading' ? (
-										/* Uploading — wait before closing */
+										/* Uploading — wait */
 										<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
 											<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 												<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'ixo-spin 1.2s linear infinite' }}>
@@ -2324,8 +2326,20 @@ if (previewMode && !forcePreview) {
 												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>Uploading your recording. Keep this tab open for a moment.</p>
 											</div>
 										</div>
+									) : isRemoteMode ? (
+										/* Remote: upload done — friendly manual-close prompt */
+										<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+											<div style={{ fontSize: '28px', lineHeight: 1 }}>👋</div>
+											<div>
+												<p style={{ margin: '0 0 5px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>That's a wrap!</p>
+												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.6 }}>
+													{interviewerUploadState === 'uploaded' ? 'Recording uploaded successfully. ' : ''}
+													Your feedback is in. You can close this tab now.
+												</p>
+											</div>
+										</div>
 									) : (
-										/* Upload done (or no recording) — show countdown */
+										/* Local/split-screen: countdown then window.close() */
 										<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
 											<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 												<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -2333,17 +2347,11 @@ if (previewMode && !forcePreview) {
 											<div>
 												<p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>All done.</p>
 												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>
-													{interviewerUploadState === 'uploaded' ? 'Recording uploaded.' : ''}{' '}
 													{overlayAutoClose > 0 ? `Closing in ${overlayAutoClose}s…` : 'Closing…'}
 												</p>
 											</div>
-											{/* Countdown bar */}
 											<div style={{ width: '100%', height: '2px', borderRadius: '1px', background: 'rgba(92,64,51,0.1)', overflow: 'hidden' }}>
-												<div style={{
-													height: '100%', borderRadius: '1px', background: 'rgba(61,90,53,0.35)',
-													width: `${(overlayAutoClose / 3) * 100}%`,
-													transition: 'width 0.95s linear',
-												}} />
+												<div style={{ height: '100%', borderRadius: '1px', background: 'rgba(61,90,53,0.35)', width: `${(overlayAutoClose / 3) * 100}%`, transition: 'width 0.95s linear' }} />
 											</div>
 										</div>
 									)
@@ -2892,6 +2900,17 @@ if (previewMode && !forcePreview) {
 								<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>Uploading your recording. Keep this tab open for a moment.</p>
 							</div>
 						</div>
+					) : isRemoteMode ? (
+						<div style={{ padding: '20px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+							<div style={{ fontSize: '28px', lineHeight: 1 }}>👋</div>
+							<div>
+								<p style={{ margin: '0 0 5px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>That's a wrap!</p>
+								<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.6 }}>
+									{interviewerUploadState === 'uploaded' ? 'Recording uploaded successfully. ' : ''}
+									Your feedback is in. You can close this tab now.
+								</p>
+							</div>
+						</div>
 					) : (
 						<div style={{ padding: '20px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
 							<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2900,7 +2919,6 @@ if (previewMode && !forcePreview) {
 							<div>
 								<p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>All done.</p>
 								<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>
-									{interviewerUploadState === 'uploaded' ? 'Recording uploaded. ' : ''}
 									{successAutoClose > 0 ? `Closing in ${successAutoClose}s…` : 'Closing…'}
 								</p>
 							</div>
