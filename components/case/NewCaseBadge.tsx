@@ -35,18 +35,32 @@ type NewCaseBadgeProps = {
   caseId?: number | null
   // Optional fallback: case title or slug, used only if caseId is missing.
   caseKey?: string | null
-  // 'sm' for repo rows/cards, 'md' for the case hero.
+  // 'sm' for repo rows/cards (26px), 'md' for the case hero (38px).
   size?: 'sm' | 'md'
   className?: string
 }
 
-export default function NewCaseBadge({ caseId, caseKey, size = 'sm', className = '' }: NewCaseBadgeProps) {
+// 8-point soft scalloped seal in a 40x40 viewBox.
+// Outer points sit on radius 18 at angles 0/45/90/...; inner valleys on
+// radius 14.5 at angles 22.5/67.5/... With stroke-linejoin: round this
+// reads as the soft scalloped seal silhouette from the approved mockup.
+const SEAL_PATH =
+  'M 38,20 L 33.40,25.55 L 32.73,32.73 L 25.55,33.40 L 20,38 ' +
+  'L 14.45,33.40 L 7.27,32.73 L 6.60,25.55 L 2,20 L 6.60,14.45 ' +
+  'L 7.27,7.27 L 14.45,6.60 L 20,2 L 25.55,6.60 L 32.73,7.27 ' +
+  'L 33.40,14.45 Z'
+
+export default function NewCaseBadge({
+  caseId,
+  caseKey,
+  size = 'sm',
+  className = '',
+}: NewCaseBadgeProps) {
   if (!isNewCase(caseId, caseKey)) return null
 
-  // Bigger than before so the inner disc has room for legible upright text.
-  const dim = size === 'md' ? 38 : 22
-  const fontSize = size === 'md' ? 9.4 : 6.1
-  const ring = size === 'md' ? 1.6 : 1.2
+  // Repository rows = 26px (bumped from 22 for better legibility).
+  // Case hero = 38px (unchanged).
+  const dim = size === 'md' ? 38 : 26
 
   return (
     <span
@@ -54,7 +68,6 @@ export default function NewCaseBadge({ caseId, caseKey, size = 'sm', className =
       role="img"
       aria-label="New case"
       title="New in this edition"
-      style={{ width: dim, height: dim }}
     >
       <svg
         viewBox="0 0 40 40"
@@ -64,39 +77,48 @@ export default function NewCaseBadge({ caseId, caseKey, size = 'sm', className =
         className="ncx-new-badge-svg"
       >
         <defs>
-          <linearGradient id={`ncxNewGrad-${size}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#4C6B40" />
-            <stop offset="55%" stopColor="#3D5A35" />
-            <stop offset="100%" stopColor="#314A2B" />
-          </linearGradient>
-          {/* clip used to keep the shine glint inside the seal */}
+          {/* clip used to keep the shine glint inside the seal silhouette */}
           <clipPath id={`ncxNewClip-${size}`}>
-            <path d="M20 1.5 L23.4 6.6 L29.1 4.0 L29.6 10.2 L35.8 9.6 L33.4 15.4 L38.7 18.1 L34.0 22.0 L37.9 26.8 L31.9 28.3 L33.0 34.4 L27.0 32.6 L25.2 38.6 L20 35.0 L14.8 38.6 L13.0 32.6 L7.0 34.4 L8.1 28.3 L2.1 26.8 L6.0 22.0 L1.3 18.1 L6.6 15.4 L4.2 9.6 L10.4 10.2 L10.9 4.0 L16.6 6.6 Z" />
+            <path d={SEAL_PATH} />
           </clipPath>
         </defs>
 
-        {/* 12-point starburst seal (no rotation) */}
+        {/* solid forest-green seal — matches the site accent green (#3D5A35) */}
         <path
           className="ncx-new-badge-star"
-          fill={`url(#ncxNewGrad-${size})`}
-          stroke="#A8C49A"
-          strokeWidth={ring}
+          fill="#3D5A35"
           strokeLinejoin="round"
-          d="M20 1.5 L23.4 6.6 L29.1 4.0 L29.6 10.2 L35.8 9.6 L33.4 15.4 L38.7 18.1 L34.0 22.0 L37.9 26.8 L31.9 28.3 L33.0 34.4 L27.0 32.6 L25.2 38.6 L20 35.0 L14.8 38.6 L13.0 32.6 L7.0 34.4 L8.1 28.3 L2.1 26.8 L6.0 22.0 L1.3 18.1 L6.6 15.4 L4.2 9.6 L10.4 10.2 L10.9 4.0 L16.6 6.6 Z"
+          d={SEAL_PATH}
         />
 
-        {/* clean inner disc: gives the text a flat round field so NEW is fully legible and contained */}
-        <circle cx="20" cy="20" r="11.6" fill="#2E4427" />
-        <circle cx="20" cy="20" r="11.6" fill="none" stroke="#B7D0A9" strokeOpacity="0.5" strokeWidth="0.8" />
+        {/* NEW wordmark — SVG-native so it scales with the badge and never spills */}
+        <text
+          x="20"
+          y="20.5"
+          fontFamily="'Work Sans', system-ui, -apple-system, sans-serif"
+          fontSize="11"
+          fontWeight="700"
+          fill="#FFFCF7"
+          textAnchor="middle"
+          dominantBaseline="central"
+          letterSpacing="-0.3"
+        >
+          NEW
+        </text>
 
-        {/* modern shine glint: a soft diagonal light band that sweeps across, clipped to the seal */}
+        {/* modern diagonal shine band, clipped to the seal silhouette */}
         <g clipPath={`url(#ncxNewClip-${size})`}>
-          <rect className="ncx-new-badge-glint" x="-22" y="-6" width="14" height="52" fill="rgba(255,248,240,0.35)" transform="rotate(20 20 20)" />
+          <rect
+            className="ncx-new-badge-glint"
+            x="-22"
+            y="-6"
+            width="14"
+            height="52"
+            fill="rgba(255,248,240,0.30)"
+            transform="rotate(20 20 20)"
+          />
         </g>
       </svg>
-
-      {/* upright, centered, never rotated */}
-      <span className="ncx-new-badge-text" style={{ fontSize }}>NEW</span>
     </span>
   )
 }

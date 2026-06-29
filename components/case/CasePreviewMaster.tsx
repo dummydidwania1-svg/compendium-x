@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
 import { createPortal } from 'react-dom'
 import NewCaseBadge from '@/components/case/NewCaseBadge'
+import PracticeFab from '@/components/ui/PracticeFab'
 
 /* ═══════════════════════════════════════════════════════════
    Types
@@ -1897,90 +1898,6 @@ function CompactFooter() {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════
-   Practice FAB
-   ═══════════════════════════════════════════════════════════ */
-
-function PracticeFab({ visible, onClick }: { visible: boolean; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false)
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: '32px',
-        right: 'clamp(20px, calc((100vw - 1480px) / 2 + 20px), 48px)',
-        zIndex: 50,
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.85)',
-        transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)',
-        pointerEvents: visible ? 'auto' : 'none',
-      }}
-    >
-      {/* Helper text — bare label, no box, no border */}
-      <span
-        style={{
-          position: 'absolute',
-          bottom: 'calc(100% + 8px)',
-          left: '50%',
-          transform: hovered ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(3px)',
-          opacity: hovered ? 0.50 : 0,
-          transition: 'opacity 0.2s ease, transform 0.2s ease',
-          fontSize: '9px',
-          fontWeight: 600,
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase' as const,
-          color: '#5C4033',
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-        }}
-      >
-        Practice
-      </span>
-
-      <button
-        type="button"
-        aria-label="Practice this case"
-        onClick={onClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className="relative"
-        style={{
-          width: '52px',
-          height: '52px',
-          borderRadius: '50%',
-          background: hovered ? 'rgba(92,64,51,0.82)' : 'rgba(92,64,51,0.11)',
-          border: '1px solid rgba(92,64,51,0.22)',
-          boxShadow: hovered ? '0 8px 22px -6px rgba(92,64,51,0.35)' : '0 2px 10px -4px rgba(92,64,51,0.12)',
-          transform: hovered ? 'scale(1.06)' : 'scale(1)',
-          transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {/* Ping ring */}
-        {!hovered && (
-          <span
-            className="absolute inset-0 rounded-full pointer-events-none"
-            style={{
-              border: '1px solid rgba(92,64,51,0.28)',
-              animation: 'cpm-fab-ping 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite',
-            }}
-          />
-        )}
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"
-          style={{ marginLeft: '1.5px', position: 'relative', zIndex: 1 }}>
-          <path
-            d="M5.5 3.5L12 8L5.5 12.5V3.5Z"
-            fill={hovered ? '#FFF8F0' : 'rgba(92,64,51,0.70)'}
-            style={{ transition: 'fill 0.2s ease' }}
-          />
-        </svg>
-      </button>
-    </div>
-  )
-}
 
 
 /* ═══════════════════════════════════════════════════════════
@@ -3359,8 +3276,6 @@ export default function CasePreviewMaster({
   const drilldownBottomRef = useRef<HTMLDivElement>(null)
   const activeStepRef = useRef(0)
 
-  const fabVisible = true
-
   // ─── Responsive ──────────────────────────────
   const [isDesktop, setIsDesktop] = useState(false)
   useEffect(() => {
@@ -4480,7 +4395,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
         )}
 
         {/* ── Floating action buttons ── */}
-        {previewMode && <PracticeFab visible={fabVisible} onClick={() => router.push('/practice')} />}
+        {previewMode && <PracticeFab onClick={() => router.push('/practice')} />}
 
       </div>
     </div>
