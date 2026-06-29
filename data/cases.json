@@ -9973,6 +9973,8 @@
       "columns": ["Age Group", "Population percentage", "Population", "Category", "% following football", "Number of people"],
       "columnWidths": ["15%", "18%", "15%", "20%", "16%", "16%"],
       "summaryRows": [6],
+      "mergeRowPairs": 3,
+      "mergeFinalRowCols": 5,
       "rows": [
         ["< 18", "40%", "16 million", "Male (8 million)", "25%", "2,000,000"],
         ["", "", "", "Female (8 million)", "5%", "400,000"],
