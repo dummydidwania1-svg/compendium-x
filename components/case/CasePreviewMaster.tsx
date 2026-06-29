@@ -1948,9 +1948,9 @@ function PracticeFab({ visible, onClick }: { visible: boolean; onClick: () => vo
           width: '52px',
           height: '52px',
           borderRadius: '50%',
-          background: hovered ? 'rgba(61,90,53,0.95)' : 'rgba(61,90,53,0.18)',
-          border: '1px solid rgba(61,90,53,0.30)',
-          boxShadow: hovered ? '0 8px 22px -6px rgba(61,90,53,0.45)' : '0 2px 10px -4px rgba(61,90,53,0.18)',
+          background: hovered ? 'rgba(92,64,51,0.82)' : 'rgba(92,64,51,0.11)',
+          border: '1px solid rgba(92,64,51,0.22)',
+          boxShadow: hovered ? '0 8px 22px -6px rgba(92,64,51,0.35)' : '0 2px 10px -4px rgba(92,64,51,0.12)',
           transform: hovered ? 'scale(1.06)' : 'scale(1)',
           transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
           cursor: 'pointer',
@@ -1959,12 +1959,12 @@ function PracticeFab({ visible, onClick }: { visible: boolean; onClick: () => vo
           justifyContent: 'center',
         }}
       >
-        {/* Ping ring — same pattern as FeedbackAnalyser fa-ping */}
+        {/* Ping ring */}
         {!hovered && (
           <span
             className="absolute inset-0 rounded-full pointer-events-none"
             style={{
-              border: '1px solid rgba(61,90,53,0.35)',
+              border: '1px solid rgba(92,64,51,0.28)',
               animation: 'cpm-fab-ping 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite',
             }}
           />
@@ -1973,7 +1973,7 @@ function PracticeFab({ visible, onClick }: { visible: boolean; onClick: () => vo
           style={{ marginLeft: '1.5px', position: 'relative', zIndex: 1 }}>
           <path
             d="M5.5 3.5L12 8L5.5 12.5V3.5Z"
-            fill={hovered ? '#FFF8F0' : 'rgba(61,90,53,0.85)'}
+            fill={hovered ? '#FFF8F0' : 'rgba(92,64,51,0.70)'}
             style={{ transition: 'fill 0.2s ease' }}
           />
         </svg>
@@ -3359,17 +3359,7 @@ export default function CasePreviewMaster({
   const drilldownBottomRef = useRef<HTMLDivElement>(null)
   const activeStepRef = useRef(0)
 
-  // ─── Engagement state — shows FABs after 1% interaction ─
-  // Fires on first scroll past 30px OR after 3s on page
-  const [fabVisible, setFabVisible] = useState(false)
-  useEffect(() => {
-    let triggered = false
-    const show = () => { if (triggered) return; triggered = true; setFabVisible(true) }
-    const onScroll = () => { if (window.scrollY > 30) show() }
-    const timer = setTimeout(show, 3000)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(timer) }
-  }, [])
+  const fabVisible = true
 
   // ─── Responsive ──────────────────────────────
   const [isDesktop, setIsDesktop] = useState(false)

@@ -20,7 +20,7 @@ import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { InterviewerMicRecovery } from '@/components/permissions/InterviewerMicRecovery'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import casesCatalog from '@/data/cases.json'
-import NewCaseBadge from '@/components/case/NewCaseBadge'
+import NewCaseBadge, { isNewCase } from '@/components/case/NewCaseBadge'
 
 
 function normalizeCaseType(raw: string | null): string | null {
@@ -375,6 +375,7 @@ function RepositoryContent() {
   const [levelFilter, setLevelFilter] = useState<string[]>([])
   const [industryFilter, setIndustryFilter] = useState<string[]>([])
 const [companyFilter, setCompanyFilter] = useState<string[]>([])
+  const [recentlyAddedFilter, setRecentlyAddedFilter] = useState(false)
   const [actionError, setActionError] = useState('')
   const [failedCase, setFailedCase] = useState<{ id: string; title: string } | null>(null)
   // When selection fails because a case is already in_progress, store the
@@ -422,10 +423,10 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
 
 const hasActiveFilters =
   typeFilter.length > 0 || levelFilter.length > 0 ||
-  industryFilter.length > 0 || companyFilter.length > 0
+  industryFilter.length > 0 || companyFilter.length > 0 || recentlyAddedFilter
 const hasQuery = filter.trim().length > 0
 const clearAllFilters = () => {
-  setTypeFilter([]); setLevelFilter([]); setIndustryFilter([]); setCompanyFilter([])
+  setTypeFilter([]); setLevelFilter([]); setIndustryFilter([]); setCompanyFilter([]); setRecentlyAddedFilter(false)
 }
 
   // Show case-load-error overlay when redirected back from a failed interviewer panel.
@@ -750,22 +751,21 @@ const haystack = [
   caseItem.title, caseItem.industry, caseItem.case_type,
   caseItem.subtype, caseItem.difficulty, caseItem.company, caseItem.round,
 ].map((v) => (v ?? '').toLowerCase())
-   
+
     const matchesText = tokens.every((tok) => haystack.some((f) => f.includes(tok)))
     const eq = (val: string | null, list: string[]) =>
       list.length === 0 || list.some((x) => (val ?? '').toLowerCase() === x.toLowerCase())
 
-
-    
 return (
   matchesText &&
   eq(caseItem.case_type, typeFilter) &&
   eq(caseItem.difficulty, levelFilter) &&
   eq(caseItem.industry, industryFilter) &&
-  eq(caseItem.company, companyFilter)
+  eq(caseItem.company, companyFilter) &&
+  (!recentlyAddedFilter || isNewCase(caseItem.numericId, caseItem.slug))
 )
   })
-}, [cases, filter, typeFilter, levelFilter, industryFilter, companyFilter])
+}, [cases, filter, typeFilter, levelFilter, industryFilter, companyFilter, recentlyAddedFilter])
 
 
 // Book-style lettered sections — only when browsing (no search/filter active).
@@ -1427,6 +1427,11 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
   .repo-chiprow { gap: 8px; }
   .repo-chip { flex: 0 0 auto; font-size: 11.5px; padding: 11px 15px; }
 }
+@keyframes repo-fab-ping {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  70%  { transform: scale(1.55); opacity: 0; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
       `}</style>
 
       {selectionMode ? (
@@ -1472,34 +1477,36 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
 
           {/* Header */}
           <div className="mb-12 max-w-[760px]">
-            <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 pl-[2px]">
-              <span className="text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">
-                Repository
-              </span>
-              <div className="flex flex-wrap items-center gap-2.5">
-                {selectionMode && (
-                  <>
-                    <span className="text-[7px] tracking-[0.1em] font-semibold px-1.5 py-[1px] rounded-sm border border-[#3D5A35]/20 text-[#3D5A35]/60 bg-[#3D5A35]/5 leading-tight uppercase">
-                      Interviewer Mode
-                    </span>
-                    <span className="text-[7px] tracking-[0.1em] font-semibold px-1.5 py-[1px] rounded-sm border border-[#C4A882]/30 text-[#C4A882] bg-[#C4A882]/8 leading-tight uppercase">
-                      {sessionMode === 'local' ? 'Same Device' : 'Remote'}
-                    </span>
-                  </>
-                )}
+            <div>
+              <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 pl-[2px]">
+                <span className="text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">
+                  Repository
+                </span>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {selectionMode && (
+                    <>
+                      <span className="text-[7px] tracking-[0.1em] font-semibold px-1.5 py-[1px] rounded-sm border border-[#3D5A35]/20 text-[#3D5A35]/60 bg-[#3D5A35]/5 leading-tight uppercase">
+                        Interviewer Mode
+                      </span>
+                      <span className="text-[7px] tracking-[0.1em] font-semibold px-1.5 py-[1px] rounded-sm border border-[#C4A882]/30 text-[#C4A882] bg-[#C4A882]/8 leading-tight uppercase">
+                        {sessionMode === 'local' ? 'Same Device' : 'Remote'}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
+              <h1
+                style={{ fontFamily: "'Newsreader', serif" }}
+                className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
+              >
+                Case Library
+              </h1>
+              <p className="mt-4 max-w-[620px] pl-[2px] text-[13px] leading-relaxed text-[#5c4033]/62">
+                {selectionMode
+                  ? 'Choose a case to launch this interview session.'
+                  : 'Browse available cases, search and filter by type or level, and preview before practicing.'}
+              </p>
             </div>
-            <h1
-              style={{ fontFamily: "'Newsreader', serif" }}
-              className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
-            >
-              Case Library
-            </h1>
-            <p className="mt-4 max-w-[620px] pl-[2px] text-[13px] leading-relaxed text-[#5c4033]/62">
-              {selectionMode
-                ? 'Choose a case to launch this interview session.'
-                : 'Browse available cases, search and filter by type or level, and preview before practicing.'}
-            </p>
           </div>
 
           {/* Framework chips - standalone, above the case table container */}
@@ -1564,13 +1571,24 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
   </button>
 )}
 
-{(hasActiveFilters || hasQuery) && (
-  <div className="ml-auto flex items-center gap-3">
+<div className="ml-auto flex items-center gap-3">
+  {(hasActiveFilters || hasQuery) && (
     <span className="text-[10px] uppercase tracking-[0.16em] text-[#5C4033]/45">
       {filteredCases.length} {filteredCases.length === 1 ? 'result' : 'results'}
     </span>
-  </div>
-)}
+  )}
+  <button
+    onClick={() => setRecentlyAddedFilter((v) => !v)}
+    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors duration-200 ${
+      recentlyAddedFilter
+        ? 'border-[#3D5A35]/35 bg-[#3D5A35]/10 text-[#3D5A35]'
+        : 'border-[#5C4033]/12 bg-transparent text-[#5C4033]/50 hover:border-[#3D5A35]/22 hover:text-[#3D5A35]/70'
+    }`}
+  >
+    <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" className="shrink-0"><circle cx="4" cy="4" r="3" /></svg>
+    Recently Added
+  </button>
+</div>
 </div>
             </div>
 
@@ -1636,41 +1654,6 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
   : filteredCases.map((caseItem, i) => <CaseCard key={caseItem.id} caseItem={caseItem} index={i} {...cardHandlers} />)}
 </div>
 
-                  {/* Coming Soon - animated glass strip */}
-                  <div className="relative border-t border-[#5C4033]/6 overflow-hidden">
-                    <div
-                      className="relative flex items-center justify-center gap-3 py-5"
-                      style={{
-                        background: 'linear-gradient(180deg, rgba(255,248,240,0.32) 0%, rgba(252,245,237,0.72) 45%, rgba(248,240,231,0.88) 100%)',
-                        backdropFilter: 'blur(16px)',
-                        WebkitBackdropFilter: 'blur(16px)',
-                      }}
-                    >
-                      {/* Shimmer overlay */}
-                      <div
-                        className="pointer-events-none absolute inset-0"
-                        style={{
-                          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)',
-                          backgroundSize: '200% 100%',
-                          animation: 'repo-shimmer 4s ease-in-out infinite',
-                        }}
-                      />
-                      <span className="inline-block w-6 h-[1px] bg-[#D9D0C4]/50" />
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] uppercase tracking-[0.22em] font-semibold text-[#5C4033]/35">
-                          More cases coming soon
-                        </span>
-                        <svg
-                          width="10" height="10" viewBox="0 0 10 10" fill="none"
-                          className="text-[#5C4033]/30"
-                          style={{ animation: 'repo-bounce 1.8s ease-in-out infinite' }}
-                        >
-                          <path d="M5 2L5 8M5 8L2.5 5.5M5 8L7.5 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
-                      <span className="inline-block w-6 h-[1px] bg-[#D9D0C4]/50" />
-                    </div>
-                  </div>
                 </>
               )}
             </div>
@@ -1684,6 +1667,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
           <Footer currentPage="repository" />
         </div>
       ) : null}
+
     </div>
   )
 }

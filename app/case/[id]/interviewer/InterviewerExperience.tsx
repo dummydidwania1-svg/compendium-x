@@ -861,11 +861,11 @@ export function InterviewerPageInner({
 
 	// When overlay is in success state and upload is done, start the 3s countdown.
 	// Local/split-screen: window.close() works (tab opened by script) — fires at 0.
-	// Remote: window.close() is blocked — show manual-close card instead.
+	// Remote: redirect to homepage instead.
 	useEffect(() => {
 		if (!overlaySuccess) return
 		if (interviewerUploadState === 'uploading') return
-		if (isRemoteMode) return
+		if (isRemoteMode) { router.push('/'); return }
 		setOverlayAutoClose(3)
 		const iv = setInterval(() => {
 			setOverlayAutoClose(prev => {
@@ -882,11 +882,11 @@ export function InterviewerPageInner({
 	}, [overlaySuccess, interviewerUploadState, isRemoteMode])
 
 	// Auto-close for currentView='success' (non-overlay path, e.g. skip-to-success).
-	// Only fires in local mode — remote tab can't be closed by script.
+	// Local: window.close(). Remote: redirect to homepage.
 	useEffect(() => {
 		if (currentView !== 'success') return
 		if (interviewerUploadState === 'uploading') return
-		if (isRemoteMode) return
+		if (isRemoteMode) { router.push('/'); return }
 		setSuccessAutoClose(3)
 		const iv = setInterval(() => {
 			setSuccessAutoClose(prev => {
