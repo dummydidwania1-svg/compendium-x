@@ -9918,8 +9918,112 @@
   ],
   "framework": "Candidate: Alright. So, our objective is to determine the number of mini-trucks the Professor will require in order to transport €2.4 billion. Am I right?\nInterviewer: Yes.\nCandidate: I have a couple of questions before I begin. How many trips is the money going to be transported in? What denomination are the notes in? How are they packed?\nInterviewer: The money has to be transported in a single trip. You can assume that the currency notes are in €100 denomination. They are to be loosely transported.\nCandidate: Got it. I will first estimate the volume of 1 note of €100 and the number of such notes. Next, I estimate the volume of 1 mini truck. The following formula will help us arrive at the number of mini-trucks:\n^ Number of mini-trucks required = (Number of notes * Volume of 1 note) / (Volume of 1 mini-truck * Number of trips)\nThis is based on 2 assumptions:\n1) The mini-truck can work at full capacity and will not have a problem carrying the weight of the money.\n2) There is no wastage of space when the trucks are loaded.\nInterviewer: Sounds good.\nCandidate: To calculate the volume of 1 note, we will need its length, width and thickness. A currency note is usually as long as a 15 cm ruler. The ratio of length to width is approximately 2:1. This means we can take the width to be about 7 cm. Calculating the thickness of a single note will be difficult. It will be easier to imagine a bunch of 100 notes. A bunch of 100 notes will be about 1 cm thick. Thus, the thickness of 1 note will be about 0.1 mm or 0.01 cm. We now have enough information to calculate the volume of 1 note.\n^ Volume of 1 note = Length * Width * Thickness\n^ = 15 cm * 7 cm * 0.01 cm\n^ = 1 cm³ (approx.)\nCandidate: Let's now calculate the number of notes.\n^ Number of notes = Total amount / Denomination of 1 note\n^ = €2.4 billion / €100\n^ = (2.4 * 10⁹) / 10²\n^ = 2.4 * 10⁷\nCandidate: We must now estimate the volume of each mini-truck, specifically its cargo body. Can I assume the mini-truck to be similar to a Tata Ace which is commonly used in India?\nInterviewer: Sure.\nCandidate: Okay. Again, we need to estimate the length, breadth and height of the cargo body of the truck. The breadth of the body is approximately equal to 5 feet or 150 cm and the length is about twice of this, i.e., 300 cm. The height of the cargo body will not be more than 6 feet, i.e., 180 cm (approx.)\n^ Volume of 1 truck = Length * Breadth * Height\n^ = 300 cm * 150 cm * 180 cm\n^ = 8 * 10⁶ cm³ (approx.)\nCandidate: We can now substitute the values in the original formula.\n^ Number of mini-trucks required = ((2.4 * 10⁷) * 1) / (8 * 10⁶)\n^ = 3\nCandidate: Therefore, 3 mini-trucks are required.\nInterviewer: Great work.\n\nMoney Heist Framework\nTRANSPORTING THE LOOT\nClarifying Questions: Number of trips the money will be transported in. Denomination of the notes. How the notes are packed.\nBrownie Points: Confirming that the mini-truck can bear the weight of the load. Stating the full-capacity and no-wasted-space assumptions before calculating.\nKeep In Mind: Visualise the problem before calculating. Keep every measurement in one unit. Anchor unknown sizes to familiar objects."
 },
-
-
+{
+  "id": 58,
+  "docId": "case-58",
+  "title": "Hala Madrid!",
+  "industry": "Industry Agnostic",
+  "difficulty": "Easy",
+  "case_type": "Guesstimate",
+  "company": "Kearney",
+  "round": "Buddy",
+  "prompt": "You spoke about your passion for football. Which is your favourite football club?",
+  "abbreviations": [
+    "BPL: Below Poverty Line",
+    "LMC: Lower Middle Class",
+    "UMC: Upper Middle Class",
+    "UC: Upper Class"
+  ],
+  "frameworkTree": {
+    "nodes": {
+      "population": { "id": "population", "label": "Population (1.4 Billion)", "tone": "root", "children": ["urban", "rural"] },
+      "urban": { "id": "urban", "label": "Urban (400 Million)", "tone": "branch", "children": ["bpl", "lmc", "umc", "uc"] },
+      "rural": { "id": "rural", "label": "Rural (1 Billion, eliminated)", "tone": "leaf", "children": [] },
+      "bpl": { "id": "bpl", "label": "BPL (120 Million)", "tone": "leaf", "children": [] },
+      "lmc": { "id": "lmc", "label": "LMC (120 Million)", "tone": "leaf", "children": [] },
+      "umc": { "id": "umc", "label": "UMC (120 Million)", "tone": "leaf", "children": [] },
+      "uc": { "id": "uc", "label": "Upper Class (40 Million)", "tone": "branch", "children": ["affluent-fans"] },
+      "affluent-fans": { "id": "affluent-fans", "label": "Affluent Football Fans (3 Million)", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["population", "urban", "uc"],
+    "defaultFocusedId": "uc",
+    "notes": [
+      { "title": "Questions", "items": ["Are we counting only official jerseys or replicas too?", "What time duration are we considering?"] },
+      { "title": "Keep In Mind", "items": ["Round off numbers wherever required to avoid calculation mistakes", "Only the Upper Class can afford the ~ Rs 6,000 official jersey", "Football following skews young and male"] },
+      { "title": "Brownie Points", "items": ["Dividing football followers across 8 popularly supported clubs", "Drawing insight from personal experience (1 in 5 owns a jersey)"] }
+    ]
+  },
+  "additionalFrameworkTrees": [
+    {
+      "label": "Football Fans to Jerseys Sold per Year",
+      "nodes": {
+        "football-fans": { "id": "football-fans", "label": "Football Fans (3 Million)", "tone": "root", "children": ["real-madrid", "other-clubs"] },
+        "real-madrid": { "id": "real-madrid", "label": "Real Madrid Fans (375,000)", "tone": "branch", "children": ["jersey-owners"] },
+        "other-clubs": { "id": "other-clubs", "label": "Other Clubs (2,625,000)", "tone": "leaf", "children": [] },
+        "jersey-owners": { "id": "jersey-owners", "label": "Jersey Owners (75,000)", "tone": "branch", "children": ["jerseys-year"] },
+        "jerseys-year": { "id": "jerseys-year", "label": "Jerseys Sold per Year (15,000)", "tone": "leaf", "children": [] }
+      },
+      "defaultExpanded": ["football-fans", "real-madrid", "jersey-owners"],
+      "defaultFocusedId": "jerseys-year",
+      "notes": []
+    }
+  ],
+  "visualisations": [
+    {
+      "id": "urban-income-segmentation",
+      "type": "table",
+      "inlineOnly": true,
+      "title": "Urban Population by Income",
+      "header": "Urban Population by Income",
+      "noTitle": true,
+      "columns": ["Category", "Income", "Population percentage", "Population"],
+      "columnWidths": ["28%", "32%", "20%", "20%"],
+      "summaryRows": [3],
+      "rows": [
+        ["Below Poverty Line", "< Rs 10,000/month", "30%", "120 million"],
+        ["Lower Middle Class", "Rs 10,000 - Rs 20,000/month", "30%", "120 million"],
+        ["Upper Middle Class", "Rs 20,000 - Rs 80,000/month", "30%", "120 million"],
+        ["Upper Class", "> Rs 80,000/month", "10%", "40 million"]
+      ],
+      "insight": "Only the Upper Class (40 million) can comfortably afford the ~ Rs 6,000 official jersey; the rest opt for cheaper replicas and are eliminated."
+    },
+    {
+      "id": "football-following-by-age",
+      "type": "table",
+      "inlineOnly": true,
+      "title": "Football Following by Age and Gender",
+      "header": "Football Following by Age and Gender",
+      "noTitle": true,
+      "columns": ["Age Group", "Population percentage", "Population", "Category", "% following football", "Number of people"],
+      "columnWidths": ["15%", "18%", "15%", "20%", "16%", "16%"],
+      "summaryRows": [6],
+      "rows": [
+        ["< 18", "40%", "16 million", "Male (8 million)", "25%", "2,000,000"],
+        ["", "", "", "Female (8 million)", "5%", "400,000"],
+        ["18 - 40", "30%", "12 million", "Male (6 million)", "10%", "600,000"],
+        ["", "", "", "Female (6 million)", "2%", "120,000"],
+        ["40+", "30%", "12 million", "Male (6 million)", "0%", "0"],
+        ["", "", "", "Female (6 million)", "0%", "0"],
+        ["Total", "", "", "", "", "3 million (approx.)"]
+      ],
+      "insight": "Splitting the 40 million Upper Class by age and gender and applying football-following rates (highest among young males, negligible above 40) gives about 3 million fans who can afford the official jersey."
+    },
+    {
+      "title": "Jerseys Sold per Year",
+      "type": "formula",
+      "lhs": "Jerseys Sold per Year",
+      "rhs": "Total Official Jerseys Owned / Life of One Jersey",
+      "derivations": [
+        { "lhs": "Affluent Football Fans", "rhs": "~3,000,000 (Upper Class who follow football)" },
+        { "lhs": "Real Madrid Supporters", "rhs": "3,000,000 / 8 popular teams = 375,000" },
+        { "lhs": "Official Jersey Owners", "rhs": "375,000 / 5 (1 in 5 owns a jersey) = 75,000" },
+        { "lhs": "Jerseys Sold per Year", "rhs": "75,000 / 5-year life = 15,000" }
+      ],
+      "content": "From ~3 million affluent football fans, one-eighth (2 leagues x 4 popular teams) support Real Madrid = 375,000; one in five owns an official jersey = 75,000; dividing by a 5-year jersey life gives about 15,000 official Real Madrid jerseys sold in India each year."
+    }
+  ],
+  "framework": "Candidate: Yes sir. I'm a die-hard supporter of Real Madrid.\nInterviewer: That's great. How many Real Madrid jerseys do you think are sold in India?\nCandidate: Are we talking about the official jersey which costs about Rs 6,000 or are we including replicas as well? Also, what duration are we talking about?\nInterviewer: I am talking about official jerseys sold in a year.\nCandidate: Got it. A good place to start is India's population. Then, we can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. The demand for jerseys in the rural areas will be negligible due to lower income as well as lower exposure to international football. Even the ones who buy jerseys would probably buy replicas. Therefore, I would like to eliminate this section. That leaves us with about 400 million people.\nInterviewer: Makes sense.\nCandidate: Next, we can slice the urban population according to different income levels:\n[VIS:0]\nCandidate: Since the official jerseys are quite costly, I believe only the upper class would be able to afford it. Other football fans may opt for the replica which is considerably cheaper. This leaves us with 40 million people. In our country, the people that watch football are young. Therefore, we divide the population into different age groups and look at how many people follow football from each age group. While doing this, we will also keep in mind that boys are more interested than girls when it comes to football.\nInterviewer: Sure. Go ahead!\n[VIS:1]\nCandidate: We have now arrived at the number of people who follow football closely in India and can afford to buy the official jersey. We must keep in mind that there are multiple football clubs that people follow and are usually loyal to one of these. There are 2 majorly followed leagues, the Premier League and the La Liga. Let's say that each of these leagues has 4 teams which enjoy popular support in our country and the fans are equally divided across these teams. That means about one-eighth of the 3 million people will be Real Madrid supporters, i.e., 375,000 supporters.\nCandidate: Out of these, maybe one in five would like to own an official jersey of the team. This is based on what I've seen in my own friends' circle. That gives us a number of 75,000 official Real Madrid jerseys that are sold in our country.\nCandidate: We are left with one final step.\n^ Number of jerseys sold in a year = Total number of jerseys sold/Life of one jersey\nCandidate: One jersey would last about 5 years. Therefore, the total number of official Real Madrid jerseys sold in India every year is equal to 15,000.\nInterviewer: Lovely.\n\nHala Madrid! Framework\nREAL MADRID JERSEYS SOLD IN INDIA IN ONE YEAR\nClarifying Questions: Only official jerseys? What duration?\nBrownie Points: Dividing football followers into 8 clubs. Drawing insight from personal experience.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers wherever required."
+},
 {
   "id": 59,
   "docId": "case-59",
@@ -10379,7 +10483,373 @@
   ],
   "framework": "Candidate: Sure, I have some clarifying questions. What day are we talking about? Weekend/Weekday/Festival etc.\nInterviewer: You can assume it to be a weekend.\nCandidate: Alright. What do we mean by number of people? Will we include the employees and casual walkers as well?\nInterviewer: Good question. We mean the number of people visiting with a purpose.\nCandidate: Sure, thank you. From what I know, people visit Khan Market for shopping and its restaurants. Is there any other purpose I should be aware of?\nInterviewer: No, you can look at these two.\nCandidate: Sure. We can analyse this problem by identifying bottlenecks from the supply side.\nStep 1: Estimating the number of restaurants\nStep 2: Distribution of occupancy rates across the day\nStep 3: Estimating the number of shops\nStep 4: Distribution of footfall across the day\nStep 5: Subtraction of overlap of people eating as well as shopping\nDoes this process seem okay to you or should I look at something else?\nInterviewer: You can proceed with this structure.\nCandidate: Sure.\nStep 1: Estimating the number of restaurants\nKhan Market has 2 inner lanes and 2 outer lanes. Assuming 10 restaurants per inner lane and assuming 15 restaurants per outer lane gives us 50 restaurants.\nStep 2: Distribution of occupancy rates across the day\nAssuming every restaurant is equally popular (it averages out), we do not have to categorise the restaurants according to popularity.\n[VIS:0]\nTotal number of people visiting a single restaurant = 168\n~ Total = 168 * 50 = 8,400\nAssumption: Turnaround time of every table is 1 hour.\nStep 3: Estimating the number of shops\nKhan Market has 2 inner lanes and 2 outer lanes. Assuming 10 shops per inner lane and assuming 10 shops per outer lane gives us 40 shops.\nStep 4: Distribution of footfall across the day\n[VIS:1]\nTotal number of visits per shop = 134\n~ Total number of visits in all shops in Khan Market = 134 * 40 = 5,360\nOn an average a person visits 3 stores.\n~ Total number of people shopping at Khan Market = 5360 / 3 = 1,800 (approx.)\nStep 5: Subtraction of overlap\nOn an average, we can assume 1 in every 4 people that go shopping in Khan Market will eat at restaurants. This is based on my personal experience going shopping to any place.\n~ People exclusively coming for shopping = 1,800 - (1,800 / 4) = 1,350.\nTotal number of people coming to Khan market everyday = 8,400 + 1,350 = 9,750.\nInterviewer: Good job. We can close the case now.\n\nMy Name is Khan Framework\nNUMBER OF PEOPLE WHO VISIT KHAN MARKET IN A DAY\nClarifying Questions: Whether employees are included in footfall? Which day? Why do people visit Khan Market?\nBrownie Points: Avoiding double counting by identification of overlap of people who visit for shopping as well as dining.\nKeep In Mind: It is important to state all assumptions explicitly."
 },
-
+{
+  "id": 64,
+  "docId": "case-64",
+  "title": "Space(from my)X",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Guesstimate",
+  "company": "L.E.K. Consulting",
+  "round": "Buddy",
+  "prompt": "You are a Venture Capitalist in 2010 and Elon Musk has come to you to ask for investment in SpaceX. How do you size the market?",
+  "frameworkTree": {
+    "nodes": {
+      "market-size": { "id": "market-size", "label": "Market Size for SpaceX", "tone": "root", "children": ["num-customers", "price-per-trip"] },
+      "num-customers": { "id": "num-customers", "label": "Number of Customers", "tone": "branch", "children": ["top-1pct", "fit-to-fly", "risk-appetite", "preference"] },
+      "top-1pct": { "id": "top-1pct", "label": "US Top 1% by Net Worth", "tone": "leaf", "children": [] },
+      "fit-to-fly": { "id": "fit-to-fly", "label": "Fit to Fly (Health)", "tone": "leaf", "children": [] },
+      "risk-appetite": { "id": "risk-appetite", "label": "Risk Appetite", "tone": "leaf", "children": [] },
+      "preference": { "id": "preference", "label": "Preference for Space Travel", "tone": "leaf", "children": [] },
+      "price-per-trip": { "id": "price-per-trip", "label": "Price per Trip", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["market-size", "num-customers"],
+    "defaultFocusedId": "num-customers",
+    "notes": [
+      { "title": "Questions", "items": ["Global market or the USA only?", "Any supply-side or capacity constraints?", "Anything special about 2010 to note?"] },
+      { "title": "Keep In Mind", "items": ["Ask about the company if it is unfamiliar", "Narrow fit-to-fly share by age group", "Filter on affordability, health, risk and preference"] },
+      { "title": "Brownie Points", "items": ["Layering health, age and risk filters", "Adjusting fit-to-fly by age group"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "customer-funnel",
+      "type": "table",
+      "inlineOnly": true,
+      "title": "Table 1",
+      "header": "Table 1",
+      "noTitle": true,
+      "columns": ["Age Group", "Population Share in Top 1%", "Health Conditions", "Percentage Fit to Fly", "Risk Appetite", "Preference for Space Travel", "Total"],
+      "columnWidths": ["12%", "15%", "16%", "14%", "13%", "18%", "12%"],
+      "rows": [
+        ["0-30", "20%", "Peak Health", "90%", "70%", "10%", "37,800"],
+        ["30-70", "60%", "Moderate Health", "50%", "50%", "10%", "45,000"],
+        ["70+", "20%", "Low Health", "10%", "20%", "10%", "1,200"]
+      ],
+      "insight": "Starting from 3 million people in the US top 1%, each age band is filtered by health (fit to fly), risk appetite and a 10% preference for space travel, leaving about 84,000 likely customers."
+    },
+    {
+      "title": "Market Size Formula",
+      "type": "formula",
+      "lhs": "Market Size",
+      "rhs": "Number of Customers × Price per Trip",
+      "derivations": [
+        { "lhs": "Number of Customers", "rhs": "US Top 1% × % Fit to Fly × % Risk Appetite × % Preference" },
+        { "lhs": "US Top 1%", "rhs": "US Population × 1%" }
+      ],
+      "content": "Market Size = Number of Customers × Price per Trip. The customer pool starts from the US top 1% by net worth (those who can afford a $0.5–1M trip), then narrows by health clearance (fit to fly), risk appetite and a 1-in-10 preference for space travel, giving about 80,000 customers at ~$500,000 each."
+    },
+    {
+      "id": "market-size-calc",
+      "type": "table",
+      "title": "Market Size",
+      "header": "Market Size",
+      "noTitle": true,
+      "columns": ["Particulars", "Calculation", "Value"],
+      "columnWidths": ["40%", "37%", "23%"],
+      "summaryRows": [3],
+      "rows": [
+        ["US population (2010)", "assumed", "300 million"],
+        ["Affordable segment (top 1%)", "300 million × 1%", "3 million"],
+        ["Customers after filters", "health × risk × preference (Table 1)", "~80,000"],
+        ["Market size", "80,000 × $500,000", "$40 billion"]
+      ],
+      "insight": "Roughly 80,000 affluent, health-cleared and willing customers at an average ticket of ~$500,000 give a US private space-tourism market of about $40 billion."
+    }
+  ],
+  "framework": "Candidate: Can you please tell me more about SpaceX's mission and operations?\nInterviewer: SpaceX, based out of the USA, was started by Elon Musk in 2002 with the goal of reducing space transportation costs to enable the colonization of Mars. It has many operations but for the purpose of this guesstimate, you can size the market for private space tourism.\nCandidate: Does that mean individuals flying off to space purely for entertainment/fun purposes?\nInterviewer: Haha! You can assume that to be the case, yes.\nCandidate: Are we looking to size the global market or just the one in the USA?\nInterviewer: Let's try and size the USA market only for now.\nCandidate: Should I try size the market purely from a demand standpoint or should I also incorporate several supply-side constraints that potentially could reduce the overall market size?\nInterviewer: Let's assume that there are no supply-side/capacity constraints.\nCandidate: Is there anything special about 2010 that I should be aware of which could influence public sentiment or awareness as far as private space tourism is concerned?\nInterviewer: Not really. Let's hear your approach for solving this problem.\n^ Market size = Number of customers * Price per trip\nCandidate: I would like to identify top-level income class in the United States and add on more filters. These would include accounting for health conditions, risk appetite and preference for something as exotic as space travel. I would then multiply this with average ticket value in order to get the total market size.\nCandidate: Does this approach sound fine?\nInterviewer: Yes, it does. Go ahead.\nCandidate: We can assume the total population of the USA in 2010 to be 300 million. A private space flight would cost between half a million dollars and a million dollars. We can assume that only the top 1% (net worth of approximately 10 million or more) are capable of affording private space travel. This is because the activity will take away more than 10% of the net worth in one go for people outside the top 1% which is a sizeable chunk. Therefore, we are left with 3 million people.\nCandidate: Out of this, we know that certain people will not have medical clearances based on the age group that they belong to and their respective share in the top 1% population. We can also account for risk factor: younger people are more likely to have a higher risk appetite by virtue of lesser responsibilities (longer time horizon to earn more money) as well as a greater adrenaline rush.\nCandidate: For determining preference for space travel, we can assume that there are 9 other activities like space travel. The interested individuals are equally likely to choose one of the 10 activities like flying an aircraft and exploring the deep-sea bed alone among others.\n[VIS:0]\nThus, the total number that we get is equal to 84,000 people.\nInterviewer: Let's round this number off to 80,000. What next?\nCandidate: Assuming that the average ticket cost is equal to approximately 500,000 USD, we get our market size equal to 40 billion dollars.\nCandidate: Based on how the advancements take place in the coming decade, frequency of travel by same individuals can also increase. That can lead to an increase in the market size.\nInterviewer: Interesting. Anything else?\nCandidate: We can also calculate the specific market share for SpaceX based on comparison with competitors like Blue Origin and Virgin Galactic.\nInterviewer: That won't be necessary. We can close the case here.\n\nSpace(from my)X Framework\nSIZING THE MARKET FOR SPACEX\nClarifying Questions: Sizing the global market or the USA market only? Any supply side constraints that could limit the market size?\nBrownie Points: Accommodating health concerns as a factor for space travel and narrowing down the percentage of people fit to fly based on their age group.\nKeep In Mind: Ask for more information about the company in case you are not familiar with it."
+},
+{
+  "id": 65,
+  "docId": "case-65",
+  "title": "Once Upon A Timesheet",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Guesstimate",
+  "company": "BCG",
+  "round": "Buddy",
+  "prompt": "Since you're interviewing for BCG, what is your estimate of the annual revenue that BCG generates in India?",
+  "frameworkTree": {
+    "nodes": {
+      "annual-revenue": { "id": "annual-revenue", "label": "Annual Revenue (BCG India)", "tone": "root", "children": ["weekly-revenue", "working-weeks", "fx-rate"] },
+      "weekly-revenue": { "id": "weekly-revenue", "label": "Weekly Revenue", "tone": "branch", "children": ["headcount", "billable-hours", "fee-per-hour"] },
+      "headcount": { "id": "headcount", "label": "Headcount by Level", "tone": "leaf", "children": [] },
+      "billable-hours": { "id": "billable-hours", "label": "Billable Hours per Week", "tone": "leaf", "children": [] },
+      "fee-per-hour": { "id": "fee-per-hour", "label": "Fee per Hour", "tone": "leaf", "children": [] },
+      "working-weeks": { "id": "working-weeks", "label": "Working Weeks per Year", "tone": "leaf", "children": [] },
+      "fx-rate": { "id": "fx-rate", "label": "USD-INR Rate", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["annual-revenue", "weekly-revenue"],
+    "defaultFocusedId": "weekly-revenue",
+    "notes": [
+      { "title": "Questions", "items": ["Are non-consulting arms included?", "What fee models and pro-bono share apply?", "How many work at reduced flex capacity?"] },
+      { "title": "Keep In Mind", "items": ["Use insights from the pre-placement talk", "Adjust billable hours by seniority", "Apply a cost-to-client billing multiple"] },
+      { "title": "Brownie Points", "items": ["Flagging other BCG arms in India", "Noting pro-bono and government rates", "Accounting for flex-work options"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "weekly-revenue-table",
+      "type": "table",
+      "title": "Total Weekly Revenue",
+      "header": "Total Weekly Revenue",
+      "noTitle": true,
+      "columns": ["Profiles", "Headcount (A)", "Hours/Week (B)", "Fee/Hour (US$) (C)", "Revenue/Week (US$) (A*B*C)"],
+      "columnWidths": ["30%", "17%", "17%", "18%", "18%"],
+      "summaryRows": [7, 8, 9, 10, 11],
+      "rows": [
+        ["Managing Director & Partner", "60", "20", "1,000", "12,00,000"],
+        ["Partner", "100", "30", "800", "24,00,000"],
+        ["Principal", "110", "35", "600", "23,10,000"],
+        ["Project Leader", "120", "35", "400", "16,80,000"],
+        ["Consultant", "130", "40", "250", "13,00,000"],
+        ["Senior Associate", "180", "40", "150", "10,80,000"],
+        ["Associate", "150", "40", "100", "6,00,000"],
+        ["Total Revenue Per Week (US$)", "", "", "", "~10.5 million"],
+        ["Working Weeks in a Year", "", "", "", "45"],
+        ["Total Revenue Per Annum (US$)", "", "", "", "~475 million"],
+        ["USD-INR Conversion Rate", "", "", "", "US$1 = ₹75"],
+        ["Total Revenue Per Annum (INR)", "", "", "", "₹3500 crore"]
+      ],
+      "insight": "Each level's weekly billings are headcount × billable hours × fee per hour; summed across the 850-strong pyramid that is ~US$10.5 million a week, ~US$475 million a year, or about ₹3,500 crore at ₹75 to the dollar."
+    },
+    {
+      "title": "BCG India Revenue Formula",
+      "type": "formula",
+      "lhs": "Annual Revenue (INR)",
+      "rhs": "Weekly Revenue × Working Weeks × USD-INR Rate",
+      "derivations": [
+        { "lhs": "Weekly Revenue", "rhs": "Sum of (Headcount × Billable Hours × Fee per Hour) across all levels" }
+      ],
+      "content": "Annual Revenue = Weekly Revenue × Working Weeks per Year × USD-INR Rate. Weekly revenue is the sum across the seven-level pyramid of each level's headcount times its billable hours times its fee per hour, giving ~US$10.5 million per week, ~US$475 million per year and about ₹3,500 crore at ₹75 to the dollar."
+    }
+  ],
+  "framework": "Candidate: Are we referring to the revenue only from the consulting services that BCG provides in India or should I factor in other arms such as the BCG Digital Ventures and BCG Gamma?\nInterviewer: Let's focus on our direct consulting here.\nCandidate: Broadly, my overall approach would be to look at the various positions and estimate their billables and aggregate them. The formula at each level in the hierarchy would be Number of consultants * Number of billable hours * billing rate per hour. I'd like to start off with the number of consultants BCG has in India.\nInterviewer: That sounds good. What's the number you have in mind?\nCandidate: As far as I can recall from the pre-placement talk, around 1000?\nInterviewer: Sure, take it as 850 consultants in total.\nCandidate: Got it. I would like to understand how our fee structure works, first. Do we have different models for calculating our fee? As BCG is socially conscious, what percentage of projects are taken pro-bono? Also, as consultants have the option to work at 60% or 80% capacity to meet other personal commitments, how many actively use these options?\nInterviewer: There are two models; one is a flat fee approach based on different rates given the hours of work involved and the second includes a variable component that factors in the outcomes that we achieve for our clients. For pro-bono or flex-work, assume that to be negligible for now.\nCandidate: Sure. In that case, I'd like to work with a tabular structure. The hierarchy of profiles is Managing Director & Partner (MDP), Partner, Principal, Project Leader, Consultant, Senior Associate and Associate. I believe everyone has a 60 hour work week and different billing rates.\nInterviewer: Right. Why don't you go ahead and tell me the breakdown of the 850 consultants into the different brackets? Suppose we have 60 MDPs.\nCandidate: Broadly speaking, the group would have a pyramid structure. So, with 60 MDPs, I would assume there are 100 Partners, 120 Principals, 130 Project Leaders, 140 Consultants, 150 Senior Associates and 150 Associates.\nInterviewer: Which stage of education do you think would see the highest inflow of consultants?\nCandidate: Ah, yes. Since a large share of new employees joins in after their Masters, I would like to increase the count of Senior Associates to 180 and reduce the three rungs above that by 10 each.\nCandidate: Makes sense. Moving on to the number of hours they work, I would place it at 60 hours per week. Is this a fair number?\nInterviewer: Yes, that's fine. But, due to contractual terms, we can charge a maximum of 40 hours per consultant. Do you think consultants at each level give up 40 hours?\nCandidate: As I understand, they would be working a total of 40 hours. However, at the senior levels, a lot of time would be devoted to business development as well. So, I would adjust the hours to 20 for MDPs, 30 for Partners and 35 each for Principals and Project Leaders.\nInterviewer: Sure, go ahead.\nCandidate: Talking about the billing rate, I would like to start by looking at the salary paid. Taking a salary of around 18 lakh with 45 working weeks a year, we get ₹40000 per week. Since this is spread over 40 hours, we get ₹1000 per hour. But, this is the cost to the company, so BCG would offer the service to clients at a certain multiple. Is a 3x multiple fine?\nInterviewer: No, take 10x.\nCandidate: Sure. So, that's ₹10000 per hour.\nInterviewer: Right. Let's shift to US Dollars, use $100 at the Associate level and $1000 for MDPs.\nCandidate: In that case, my estimate would be $800, $600, $400, $300 and $200, from a Partner to a Senior Associate.\nInterviewer: During the initial stages, the growth is slower. Let's change it to $250 and $150 for a Consultant and a Senior Associate respectively.\nCandidate: Alright. As per my calculations, it comes to $10.5 million per week, which is $475 million taking 45 working weeks in a usual year, allowing for regular breaks. In INR, that comes out to around ₹3500 crores.\nInterviewer: Sure, do you think that's an overestimate or an underestimate?\nCandidate: I feel this figure would be slightly overestimated because we have not factored in pro-bono cases and flex-work. Also, BCG does a lot of projects with the government, for which there might be a different and lower charge.\nInterviewer: That sounds like a good number, we can close the case now.\n\nOnce Upon A Timesheet Framework\nANNUAL REVENUE OF BCG IN INDIA\nClarifying Questions: Are non-consulting services included?\nBrownie Points: Other arms that BCG has in India. Pro-bono services at different rates. Work flexibility options offered to employees.\nKeep In Mind: Pay attention in the PPT. While this is rare, in this case, displaying great insights into specifics of the company's work will definitely be a plus."
+},
+{
+  "id": 66,
+  "docId": "case-66",
+  "title": "Final Destination",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Guesstimate",
+  "company": "McKinsey & Co.",
+  "round": "Engagement Manager",
+  "abbreviations": ["B2B: Business to Business", "B2C: Business to Consumer"],
+  "prompt": "Let's start with a quick guesstimate. I used Google Maps to find my way to the college campus today, what do you think is the market size of Google Maps in India?",
+  "frameworkTree": {
+    "nodes": {
+      "market-size": { "id": "market-size", "label": "Google Maps Market Size (India)", "tone": "root", "children": ["population", "literacy", "device-internet", "age-usage", "maps-share"] },
+      "population": { "id": "population", "label": "Population Split", "tone": "branch", "children": ["rural", "urban"] },
+      "rural": { "id": "rural", "label": "Rural (70%)", "tone": "leaf", "children": [] },
+      "urban": { "id": "urban", "label": "Urban (30%)", "tone": "leaf", "children": [] },
+      "literacy": { "id": "literacy", "label": "Literacy Filter", "tone": "leaf", "children": [] },
+      "device-internet": { "id": "device-internet", "label": "Device & Internet Access", "tone": "leaf", "children": [] },
+      "age-usage": { "id": "age-usage", "label": "Age-Based Usage", "tone": "leaf", "children": [] },
+      "maps-share": { "id": "maps-share", "label": "Google Maps Market Share", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["market-size", "population"],
+    "defaultFocusedId": "market-size",
+    "notes": [
+      { "title": "Questions", "items": ["B2B, B2C or both?", "What threshold use frequency counts as a customer?", "Any device or platform constraints?"] },
+      { "title": "Keep In Mind", "items": ["Round off numbers to avoid calculation mistakes", "Stay objective, avoid company-favourable assumptions", "Sequence filters: literacy, then device/internet, then age"] },
+      { "title": "Brownie Points", "items": ["Considering B2B users such as Uber", "Noting availability in multiple languages", "Flagging MapMyIndia as a competitor"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "market-size-funnel",
+      "type": "table",
+      "title": "Market Size of Google Maps in India",
+      "header": "Market Size of Google Maps in India",
+      "noTitle": true,
+      "columns": ["Particulars", "Rural (millions)", "Urban (millions)"],
+      "columnWidths": ["46%", "27%", "27%"],
+      "summaryRows": [8],
+      "rows": [
+        ["Population", "980", "420"],
+        ["Literacy", "70%", "85%"],
+        ["Literate Population", "685", "360"],
+        ["Availability of Device & Internet", "40%", "80%"],
+        ["Addressable Market", "275", "290"],
+        ["Age-Based Usage (see age table)", "21%", "50%"],
+        ["Google Maps' Market Share", "80%", "95%"],
+        ["Google Maps Users", "46", "138"],
+        ["Total Google Maps Market Size", "184 million monthly active users in India", ""]
+      ],
+      "insight": "Starting from 1.4 billion people split 70:30 rural:urban, successive literacy, device/internet, age-based usage and Google Maps share filters leave ~46 million rural and ~138 million urban users — about 184 million monthly active users in India."
+    },
+    {
+      "id": "age-based-usage-table",
+      "type": "table",
+      "title": "Age-Based Usage Split",
+      "header": "Age-Based Usage Split",
+      "noTitle": true,
+      "columns": ["Particulars", "0-18 Years", "18-35 Years", "35-55 Years", "55+ Years", "Total"],
+      "columnWidths": ["24%", "15%", "16%", "16%", "14%", "15%"],
+      "summaryRows": [2, 4],
+      "rows": [
+        ["Population %", "30%", "40%", "20%", "10%", "100%"],
+        ["Rural Use %", "10%", "40%", "10%", "0%", "-"],
+        ["Rural Users", "3%", "16%", "2%", "0%", "21%"],
+        ["Urban Use %", "25%", "80%", "50%", "0%", "-"],
+        ["Urban Users", "7.5%", "32%", "10%", "0%", "50%"]
+      ],
+      "insight": "Within each segment, usage rates are weighted by the age-group population mix; rural usage nets to 21% of the addressable base and urban to 50%."
+    },
+    {
+      "title": "Google Maps Users Formula",
+      "type": "formula",
+      "lhs": "Google Maps Users (per segment)",
+      "rhs": "Addressable Market × Age-Based Usage × Google Maps Market Share",
+      "derivations": [
+        { "lhs": "Rural Users", "rhs": "275M × 21% × 80% ≈ 46M" },
+        { "lhs": "Urban Users", "rhs": "290M × 50% × 95% ≈ 138M" },
+        { "lhs": "Total Market Size", "rhs": "46M + 138M = 184M monthly active users" }
+      ],
+      "content": "Per segment, Google Maps users = Addressable Market × Age-Based Usage × Google Maps Market Share. Rural: 275M × 21% × 80% ≈ 46M. Urban: 290M × 50% × 95% ≈ 138M. Total market size = 46M + 138M = 184M monthly active users in India."
+    }
+  ],
+  "framework": "Candidate: Sure. I'd like to ask a few preliminary questions first. What is the base metric for market size? For that, are we considering both B2B (eg. Uber) and B2C segments of location data usage?\nInterviewer: We are defining market size as the number of customers who use the service, focusing on individuals and not on firms/enterprises.\nCandidate: Got it. Also, do we have any device constraints or is Google Maps' use across the application and browsers equally applicable? Also, what frequency of usage would qualify an individual to be categorised as a customer?\nInterviewer: Yes, consider all possibilities. Anyone who uses the service at least once a month is a customer.\nCandidate: Alright. The approach I have in mind is starting with India's population split into rural and urban. Then I would apply various filters such as literacy and availability of devices and the internet to make the use feasible. Lastly, I would segment the populations across age group and estimate the final number using usage patterns. Does this sound fair?\nInterviewer: Sounds good, go on.\nCandidate: Starting with India's total population of roughly 1400 million, segmented into rural and urban at 70%-30%. This gives us 980 million and 420 million approximately. While the service is available in multiple languages, literacy is a key requirement for an individual to use it. So, taking the rural literacy rate at 70%, we get roughly 685 million rural literates and at 85%, we get 360 million urban literates. We can directly exclude the others, who are illiterate. Should I avoid approximating and use the exact figures?\nInterviewer: No, that's fine.\nCandidate: Another need is that of a device and internet since those without both of these simultaneously would be unable to utilize the service. However, since we have already segmented on literacy lines, which would have a large overlap with the availability of devices and the internet due to the extreme poor being typically excluded from both, we will have to take figures higher than the usual rate. With this logic, I believe 40% of rural literates and 80% of urban literates will be digitally connected, giving us 275 million and 290 million respectively.\nInterviewer: Glad you kept that nuance in mind, go on.\nCandidate: As a final division, I would like to segment according to age groups as this would greatly determine the usage patterns. Again, since we have narrowed it down to the literate population with digital connectivity, which would tilt towards the younger segment, our population split would have to reflect this. For simplicity, I would like to take the same distribution across rural and urban areas: 30% in 0-18 years, 40% in 18-35 years, 20% in 35-55 years and 10% in 55+ years.\nInterviewer: Makes sense. Now, why don't you attach specific use percentages to these groups?\nCandidate: Definitely. Due to more personal relevance, I'll start with the urban segment. Within 0-18 years, half the individuals are too young, and the other half would use direction services at a relatively limited rate, as they would often travel with parents. So, I'll take 25% here. The 18-35 years segment should be prime users, as they would travel extensively and have the requisite understanding as well, so I'll take 80% here. Within 35-55 years, there might be technological limitations and they might already know most of their usual routes, so I'll take 50%. I think we should eliminate the 55+ years segment as very few would be equipped to use the service comfortably and those who do use it would rely on younger people for whom the usage is indirect.\nInterviewer: Nice analysis, why don't you talk about the rural part first and then you can work on the calculations.\nCandidate: Alright. Generally, rural figures would be lower than their urban counterparts since people would know their areas better and the maps might not be as accurate too. For 0-18 years, with the lower 2/3rd of ages not using the service and 30% of the rest using it, I'll take 10%. Again, as the target age group, a good number of individuals in the 18-35 years bracket might use the service, so we'll take 40%. The factor of technical difficulties would be quite powerful for the rural people of 35-55 years, so we can take 10% here. Lastly, we can safely eliminate the 55+ years segment as non-users.\nInterviewer: Great, tell me the final answer now.\nCandidate: After multiplying the relevant rural population of 275 million across the population split and usage percentages, we get 58 million. Similarly, for the urban part, we get 145 million. But, this reflects the total usage of direction and location services but we need the specific usage of Google Maps. For this, I will take 80% and 95% for rural and urban respectively. In rural areas, Google Maps does not offer comprehensive coverage, which might help competitors like MapMyIndia. However, in urban areas, Google Maps is widely preferred as alternatives like Apple Maps are greatly limited to a specific niche. So, we get 46 million and 138 million users respectively, which gives us a total of 184 million month-wise active users of Google Maps in India.\nInterviewer: Well done, all the best for your next round.\n\nFinal Destination Framework\nMARKET SIZE OF GOOGLE MAPS IN INDIA\nClarifying Questions: B2B, B2C or both? Threshold use frequency?\nBrownie Points: Considering B2B users such as Uber. Available in multiple languages. MapMyIndia as a competitor.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers wherever required. Resist the urge to take assumptions favorable for the company and remain objective in your analysis."
+},
+{
+  "id": 67,
+  "docId": "case-67",
+  "title": "No Of-Fence",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Guesstimate",
+  "company": "Curated by the Authors",
+  "prompt": "Let's start with a quick guesstimate. Estimate the market size for barbed wires in India.",
+  "frameworkTree": {
+    "nodes": {
+      "market-size": { "id": "market-size", "label": "Market Size of Barbed Wires (India)", "tone": "root", "children": ["land-area"] },
+      "land-area": { "id": "land-area", "label": "Land Area (3 million km²)", "tone": "branch", "children": ["forests", "plots", "built-up", "waste"] },
+      "forests": { "id": "forests", "label": "Forests (30%)", "tone": "leaf", "children": [] },
+      "plots": { "id": "plots", "label": "Plots (40%)", "tone": "leaf", "children": [] },
+      "built-up": { "id": "built-up", "label": "Built-Up Land (20%)", "tone": "branch", "children": ["roads", "other-construction"] },
+      "roads": { "id": "roads", "label": "Roads (5%)", "tone": "leaf", "children": [] },
+      "other-construction": { "id": "other-construction", "label": "Other Construction (15%)", "tone": "leaf", "children": [] },
+      "waste": { "id": "waste", "label": "Waste/Other Uses (5%)", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["market-size", "land-area", "built-up"],
+    "defaultFocusedId": "land-area",
+    "notes": [
+      { "title": "Questions", "items": ["How is market size defined - length, revenue or units?", "What are the use cases of barbed wire?", "Should we approach demand-side or supply-side?"] },
+      { "title": "Keep In Mind", "items": ["Round off numbers to avoid calculation mistakes", "Constructed plots are smaller due to higher cost", "Account for different barbed wire arrangements"] },
+      { "title": "Brownie Points", "items": ["Constructed lands smaller due to greater cost", "Different arrangements of barbed wire", "Discounting for common fences, excluding road-facing fences"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "barbed-wire-calc",
+      "type": "table",
+      "title": "Market Size of Barbed Wires in India",
+      "header": "Market Size of Barbed Wires in India",
+      "noTitle": true,
+      "columns": ["Particulars", "Plots", "Constructed Land"],
+      "columnWidths": ["50%", "25%", "25%"],
+      "summaryRows": [7, 8, 9, 10, 11],
+      "rows": [
+        ["Number of Landholdings", "120 million", "120 million"],
+        ["% with Boundaries", "60%", "90%"],
+        ["% Boundaries which are Non-Concrete", "80%", "50%"],
+        ["Number of Relevant Landholdings", "60 million", "50 million"],
+        ["Average Perimeter", "0.4 km", "0.3 km"],
+        ["Barbed Wire's Multiple of Perimeter", "5.9", "4"],
+        ["Barbed Wire Length", "156 million km", "60 million km"],
+        ["Total Length", "216 million km", ""],
+        ["Discount for Common Borders", "20%", ""],
+        ["Stock Value of Length", "173 million km", ""],
+        ["Annual Replacement @ 5% + Growth @ 1%", "6%", ""],
+        ["Annual Market Size", "10.38 million km", ""]
+      ],
+      "insight": "From 3 million km² of land, 40% agricultural plots and 20% constructed land give 120 million landholdings each; after boundary, non-concrete, perimeter and wire-multiple filters the barbed wire stock is ~216 million km, discounted 20% for shared/road-facing borders to 173 million km, of which 6% (5% replacement + 1% growth) is sold each year — about 10.38 million km."
+    },
+    {
+      "title": "Annual Market Size Formula",
+      "type": "formula",
+      "lhs": "Annual Market Size",
+      "rhs": "Discounted Stock Length × (Replacement Rate + Growth Rate)",
+      "derivations": [
+        { "lhs": "Total Stock Length", "rhs": "156M km (plots) + 60M km (constructed) = 216M km" },
+        { "lhs": "Stock After Common-Border Discount", "rhs": "216M km × (1 - 20%) = 173M km" },
+        { "lhs": "Annual Market Size", "rhs": "173M km × 6% = 10.38M km" }
+      ],
+      "content": "Annual barbed wire sold = discounted stock length × (5% replacement + 1% growth). Stock length is 156M km from plots plus 60M km from constructed land = 216M km; a 20% discount for shared and road-facing borders gives 173M km; 6% of that is about 10.38 million km a year."
+    }
+  ],
+  "framework": "Candidate: Interesting question! To start off, I'd like to understand the term market size better - how are we defining it, and are we measuring it in terms of length, revenue or something else?\nInterviewer: We define the market size as the total length of barbed wire sold in a particular year.\nCandidate: Got it. To the best of my understanding, barbed wire is used as a protective barrier around compounds, either independently or on top of a wall. Is there any use case I'm missing out on?\nInterviewer: No, let's focus on just these cases.\nCandidate: Sure. While there are multiple demand-side and supply-side ways to approach this, I think given the limited information, it would make sense for me to start with India's total land area, look at the land use distribution and then estimate it from there.\nInterviewer: Sounds good, go ahead.\nCandidate: India's total land area is around 3 million km². We can split this into forests (30%), plots including cultivated plots (50%), built-up/constructed land (15%) and waste & other uses (5%), of which forests and wasteland would have negligible use of barbed wires. Within the 15% build-up area, we can take a 5% and 10% split for roads and other constructions respectively, of which roads would not use barbed wires prominently. So, we can now focus on the 50% plots and the 10% constructed land.\nInterviewer: Since these plots could have non-agricultural uses as well, say residential or commercial plots which are lying vacant, which of these two categories do they fit in?\nCandidate: Ah, that makes sense. While they are plots, in terms of their use of barbed wires, they would fit in more closely with the constructed land. Assuming 80% of the plot area is agricultural, that is 40% of total land - we can consider this to be 40% plots and 20% constructed land.\nInterviewer: Great, what next?\nCandidate: Now, we need to proceed toward the average landholding size. For simplicity, we can assume square plots. For agricultural purposes, due to repeated fragmentation across generations, landholding sizes have reduced to around 1 hectare on average, which is 100m x 100m, or 0.01 km². Since constructed land is more expensive, the size should be smaller, so we can take it as 0.005 km².\nInterviewer: Why don't you calculate the number of landholdings for both categories now?\nCandidate: For agricultural plots, we have 3 million km² x 40% x 0.01 km², which gives us 120 million. For constructed plots, we have 3 million km² x 20% / 0.005 km², which is also 120 million. Next, we know that not all plots will have a well-defined boundary of any form, say 40% of agricultural plots and 10% of constructed plots lack boundaries. Of those that have it, the boundary can be a concrete wall, a wall with barbed wire in circles on top or just barbed wire around sticks. The share of concrete walls should be around 20% for agricultural plots and 50% for constructed plots.\nInterviewer: Before we proceed further, again, what is the number of plots we are left with?\nCandidate: For agricultural plots, we have 120 million x 60% x 80% = 57.6 million plots, or roughly 60 million plots. For other plots, we have 120 million x 90% x 50% = 54 million plots, which we can round down to 50 million plots. Now, we will try and arrive at the total length of barbed wire currently in use. For plots with barbed wire in circles on top of a wall, each unit length would require triple the length of wire because of the circular windings. On the other hand, when there is just barbed wire, many layers are tied, so we can take it as 8x the unit length.\nCandidate: Focussing on the 60 million agricultural plots, we can take 30% of plots need 3x and 70% need 8x, while each plot has a perimeter of 4 times 100m, which is 400 metres. Here, we get a total of 156 million km of wire here. Similarly, for the 50 million other plots, we can take 80% of plots with 3x and 20% of plots with 8x, due to a much more formal market that needs security. Since the plot size is 5000 m², each side is roughly 70m and the perimeter is around 300m. This gives us a total of 60 million km of wire, and the grand total is 216 million km.\nInterviewer: Impressive analysis. What about common boundaries?\nCandidate: Right. It is quite possible that our value would have double-counting involved. Theoretically, every fence could be counted twice, so our maximum discount factor would be 50%. But, a large number of fences are facing the road or are bordered by land which is not fenced, I think a 20% discount would be more appropriate. This brings us to 173 million km of wire.\nInterviewer: How do we get to our final answer from here?\nCandidate: The 173 million km is the stock value. Assuming a life cycle of 20 years, only 1/20 or 5% of this total will need to be replaced each year. As the total land area of India cannot increase with time, the component of growth would arise from lands that were earlier unfenced being fenced, which we can take at 1%. So, 6% of 216 million km is 10.38 million km of barbed wire sold in India annually.\nInterviewer: Great job, all the best!\n\nNo Of-Fence Framework\nMARKET SIZE OF BARBED WIRES IN INDIA\nClarifying Questions: Way of measuring market size? Use cases of the product?\nBrownie Points: Constructed lands would be smaller due to greater cost. Different arrangements of barbed wire. Discounting for common fences with road-facing fences not included.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers wherever required."
+},
+{
+  "id": 68,
+  "docId": "case-68",
+  "title": "Mile High Club",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Guesstimate",
+  "company": "Bain & Company",
+  "round": "Manager",
+  "prompt": "Hey! Let's do a quick guesstimate. Can you think about the number of meals prepared by Udaan Airlines in Delhi every morning?",
+  "frameworkTree": {
+    "nodes": {
+      "num-meals": { "id": "num-meals", "label": "Meals Prepared (Vistara, Delhi) ~7,000", "tone": "root", "children": ["flights-serving", "people-per-flight", "contingency"] },
+      "flights-serving": { "id": "flights-serving", "label": "Flights Serving Meals (~68)", "tone": "branch", "children": ["tier1", "tier2", "hours-served"] },
+      "tier1": { "id": "tier1", "label": "Delhi to Tier 1 (4 x 7 = 28)", "tone": "leaf", "children": [] },
+      "tier2": { "id": "tier2", "label": "Delhi to Tier 2 (2 x 40 = 80)", "tone": "leaf", "children": [] },
+      "hours-served": { "id": "hours-served", "label": "Hours Meals Served (15/24)", "tone": "leaf", "children": [] },
+      "people-per-flight": { "id": "people-per-flight", "label": "Avg People per Flight (90)", "tone": "leaf", "children": [] },
+      "contingency": { "id": "contingency", "label": "Contingency Reserve (15%)", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["num-meals", "flights-serving"],
+    "defaultFocusedId": "num-meals",
+    "notes": [
+      { "title": "Questions", "items": ["Meals on flights only or also on ground?", "Domestic and international flights or just domestic?", "Are we in a post-pandemic scenario?"] },
+      { "title": "Keep In Mind", "items": ["Average occupancy varies with context - clarify the pandemic's role", "Meals served only in certain time slots", "Treat domestic flights as short-haul for crew sizing"] },
+      { "title": "Brownie Points", "items": ["Accounting for wastage and buffer", "Knowing not all tier 2 cities have flights from Delhi", "Running a runway-throughput sanity check"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "meals-breakdown",
+      "type": "table",
+      "title": "Meals Prepared by Vistara in Delhi",
+      "header": "Meals Prepared by Vistara in Delhi",
+      "noTitle": true,
+      "columns": ["Component", "Calculation", "Value"],
+      "columnWidths": ["42%", "36%", "22%"],
+      "summaryRows": [10],
+      "rows": [
+        ["Flights from Delhi (Tier 1)", "4 x 7 cities", "28"],
+        ["Flights from Delhi (Tier 2)", "2 x 40 cities", "80"],
+        ["Total Daily Flights", "28 + 80", "108"],
+        ["Flights Serving Meals", "108 x (15/24)", "~68"],
+        ["Total Seats", "162 economy + 6 business", "168"],
+        ["Passengers per Flight", "168 x 50% occupancy", "84"],
+        ["Flight Crew per Flight", "2 pilots + 4 attendants", "6"],
+        ["People per Flight", "84 + 6", "90"],
+        ["Meals Served Onboard", "90 x 68", "6,120"],
+        ["Contingency Reserve", "5% wastage + 10% buffer", "15%"],
+        ["Meals Prepared", "6,120 x 1.15", "~7,000"]
+      ],
+      "insight": "Roughly 68 of the 108 daily Delhi departures fall in meal-serving slots; at 90 people per flight (84 passengers at 50% occupancy plus 6 crew) that is ~6,120 meals served, and adding a 15% wastage-plus-buffer reserve gives about 7,000 meals prepared each morning."
+    },
+    {
+      "title": "Number of Meals Formula",
+      "type": "formula",
+      "lhs": "Number of Meals",
+      "rhs": "Flights Serving Meals x (Avg Passengers per Flight + Flight Crew per Flight) + Wastage",
+      "derivations": [
+        { "lhs": "Flights Serving Meals", "rhs": "(4 x 7 + 2 x 40) x 15/24 = 108 x 15/24 ≈ 68" },
+        { "lhs": "People per Flight", "rhs": "(168 seats x 50%) + (2 pilots + 4 attendants) = 84 + 6 = 90" },
+        { "lhs": "Meals Served", "rhs": "68 x 90 = 6,120" },
+        { "lhs": "Meals Prepared", "rhs": "6,120 x (1 + 15%) ≈ 7,000" }
+      ],
+      "content": "Number of meals = flights serving meals x (average passengers per flight + flight crew per flight), grossed up for wastage. About 68 flights fall in meal slots; each carries ~90 people (84 passengers at 50% occupancy plus 6 crew), giving ~6,120 meals served; a 15% wastage-and-buffer reserve lifts this to about 7,000 meals prepared."
+    }
+  ],
+  "framework": "Candidate: Are we concerned with the meals served on flights alone or other places as well like meals served to the on-ground and corporate staff?\nInterviewer: Let's only consider the meals needed in flights for now.\nCandidate: Will it be fair to assume that the meals are prepared by Udaan only once during the day which is morning in this case?\nInterviewer: Yes, that is a fair assumption.\nCandidate: Do I look at both domestic as well as international flights?\nInterviewer: No, focus on only domestic flights for now.\nCandidate: Are we operating in a post-pandemic world?\nInterviewer: Yes, you can assume that.\nCandidate: Just to clarify here, can we classify Udaan as a high-frill airline for the purpose of this guesstimate?\nInterviewer: Sure!\nCandidate: Let me draw out how I want to approach this problem. I will try to estimate the number of meals actually served on flights first and then account for wastage in the end. Given that Udaan is a high-frill airline, the meals are included in the ticket price and would be served to every passenger on board as well as the flight crew. The meals prepared in Delhi in the morning will be served on the flights which depart from Delhi. I have built an expression to estimate the number of meals served.\n^ Number of meals = No. of flights where meals are served x (Average number of passengers per flight + Flight crew members per flight) + wastage\nInterviewer: This sounds fine, go ahead.\nCandidate: Given the scale Udaan operates on, having a sizeable market share, I believe it should have 4 flights a day from Delhi to the tier 1 cities and 2 flights a day from Delhi to the tier 2 cities. Excluding Delhi, there are 7 tier 1 cities and around 100 tier 2 cities but the flights don't go to all tier-2 cities from Delhi. Assuming that the flights go to 40 tier 2 cities, we get 108 flights a day (4x7 + 2x40). However, I assume that the meals would be served only during particular time slots during the day.\nCandidate: If we set aside 5 hours each for breakfast, lunch and dinner and assume the flights to be uniformly distributed throughout the day, we get nine hours where we are not serving any meals. The number of flights where meals would be served should be\n^ (15/24)*108 = ~ 68 flights\nCandidate: The last time I went on a domestic flight, I remember the aircraft having 30 rows with 6 seats per row. That gives us 180 passenger seats when the layout is all economy. Udaan on the other hand has an option for business-class as well. I assume I can replace 6 rows of 3 at the front with 3 rows of 2 to come up with the new estimated number of seats.\n^ 180 - 18 + 6 = 168\nCandidate: The Pandemic also saw lower than usual occupancy rates, I, therefore, assume that 50% of the seats are occupied on average in flights departing from Delhi.\nCandidate: That gives us 84 (168/2) passengers, 4 flight attendants and 2 pilots on board. Flight crew assumptions are made based on the fact that domestic flights out of Delhi can be classified as short-haul, given that the flying time doesn't go far beyond 3 hours.\nCandidate: The number of meals served onboard should be around 90*68 = 6120 meals\nCandidate: Assuming 5% wastage in the supply chain and another 10% kept as a buffer (for reasons like reordering, grievance redressal, complimentary offerings, etc.) the number of meals prepared goes up to approximately 7000.\nInterviewer: How would you check the accuracy of your estimate?\nCandidate: The Delhi airport has three runways, two of which are used on a regular basis for commercial passenger flights. Assuming that 50% of the time the runway is used for take-offs and the other 50% for landings, and every flight occupies the runway for 4 minutes while taking off, that gives us 15 flights taking off from the airport every hour. Our assumption of 108 domestic flights a day departing from Delhi gives us around 4.5 flights (108/24) for Udaan taking off every hour.\nCandidate: The Indian airline industry is an oligopoly with 5-6 players, Vistara should have a market share of roughly 16-20%. Even the more aggressive end of this range doesn't justify the ~ 33% of take-offs being those of Vistara's out of the Delhi airport. I, therefore, believe that we have slightly overestimated the number of meals prepared.\nInterviewer: What do you think might have led to this overestimation?\nCandidate: I believe that we have overestimated the number of flights as seen in the sanity check. The most probable reason would be that most cities would not have direct flights from Delhi, but flights with layovers at intermediate cities. This should have a considerable effect on our estimated number of flights and subsequently, meals prepared.\nCandidate: We should also be mindful of certain special situations wherein flights departing from elsewhere get meals that are prepared in Delhi when they make a layover during transit. This should also be incorporated in the analysis. Do you want me to dive deeper into it?\nInterviewer: No, that will not be required. Thank you for your time.\n\nMile High Club Framework\nNUMBER OF MEALS PREPARED BY VISTARA AIRLINES IN DELHI EVERY MORNING\nClarifying Questions: Only consider meals to be served on flight or also on ground? Incorporate analysis for both domestic and international flights or not?\nBrownie Points: Accounting for wastage and buffer in your analysis. Knowing that not all tier 2 cities will have airports or flights landing from Delhi.\nKeep In Mind: Average occupancy will vary based on the context so clarify if the pandemic plays a role."
+},
 
 
 
