@@ -8241,6 +8241,10 @@
     ],
     "framework": "Candidate: Sure. I want to begin by understanding our client better. Where are we currently operating and what is our objective out of this new venture?\nInterviewer: Our client currently has Panjim-Vasco Ferry, Port Blair-Havelock Ferry and Jorhat-Majuli Ferry. We would like you to assess the financial attractiveness of the Chennai-Port Blair Ferry in terms of expected revenue from Indian tourists. Assume that all ferry services to Port Blair depart from Chennai.\nCandidate: Interesting. So, our client has experience in this business. I would like to now understand the proposed ferry and the market better. What kind of ferry do we have in mind: Luxury/Economy? How long is the journey? Do we have competitors on this route?\nInterviewer: Our cruise will be luxurious. The journey is about 60 hours long and we have a few players in the market.\nCandidate: Understood. To analyse the revenue, I would like to calculate the market size and market share with the following steps:\n1) Estimate the number of people who travel\n2) Estimate the number of people who would go to Port Blair\n3) Estimate the number of people who would travel by ferry\n4) Estimate the share of the above that would choose our service\n_(Step 1: Estimate the number of people who travel for recreational purposes at least once in two years)_\nA good place to start is India's population. We can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. Next, we can slice the urban population according to different income levels:\n[VIS:0]\nCan we move forward with the above estimation on the basis of income segmentation?\nInterviewer: Sure.\nCandidate: Total number of families that go on a trip every year = 35 million\nAssumption: Average number of trips per year per family = 1\nTotal number of trips in a year = 35 million\nWe can say about 10% of these would be international\n~ Total number of domestic trips = 31.5 million ≈ 32 million (approx.)\n_(Step 2: Estimate the number of families that would go to Port Blair)_\nWe can assume that there are about 20 popular tourist destinations in India with an equal probability of being chosen. Hence, number of family trips made to Port Blair = 32 million/20 = 1.6 million\n_(Step 3: Estimate the number of families that would travel by ferry)_\nHere, I would like to know the price of ferry tickets and the price of an airline ticket.\nInterviewer: Sure, ferry prices are Rs. 8000 per ticket. We as well as our competitors are charging the same price. An airline ticket costs around Rs. 4000.\nCandidate: Thank you. We can further analyse this by segmenting families based on the mode of transportation. Since flights are cheaper and faster, most people, especially those belonging to the middle class will opt for this. About 30% would prefer a ferry given the luxurious and leisurely experience.\n[VIS:1]\n_(Step 4: Estimate the share of the above that would choose our service)_\nI would now like to benchmark our cruise with those of our competitors.\nInterviewer: We have a well established brand name unlike our competitors and in addition to that the service that we provide is superior to that of our competitors. Assume we will be able to capture 40% of the market.\nCandidate: ~ Number of families that travel by our cruise = 500,000 * 40% = 200,000 families. Expected revenue = 2,00,000*4* 8,000 = 6,400,000,000 = Rs. 6.4 billion. Keeping the cost in mind, our client can make decisions based on this revenue figure.\nInterviewer: Yes, indeed, thank you for your time."
   },
+
+
+
+
   {
     "id": 28,
     "docId": "case-28",
@@ -9843,6 +9847,249 @@
     ],
     "framework": "Candidate: Interesting. I'd like to understand the problem a little better. Where is our client located? How many different types of biscuits do they produce? How much is their current market share and by how much do they want to increase their market share?\nInterviewer: The client is located Pan-India. For the purpose of this case, assume they sell one kind of biscuit – the Salted Biscuit. Their market share has been steadily dropping. It is currently at 30%. They want to bring it to 40%.\nCandidate: Has the decline in market share been Pan-India?\nInterviewer: No, in fact, the decline has been only in Gujarat.\nCandidate: Interesting. I'd like to divide my approach into 2. First, I'd like to understand the cause for decline in sales and then come up with strategies to increase market share.\nInterviewer: You can proceed with your approach.\nCandidate: Analysing the declining sales, I would like to break it into the 3 steps of the value chain - Production, Distribution and Demand. Under production, I'd like to understand if there have been any changes causing us to not meet the demand. Either reduction in capacity or reduced efficiency. Under Distribution, I'd like to understand if there has been any change in the number of distributors we have and the amount sold by each distributor. Lastly, I'd like to understand if there has been a decline in the demand for our biscuits.\nMy hypothesis is that the decline has to be due to a decline in demand since a drop of this magnitude lasting for over 3 years comes mostly from a customer pull issue.\nInterviewer: You're right. Analyse demand.\nCandidate: Under Demand, there are 4 main segments I'd like to understand. Company, Competitors, Customers and Product.\nUnder company, factors like firm's goals, its competencies and strategies employed to achieve them. Under competitors, factors like nature of the market, market share and competitor competencies over us become important. Under customers, factors like consumer behaviour, values, demographics shall be analysed. Lastly, under Product, the nature of the product is analysed to see if it meets customer needs and expectations. Is there any one segment you'd like me to analyse?\nInterviewer: Why don't you look at competitors?\nCandidate: Sure. I'd like to understand how many competitors exist and how they have been performing in the last 3 years. More importantly, have any of their market shares increased in the last 3 years? Has there been a new entrant in the market?\nInterviewer: Great. There is one other competitor, Canoli Inc, that exists in the market. As you have identified correctly, their market share has been consistently growing.\nCandidate: Ahaa! I'd now like to pin point exactly why Canoli are able to attract customers better than us. Here, I'd like to look at Product, Price, Promotion and Place.\na) Product - Are they offering a superior product?\nb) Price - Is their price better?\nc) Promotion - Are they marketing their product better? Is their publicity better?\nd) Place - Are they available in more accessible and prominent channels/within the outlets?\nInterviewer: Yes! Canolli inc offers a superior product because of the superior raw materials they use. Can you think of why the client hasn't done the same?\nCandidate: Sure! It might be because:\n1) We don't have access to superior raw materials due to certain constraints\n2) We have access, but can't maintain price competitiveness if we purchase them\n3) We don't have the same supplier relations as our competitors do.\nInterviewer: Perfect. Canolli Inc sources its flour from the US and therefore has superior quality. We can't do the same. Why don't we now analyse methods to increase sales?\nCandidate: Sure. Since sales is equal to Number of customers x Revenue per customer, we shall try to increase both of them.\nUnder Revenue per customer, we can try to increase the volume per customer and/or the price charged per serving. Increasing the volume would involve loyalty programmes and incentives for larger purchases. Both volume and price increase are unlikely to happen since we have identified the problem as quality as compared to competitors.\nUnder Number of customers, we can try and increase customers through 4 methods. Target new customers in the same geographies, target new customers in different geographies, mimicking competitor quality to gain customers, merge or acquire competitors. Targeting customers in different geographies is irrelevant since we are aiming at increasing sales in Gujarat. Replicating competitor quality too is irrelevant since we have understood that they source potatoes from the US.\nCandidate: Is there any possibility of merging/acquiring Canolli Inc to increase sales?\nInterviewer: There might be. What would you need to know to analyse if that would be the right decision?\nCandidate: The following considerations would be important:\n1) Willingness of both companies to merge\n2) Our ability to acquire\n3) Synergies\n4) Public perception\n5) Government permissions (Competitive laws, licensing requirements, etc.)\n6) Compatibility of management styles and cultural fit.\nInterviewer: We have learnt that our client is unwilling to merge. All other factors seem to be in our favour. How would you determine if we can and should acquire Canolli Inc?\nCandidate: Our ability to acquire would primarily depend on the value of the Gujarat division of Canolli Inc. This value should be compared with the potential increase in sales due to the acquisition since we would then have a stronghold over the market. Thus, if the sales after acquisition justifies the price of acquisition and helps to achieve the 10% increase in market share, we should go ahead with acquisition, provided we can arrange the funds for the same.\nInterviewer: Perfect. Thank you for your time. We can close the case here.\n\nRisk It for the Biscuit Framework & Recommendations\nTURNAROUND STRATEGIES FOR ABC FOOD INC.\nClarifying Questions: Location of client? Target growth percentage? Segmenting decline geographically?\nBrownie Points: Cultural fit as important consideration before merging or acquiring\nKeep In Mind: Attempts to increase sales must focus on existing weaknesses in the company to gain maximum growth"
   },
+
+
+
+  {
+  "id": 57,
+  "docId": "case-57",
+  "title": "Money Heist",
+  "industry": "Industry Agnostic",
+  "difficulty": "Easy",
+  "case_type": "Guesstimate",
+  "company": "Z.S. Associates",
+  "round": "Partner",
+  "prompt": "Your client is the professor from Money Heist. His team has just robbed the Royal Mint of Spain to the tune of €2.4 billion in cash. He needs your help in transporting this to their safe-house located 15 km away. How many mini-trucks will he need to buy?",
+  "frameworkTree": {
+    "nodes": {
+      "mini-trucks": { "id": "mini-trucks", "label": "Mini-Trucks Required", "tone": "root", "children": ["volume-notes", "volume-truck", "trips"] },
+      "volume-notes": { "id": "volume-notes", "label": "Volume of All Notes", "tone": "leaf", "children": [] },
+      "volume-truck": { "id": "volume-truck", "label": "Volume of One Truck", "tone": "leaf", "children": [] },
+      "trips": { "id": "trips", "label": "Number of Trips", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["mini-trucks"],
+    "defaultFocusedId": "mini-trucks",
+    "notes": [
+      { "title": "Questions", "items": ["Number of trips", "Denomination of the notes", "How the notes are packed"] },
+      { "title": "Keep In Mind", "items": ["Visualise the problem before calculating", "Keep every measurement in one unit", "Anchor unknown sizes to familiar objects"] },
+      { "title": "Brownie Points", "items": ["Confirming the truck can bear the load", "Stating assumptions before calculating"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "title": "Number of Mini-Trucks Formula",
+      "type": "formula",
+      "lhs": "Number of Mini-Trucks",
+      "rhs": "(Number of Notes × Volume of 1 Note) ÷ (Volume of 1 Mini-Truck × Number of Trips)",
+      "derivations": [
+        { "lhs": "Volume of 1 Note", "rhs": "Length × Width × Thickness" },
+        { "lhs": "Number of Notes", "rhs": "Total Cash ÷ Denomination of 1 Note" },
+        { "lhs": "Volume of 1 Mini-Truck", "rhs": "Length × Breadth × Height" }
+      ],
+      "content": "Number of Mini-Trucks = (Number of Notes × Volume of 1 Note) ÷ (Volume of 1 Mini-Truck × Number of Trips). Where: Volume of 1 Note = Length × Width × Thickness; Number of Notes = Total Cash ÷ Denomination of 1 Note; Volume of 1 Mini-Truck = Length × Breadth × Height."
+    },
+    {
+      "id": "mini-trucks-calculation",
+      "type": "table",
+      "title": "Mini-Trucks Calculation",
+      "header": "Mini-Trucks Calculation",
+      "noTitle": true,
+      "columns": ["Particulars", "Calculation", "Value"],
+      "columnWidths": ["40%", "37%", "23%"],
+      "summaryRows": [3, 6, 7, 11, 13],
+      "rows": [
+        ["1. Note length (A)", "as long as a 15 cm ruler", "15 cm"],
+        ["2. Note width (B)", "A ÷ 2 (length : width ≈ 2 : 1)", "7 cm"],
+        ["3. Note thickness (C)", "100-note bunch ≈ 1 cm, so 1 ÷ 100", "0.01 cm"],
+        ["4. Volume of 1 note (D)", "A × B × C", "≈ 1 cm³"],
+        ["5. Total cash (E)", "given", "€2.4 billion"],
+        ["6. Note denomination (F)", "given", "€100"],
+        ["7. Number of notes (G)", "E ÷ F", "2.4 × 10⁷"],
+        ["8. Volume of all notes (H)", "G × D", "2.4 × 10⁷ cm³"],
+        ["9. Truck breadth (I)", "≈ 5 feet", "150 cm"],
+        ["10. Truck length (J)", "≈ 2 × I", "300 cm"],
+        ["11. Truck height (K)", "≈ 6 feet", "180 cm"],
+        ["12. Volume of 1 truck (L)", "I × J × K", "≈ 8 × 10⁶ cm³"],
+        ["13. Number of trips (M)", "given (single trip)", "1"],
+        ["14. Mini-trucks required", "H ÷ (L × M)", "3"]
+      ],
+      "insight": "All dimensions are kept in centimetres so the volumes divide cleanly. With a single trip, and assuming the truck runs at full capacity with no wasted space, the loot needs 3 mini-trucks."
+    }
+  ],
+  "framework": "Interviewer: Your client is the professor from Money Heist. His team has just robbed the Royal Mint of Spain to the tune of €2.4 billion in cash. He needs your help in transporting this to their safe-house located 15 km away. How many mini-trucks will he need to buy?\nCandidate: Alright. So, our objective is to determine the number of mini-trucks the Professor will require in order to transport €2.4 billion. Am I right?\nInterviewer: Yes.\nCandidate: I have a couple of questions before I begin. How many trips is the money going to be transported in? What denomination are the notes in? How are they packed?\nInterviewer: The money has to be transported in a single trip. You can assume that the currency notes are in €100 denomination. They are to be loosely transported.\nCandidate: Got it. I will first estimate the volume of 1 note of €100 and the number of such notes. Next, I estimate the volume of 1 mini truck. The following formula will help us arrive at the number of mini-trucks:\n^Number of mini-trucks required = (Number of notes * Volume of 1 note) / (Volume of 1 mini-truck * Number of trips)\nThis is based on 2 assumptions:\n1) The mini-truck can work at full capacity and will not have a problem carrying the weight of the money.\n2) There is no wastage of space when the trucks are loaded.\nInterviewer: Sounds good.\nCandidate: To calculate the volume of 1 note, we will need its length, width and thickness. A currency note is usually as long as a 15 cm ruler. The ratio of length to width is approximately 2:1. This means we can take the width to be about 7 cm. Calculating the thickness of a single note will be difficult. It will be easier to imagine a bunch of 100 notes. A bunch of 100 notes will be about 1 cm thick. Thus, the thickness of 1 note will be about 0.1 mm or 0.01 cm. We now have enough information to calculate the volume of 1 note.\n^Volume of 1 note = Length * Width * Thickness\n^= 15 cm * 7 cm * 0.01 cm\n^= 1 cm³ (approx.)\nCandidate: Let's now calculate the number of notes.\n^Number of notes = Total amount / Denomination of 1 note\n^= €2.4 billion / €100\n^= (2.4 * 10⁹) / 10²\n^= 2.4 * 10⁷\nCandidate: We must now estimate the volume of each mini-truck, specifically its cargo body. Can I assume the mini-truck to be similar to a Tata Ace which is commonly used in India?\nInterviewer: Sure.\nCandidate: Okay. Again, we need to estimate the length, breadth and height of the cargo body of the truck. The breadth of the body is approximately equal to 5 feet or 150 cm and the length is about twice of this, i.e., 300 cm. The height of the cargo body will not be more than 6 feet, i.e., 180 cm (approx.)\n^Volume of 1 truck = Length * Breadth * Height\n^= 300 cm * 150 cm * 180 cm\n^= 8 * 10⁶ cm³ (approx.)\nCandidate: We can now substitute the values in the original formula.\n^Number of mini-trucks required = ((2.4 * 10⁷) * 1) / (8 * 10⁶)\n^= 3\nCandidate: Therefore, 3 mini-trucks are required.\nInterviewer: Great work.\n\nMoney Heist Framework\nTRANSPORTING THE LOOT\nClarifying Questions: Number of trips the money will be transported in. Denomination of the notes. How the notes are packed.\nBrownie Points: Confirming that the mini-truck can bear the weight of the load. Stating the full-capacity and no-wasted-space assumptions before calculating.\nKeep In Mind: Visualise the problem before calculating. Keep every measurement in one unit. Anchor unknown sizes to familiar objects."
+},
+{
+  "id": 58,
+  "docId": "case-58",
+  "title": "Hala Madrid!",
+  "industry": "Industry Agnostic",
+  "difficulty": "Easy",
+  "case_type": "Guesstimate",
+  "company": "Kearney",
+  "round": "Buddy",
+  "prompt": "You're a die-hard Real Madrid supporter. How many Real Madrid jerseys do you think are sold in India? We are talking about official jerseys (which cost about Rs 6,000) sold in one year.",
+  "abbreviations": [
+    "BPL: Below Poverty Line",
+    "LMC: Lower Middle Class",
+    "UMC: Upper Middle Class",
+    "UC: Upper Class"
+  ],
+  "frameworkTree": {
+    "nodes": {
+      "population": { "id": "population", "label": "Indian Population", "tone": "root", "children": ["urban", "rural"] },
+      "urban": { "id": "urban", "label": "Urban", "tone": "branch", "children": ["bpl", "lmc", "umc", "uc"] },
+      "rural": { "id": "rural", "label": "Rural", "tone": "support", "children": [] },
+      "bpl": { "id": "bpl", "label": "BPL", "tone": "support", "children": [] },
+      "lmc": { "id": "lmc", "label": "LMC", "tone": "support", "children": [] },
+      "umc": { "id": "umc", "label": "UMC", "tone": "support", "children": [] },
+      "uc": { "id": "uc", "label": "UC", "tone": "branch", "children": [] }
+    },
+    "defaultExpanded": ["population", "urban"],
+    "defaultFocusedId": "uc",
+    "notes": [
+      { "title": "Questions", "items": ["Official jersey or replicas", "Time period in scope", "New or resale jerseys"] },
+      { "title": "Keep In Mind", "items": ["Round figures to simplify the math", "Eliminate non-buyers with clear logic", "Anchor ratios to personal observation"] },
+      { "title": "Brownie Points", "items": ["Splitting fans across eight popular clubs", "Grounding ratios in personal experience"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "urban-income-segmentation",
+      "type": "table",
+      "title": "Urban Population by Income",
+      "header": "Urban Population by Income",
+      "noTitle": true,
+      "columns": ["Income Class", "Monthly Income", "Share of Urban", "Population"],
+      "columnWidths": ["28%", "30%", "20%", "22%"],
+      "summaryRows": [3],
+      "rows": [
+        ["BPL", "< Rs 10,000", "30%", "120 million"],
+        ["LMC", "Rs 10,000 – 20,000", "30%", "120 million"],
+        ["UMC", "Rs 20,000 – 80,000", "30%", "120 million"],
+        ["UC", "> Rs 80,000", "10%", "40 million"]
+      ],
+      "insight": "Only the Upper Class (40 million) can comfortably afford the ~Rs 6,000 official jersey; the rest opt for cheaper replicas and are eliminated."
+    },
+    {
+      "id": "football-fans-calculation",
+      "type": "table",
+      "title": "Football Fans in the Upper Class",
+      "header": "Football Fans in the Upper Class",
+      "noTitle": true,
+      "columns": ["Segment", "Population", "% Following Football", "Football Fans"],
+      "columnWidths": ["34%", "22%", "22%", "22%"],
+      "summaryRows": [6],
+      "rows": [
+        ["Under 18, Male", "8 million", "25%", "2,000,000"],
+        ["Under 18, Female", "8 million", "5%", "400,000"],
+        ["18 to 40, Male", "6 million", "10%", "600,000"],
+        ["18 to 40, Female", "6 million", "2%", "120,000"],
+        ["Above 40, Male", "6 million", "0%", "0"],
+        ["Above 40, Female", "6 million", "0%", "0"],
+        ["Total football fans", "40 million", "—", "≈ 3 million"]
+      ],
+      "insight": "The 40 million Upper Class split by age (under 18: 16M, 18 to 40: 12M, above 40: 12M), then roughly half male and half female. Applying football-following rates — highest among young males, negligible above 40 — gives about 3 million football fans who can afford an official jersey."
+    },
+    {
+      "id": "jerseys-per-year-calculation",
+      "type": "table",
+      "title": "Jerseys Sold Per Year",
+      "header": "Jerseys Sold Per Year",
+      "noTitle": true,
+      "columns": ["Particulars", "Calculation", "Value"],
+      "columnWidths": ["40%", "37%", "23%"],
+      "summaryRows": [3],
+      "rows": [
+        ["Football fans (A)", "from previous step", "3,000,000"],
+        ["Real Madrid fans (B)", "A ÷ 8 (2 leagues × 4 popular clubs)", "375,000"],
+        ["Official jersey owners (C)", "B ÷ 5 (1 in 5 own the official jersey)", "75,000"],
+        ["Jerseys sold per year", "C ÷ 5 (5-year jersey life)", "15,000"]
+      ],
+      "insight": "Fans split evenly across 8 popular clubs in the Premier League and La Liga, so about 1/8 support Real Madrid. Around 1 in 5 own the official jersey, and each jersey lasts ~5 years — giving roughly 15,000 official jerseys sold in India each year."
+    }
+  ],
+  "additionalFrameworkTrees": [
+    {
+      "label": "Football Fans to Jerseys Sold",
+      "nodes": {
+        "football-fans": { "id": "football-fans", "label": "Football Fans", "tone": "root", "children": ["real-madrid", "other-clubs"] },
+        "real-madrid": { "id": "real-madrid", "label": "Real Madrid Fans", "tone": "branch", "children": ["jersey-owners"] },
+        "other-clubs": { "id": "other-clubs", "label": "Other Clubs", "tone": "support", "children": [] },
+        "jersey-owners": { "id": "jersey-owners", "label": "Jersey Owners", "tone": "branch", "children": ["jerseys-year"] },
+        "jerseys-year": { "id": "jerseys-year", "label": "Jerseys Per Year", "tone": "branch", "children": [] }
+      },
+      "defaultExpanded": ["football-fans", "real-madrid", "jersey-owners"],
+      "defaultFocusedId": "jerseys-year",
+      "notes": []
+    }
+  ],
+  "framework": "Interviewer: You spoke about your passion for football. Which is your favourite football club?\nCandidate: Yes Sir. I'm a die-hard supporter of Real Madrid.\nInterviewer: That's great. How many Real Madrid jerseys do you think are sold in India?\nCandidate: Are we talking about the official jersey which costs about Rs 6,000 or are we including replicas as well? Also, what duration are we talking about?\nInterviewer: I am talking about official jerseys sold in a year.\nCandidate: Got it. A good place to start is India's population. Then, we can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. The demand for jerseys in the rural areas will be negligible due to lower income as well as lower exposure to international football. Even the ones who buy jerseys would probably buy replicas. Therefore, I would like to eliminate this section. That leaves us with about 400 million people.\nInterviewer: Makes sense.\nCandidate: Next, we can slice the urban population according to different income levels: Below Poverty Line, Lower Middle Class, Upper Middle Class and Upper Class. Since the official jerseys are quite costly, I believe only the upper class would be able to afford it. Other football fans may opt for the replica which is considerably cheaper. This leaves us with 40 million people. In our country, the people that watch football are young. Therefore, we divide the population into different age groups and look at how many people follow football from each age group. While doing this, we will also keep in mind that boys are more interested than girls when it comes to football.\nInterviewer: Sure. Go ahead!\nCandidate: Splitting the 40 million by age (under 18 at 40%, 18 to 40 at 30%, and above 40 at 30%) and then by gender, I apply the share of each group that follows football. Young males have the highest following while almost no one above 40 follows it closely. Adding up the segments, we arrive at about 3 million people who follow football closely and can afford the official jersey.\nInterviewer: Makes sense.\nCandidate: We must keep in mind that there are multiple football clubs that people follow and are usually loyal to one of these. There are 2 majorly followed leagues, the Premier League and the La Liga. Let's say each league has 4 teams which enjoy popular support in our country and the fans are equally divided across these teams. That means about one-eighth of the 3 million people will be Real Madrid supporters, i.e., 375,000 supporters.\nCandidate: Out of these, maybe one in five would like to own an official jersey of the team. This is based on what I've seen in my own friends' circle. That gives us about 75,000 official Real Madrid jerseys owned in our country.\nCandidate: We are left with one final step.\n^Number of jerseys sold in a year = Total jerseys owned / Life of one jersey\nOne jersey would last about 5 years. Therefore, the number of official Real Madrid jerseys sold in India every year is:\n^= 75,000 / 5\n^= 15,000\nInterviewer: Lovely.\n\nHala Madrid! Framework\nREAL MADRID JERSEYS SOLD IN INDIA IN ONE YEAR\nClarifying Questions: Official jersey only or replicas too? What time duration are we considering?\nBrownie Points: Dividing football followers across 8 popular clubs. Drawing insight from personal experience.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers wherever required."
+},
+{
+  "id": 59,
+  "docId": "case-59",
+  "title": "Subway Surfers",
+  "industry": "Industry Agnostic",
+  "difficulty": "Easy",
+  "case_type": "Guesstimate",
+  "company": "Kepler Cannon",
+  "round": "Manager",
+  "prompt": "You travel to college by metro almost every day. How would you estimate the fleet size of the Delhi metro — the number of trains active in the network at a given point in time?",
+  "frameworkTree": {
+    "nodes": {
+      "num-trains": { "id": "num-trains", "label": "Number of Trains", "tone": "root", "children": ["num-lines", "trains-per-line"] },
+      "num-lines": { "id": "num-lines", "label": "Number of Lines", "tone": "support", "children": [] },
+      "trains-per-line": { "id": "trains-per-line", "label": "Trains per Line", "tone": "branch", "children": ["journey-time", "frequency", "both-directions"] },
+      "journey-time": { "id": "journey-time", "label": "Journey Time", "tone": "leaf", "children": [] },
+      "frequency": { "id": "frequency", "label": "Train Frequency", "tone": "leaf", "children": [] },
+      "both-directions": { "id": "both-directions", "label": "Both Directions", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["num-trains", "trains-per-line"],
+    "defaultFocusedId": "trains-per-line",
+    "notes": [
+      { "title": "Questions", "items": ["Definition of fleet size", "Active fleet or yard included", "Peak-hour or average frequency"] },
+      { "title": "Keep In Mind", "items": ["Visualise the problem before calculating", "Use peak-hour frequency for max fleet", "Count trains in both directions"] },
+      { "title": "Brownie Points", "items": ["Using personal commute for assumptions", "Adjusting for the longer yellow line"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "title": "Fleet Size Formula",
+      "type": "formula",
+      "lhs": "Number of Trains",
+      "rhs": "Number of Lines × Trains per Line",
+      "derivations": [
+        { "lhs": "Trains per Line", "rhs": "(Journey Time ÷ Train Frequency) × 2 (both directions)" }
+      ],
+      "content": "Number of Trains = Number of Lines × Trains per Line, where Trains per Line = (Journey Time ÷ Train Frequency) × 2 to account for trains running in both directions. Only peak-hour frequency is used, since that captures the maximum number of trains active at once."
+    },
+    {
+      "id": "fleet-size-calculation",
+      "type": "table",
+      "title": "Delhi Metro Fleet Size",
+      "header": "Delhi Metro Fleet Size",
+      "noTitle": true,
+      "columns": ["Particulars", "Calculation", "Value"],
+      "columnWidths": ["42%", "35%", "23%"],
+      "summaryRows": [3, 5],
+      "rows": [
+        ["Average journey time (A)", "first to last station (yellow line ~80 min, adjusted)", "60 min"],
+        ["Peak-hour frequency (B)", "one train every 4 minutes", "4 min"],
+        ["Trains per line, one way (C)", "A ÷ B", "15"],
+        ["Trains per line, both ways (D)", "C × 2", "30"],
+        ["Number of metro lines (E)", "given for Delhi", "10"],
+        ["Active fleet size", "D × E", "300"]
+      ],
+      "insight": "Peak-hour frequency is used because it captures the maximum number of trains running at once, which equals the active fleet. Doubling for both directions and multiplying across all 10 lines gives an active fleet of about 300 trains."
+    }
+  ],
+  "framework": "Interviewer: I'm assuming you travel to college by metro. What if you had to estimate the fleet size of the Delhi metro? How would you go about it?\nCandidate: Yes, I commute by metro almost everyday. What exactly do we mean by fleet size?\nInterviewer: Fleet size means the number of trains in the network at a given point in time.\nCandidate: Are we talking about the active fleet of trains in the network or are we also including those which are in the yard and are not in use currently?\nInterviewer: Good question. We are only concerned with the active fleet.\nCandidate: Understood. The active fleet can be calculated using the following formula:\n^Number of trains = Number of metro lines * Number of trains/line\nCandidate: I know that there are 10 metro lines in Delhi. To calculate the number of trains/line, we can look at the frequency of trains and make an estimate of the time it takes the train to complete the trip from the first station to the last station on the line.\nCandidate: I travel to college on the yellow line. There is one train which comes every 4 minutes in peak hours. We are only concerned by the frequency in peak hours since our objective is to find the maximum number of trains in use at any point during the day. This will essentially give us the fleet size. The journey from the first stop to the last stop of the yellow line takes about 80 minutes. However, I think the yellow line is one of the longer lines in the metro network. After adjusting for this, we can say that the average metro route can be covered in about 60 minutes.\n^Number of trains/line = Total time taken to complete journey / Frequency of trains\n^= 60 / 4\n^= 15\nCandidate: Therefore, the number of trains/line is about 15. However, we still have to take one thing into consideration. These 15 trains are going in one direction. There are another 15 which will be going in the opposite direction at the same time. Thus, we are left with 30 trains/line. Finally, we can multiply it with the total number of lines in Delhi, i.e., 10.\n^Active fleet size of Delhi metro = 10 * 30\n^= 300\nInterviewer: Good job.\n\nSubway Surfers Framework\nFLEET SIZE OF DELHI METRO\nClarifying Questions: What do we mean by fleet size? Are we concerned only with the active fleet?\nBrownie Points: Incorporating own travelling experience to make more accurate assumptions.\nKeep In Mind: It is easier to solve guesstimates if you can visualise the problem at hand. Account for only peak hours while calculating the fleet size."
+},
+
+
+
+
+
   {
     "id": 69,
     "docId": "case-69",
