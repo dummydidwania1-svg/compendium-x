@@ -9936,38 +9936,16 @@
   ],
   "frameworkTree": {
     "nodes": {
-      "population": { "id": "population", "label": "Population (1.4 Billion)", "tone": "root", "children": ["urban", "rural"] },
-      "urban": { "id": "urban", "label": "Urban (400 Million)", "tone": "branch", "children": ["bpl", "lmc", "umc", "uc"] },
-      "rural": { "id": "rural", "label": "Rural (1 Billion, eliminated)", "tone": "leaf", "children": [] },
-      "bpl": { "id": "bpl", "label": "BPL (120 Million)", "tone": "leaf", "children": [] },
-      "lmc": { "id": "lmc", "label": "LMC (120 Million)", "tone": "leaf", "children": [] },
-      "umc": { "id": "umc", "label": "UMC (120 Million)", "tone": "leaf", "children": [] },
-      "uc": { "id": "uc", "label": "Upper Class (40 Million)", "tone": "branch", "children": ["affluent-fans"] },
-      "affluent-fans": { "id": "affluent-fans", "label": "Affluent Football Fans (3 Million)", "tone": "leaf", "children": [] }
+      "jerseys-year": { "id": "jerseys-year", "label": "Jerseys Sold per Year (15,000)", "tone": "root", "children": [] }
     },
-    "defaultExpanded": ["population", "urban", "uc"],
-    "defaultFocusedId": "uc",
+    "defaultExpanded": ["jerseys-year"],
+    "defaultFocusedId": "jerseys-year",
     "notes": [
       { "title": "Questions", "items": ["Are we counting only official jerseys or replicas too?", "What time duration are we considering?"] },
       { "title": "Keep In Mind", "items": ["Round off numbers wherever required to avoid calculation mistakes", "Only the Upper Class can afford the ~ Rs 6,000 official jersey", "Football following skews young and male"] },
       { "title": "Brownie Points", "items": ["Dividing football followers across 8 popularly supported clubs", "Drawing insight from personal experience (1 in 5 owns a jersey)"] }
     ]
   },
-  "additionalFrameworkTrees": [
-    {
-      "label": "Football Fans to Jerseys Sold per Year",
-      "nodes": {
-        "football-fans": { "id": "football-fans", "label": "Football Fans (3 Million)", "tone": "root", "children": ["real-madrid", "other-clubs"] },
-        "real-madrid": { "id": "real-madrid", "label": "Real Madrid Fans (375,000)", "tone": "branch", "children": ["jersey-owners"] },
-        "other-clubs": { "id": "other-clubs", "label": "Other Clubs (2,625,000)", "tone": "leaf", "children": [] },
-        "jersey-owners": { "id": "jersey-owners", "label": "Jersey Owners (75,000)", "tone": "branch", "children": ["jerseys-year"] },
-        "jerseys-year": { "id": "jerseys-year", "label": "Jerseys Sold per Year (15,000)", "tone": "leaf", "children": [] }
-      },
-      "defaultExpanded": ["football-fans", "real-madrid", "jersey-owners"],
-      "defaultFocusedId": "jerseys-year",
-      "notes": []
-    }
-  ],
   "visualisations": [
     {
       "id": "urban-income-segmentation",
@@ -9984,8 +9962,7 @@
         ["Lower Middle Class", "Rs 10,000 - Rs 20,000/month", "30%", "120 million"],
         ["Upper Middle Class", "Rs 20,000 - Rs 80,000/month", "30%", "120 million"],
         ["Upper Class", "> Rs 80,000/month", "10%", "40 million"]
-      ],
-      "insight": "Only the Upper Class (40 million) can comfortably afford the ~ Rs 6,000 official jersey; the rest opt for cheaper replicas and are eliminated."
+      ]
     },
     {
       "id": "football-following-by-age",
@@ -10005,21 +9982,32 @@
         ["40+", "30%", "12 million", "Male (6 million)", "0%", "0"],
         ["", "", "", "Female (6 million)", "0%", "0"],
         ["Total", "", "", "", "", "3 million (approx.)"]
-      ],
-      "insight": "Splitting the 40 million Upper Class by age and gender and applying football-following rates (highest among young males, negligible above 40) gives about 3 million fans who can afford the official jersey."
+      ]
+    },
+    {
+      "id": "jerseys-funnel",
+      "type": "table",
+      "title": "Real Madrid Jerseys Sold in India per Year",
+      "header": "Real Madrid Jerseys Sold in India per Year",
+      "noTitle": true,
+      "columns": ["Ref", "Step", "Calculation", "Value"],
+      "columnWidths": ["7%", "38%", "33%", "22%"],
+      "summaryRows": [3, 4, 6],
+      "rows": [
+        ["A", "India Population", "Starting point", "1.4 billion"],
+        ["B", "Urban Population", "30% of A (rural eliminated)", "~ 400 million"],
+        ["C", "Upper Class", "10% of B (only affluent buyers)", "40 million"],
+        ["D", "Affluent Football Fans", "Age and gender filter on C", "3 million"],
+        ["E", "Real Madrid Fans", "D / 8 popular clubs", "375,000"],
+        ["F", "Official Jersey Owners", "E / 5 (1 in 5 owns one)", "75,000"],
+        ["G", "Jerseys Sold per Year", "F / 5 (5-year life)", "15,000"]
+      ]
     },
     {
       "title": "Jerseys Sold per Year",
       "type": "formula",
       "lhs": "Jerseys Sold per Year",
-      "rhs": "Total Official Jerseys Owned / Life of One Jersey",
-      "derivations": [
-        { "lhs": "Affluent Football Fans", "rhs": "~3,000,000 (Upper Class who follow football)" },
-        { "lhs": "Real Madrid Supporters", "rhs": "3,000,000 / 8 popular teams = 375,000" },
-        { "lhs": "Official Jersey Owners", "rhs": "375,000 / 5 (1 in 5 owns a jersey) = 75,000" },
-        { "lhs": "Jerseys Sold per Year", "rhs": "75,000 / 5-year life = 15,000" }
-      ],
-      "content": "From ~3 million affluent football fans, one-eighth (2 leagues x 4 popular teams) support Real Madrid = 375,000; one in five owns an official jersey = 75,000; dividing by a 5-year jersey life gives about 15,000 official Real Madrid jerseys sold in India each year."
+      "rhs": "(Real Madrid Fans x Jersey Ownership Rate) / Jersey Life"
     }
   ],
   "framework": "Candidate: Yes sir. I'm a die-hard supporter of Real Madrid.\nInterviewer: That's great. How many Real Madrid jerseys do you think are sold in India?\nCandidate: Are we talking about the official jersey which costs about Rs 6,000 or are we including replicas as well? Also, what duration are we talking about?\nInterviewer: I am talking about official jerseys sold in a year.\nCandidate: Got it. A good place to start is India's population. Then, we can keep narrowing the population based on certain eliminating factors. First, it makes sense to divide the population of 1.4 billion into 30% staying in urban areas and 70% staying in rural areas. The demand for jerseys in the rural areas will be negligible due to lower income as well as lower exposure to international football. Even the ones who buy jerseys would probably buy replicas. Therefore, I would like to eliminate this section. That leaves us with about 400 million people.\nInterviewer: Makes sense.\nCandidate: Next, we can slice the urban population according to different income levels:\n[VIS:0]\nCandidate: Since the official jerseys are quite costly, I believe only the upper class would be able to afford it. Other football fans may opt for the replica which is considerably cheaper. This leaves us with 40 million people. In our country, the people that watch football are young. Therefore, we divide the population into different age groups and look at how many people follow football from each age group. While doing this, we will also keep in mind that boys are more interested than girls when it comes to football.\nInterviewer: Sure. Go ahead!\n[VIS:1]\nCandidate: We have now arrived at the number of people who follow football closely in India and can afford to buy the official jersey. We must keep in mind that there are multiple football clubs that people follow and are usually loyal to one of these. There are 2 majorly followed leagues, the Premier League and the La Liga. Let's say that each of these leagues has 4 teams which enjoy popular support in our country and the fans are equally divided across these teams. That means about one-eighth of the 3 million people will be Real Madrid supporters, i.e., 375,000 supporters.\nCandidate: Out of these, maybe one in five would like to own an official jersey of the team. This is based on what I've seen in my own friends' circle. That gives us a number of 75,000 official Real Madrid jerseys that are sold in our country.\nCandidate: We are left with one final step.\n^ Number of jerseys sold in a year = Total number of jerseys sold/Life of one jersey\nCandidate: One jersey would last about 5 years. Therefore, the total number of official Real Madrid jerseys sold in India every year is equal to 15,000.\nInterviewer: Lovely.\n\nHala Madrid! Framework\nREAL MADRID JERSEYS SOLD IN INDIA IN ONE YEAR\nClarifying Questions: Only official jerseys? What duration?\nBrownie Points: Dividing football followers into 8 clubs. Drawing insight from personal experience.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers wherever required."
@@ -10507,8 +10495,8 @@
     "defaultFocusedId": "num-customers",
     "notes": [
       { "title": "Questions", "items": ["Global market or the USA only?", "Any supply-side or capacity constraints?", "Anything special about 2010 to note?"] },
-      { "title": "Keep In Mind", "items": ["Ask about the company if it is unfamiliar", "Narrow fit-to-fly share by age group", "Filter on affordability, health, risk and preference"] },
-      { "title": "Brownie Points", "items": ["Layering health, age and risk filters", "Adjusting fit-to-fly by age group"] }
+      { "title": "Keep In Mind", "items": ["Ask about the company if it is unfamiliar"] },
+      { "title": "Brownie Points", "items": ["Layering health, age and risk filters"] }
     ]
   },
   "visualisations": [
@@ -10551,10 +10539,9 @@
       "rows": [
         ["US population (2010)", "assumed", "300 million"],
         ["Affordable segment (top 1%)", "300 million × 1%", "3 million"],
-        ["Customers after filters", "health × risk × preference (Table 1)", "~80,000"],
+        ["Customers after filters", "Health × Risk × Preference (Table above)", "~80,000"],
         ["Market size", "80,000 × $500,000", "$40 billion"]
-      ],
-      "insight": "Roughly 80,000 affluent, health-cleared and willing customers at an average ticket of ~$500,000 give a US private space-tourism market of about $40 billion."
+      ]
     }
   ],
   "framework": "Candidate: Can you please tell me more about SpaceX's mission and operations?\nInterviewer: SpaceX, based out of the USA, was started by Elon Musk in 2002 with the goal of reducing space transportation costs to enable the colonization of Mars. It has many operations but for the purpose of this guesstimate, you can size the market for private space tourism.\nCandidate: Does that mean individuals flying off to space purely for entertainment/fun purposes?\nInterviewer: Haha! You can assume that to be the case, yes.\nCandidate: Are we looking to size the global market or just the one in the USA?\nInterviewer: Let's try and size the USA market only for now.\nCandidate: Should I try size the market purely from a demand standpoint or should I also incorporate several supply-side constraints that potentially could reduce the overall market size?\nInterviewer: Let's assume that there are no supply-side/capacity constraints.\nCandidate: Is there anything special about 2010 that I should be aware of which could influence public sentiment or awareness as far as private space tourism is concerned?\nInterviewer: Not really. Let's hear your approach for solving this problem.\n^ Market size = Number of customers * Price per trip\nCandidate: I would like to identify top-level income class in the United States and add on more filters. These would include accounting for health conditions, risk appetite and preference for something as exotic as space travel. I would then multiply this with average ticket value in order to get the total market size.\nCandidate: Does this approach sound fine?\nInterviewer: Yes, it does. Go ahead.\nCandidate: We can assume the total population of the USA in 2010 to be 300 million. A private space flight would cost between half a million dollars and a million dollars. We can assume that only the top 1% (net worth of approximately 10 million or more) are capable of affording private space travel. This is because the activity will take away more than 10% of the net worth in one go for people outside the top 1% which is a sizeable chunk. Therefore, we are left with 3 million people.\nCandidate: Out of this, we know that certain people will not have medical clearances based on the age group that they belong to and their respective share in the top 1% population. We can also account for risk factor: younger people are more likely to have a higher risk appetite by virtue of lesser responsibilities (longer time horizon to earn more money) as well as a greater adrenaline rush.\nCandidate: For determining preference for space travel, we can assume that there are 9 other activities like space travel. The interested individuals are equally likely to choose one of the 10 activities like flying an aircraft and exploring the deep-sea bed alone among others.\n[VIS:0]\nThus, the total number that we get is equal to 84,000 people.\nInterviewer: Let's round this number off to 80,000. What next?\nCandidate: Assuming that the average ticket cost is equal to approximately 500,000 USD, we get our market size equal to 40 billion dollars.\nCandidate: Based on how the advancements take place in the coming decade, frequency of travel by same individuals can also increase. That can lead to an increase in the market size.\nInterviewer: Interesting. Anything else?\nCandidate: We can also calculate the specific market share for SpaceX based on comparison with competitors like Blue Origin and Virgin Galactic.\nInterviewer: That won't be necessary. We can close the case here.\n\nSpace(from my)X Framework\nSIZING THE MARKET FOR SPACEX\nClarifying Questions: Sizing the global market or the USA market only? Any supply side constraints that could limit the market size?\nBrownie Points: Accommodating health concerns as a factor for space travel and narrowing down the percentage of people fit to fly based on their age group.\nKeep In Mind: Ask for more information about the company in case you are not familiar with it."
@@ -10582,7 +10569,7 @@
     "defaultExpanded": ["annual-revenue", "weekly-revenue"],
     "defaultFocusedId": "weekly-revenue",
     "notes": [
-      { "title": "Questions", "items": ["Are non-consulting arms included?", "What fee models and pro-bono share apply?", "How many work at reduced flex capacity?"] },
+      { "title": "Questions", "items": ["Are non-consulting arms included?"] },
       { "title": "Keep In Mind", "items": ["Use insights from the pre-placement talk", "Adjust billable hours by seniority", "Apply a cost-to-client billing multiple"] },
       { "title": "Brownie Points", "items": ["Flagging other BCG arms in India", "Noting pro-bono and government rates", "Accounting for flex-work options"] }
     ]
@@ -10624,7 +10611,7 @@
       "content": "Annual Revenue = Weekly Revenue × Working Weeks per Year × USD-INR Rate. Weekly revenue is the sum across the seven-level pyramid of each level's headcount times its billable hours times its fee per hour, giving ~US$10.5 million per week, ~US$475 million per year and about ₹3,500 crore at ₹75 to the dollar."
     }
   ],
-  "framework": "Candidate: Are we referring to the revenue only from the consulting services that BCG provides in India or should I factor in other arms such as the BCG Digital Ventures and BCG Gamma?\nInterviewer: Let's focus on our direct consulting here.\nCandidate: Broadly, my overall approach would be to look at the various positions and estimate their billables and aggregate them. The formula at each level in the hierarchy would be Number of consultants * Number of billable hours * billing rate per hour. I'd like to start off with the number of consultants BCG has in India.\nInterviewer: That sounds good. What's the number you have in mind?\nCandidate: As far as I can recall from the pre-placement talk, around 1000?\nInterviewer: Sure, take it as 850 consultants in total.\nCandidate: Got it. I would like to understand how our fee structure works, first. Do we have different models for calculating our fee? As BCG is socially conscious, what percentage of projects are taken pro-bono? Also, as consultants have the option to work at 60% or 80% capacity to meet other personal commitments, how many actively use these options?\nInterviewer: There are two models; one is a flat fee approach based on different rates given the hours of work involved and the second includes a variable component that factors in the outcomes that we achieve for our clients. For pro-bono or flex-work, assume that to be negligible for now.\nCandidate: Sure. In that case, I'd like to work with a tabular structure. The hierarchy of profiles is Managing Director & Partner (MDP), Partner, Principal, Project Leader, Consultant, Senior Associate and Associate. I believe everyone has a 60 hour work week and different billing rates.\nInterviewer: Right. Why don't you go ahead and tell me the breakdown of the 850 consultants into the different brackets? Suppose we have 60 MDPs.\nCandidate: Broadly speaking, the group would have a pyramid structure. So, with 60 MDPs, I would assume there are 100 Partners, 120 Principals, 130 Project Leaders, 140 Consultants, 150 Senior Associates and 150 Associates.\nInterviewer: Which stage of education do you think would see the highest inflow of consultants?\nCandidate: Ah, yes. Since a large share of new employees joins in after their Masters, I would like to increase the count of Senior Associates to 180 and reduce the three rungs above that by 10 each.\nCandidate: Makes sense. Moving on to the number of hours they work, I would place it at 60 hours per week. Is this a fair number?\nInterviewer: Yes, that's fine. But, due to contractual terms, we can charge a maximum of 40 hours per consultant. Do you think consultants at each level give up 40 hours?\nCandidate: As I understand, they would be working a total of 40 hours. However, at the senior levels, a lot of time would be devoted to business development as well. So, I would adjust the hours to 20 for MDPs, 30 for Partners and 35 each for Principals and Project Leaders.\nInterviewer: Sure, go ahead.\nCandidate: Talking about the billing rate, I would like to start by looking at the salary paid. Taking a salary of around 18 lakh with 45 working weeks a year, we get ₹40000 per week. Since this is spread over 40 hours, we get ₹1000 per hour. But, this is the cost to the company, so BCG would offer the service to clients at a certain multiple. Is a 3x multiple fine?\nInterviewer: No, take 10x.\nCandidate: Sure. So, that's ₹10000 per hour.\nInterviewer: Right. Let's shift to US Dollars, use $100 at the Associate level and $1000 for MDPs.\nCandidate: In that case, my estimate would be $800, $600, $400, $300 and $200, from a Partner to a Senior Associate.\nInterviewer: During the initial stages, the growth is slower. Let's change it to $250 and $150 for a Consultant and a Senior Associate respectively.\nCandidate: Alright. As per my calculations, it comes to $10.5 million per week, which is $475 million taking 45 working weeks in a usual year, allowing for regular breaks. In INR, that comes out to around ₹3500 crores.\nInterviewer: Sure, do you think that's an overestimate or an underestimate?\nCandidate: I feel this figure would be slightly overestimated because we have not factored in pro-bono cases and flex-work. Also, BCG does a lot of projects with the government, for which there might be a different and lower charge.\nInterviewer: That sounds like a good number, we can close the case now.\n\nOnce Upon A Timesheet Framework\nANNUAL REVENUE OF BCG IN INDIA\nClarifying Questions: Are non-consulting services included?\nBrownie Points: Other arms that BCG has in India. Pro-bono services at different rates. Work flexibility options offered to employees.\nKeep In Mind: Pay attention in the PPT. While this is rare, in this case, displaying great insights into specifics of the company's work will definitely be a plus."
+  "framework": "Candidate: Are we referring to the revenue only from the consulting services that BCG provides in India or should I factor in other arms such as the BCG Digital Ventures and BCG Gamma?\nInterviewer: Let's focus on our direct consulting here.\nCandidate: Broadly, my overall approach would be to look at the various positions and estimate their billables and aggregate them. The formula at each level in the hierarchy would be Number of consultants * Number of billable hours * billing rate per hour. I'd like to start off with the number of consultants BCG has in India.\nInterviewer: That sounds good. What's the number you have in mind?\nCandidate: As far as I can recall from the pre-placement talk, around 1000?\nInterviewer: Sure, take it as 850 consultants in total.\nCandidate: Got it. I would like to understand how our fee structure works, first. Do we have different models for calculating our fee? As BCG is socially conscious, what percentage of projects are taken pro-bono? Also, as consultants have the option to work at 60% or 80% capacity to meet other personal commitments, how many actively use these options?\nInterviewer: There are two models; one is a flat fee approach based on different rates given the hours of work involved and the second includes a variable component that factors in the outcomes that we achieve for our clients. For pro-bono or flex-work, assume that to be negligible for now.\nCandidate: Sure. In that case, I'd like to work with a tabular structure. The hierarchy of profiles is Managing Director & Partner (MDP), Partner, Principal, Project Leader, Consultant, Senior Associate and Associate. I believe everyone has a 60 hour work week and different billing rates.\nInterviewer: Right. Why don't you go ahead and tell me the breakdown of the 850 consultants into the different brackets? Suppose we have 60 MDPs.\nCandidate: Broadly speaking, the group would have a pyramid structure. So, with 60 MDPs, I would assume there are 100 Partners, 120 Principals, 130 Project Leaders, 140 Consultants, 150 Senior Associates and 150 Associates.\nInterviewer: Which stage of education do you think would see the highest inflow of consultants?\nCandidate: Ah, yes. Since a large share of new employees joins in after their Masters, I would like to increase the count of Senior Associates to 180 and reduce the three rungs above that by 10 each.\nInterviewer: Makes sense.\nCandidate: Moving on to the number of hours they work, I would place it at 60 hours per week. Is this a fair number?\nInterviewer: Yes, that's fine. But, due to contractual terms, we can charge a maximum of 40 hours per consultant. Do you think consultants at each level give up 40 hours?\nCandidate: As I understand, they would be working a total of 40 hours. However, at the senior levels, a lot of time would be devoted to business development as well. So, I would adjust the hours to 20 for MDPs, 30 for Partners and 35 each for Principals and Project Leaders.\nInterviewer: Sure, go ahead.\nCandidate: Talking about the billing rate, I would like to start by looking at the salary paid. Taking a salary of around 18 lakh with 45 working weeks a year, we get ₹40000 per week. Since this is spread over 40 hours, we get ₹1000 per hour. But, this is the cost to the company, so BCG would offer the service to clients at a certain multiple. Is a 3x multiple fine?\nInterviewer: No, take 10x.\nCandidate: Sure. So, that's ₹10000 per hour.\nInterviewer: Right. Let's shift to US Dollars, use $100 at the Associate level and $1000 for MDPs.\nCandidate: In that case, my estimate would be $800, $600, $400, $300 and $200, from a Partner to a Senior Associate.\nInterviewer: During the initial stages, the growth is slower. Let's change it to $250 and $150 for a Consultant and a Senior Associate respectively.\nCandidate: Alright. As per my calculations, it comes to $10.5 million per week, which is $475 million taking 45 working weeks in a usual year, allowing for regular breaks. In INR, that comes out to around ₹3500 crores.\nInterviewer: Sure, do you think that's an overestimate or an underestimate?\nCandidate: I feel this figure would be slightly overestimated because we have not factored in pro-bono cases and flex-work. Also, BCG does a lot of projects with the government, for which there might be a different and lower charge.\nInterviewer: That sounds like a good number, we can close the case now.\n\nOnce Upon A Timesheet Framework\nANNUAL REVENUE OF BCG IN INDIA\nClarifying Questions: Are non-consulting services included?\nBrownie Points: Other arms that BCG has in India. Pro-bono services at different rates. Work flexibility options offered to employees.\nKeep In Mind: Pay attention in the PPT. While this is rare, in this case, displaying great insights into specifics of the company's work will definitely be a plus."
 },
 {
   "id": 66,
@@ -10634,7 +10621,7 @@
   "difficulty": "Hard",
   "case_type": "Guesstimate",
   "company": "McKinsey & Co.",
-  "round": "Engagement Manager",
+  "round": "Eng. Manager",
   "abbreviations": ["B2B: Business to Business", "B2C: Business to Consumer"],
   "prompt": "Let's start with a quick guesstimate. I used Google Maps to find my way to the college campus today, what do you think is the market size of Google Maps in India?",
   "frameworkTree": {
@@ -10649,7 +10636,7 @@
       "maps-share": { "id": "maps-share", "label": "Google Maps Market Share", "tone": "leaf", "children": [] }
     },
     "defaultExpanded": ["market-size", "population"],
-    "defaultFocusedId": "market-size",
+    "defaultFocusedId": "population",
     "notes": [
       { "title": "Questions", "items": ["B2B, B2C or both?", "What threshold use frequency counts as a customer?", "Any device or platform constraints?"] },
       { "title": "Keep In Mind", "items": ["Round off numbers to avoid calculation mistakes", "Stay objective, avoid company-favourable assumptions", "Sequence filters: literacy, then device/internet, then age"] },
@@ -10719,12 +10706,12 @@
   "industry": "Industry Agnostic",
   "difficulty": "Hard",
   "case_type": "Guesstimate",
-  "company": "Curated by the Authors",
+  "company": "By the Authors",
+  "round": "N/A",
   "prompt": "Let's start with a quick guesstimate. Estimate the market size for barbed wires in India.",
   "frameworkTree": {
     "nodes": {
-      "market-size": { "id": "market-size", "label": "Market Size of Barbed Wires (India)", "tone": "root", "children": ["land-area"] },
-      "land-area": { "id": "land-area", "label": "Land Area (3 million km²)", "tone": "branch", "children": ["forests", "plots", "built-up", "waste"] },
+      "land-area": { "id": "land-area", "label": "Land Area (3 million km²)", "tone": "root", "children": ["forests", "plots", "built-up", "waste"] },
       "forests": { "id": "forests", "label": "Forests (30%)", "tone": "leaf", "children": [] },
       "plots": { "id": "plots", "label": "Plots (40%)", "tone": "leaf", "children": [] },
       "built-up": { "id": "built-up", "label": "Built-Up Land (20%)", "tone": "branch", "children": ["roads", "other-construction"] },
@@ -10732,40 +10719,39 @@
       "other-construction": { "id": "other-construction", "label": "Other Construction (15%)", "tone": "leaf", "children": [] },
       "waste": { "id": "waste", "label": "Waste/Other Uses (5%)", "tone": "leaf", "children": [] }
     },
-    "defaultExpanded": ["market-size", "land-area", "built-up"],
-    "defaultFocusedId": "land-area",
+    "defaultExpanded": ["land-area", "built-up"],
+    "defaultFocusedId": "built-up",
     "notes": [
-      { "title": "Questions", "items": ["How is market size defined - length, revenue or units?", "What are the use cases of barbed wire?", "Should we approach demand-side or supply-side?"] },
-      { "title": "Keep In Mind", "items": ["Round off numbers to avoid calculation mistakes", "Constructed plots are smaller due to higher cost", "Account for different barbed wire arrangements"] },
+      { "title": "Questions", "items": ["How is market size defined - length, revenue or units?", "What are the use cases of barbed wire?"] },
+      { "title": "Keep In Mind", "items": ["Round off numbers to avoid calculation mistakes"] },
       { "title": "Brownie Points", "items": ["Constructed lands smaller due to greater cost", "Different arrangements of barbed wire", "Discounting for common fences, excluding road-facing fences"] }
     ]
   },
   "visualisations": [
     {
-      "id": "barbed-wire-calc",
-      "type": "table",
-      "title": "Market Size of Barbed Wires in India",
-      "header": "Market Size of Barbed Wires in India",
-      "noTitle": true,
-      "columns": ["Particulars", "Plots", "Constructed Land"],
-      "columnWidths": ["50%", "25%", "25%"],
-      "summaryRows": [7, 8, 9, 10, 11],
-      "rows": [
-        ["Number of Landholdings", "120 million", "120 million"],
-        ["% with Boundaries", "60%", "90%"],
-        ["% Boundaries which are Non-Concrete", "80%", "50%"],
-        ["Number of Relevant Landholdings", "60 million", "50 million"],
-        ["Average Perimeter", "0.4 km", "0.3 km"],
-        ["Barbed Wire's Multiple of Perimeter", "5.9", "4"],
-        ["Barbed Wire Length", "156 million km", "60 million km"],
-        ["Total Length", "216 million km", ""],
-        ["Discount for Common Borders", "20%", ""],
-        ["Stock Value of Length", "173 million km", ""],
-        ["Annual Replacement @ 5% + Growth @ 1%", "6%", ""],
-        ["Annual Market Size", "10.38 million km", ""]
-      ],
-      "insight": "From 3 million km² of land, 40% agricultural plots and 20% constructed land give 120 million landholdings each; after boundary, non-concrete, perimeter and wire-multiple filters the barbed wire stock is ~216 million km, discounted 20% for shared/road-facing borders to 173 million km, of which 6% (5% replacement + 1% growth) is sold each year — about 10.38 million km."
-    },
+  "id": "barbed-wire-calc",
+  "type": "table",
+  "title": "Market Size of Barbed Wires in India",
+  "header": "Market Size of Barbed Wires in India",
+  "noTitle": true,
+  "columns": ["Ref", "Particulars", "Plots", "Constructed Land"],
+  "columnWidths": ["8%", "46%", "23%", "23%"],
+  "summaryRows": [3, 6, 7, 9, 11],
+  "rows": [
+    ["A", "Number of Landholdings", "120 million", "120 million"],
+    ["B", "% with Boundaries", "60%", "90%"],
+    ["C", "% of Boundaries that are Non-Concrete", "80%", "50%"],
+    ["D", "Relevant Landholdings (A x B x C)", "60 million", "50 million"],
+    ["E", "Average Perimeter", "0.4 km", "0.3 km"],
+    ["F", "Barbed Wire Multiple of Perimeter (weighted 3x / 8x)", "6.5", "4"],
+    ["G", "Barbed Wire Length (D x E x F)", "156 million km", "60 million km"],
+    ["H", "Total Stock Length (G Plots + G Constructed)", "216 million km", ""],
+    ["I", "Discount for Common Borders", "20%", ""],
+    ["J", "Net Stock Length (H x (1 - I))", "173 million km", ""],
+    ["K", "Annual Replacement (5%) + Growth (1%)", "6%", ""],
+    ["L", "Annual Market Size (J x K)", "10.38 million km", ""]
+  ]
+},
     {
       "title": "Annual Market Size Formula",
       "type": "formula",
@@ -10773,13 +10759,13 @@
       "rhs": "Discounted Stock Length × (Replacement Rate + Growth Rate)",
       "derivations": [
         { "lhs": "Total Stock Length", "rhs": "156M km (plots) + 60M km (constructed) = 216M km" },
-        { "lhs": "Stock After Common-Border Discount", "rhs": "216M km × (1 - 20%) = 173M km" },
+        { "lhs": "Discounted Stock After Commmon Borders", "rhs": "216M km × (1 - 20%) = 173M km" },
         { "lhs": "Annual Market Size", "rhs": "173M km × 6% = 10.38M km" }
       ],
       "content": "Annual barbed wire sold = discounted stock length × (5% replacement + 1% growth). Stock length is 156M km from plots plus 60M km from constructed land = 216M km; a 20% discount for shared and road-facing borders gives 173M km; 6% of that is about 10.38 million km a year."
     }
   ],
-  "framework": "Candidate: Interesting question! To start off, I'd like to understand the term market size better - how are we defining it, and are we measuring it in terms of length, revenue or something else?\nInterviewer: We define the market size as the total length of barbed wire sold in a particular year.\nCandidate: Got it. To the best of my understanding, barbed wire is used as a protective barrier around compounds, either independently or on top of a wall. Is there any use case I'm missing out on?\nInterviewer: No, let's focus on just these cases.\nCandidate: Sure. While there are multiple demand-side and supply-side ways to approach this, I think given the limited information, it would make sense for me to start with India's total land area, look at the land use distribution and then estimate it from there.\nInterviewer: Sounds good, go ahead.\nCandidate: India's total land area is around 3 million km². We can split this into forests (30%), plots including cultivated plots (50%), built-up/constructed land (15%) and waste & other uses (5%), of which forests and wasteland would have negligible use of barbed wires. Within the 15% build-up area, we can take a 5% and 10% split for roads and other constructions respectively, of which roads would not use barbed wires prominently. So, we can now focus on the 50% plots and the 10% constructed land.\nInterviewer: Since these plots could have non-agricultural uses as well, say residential or commercial plots which are lying vacant, which of these two categories do they fit in?\nCandidate: Ah, that makes sense. While they are plots, in terms of their use of barbed wires, they would fit in more closely with the constructed land. Assuming 80% of the plot area is agricultural, that is 40% of total land - we can consider this to be 40% plots and 20% constructed land.\nInterviewer: Great, what next?\nCandidate: Now, we need to proceed toward the average landholding size. For simplicity, we can assume square plots. For agricultural purposes, due to repeated fragmentation across generations, landholding sizes have reduced to around 1 hectare on average, which is 100m x 100m, or 0.01 km². Since constructed land is more expensive, the size should be smaller, so we can take it as 0.005 km².\nInterviewer: Why don't you calculate the number of landholdings for both categories now?\nCandidate: For agricultural plots, we have 3 million km² x 40% x 0.01 km², which gives us 120 million. For constructed plots, we have 3 million km² x 20% / 0.005 km², which is also 120 million. Next, we know that not all plots will have a well-defined boundary of any form, say 40% of agricultural plots and 10% of constructed plots lack boundaries. Of those that have it, the boundary can be a concrete wall, a wall with barbed wire in circles on top or just barbed wire around sticks. The share of concrete walls should be around 20% for agricultural plots and 50% for constructed plots.\nInterviewer: Before we proceed further, again, what is the number of plots we are left with?\nCandidate: For agricultural plots, we have 120 million x 60% x 80% = 57.6 million plots, or roughly 60 million plots. For other plots, we have 120 million x 90% x 50% = 54 million plots, which we can round down to 50 million plots. Now, we will try and arrive at the total length of barbed wire currently in use. For plots with barbed wire in circles on top of a wall, each unit length would require triple the length of wire because of the circular windings. On the other hand, when there is just barbed wire, many layers are tied, so we can take it as 8x the unit length.\nCandidate: Focussing on the 60 million agricultural plots, we can take 30% of plots need 3x and 70% need 8x, while each plot has a perimeter of 4 times 100m, which is 400 metres. Here, we get a total of 156 million km of wire here. Similarly, for the 50 million other plots, we can take 80% of plots with 3x and 20% of plots with 8x, due to a much more formal market that needs security. Since the plot size is 5000 m², each side is roughly 70m and the perimeter is around 300m. This gives us a total of 60 million km of wire, and the grand total is 216 million km.\nInterviewer: Impressive analysis. What about common boundaries?\nCandidate: Right. It is quite possible that our value would have double-counting involved. Theoretically, every fence could be counted twice, so our maximum discount factor would be 50%. But, a large number of fences are facing the road or are bordered by land which is not fenced, I think a 20% discount would be more appropriate. This brings us to 173 million km of wire.\nInterviewer: How do we get to our final answer from here?\nCandidate: The 173 million km is the stock value. Assuming a life cycle of 20 years, only 1/20 or 5% of this total will need to be replaced each year. As the total land area of India cannot increase with time, the component of growth would arise from lands that were earlier unfenced being fenced, which we can take at 1%. So, 6% of 216 million km is 10.38 million km of barbed wire sold in India annually.\nInterviewer: Great job, all the best!\n\nNo Of-Fence Framework\nMARKET SIZE OF BARBED WIRES IN INDIA\nClarifying Questions: Way of measuring market size? Use cases of the product?\nBrownie Points: Constructed lands would be smaller due to greater cost. Different arrangements of barbed wire. Discounting for common fences with road-facing fences not included.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers wherever required."
+  "framework": "Candidate: Interesting question! To start off, I'd like to understand the term market size better - how are we defining it, and are we measuring it in terms of length, revenue or something else?\nInterviewer: We define the market size as the total length of barbed wire sold in a particular year.\nCandidate: Got it. To the best of my understanding, barbed wire is used as a protective barrier around compounds, either independently or on top of a wall. Is there any use case I'm missing out on?\nInterviewer: No, let's focus on just these cases.\nCandidate: Sure. While there are multiple demand-side and supply-side ways to approach this, I think given the limited information, it would make sense for me to start with India's total land area, look at the land use distribution and then estimate it from there.\nInterviewer: Sounds good, go ahead.\nCandidate: India's total land area is around 3 million km². We can split this into forests (30%), plots including cultivated plots (50%), built-up/constructed land (15%) and waste & other uses (5%), of which forests and wasteland would have negligible use of barbed wires. Within the 15% build-up area, we can take a 5% and 10% split for roads and other constructions respectively, of which roads would not use barbed wires prominently. So, we can now focus on the 50% plots and the 10% constructed land.\nInterviewer: Since these plots could have non-agricultural uses as well, say residential or commercial plots which are lying vacant, which of these two categories do they fit in?\nCandidate: Ah, that makes sense. While they are plots, in terms of their use of barbed wires, they would fit in more closely with the constructed land. Assuming 80% of the plot area is agricultural, that is 40% of total land - we can consider this to be 40% plots and 20% constructed land.\nInterviewer: Great, what next?\nCandidate: Now, we need to proceed toward the average landholding size. For simplicity, we can assume square plots. For agricultural purposes, due to repeated fragmentation across generations, landholding sizes have reduced to around 1 hectare on average, which is 100m x 100m, or 0.01 km². Since constructed land is more expensive, the size should be smaller, so we can take it as 0.005 km².\nInterviewer: Why don't you calculate the number of landholdings for both categories now?\nCandidate: For agricultural plots, we have 3 million km² x 40% x 0.01 km², which gives us 120 million. For constructed plots, we have 3 million km² x 20% / 0.005 km², which is also 120 million. Next, we know that not all plots will have a well-defined boundary of any form, say 40% of agricultural plots and 10% of constructed plots lack boundaries. Of those that have it, the boundary can be a concrete wall, a wall with barbed wire in circles on top or just barbed wire around sticks. The share of concrete walls should be around 20% for agricultural plots and 50% for constructed plots.\nInterviewer: Before we proceed further, again, what is the number of plots we are left with?\nCandidate: ~ For agricultural plots, we have 120 million x 60% x 80% = 57.6 million plots, or roughly 60 million plots. For other plots, we have 120 million x 90% x 50% = 54 million plots, which we can round down to 50 million plots. Now, we will try and arrive at the total length of barbed wire currently in use. For plots with barbed wire in circles on top of a wall, each unit length would require triple the length of wire because of the circular windings. On the other hand, when there is just barbed wire, many layers are tied, so we can take it as 8x the unit length.\nCandidate: Focusing on the 60 million agricultural plots, we can take 30% of plots need 3x and 70% need 8x, while each plot has a perimeter of 4 times 100m, which is 400 metres. Here, we get a total of 156 million km of wire here. Similarly, for the 50 million other plots, we can take 80% of plots with 3x and 20% of plots with 8x, due to a much more formal market that needs security. Since the plot size is 5000 m², each side is roughly 70m and the perimeter is around 300m. This gives us a total of 60 million km of wire, and the grand total is 216 million km.\nInterviewer: Impressive analysis. What about common boundaries?\nCandidate: Right. It is quite possible that our value would have double-counting involved. Theoretically, every fence could be counted twice, so our maximum discount factor would be 50%. But, a large number of fences are facing the road or are bordered by land which is not fenced, I think a 20% discount would be more appropriate. This brings us to 173 million km of wire.\nInterviewer: How do we get to our final answer from here?\nCandidate: The 173 million km is the stock value. Assuming a life cycle of 20 years, only 1/20 or 5% of this total will need to be replaced each year. As the total land area of India cannot increase with time, the component of growth would arise from lands that were earlier unfenced being fenced, which we can take at 1%. So, 6% of 173 million km is 10.38 million km of barbed wire sold in India annually.\nInterviewer: Great job, all the best!\n\nNo Of-Fence Framework\nMARKET SIZE OF BARBED WIRES IN INDIA\nClarifying Questions: Way of measuring market size? Use cases of the product?\nBrownie Points: Constructed lands would be smaller due to greater cost. Different arrangements of barbed wire. Discounting for common fences with road-facing fences not included.\nKeep In Mind: Avoid calculation mistakes by rounding off numbers wherever required."
 },
 {
   "id": 68,
@@ -10793,16 +10779,9 @@
   "prompt": "Hey! Let's do a quick guesstimate. Can you think about the number of meals prepared by Udaan Airlines in Delhi every morning?",
   "frameworkTree": {
     "nodes": {
-      "num-meals": { "id": "num-meals", "label": "Meals Prepared (Vistara, Delhi) ~7,000", "tone": "root", "children": ["flights-serving", "people-per-flight", "contingency"] },
-      "flights-serving": { "id": "flights-serving", "label": "Flights Serving Meals (~68)", "tone": "branch", "children": ["tier1", "tier2", "hours-served"] },
-      "tier1": { "id": "tier1", "label": "Delhi to Tier 1 (4 x 7 = 28)", "tone": "leaf", "children": [] },
-      "tier2": { "id": "tier2", "label": "Delhi to Tier 2 (2 x 40 = 80)", "tone": "leaf", "children": [] },
-      "hours-served": { "id": "hours-served", "label": "Hours Meals Served (15/24)", "tone": "leaf", "children": [] },
-      "people-per-flight": { "id": "people-per-flight", "label": "Avg People per Flight (90)", "tone": "leaf", "children": [] },
-      "contingency": { "id": "contingency", "label": "Contingency Reserve (15%)", "tone": "leaf", "children": [] }
     },
-    "defaultExpanded": ["num-meals", "flights-serving"],
-    "defaultFocusedId": "num-meals",
+    "defaultExpanded": [],
+    "defaultFocusedId": "",
     "notes": [
       { "title": "Questions", "items": ["Meals on flights only or also on ground?", "Domestic and international flights or just domestic?", "Are we in a post-pandemic scenario?"] },
       { "title": "Keep In Mind", "items": ["Average occupancy varies with context - clarify the pandemic's role", "Meals served only in certain time slots", "Treat domestic flights as short-haul for crew sizing"] },
@@ -10811,44 +10790,36 @@
   },
   "visualisations": [
     {
-      "id": "meals-breakdown",
-      "type": "table",
-      "title": "Meals Prepared by Vistara in Delhi",
-      "header": "Meals Prepared by Vistara in Delhi",
-      "noTitle": true,
-      "columns": ["Component", "Calculation", "Value"],
-      "columnWidths": ["42%", "36%", "22%"],
-      "summaryRows": [10],
-      "rows": [
-        ["Flights from Delhi (Tier 1)", "4 x 7 cities", "28"],
-        ["Flights from Delhi (Tier 2)", "2 x 40 cities", "80"],
-        ["Total Daily Flights", "28 + 80", "108"],
-        ["Flights Serving Meals", "108 x (15/24)", "~68"],
-        ["Total Seats", "162 economy + 6 business", "168"],
-        ["Passengers per Flight", "168 x 50% occupancy", "84"],
-        ["Flight Crew per Flight", "2 pilots + 4 attendants", "6"],
-        ["People per Flight", "84 + 6", "90"],
-        ["Meals Served Onboard", "90 x 68", "6,120"],
-        ["Contingency Reserve", "5% wastage + 10% buffer", "15%"],
-        ["Meals Prepared", "6,120 x 1.15", "~7,000"]
-      ],
-      "insight": "Roughly 68 of the 108 daily Delhi departures fall in meal-serving slots; at 90 people per flight (84 passengers at 50% occupancy plus 6 crew) that is ~6,120 meals served, and adding a 15% wastage-plus-buffer reserve gives about 7,000 meals prepared each morning."
-    },
+  "id": "meals-breakdown",
+  "type": "table",
+  "title": "Meals Prepared by Udaan in Delhi",
+  "header": "Meals Prepared by Udaan in Delhi",
+  "noTitle": true,
+  "columns": ["Ref", "Component", "Calculation", "Value"],
+  "columnWidths": ["7%", "37%", "34%", "22%"],
+  "summaryRows": [2, 3, 7, 8, 10],
+  "rows": [
+    ["A", "Tier 1 Flights", "4 flights x 7 cities", "28"],
+    ["B", "Tier 2 Flights", "2 flights x 40 cities", "80"],
+    ["C", "Total Daily Flights", "A + B", "108"],
+    ["D", "Flights Serving Meals", "C x (15/24)", "~ 68"],
+    ["E", "Seats per Flight", "162 economy + 6 business", "168"],
+    ["F", "Passengers per Flight", "E x 50% occupancy", "84"],
+    ["G", "Flight Crew per Flight", "2 pilots + 4 attendants", "6"],
+    ["H", "People per Flight", "F + G", "90"],
+    ["I", "Meals Served Onboard", "D x H", "6,120"],
+    ["J", "Contingency Reserve", "5% wastage + 10% buffer", "15%"],
+    ["K", "Meals Prepared", "I x (1 + J)", "~ 7,000"]
+  ]
+},
     {
-      "title": "Number of Meals Formula",
-      "type": "formula",
-      "lhs": "Number of Meals",
-      "rhs": "Flights Serving Meals x (Avg Passengers per Flight + Flight Crew per Flight) + Wastage",
-      "derivations": [
-        { "lhs": "Flights Serving Meals", "rhs": "(4 x 7 + 2 x 40) x 15/24 = 108 x 15/24 ≈ 68" },
-        { "lhs": "People per Flight", "rhs": "(168 seats x 50%) + (2 pilots + 4 attendants) = 84 + 6 = 90" },
-        { "lhs": "Meals Served", "rhs": "68 x 90 = 6,120" },
-        { "lhs": "Meals Prepared", "rhs": "6,120 x (1 + 15%) ≈ 7,000" }
-      ],
-      "content": "Number of meals = flights serving meals x (average passengers per flight + flight crew per flight), grossed up for wastage. About 68 flights fall in meal slots; each carries ~90 people (84 passengers at 50% occupancy plus 6 crew), giving ~6,120 meals served; a 15% wastage-and-buffer reserve lifts this to about 7,000 meals prepared."
-    }
+  "title": "Number of Meals Formula",
+  "type": "formula",
+  "lhs": "Number of Meals",
+  "rhs": "Flights Serving Meals x (Passengers per Flight + Flight Crew per Flight) + Wastage"
+}
   ],
-  "framework": "Candidate: Are we concerned with the meals served on flights alone or other places as well like meals served to the on-ground and corporate staff?\nInterviewer: Let's only consider the meals needed in flights for now.\nCandidate: Will it be fair to assume that the meals are prepared by Udaan only once during the day which is morning in this case?\nInterviewer: Yes, that is a fair assumption.\nCandidate: Do I look at both domestic as well as international flights?\nInterviewer: No, focus on only domestic flights for now.\nCandidate: Are we operating in a post-pandemic world?\nInterviewer: Yes, you can assume that.\nCandidate: Just to clarify here, can we classify Udaan as a high-frill airline for the purpose of this guesstimate?\nInterviewer: Sure!\nCandidate: Let me draw out how I want to approach this problem. I will try to estimate the number of meals actually served on flights first and then account for wastage in the end. Given that Udaan is a high-frill airline, the meals are included in the ticket price and would be served to every passenger on board as well as the flight crew. The meals prepared in Delhi in the morning will be served on the flights which depart from Delhi. I have built an expression to estimate the number of meals served.\n^ Number of meals = No. of flights where meals are served x (Average number of passengers per flight + Flight crew members per flight) + wastage\nInterviewer: This sounds fine, go ahead.\nCandidate: Given the scale Udaan operates on, having a sizeable market share, I believe it should have 4 flights a day from Delhi to the tier 1 cities and 2 flights a day from Delhi to the tier 2 cities. Excluding Delhi, there are 7 tier 1 cities and around 100 tier 2 cities but the flights don't go to all tier-2 cities from Delhi. Assuming that the flights go to 40 tier 2 cities, we get 108 flights a day (4x7 + 2x40). However, I assume that the meals would be served only during particular time slots during the day.\nCandidate: If we set aside 5 hours each for breakfast, lunch and dinner and assume the flights to be uniformly distributed throughout the day, we get nine hours where we are not serving any meals. The number of flights where meals would be served should be\n^ (15/24)*108 = ~ 68 flights\nCandidate: The last time I went on a domestic flight, I remember the aircraft having 30 rows with 6 seats per row. That gives us 180 passenger seats when the layout is all economy. Udaan on the other hand has an option for business-class as well. I assume I can replace 6 rows of 3 at the front with 3 rows of 2 to come up with the new estimated number of seats.\n^ 180 - 18 + 6 = 168\nCandidate: The Pandemic also saw lower than usual occupancy rates, I, therefore, assume that 50% of the seats are occupied on average in flights departing from Delhi.\nCandidate: That gives us 84 (168/2) passengers, 4 flight attendants and 2 pilots on board. Flight crew assumptions are made based on the fact that domestic flights out of Delhi can be classified as short-haul, given that the flying time doesn't go far beyond 3 hours.\nCandidate: The number of meals served onboard should be around 90*68 = 6120 meals\nCandidate: Assuming 5% wastage in the supply chain and another 10% kept as a buffer (for reasons like reordering, grievance redressal, complimentary offerings, etc.) the number of meals prepared goes up to approximately 7000.\nInterviewer: How would you check the accuracy of your estimate?\nCandidate: The Delhi airport has three runways, two of which are used on a regular basis for commercial passenger flights. Assuming that 50% of the time the runway is used for take-offs and the other 50% for landings, and every flight occupies the runway for 4 minutes while taking off, that gives us 15 flights taking off from the airport every hour. Our assumption of 108 domestic flights a day departing from Delhi gives us around 4.5 flights (108/24) for Udaan taking off every hour.\nCandidate: The Indian airline industry is an oligopoly with 5-6 players, Vistara should have a market share of roughly 16-20%. Even the more aggressive end of this range doesn't justify the ~ 33% of take-offs being those of Vistara's out of the Delhi airport. I, therefore, believe that we have slightly overestimated the number of meals prepared.\nInterviewer: What do you think might have led to this overestimation?\nCandidate: I believe that we have overestimated the number of flights as seen in the sanity check. The most probable reason would be that most cities would not have direct flights from Delhi, but flights with layovers at intermediate cities. This should have a considerable effect on our estimated number of flights and subsequently, meals prepared.\nCandidate: We should also be mindful of certain special situations wherein flights departing from elsewhere get meals that are prepared in Delhi when they make a layover during transit. This should also be incorporated in the analysis. Do you want me to dive deeper into it?\nInterviewer: No, that will not be required. Thank you for your time.\n\nMile High Club Framework\nNUMBER OF MEALS PREPARED BY VISTARA AIRLINES IN DELHI EVERY MORNING\nClarifying Questions: Only consider meals to be served on flight or also on ground? Incorporate analysis for both domestic and international flights or not?\nBrownie Points: Accounting for wastage and buffer in your analysis. Knowing that not all tier 2 cities will have airports or flights landing from Delhi.\nKeep In Mind: Average occupancy will vary based on the context so clarify if the pandemic plays a role."
+  "framework": "Candidate: Are we concerned with the meals served on flights alone or other places as well like meals served to the on-ground and corporate staff?\nInterviewer: Let's only consider the meals needed in flights for now.\nCandidate: Will it be fair to assume that the meals are prepared by Udaan only once during the day which is morning in this case?\nInterviewer: Yes, that is a fair assumption.\nCandidate: Do I look at both domestic as well as international flights?\nInterviewer: No, focus on only domestic flights for now.\nCandidate: Are we operating in a post-pandemic world?\nInterviewer: Yes, you can assume that.\nCandidate: Just to clarify here, can we classify Udaan as a high-frill airline for the purpose of this guesstimate?\nInterviewer: Sure!\nCandidate: Let me draw out how I want to approach this problem. I will try to estimate the number of meals actually served on flights first and then account for wastage in the end. Given that Udaan is a high-frill airline, the meals are included in the ticket price and would be served to every passenger on board as well as the flight crew. The meals prepared in Delhi in the morning will be served on the flights which depart from Delhi. I have built an expression to estimate the number of meals served.\n^ Number of meals = No. of flights where meals are served x (Average number of passengers per flight + Flight crew members per flight) + wastage\nInterviewer: This sounds fine, go ahead.\nCandidate: Given the scale Udaan operates on, having a sizeable market share, I believe it should have 4 flights a day from Delhi to the tier 1 cities and 2 flights a day from Delhi to the tier 2 cities. Excluding Delhi, there are 7 tier 1 cities and around 100 tier 2 cities but the flights don't go to all tier-2 cities from Delhi. Assuming that the flights go to 40 tier 2 cities, we get 108 flights a day (4x7 + 2x40). However, I assume that the meals would be served only during particular time slots during the day.\nCandidate: If we set aside 5 hours each for breakfast, lunch and dinner and assume the flights to be uniformly distributed throughout the day, we get nine hours where we are not serving any meals. The number of flights where meals would be served should be\n^ (15/24)*108 = ~ 68 flights\nCandidate: The last time I went on a domestic flight, I remember the aircraft having 30 rows with 6 seats per row. That gives us 180 passenger seats when the layout is all economy. Udaan on the other hand has an option for business-class as well. I assume I can replace 6 rows of 3 at the front with 3 rows of 2 to come up with the new estimated number of seats.\n^ 180 - 18 + 6 = 168\nCandidate: The Pandemic also saw lower than usual occupancy rates, I, therefore, assume that 50% of the seats are occupied on average in flights departing from Delhi.\nCandidate: That gives us 84 (168/2) passengers, 4 flight attendants and 2 pilots on board. Flight crew assumptions are made based on the fact that domestic flights out of Delhi can be classified as short-haul, given that the flying time doesn't go far beyond 3 hours.\nCandidate: ~ The number of meals served onboard should be around 90*68 = 6120 meals\nCandidate: Assuming 5% wastage in the supply chain and another 10% kept as a buffer (for reasons like reordering, grievance redressal, complimentary offerings, etc.) the number of meals prepared goes up to approximately 7000.\nInterviewer: How would you check the accuracy of your estimate?\nCandidate: The Delhi airport has three runways, two of which are used on a regular basis for commercial passenger flights. Assuming that 50% of the time the runway is used for take-offs and the other 50% for landings, and every flight occupies the runway for 4 minutes while taking off, that gives us 15 flights taking off from the airport every hour. Our assumption of 108 domestic flights a day departing from Delhi gives us around 4.5 flights (108/24) for Udaan taking off every hour.\nCandidate: The Indian airline industry is an oligopoly with 5-6 players, Udaan should have a market share of roughly 16-20%. Even the more aggressive end of this range doesn't justify the ~ 33% of take-offs being those of Udaan's out of the Delhi airport. I, therefore, believe that we have slightly overestimated the number of meals prepared.\nInterviewer: What do you think might have led to this overestimation?\nCandidate: I believe that we have overestimated the number of flights as seen in the sanity check. The most probable reason would be that most cities would not have direct flights from Delhi, but flights with layovers at intermediate cities. This should have a considerable effect on our estimated number of flights and subsequently, meals prepared.\nCandidate: We should also be mindful of certain special situations wherein flights departing from elsewhere get meals that are prepared in Delhi when they make a layover during transit. This should also be incorporated in the analysis. Do you want me to dive deeper into it?\nInterviewer: No, that will not be required. Thank you for your time.\n\nMile High Club Framework\nNUMBER OF MEALS PREPARED BY UDAAN AIRLINES IN DELHI EVERY MORNING\nClarifying Questions: Only consider meals to be served on flight or also on ground? Incorporate analysis for both domestic and international flights or not?\nBrownie Points: Accounting for wastage and buffer in your analysis. Knowing that not all tier 2 cities will have airports or flights landing from Delhi.\nKeep In Mind: Average occupancy will vary based on the context so clarify if the pandemic plays a role."
 },
 
 

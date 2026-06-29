@@ -53,7 +53,7 @@ export type VisFormula = {
   rhs?: string
   derivations?: { lhs: string; rhs: string }[]
 }
-export type VisTable = { type: 'table'; title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; noTitle?: boolean; summaryRows?: number[]; columnWidths?: string[]; insight?: string; header?: string }
+export type VisTable = { type: 'table'; title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; noTitle?: boolean; summaryRows?: number[]; columnWidths?: string[]; insight?: string; header?: string; mergeRowPairs?: number; mergeFinalRowCols?: number }
 export type VisDecisionNode = {
   id: string
   label: string
@@ -2534,8 +2534,12 @@ function VisTableInline({ vis }: { vis: VisTable }) {
     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
     color: '#f0f5ee', background: '#5C4033',
   }
-  const colCount = vis.columns.length
-  const dataColCount = colCount - 1
+
+  // mergeRowPairs: how many leading columns to rowspan across every 2 rows
+  // mergeFinalRowCols: how many leading columns to colspan in the last row
+  const mergeRowPairs = vis.mergeRowPairs ?? 0
+  const mergeFinalRowCols = vis.mergeFinalRowCols ?? 0
+
   return (
     <div className="w-full overflow-x-auto rounded-[4px] border border-[#5C4033]/15">
       <table className="w-full border-collapse" style={{ tableLayout: vis.columnWidths ? 'fixed' : 'auto' }}>
@@ -2559,22 +2563,63 @@ function VisTableInline({ vis }: { vis: VisTable }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, ri) => (
-            <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>
-              {row.map((cell, ci) => (
-                <td key={ci} className="px-4 py-1.5 align-middle"
+          {rows.map((row, ri) => {
+            const isLastRow = ri === rows.length - 1
+            const isPairSecond = mergeRowPairs > 0 && !isLastRow && ri % 2 === 1
+
+            // Build cells
+            const cells: React.ReactNode[] = []
+
+            if (isLastRow && mergeFinalRowCols > 0) {
+              // Merged leading cell spanning mergeFinalRowCols columns
+              cells.push(
+                <td key="merged-final" colSpan={mergeFinalRowCols} className="px-4 py-1.5 align-middle"
                   style={{
-                    fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: ci === 0 ? 500 : 400,
-                    color: '#3B2F2F', lineHeight: 1.5,
-                    textAlign: ci === 0 ? 'left' : 'center',
+                    fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500,
+                    color: '#3B2F2F', lineHeight: 1.5, textAlign: 'left',
                     borderTop: '1px solid rgba(61,90,53,0.08)',
-                    borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                   }}>
-                  {cell}
+                  {row[0]}
                 </td>
-              ))}
-            </tr>
-          ))}
+              )
+              // Remaining cells after the merged span
+              for (let ci = mergeFinalRowCols; ci < row.length; ci++) {
+                cells.push(
+                  <td key={ci} className="px-4 py-1.5 align-middle"
+                    style={{
+                      fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 400,
+                      color: '#3B2F2F', lineHeight: 1.5, textAlign: 'center',
+                      borderTop: '1px solid rgba(61,90,53,0.08)',
+                      borderLeft: '1px solid rgba(61,90,53,0.08)',
+                    }}>
+                    {row[ci]}
+                  </td>
+                )
+              }
+            } else {
+              row.forEach((cell, ci) => {
+                // Skip leading merged cols on second row of a pair
+                if (isPairSecond && ci < mergeRowPairs) return
+                // On first row of a pair, span 2 rows for leading cols
+                const rowSpan = (mergeRowPairs > 0 && !isLastRow && ri % 2 === 0 && ci < mergeRowPairs) ? 2 : 1
+                cells.push(
+                  <td key={ci} rowSpan={rowSpan} className="px-4 py-1.5 align-middle"
+                    style={{
+                      fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: ci === 0 ? 500 : 400,
+                      color: '#3B2F2F', lineHeight: 1.5,
+                      textAlign: ci < mergeRowPairs ? 'center' : ci === 0 ? 'left' : 'center',
+                      verticalAlign: rowSpan > 1 ? 'middle' : undefined,
+                      borderTop: '1px solid rgba(61,90,53,0.08)',
+                      borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
+                    }}>
+                    {cell}
+                  </td>
+                )
+              })
+            }
+
+            return <tr key={ri} style={{ background: 'rgba(255,248,240,0.5)' }}>{cells}</tr>
+          })}
         </tbody>
       </table>
     </div>
