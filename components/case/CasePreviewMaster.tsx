@@ -2565,30 +2565,28 @@ function VisTableInline({ vis }: { vis: VisTable }) {
         <tbody>
           {rows.map((row, ri) => {
             const isLastRow = ri === rows.length - 1
+            const isPairFirst = mergeRowPairs > 0 && !isLastRow && ri % 2 === 0
             const isPairSecond = mergeRowPairs > 0 && !isLastRow && ri % 2 === 1
 
-            // Build cells
             const cells: React.ReactNode[] = []
 
             if (isLastRow && mergeFinalRowCols > 0) {
-              // Merged leading cell spanning mergeFinalRowCols columns
               cells.push(
-                <td key="merged-final" colSpan={mergeFinalRowCols} className="px-4 py-1.5 align-middle"
+                <td key="merged-final" colSpan={mergeFinalRowCols} className="px-4 py-1.5"
                   style={{
                     fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500,
-                    color: '#3B2F2F', lineHeight: 1.5, textAlign: 'left',
+                    color: '#3B2F2F', lineHeight: 1.5, textAlign: 'left', verticalAlign: 'middle',
                     borderTop: '1px solid rgba(61,90,53,0.08)',
                   }}>
                   {row[0]}
                 </td>
               )
-              // Remaining cells after the merged span
               for (let ci = mergeFinalRowCols; ci < row.length; ci++) {
                 cells.push(
-                  <td key={ci} className="px-4 py-1.5 align-middle"
+                  <td key={ci} className="px-4 py-1.5"
                     style={{
                       fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 400,
-                      color: '#3B2F2F', lineHeight: 1.5, textAlign: 'center',
+                      color: '#3B2F2F', lineHeight: 1.5, textAlign: 'center', verticalAlign: 'middle',
                       borderTop: '1px solid rgba(61,90,53,0.08)',
                       borderLeft: '1px solid rgba(61,90,53,0.08)',
                     }}>
@@ -2598,18 +2596,21 @@ function VisTableInline({ vis }: { vis: VisTable }) {
               }
             } else {
               row.forEach((cell, ci) => {
-                // Skip leading merged cols on second row of a pair
                 if (isPairSecond && ci < mergeRowPairs) return
-                // On first row of a pair, span 2 rows for leading cols
-                const rowSpan = (mergeRowPairs > 0 && !isLastRow && ri % 2 === 0 && ci < mergeRowPairs) ? 2 : 1
+                const isMerged = isPairFirst && ci < mergeRowPairs
+                const rowSpan = isMerged ? 2 : 1
+                // Suppress top border on second row for non-merged cols to avoid
+                // a line cutting across the rowspan cells
+                const suppressTopBorder = isPairSecond && ci >= mergeRowPairs
                 cells.push(
-                  <td key={ci} rowSpan={rowSpan} className="px-4 py-1.5 align-middle"
+                  <td key={ci} rowSpan={rowSpan} className="px-4 py-1.5"
                     style={{
                       fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: ci === 0 ? 500 : 400,
                       color: '#3B2F2F', lineHeight: 1.5,
-                      textAlign: ci < mergeRowPairs ? 'center' : ci === 0 ? 'left' : 'center',
-                      verticalAlign: rowSpan > 1 ? 'middle' : undefined,
-                      borderTop: '1px solid rgba(61,90,53,0.08)',
+                      // col 0 always left; merged cols 1+ centered; non-merged cols centered
+                      textAlign: ci === 0 ? 'left' : 'center',
+                      verticalAlign: 'middle',
+                      borderTop: suppressTopBorder ? 'none' : '1px solid rgba(61,90,53,0.08)',
                       borderLeft: ci > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                     }}>
                     {cell}
