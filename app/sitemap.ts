@@ -1,16 +1,71 @@
 import type { MetadataRoute } from 'next'
+import casesData from '@/data/cases.json'
+import { slugifyCase } from '@/lib/slug'
 
-const BASE = 'https://www.casecompendiumx.in'
+const BASE_URL = 'https://www.casecompendiumx.in'
+
+const FRAMEWORK_SLUGS = [
+  'profitability',
+  'market-entry',
+  'growth',
+  'pricing',
+  'unconventional',
+  'guesstimate',
+] as const
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date()
+  const cases = casesData as Array<{ title?: string; slug?: string }>
+
+  const caseUrls: MetadataRoute.Sitemap = cases
+    .map((c) => {
+      const slug = c.slug?.trim() || slugifyCase(c.title ?? '')
+      if (!slug) return null
+      return {
+        url: `${BASE_URL}/case/${slug}`,
+        changeFrequency: 'monthly' as const,
+        priority: 0.8,
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+
+  const frameworkUrls: MetadataRoute.Sitemap = FRAMEWORK_SLUGS.map((slug) => ({
+    url: `${BASE_URL}/repository/frameworks/${slug}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }))
+
   return [
-    { url: `${BASE}/`, lastModified: now, changeFrequency: 'weekly', priority: 1.0 },
-    { url: `${BASE}/repository`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${BASE}/practice`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${BASE}/our-story`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${BASE}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${BASE}/collaborators`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE}/login`, lastModified: now, changeFrequency: 'yearly', priority: 0.6 },
+    {
+      url: BASE_URL,
+      changeFrequency: 'monthly',
+      priority: 1,
+    },
+    {
+      url: `${BASE_URL}/repository`,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    ...frameworkUrls,
+    ...caseUrls,
+    {
+      url: `${BASE_URL}/our-story`,
+      changeFrequency: 'yearly',
+      priority: 0.5,
+    },
+    {
+      url: `${BASE_URL}/about-ccx`,
+      changeFrequency: 'yearly',
+      priority: 0.5,
+    },
+    {
+      url: `${BASE_URL}/collaborators`,
+      changeFrequency: 'yearly',
+      priority: 0.4,
+    },
+    {
+      url: `${BASE_URL}/login`,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
   ]
 }
