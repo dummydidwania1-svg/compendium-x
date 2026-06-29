@@ -9936,13 +9936,12 @@
   ],
   "frameworkTree": {
     "nodes": {
-      "jerseys-year": { "id": "jerseys-year", "label": "Jerseys Sold per Year (15,000)", "tone": "root", "children": [] }
     },
-    "defaultExpanded": ["jerseys-year"],
-    "defaultFocusedId": "jerseys-year",
+    "defaultExpanded": [],
+    "defaultFocusedId": "",
     "notes": [
       { "title": "Questions", "items": ["Are we counting only official jerseys or replicas too?", "What time duration are we considering?"] },
-      { "title": "Keep In Mind", "items": ["Round off numbers wherever required to avoid calculation mistakes", "Only the Upper Class can afford the ~ Rs 6,000 official jersey", "Football following skews young and male"] },
+      { "title": "Keep In Mind", "items": ["Round off numbers wherever required to avoid calculation mistakes", "Only the Upper Class can afford the ~ Rs 6,000 official jersey"] },
       { "title": "Brownie Points", "items": ["Dividing football followers across 8 popularly supported clubs", "Drawing insight from personal experience (1 in 5 owns a jersey)"] }
     ]
   },
