@@ -320,7 +320,7 @@ function layoutDesktop(
     if (!vis.has(id)) return 0
     const ow = estNodeW(id); nw.set(id, ow)
     const footprint = estNodeFootprint(id)
-    const vc = NODES[id].children.filter(c => vis.has(c))
+    const vc = (NODES[id]?.children ?? []).filter(c => vis.has(c))
     if (!vc.length) { sub.set(id, footprint); return footprint }
     const localGap = gapFor(vc.length, nodeDepth(id))
     const cw = vc.reduce((s, c, i) => s + measure(c) + (i > 0 ? localGap : 0), 0)
@@ -329,7 +329,7 @@ function layoutDesktop(
 
   const assign = (id: string, sx: number, ex: number) => {
     const d = nodeDepth(id)
-    const vc = NODES[id].children.filter(c => vis.has(c))
+    const vc = (NODES[id]?.children ?? []).filter(c => vis.has(c))
     const y = topPad + vStep * d
     if (!vc.length) { pos.set(id, { x: (sx + ex) / 2, y }); return }
     const localGap = gapFor(vc.length, d)
@@ -356,7 +356,7 @@ function layoutDesktop(
     const p = pos.get(id)
     const labelW = effW.get(id) ?? estNodeW(id)
     if (!p) return b
-    const footprint = labelW + (NODES[id].children.length > 0 ? 34 : 0)
+    const footprint = labelW + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
     return { minX: Math.min(b.minX, p.x - labelW / 2), maxX: Math.max(b.maxX, p.x - labelW / 2 + footprint) }
   }, { minX: Infinity, maxX: -Infinity })
 
@@ -364,7 +364,7 @@ function layoutDesktop(
     const ctr = (bounds.minX + bounds.maxX) / 2, scale = aW / (bounds.maxX - bounds.minX)
     ids.forEach(id => {
       const p = pos.get(id); if (!p) return
-      const hc = NODES[id].children.length > 0
+      const hc = (NODES[id]?.children?.length ?? 0) > 0
       const cw = effW.get(id) ?? estNodeW(id)
       pos.set(id, { x: ctr + (p.x - ctr) * scale, y: p.y })
       effW.set(id, Math.max(hc ? 132 : 116, cw * scale))
@@ -376,31 +376,31 @@ function layoutDesktop(
     const p = pos.get(id)
     const labelW = effW.get(id) ?? estNodeW(id)
     if (!p) return b
-    const footprint = labelW + (NODES[id].children.length > 0 ? 34 : 0)
+    const footprint = labelW + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
     return { minX: Math.min(b.minX, p.x - labelW / 2), maxX: Math.max(b.maxX, p.x - labelW / 2 + footprint) }
   }, { minX: Infinity, maxX: -Infinity })
 
   if (isFinite(bounds.minX)) {
-    const effectiveFootprint = (id: string) => (effW.get(id) ?? estNodeW(id)) + (NODES[id].children.length > 0 ? 34 : 0)
+    const effectiveFootprint = (id: string) => (effW.get(id) ?? estNodeW(id)) + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
 
     const shiftVisibleSubtree = (id: string, delta: number) => {
       if (!delta) return
       const point = pos.get(id)
       if (point) pos.set(id, { x: point.x + delta, y: point.y })
-      NODES[id].children
+      ;(NODES[id]?.children ?? [])
         .filter((childId) => vis.has(childId))
         .forEach((childId) => shiftVisibleSubtree(childId, delta))
     }
 
     const parentIds = ids
-      .filter((id) => NODES[id].children.some((childId) => vis.has(childId)))
+      .filter((id) => (NODES[id]?.children ?? []).some((childId) => vis.has(childId)))
       .sort((left, right) => nodeDepth(left) - nodeDepth(right))
 
     parentIds.forEach((parentId) => {
       const parentPoint = pos.get(parentId)
       if (!parentPoint) return
 
-      const children = NODES[parentId].children.filter((childId) => vis.has(childId))
+      const children = (NODES[parentId]?.children ?? []).filter((childId) => vis.has(childId))
       if (children.length <= 1) return
 
       const rowLeft = parentId === ROOT_ID ? laneL : aL
@@ -435,7 +435,7 @@ function layoutDesktop(
       const p = pos.get(id)
       const labelW = effW.get(id) ?? estNodeW(id)
       if (!p) return b
-      const footprint = labelW + (NODES[id].children.length > 0 ? 34 : 0)
+      const footprint = labelW + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
       return { minX: Math.min(b.minX, p.x - labelW / 2), maxX: Math.max(b.maxX, p.x - labelW / 2 + footprint) }
     }, { minX: Infinity, maxX: -Infinity })
 
@@ -459,7 +459,7 @@ function layoutDesktop(
         const p = pos.get(id)
         const labelW = effW.get(id) ?? estNodeW(id)
         if (!p) return b
-        const footprint = labelW + (NODES[id].children.length > 0 ? 34 : 0)
+        const footprint = labelW + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
         return { minX: Math.min(b.minX, p.x - labelW / 2), maxX: Math.max(b.maxX, p.x - labelW / 2 + footprint) }
       }, { minX: Infinity, maxX: -Infinity })
 
@@ -3181,7 +3181,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
           next.add(id)
           if (!multiActive) {
             const parent = PARENTS[id]
-            if (parent) NODES[parent].children.forEach(sib => {
+            if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
               if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
             })
           }
@@ -3217,7 +3217,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
         next.add(id)
         if (!multiActive) {
           const parent = PARENTS[id]
-          if (parent) NODES[parent].children.forEach(sib => {
+          if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
             if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
           })
         }
@@ -3587,7 +3587,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
         } else {
           next.add(id)
           const parent = PARENTS[id]
-          if (parent) NODES[parent].children.forEach(sib => {
+          if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
             if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
           })
         }
@@ -3621,7 +3621,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
       } else {
         next.add(id)
         const parent = PARENTS[id]
-        if (parent) NODES[parent].children.forEach(sib => {
+        if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
           if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
         })
       }
@@ -4853,7 +4853,7 @@ export function CaseInterviewerMaster({
         const next = new Set(prev)
         loadTree(tree)
         if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)) }
-        else { next.add(id); const parent = PARENTS[id]; if (parent) NODES[parent].children.forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
+        else { next.add(id); const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
         return next
       })
       setEdgeAnimKey(k => k + 1)
@@ -4867,7 +4867,7 @@ export function CaseInterviewerMaster({
       const next = new Set(prev)
       loadTree(tree)
       if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)); if (pathTo(mobileFocId).includes(id)) setMobileFocId(id) }
-      else { next.add(id); const parent = PARENTS[id]; if (parent) NODES[parent].children.forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
+      else { next.add(id); const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
       return next
     })
   }
