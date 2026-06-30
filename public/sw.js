@@ -1,7 +1,7 @@
 // Service worker for Case CompendiumX
 // Caches app shell on install, serves offline for repository + case pages.
 
-const CACHE = 'ccx-shell-v3'
+const CACHE = 'ccx-shell-v4'
 
 // App shell: pages that must survive offline
 const SHELL = [
@@ -23,14 +23,24 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-// ── Activate: remove old caches ────────────────────────────────
+// ── Activate: remove old caches, then tell open tabs to reload ──
+// A tab that's been open since before this deploy is still running the
+// previous build's JS in memory. If it later lazy-loads a chunk (route
+// transition, code-split import) by the old hashed filename, that file no
+// longer exists on the origin once the new deploy has replaced .next/static
+// — the fetch 404s/503s and React crashes with "Cannot read properties of
+// undefined" trying to use the missing module. Forcing a reload once on
+// activation gets every open tab onto the current build's chunk hashes.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    (async () => {
+      const keys = await caches.keys()
+      await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      await self.clients.claim()
+      const clientList = await self.clients.matchAll({ type: 'window' })
+      for (const client of clientList) client.postMessage({ type: 'SW_UPDATED' })
+    })()
   )
-  self.clients.claim()
 })
 
 // ── Fetch: network-first for Firestore/API, cache-first for assets ──
