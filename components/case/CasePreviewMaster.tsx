@@ -3263,6 +3263,13 @@ export default function CasePreviewMaster({
   DEFAULT_FOCUSED_ID = tree.defaultFocusedId
   DEFAULT_FOCUSED_IDS = tree.defaultFocusedIds ?? []
   NOTES = tree.notes
+  // Capture primary-tree values into locals so that AdditionalFrameworkPanel's
+  // loadTree() calls (which mutate the module-level globals) cannot corrupt the
+  // values this component's JSX closes over. React concurrent mode can interleave
+  // child renders after the parent body has run, so reading the globals directly
+  // in JSX is unsafe — reading the captured locals is always correct.
+  const primaryNotes = tree.notes
+  const primaryRootId = ROOT_ID
   const hasTree = ROOT_ID !== ''
   const maxTreeDepth = hasTree ? Math.max(...Object.keys(NODES).map(nodeDepth), 0) : 0
 
@@ -3931,7 +3938,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                   {/* ── Desktop sidebar: notes ─────────── */}
                   {!forumOpen && (
                   <aside className="hidden lg:block h-full">
-  <SyncedNotesSidebar notes={NOTES}  />
+  <SyncedNotesSidebar notes={primaryNotes}  />
 </aside>
                   )}
 
@@ -4100,9 +4107,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
               {(() => { loadTree(tree); return null })()}
 
               {/* ── Notes below chart (forum open only, desktop) ── */}
-              {forumOpen && NOTES.length > 0 && (
-                <div className="mt-4 hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(NOTES.length, 3)}, 1fr)` }}>
-                  {NOTES.map((n, idx) => (
+              {forumOpen && primaryNotes.length > 0 && (
+                <div className="mt-4 hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(primaryNotes.length, 3)}, 1fr)` }}>
+                  {primaryNotes.map((n, idx) => (
                     <div
                       key={n.title}
                       className="rounded-[4px] border border-[rgba(61,90,53,0.10)] bg-[rgba(255,248,240,0.80)] px-3 py-3 transition-all duration-300 hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
@@ -4127,7 +4134,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
 
               {/* Mobile notes (above chart) */}
               <div className="mb-6 grid gap-3 sm:grid-cols-3">
-                {NOTES.map(n => <NoteCard key={n.title} title={n.title} items={n.items} />)}
+                {primaryNotes.map(n => <NoteCard key={n.title} title={n.title} items={n.items} />)}
               </div>
 
               {/* Calc pair — before framework tree (mobile) */}
@@ -4145,7 +4152,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
               </>)}
               <Reveal>
                 <div className="space-y-3">
-                  <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds}
+                  <MobileTreeNode nodeId={primaryRootId} focusedId={mobileFocId} expandedIds={mobileExpIds}
                     onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                 </div>
               </Reveal>
@@ -4429,6 +4436,9 @@ export function CaseInterviewerMaster({
   // ─── Sync tree data (same as preview) ────────────────
   const tree = frameworkTree ?? BANKING_ON_YOU_TREE
   loadTree(tree)
+  // Capture primary-tree values before any child AdditionalFrameworkPanel can corrupt globals.
+  const primaryNotes = tree.notes
+  const primaryRootId = ROOT_ID
   const hasTree = ROOT_ID !== ''
   const maxTreeDepth = hasTree ? Math.max(...Object.keys(NODES).map(nodeDepth), 0) : 0
 
@@ -5143,9 +5153,9 @@ export function CaseInterviewerMaster({
               {(() => { loadTree(tree); return null })()}
 
               {/* Notes — brownie points + questions (outside the card, same as preview) */}
-              {NOTES.length > 0 && (
-                <div className="mt-4 hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(NOTES.length, 3)}, 1fr)` }}>
-                  {NOTES.map((n, idx) => (
+              {primaryNotes.length > 0 && (
+                <div className="mt-4 hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(primaryNotes.length, 3)}, 1fr)` }}>
+                  {primaryNotes.map((n, idx) => (
                     <div
                       key={n.title}
                       className="rounded-[4px] border border-[rgba(61,90,53,0.10)] bg-[rgba(255,248,240,0.80)] px-3 py-3 transition-all duration-300 hover:-translate-y-[2px] hover:border-[rgba(61,90,53,0.18)] hover:shadow-[0_4px_16px_-4px_rgba(61,90,53,0.10)]"
@@ -5168,7 +5178,7 @@ export function CaseInterviewerMaster({
               {/* Mobile drill down */}
               <div className="lg:hidden">
                 <div className="mb-6 grid gap-3 sm:grid-cols-3">
-                  {NOTES.map(n => <NoteCard key={n.title} title={n.title} items={n.items} />)}
+                  {primaryNotes.map(n => <NoteCard key={n.title} title={n.title} items={n.items} />)}
                 </div>
                 {/* Calc pair — before framework tree (interviewer mobile) */}
                 {visualisations?.some(v => v.type === 'calcpair') && (<>
@@ -5185,7 +5195,7 @@ export function CaseInterviewerMaster({
                 </>)}
                 <Reveal>
                   <div className="space-y-3">
-                    <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds} onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
+                    <MobileTreeNode nodeId={primaryRootId} focusedId={mobileFocId} expandedIds={mobileExpIds} onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                   </div>
                 </Reveal>
                 {/* ── Additional framework trees (interviewer mobile) ── */}
