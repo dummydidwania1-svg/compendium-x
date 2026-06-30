@@ -242,7 +242,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       `}</style>
 
       <div
-        className="profile-overlay-panel relative flex w-full max-w-[760px] overflow-hidden rounded-[44px] bg-[#fff8f0]"
+        className="profile-overlay-panel relative flex w-full max-w-[680px] overflow-hidden rounded-[56px] bg-[#fff8f0]"
         style={{
           boxShadow: '0 28px 70px rgba(43,33,24,0.28), 0 1px 0 rgba(255,255,255,0.4) inset',
           fontFamily: "'Work Sans', sans-serif",
