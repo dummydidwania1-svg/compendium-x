@@ -100,53 +100,22 @@ const Navbar = ({ currentPage }: NavbarProps) => {
         {/* Main bar — always 70px tall */}
         <div
           style={{ height: '70px' }}
-          className="flex justify-between items-center w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 max-w-[1440px] mx-auto gap-3"
+          className="relative flex justify-between items-center w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 max-w-[1440px] mx-auto gap-3"
         >
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-1 transition-opacity hover:opacity-85 shrink-0" aria-label="Go to home page">
+          {/* Logo — mobile only; desktop tie icon lives inside the centered nav group below */}
+          <Link href="/" className="md:hidden transition-opacity hover:opacity-85 shrink-0" aria-label="Go to home page">
             <img
               src="/logo.png"
               alt="Case Compendium X"
               width={56}
               height={56}
-              className="w-10 h-10 md:w-12 md:h-12 object-contain shrink-0"
+              className="w-10 h-10 object-contain shrink-0"
             />
-            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-base md:text-lg font-semibold tracking-tight whitespace-nowrap">
-              <span className="text-[#453a2a]">Case Compendium</span>
-              <span className="text-[#3D5A35]">X</span>
-            </div>
           </Link>
 
-          {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center space-x-10">
-            <a
-              href="/"
-              style={{ fontFamily: "'Work Sans', sans-serif" }}
-              className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'home' ? 'active' : ''}`}
-              onClick={(e) => {
-                if (currentPage !== 'home') {
-                  e.preventDefault()
-                  window.location.href = '/'
-                }
-              }}
-            >
-              HOME
-            </a>
-            <Link
-              href="/repository"
-              style={{ fontFamily: "'Work Sans', sans-serif" }}
-              className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'repository' ? 'active' : ''}`}
-            >
-              REPOSITORY
-            </Link>
-            <Link
-              href="/dashboard"
-              style={{ fontFamily: "'Work Sans', sans-serif" }}
-              className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'dashboard' ? 'active' : ''}`}
-            >
-              DASHBOARD
-            </Link>
+          {/* Desktop centered nav group — ABOUT US, REPOSITORY, tie icon, DASHBOARD, PRACTICE all in one row, anchored to the true center as a single unit so spacing mirrors symmetrically around the tie */}
+          <div className="hidden md:flex items-center space-x-10 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="nav-dropdown">
               <span
                 style={{ fontFamily: "'Work Sans', sans-serif" }}
@@ -176,11 +145,43 @@ const Navbar = ({ currentPage }: NavbarProps) => {
                 </Link>
               </div>
             </div>
+
+            <Link
+              href="/repository"
+              style={{ fontFamily: "'Work Sans', sans-serif" }}
+              className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'repository' ? 'active' : ''}`}
+            >
+              REPOSITORY
+            </Link>
+
+            <Link href="/" className="transition-opacity hover:opacity-85 shrink-0" aria-label="Go to home page">
+              <img
+                src="/logo.png"
+                alt="Case Compendium X"
+                width={56}
+                height={56}
+                className="w-12 h-12 object-contain shrink-0"
+              />
+            </Link>
+
+            <Link
+              href="/dashboard"
+              style={{ fontFamily: "'Work Sans', sans-serif" }}
+              className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'dashboard' ? 'active' : ''}`}
+            >
+              DASHBOARD
+            </Link>
+            <Link
+              href="/practice"
+              style={{ fontFamily: "'Work Sans', sans-serif" }}
+              className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'practice' ? 'active' : ''}`}
+            >
+              PRACTICE
+            </Link>
           </div>
 
-          {/* Right side: auth + mobile hamburger */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Auth buttons */}
+          {/* Desktop auth — sits at far right of the bar */}
+          <div className="hidden md:flex items-center shrink-0 md:ml-auto">
             {isSignedIn ? (
               <button
                 onClick={() => setShowProfileModal(true)}
@@ -199,13 +200,34 @@ const Navbar = ({ currentPage }: NavbarProps) => {
                 SIGN IN
               </button>
             )}
+          </div>
 
-            {/* Hamburger — visible only below md */}
+          {/* Mobile: auth button + hamburger */}
+          <div className="flex md:hidden items-center gap-2 sm:gap-3 shrink-0">
+            {isSignedIn ? (
+              <button
+                onClick={() => setShowProfileModal(true)}
+                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                className="flex items-center gap-1.5 border border-[#3D5A35] px-3 py-1.5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 whitespace-nowrap cursor-pointer bg-transparent"
+              >
+                <span className="material-symbols-outlined text-[16px] leading-none" style={{ fontSize: '16px' }}>account_circle</span>
+                My Account
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                className={`border border-[#3D5A35] px-3 py-1.5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap${isPreview ? ' _nav_signin_btn' : ''}`}
+              >
+                SIGN IN
+              </button>
+            )}
+
             <button
               onClick={() => setMobileMenuOpen((o) => !o)}
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
-              className="md:hidden flex flex-col justify-center items-center w-9 h-9 gap-[5px] shrink-0 rounded transition-colors hover:bg-[#3D5A35]/08"
+              className="flex flex-col justify-center items-center w-9 h-9 gap-[5px] shrink-0 rounded transition-colors hover:bg-[#3D5A35]/08"
             >
               <span
                 className="block w-5 h-[1.5px] bg-[#453a2a] transition-transform duration-200 origin-center"
@@ -236,6 +258,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
             {[
               { href: '/', label: 'HOME', page: 'home' },
               { href: '/repository', label: 'REPOSITORY', page: 'repository' },
+              { href: '/practice', label: 'PRACTICE', page: 'practice' },
               { href: '/dashboard', label: 'DASHBOARD', page: 'dashboard' },
               { href: '/about-ccx', label: 'THE PLATFORM', page: 'about-ccx' },
               { href: '/our-story', label: 'THE TEAM', page: 'about' },

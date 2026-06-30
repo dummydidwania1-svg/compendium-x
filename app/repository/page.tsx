@@ -21,7 +21,6 @@ import { InterviewerMicRecovery } from '@/components/permissions/InterviewerMicR
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import casesCatalog from '@/data/cases.json'
 import NewCaseBadge, { isNewCase } from '@/components/case/NewCaseBadge'
-import PracticeFab from '@/components/ui/PracticeFab'
 
 
 function normalizeCaseType(raw: string | null): string | null {
@@ -1669,8 +1668,6 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
           <Footer currentPage="repository" />
         </div>
       ) : null}
-
-      {!selectionMode && <PracticeFab onClick={() => router.push('/practice')} />}
 
     </div>
   )

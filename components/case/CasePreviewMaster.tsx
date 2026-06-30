@@ -3,11 +3,9 @@
 import { Fragment, ReactNode, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import Navbar from '@/components/dashboard/Navbar'
 import { createPortal } from 'react-dom'
 import NewCaseBadge from '@/components/case/NewCaseBadge'
-import PracticeFab from '@/components/ui/PracticeFab'
 
 /* ═══════════════════════════════════════════════════════════
    Types
@@ -3268,7 +3266,6 @@ export default function CasePreviewMaster({
   const hasTree = ROOT_ID !== ''
   const maxTreeDepth = hasTree ? Math.max(...Object.keys(NODES).map(nodeDepth), 0) : 0
 
-  const router = useRouter()
   const chartRef = useRef<HTMLDivElement>(null)
   const walkthroughRef = useRef<HTMLElement>(null)
   const drilldownRef = useRef<HTMLElement>(null)
@@ -4393,9 +4390,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
             </div>
           </div>
         )}
-
-        {/* ── Floating action buttons ── */}
-        {previewMode && <PracticeFab onClick={() => router.push('/practice')} />}
 
       </div>
     </div>
