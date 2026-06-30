@@ -3029,6 +3029,19 @@ function loadTree(tree: FrameworkTree) {
   NOTES = tree.notes
 }
 
+// Safe alternative to loadTree that does NOT touch module-level globals.
+// Use this inside AdditionalFrameworkPanel so it never corrupts the primary
+// tree's globals that CasePreviewMaster and CaseInterviewerMaster depend on.
+function computeTreeLocals(tree: FrameworkTree) {
+  const nodes = tree.nodes
+  const parents: Record<string, string> = {}
+  for (const [id, node] of Object.entries(nodes)) {
+    for (const ch of node.children) parents[ch] = id
+  }
+  const rootId = Object.keys(nodes).find(id => !parents[id]) ?? ''
+  return { nodes, parents, rootId }
+}
+
 /* ═══════════════════════════════════════════════════════════
    AdditionalFrameworkPanel — a standalone interactive chart
    for a secondary FrameworkTree. Renders below the primary one
@@ -3037,23 +3050,42 @@ function loadTree(tree: FrameworkTree) {
    ═══════════════════════════════════════════════════════════ */
 
 export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hideHeader = false, noScroll = false, forceVertical = false }: { tree: FrameworkTree; label?: string; multiActive?: boolean; hideHeader?: boolean; noScroll?: boolean; forceVertical?: boolean }) {
-  // Swap globals so all layout utilities operate on this tree
-  loadTree(tree)
+  // Use local computation — never touch the shared module-level globals so the
+  // primary tree's NODES/ROOT_ID/NOTES are never corrupted by this panel.
+  const { nodes: localNodes, parents: localParents, rootId: localRootId } = useMemo(
+    () => computeTreeLocals(tree),
+    // tree reference is stable per render cycle; recompute only if tree object changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tree]
+  )
 
-  const maxTreeDepth = ROOT_ID ? Math.max(...Object.keys(NODES).map(nodeDepth), 0) : 0
+  const maxTreeDepth = localRootId ? Math.max(...Object.keys(localNodes).map(id => {
+    let depth = 0; let cur: string | undefined = id
+    while (cur) { cur = localParents[cur]; if (cur) depth++ }
+    return depth
+  }), 0) : 0
   const useVerticalLayout = forceVertical || shouldUseVerticalLayout('preview')
+
+  const localFocusPath = useMemo(() => {
+    const ids = (tree.defaultFocusedIds?.length ? tree.defaultFocusedIds : tree.defaultFocusedId ? [tree.defaultFocusedId] : [])
+    const out = new Set<string>()
+    for (const fid of ids) {
+      let cur: string | undefined = fid
+      while (cur) { out.add(cur); cur = localParents[cur] }
+    }
+    return out
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tree])
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
     if (multiActive) return new Set(tree.defaultExpanded)
-    const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
-    return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+    return new Set([...tree.defaultExpanded].filter(id => localFocusPath.has(id)))
   })
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
     if (multiActive) return new Set(tree.defaultExpanded)
-    const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
-    return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+    return new Set([...tree.defaultExpanded].filter(id => localFocusPath.has(id)))
   })
   const [mobileFocId, setMobileFocId] = useState(() => tree.defaultFocusedId || '')
   const [chartVisible, setChartVisible] = useState(false)
@@ -3085,41 +3117,64 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Before computing visibleIds we must ensure globals reflect THIS tree
-  loadTree(tree)
-
+  // Compute visibleIds locally without touching globals
   const visibleIds = useMemo(() => {
-    loadTree(tree)
     const s = new Set<string>()
-    if (ROOT_ID) collectVisible(ROOT_ID, expandedIds, s)
+    const collect = (id: string) => {
+      s.add(id)
+      if (!expandedIds.has(id)) return
+      const node = localNodes[id]
+      if (!node) return
+      for (const ch of node.children) collect(ch)
+    }
+    if (localRootId) collect(localRootId)
     return [...s]
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expandedIds, tree])
+  }, [expandedIds, localNodes, localRootId])
 
-  const chartMaxDepth = useMemo(() => Math.max(...visibleIds.map(nodeDepth), 0), [visibleIds])
+  const chartMaxDepth = useMemo(() => Math.max(...visibleIds.map(id => {
+    let depth = 0; let cur: string | undefined = id
+    while (cur) { cur = localParents[cur]; if (cur) depth++ }
+    return depth
+  }), 0), [visibleIds, localParents])
   const isChartFullyExpanded = useMemo(
-    () => [...DEFAULT_EXPANDED].every(id => expandedIds.has(id)),
-    [expandedIds]
+    () => [...tree.defaultExpanded].every(id => expandedIds.has(id)),
+    [expandedIds, tree.defaultExpanded]
   )
   const [, startChartTransition] = useTransition()
 
+  // Local helpers that work on localNodes/localParents without touching globals
+  const localDescendants = useCallback((id: string): string[] => {
+    const node = localNodes[id]; if (!node) return []
+    const out: string[] = []
+    for (const ch of node.children) { out.push(ch, ...localDescendants(ch)) }
+    return out
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localNodes])
+
+  const localPathTo = useCallback((id: string): string[] => {
+    const p: string[] = []
+    let cur: string | undefined = id
+    while (cur) { p.unshift(cur); cur = localParents[cur] }
+    return p
+  }, [localParents])
+
   const handleSelect = (id: string) => {
-    loadTree(tree)
     setFocusedId(id)
-    const node = NODES[id]
-    if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && node?.children.length) return
+    const node = localNodes[id]
+    if (!multiActive && !localFocusPath.has(id) && node?.children.length) return
     startChartTransition(() => {
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
           const next = new Set(prev)
           next.delete(id)
-          loadTree(tree); descendants(id).forEach(d => next.delete(d))
+          localDescendants(id).forEach(d => next.delete(d))
           return next
         })
       } else {
         setExpandedIds(prev => {
           const next = new Set(prev)
-          loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
+          localPathTo(id).forEach(p => { if (localNodes[p]?.children.length) next.add(p) })
           return next
         })
       }
@@ -3128,22 +3183,20 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
   }
 
   const handleToggle = (id: string) => {
-    loadTree(tree)
-    const node = NODES[id]; if (!node?.children.length) return
-    if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return
+    const node = localNodes[id]; if (!node?.children.length) return
+    if (!multiActive && !localFocusPath.has(id)) return
     startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
-        loadTree(tree)
         if (next.has(id)) {
-          next.delete(id); descendants(id).forEach(d => next.delete(d))
-          if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
+          next.delete(id); localDescendants(id).forEach(d => next.delete(d))
+          if (focusedId && localPathTo(focusedId).includes(id)) setFocusedId(id)
         } else {
           next.add(id)
           if (!multiActive) {
-            const parent = PARENTS[id]
-            if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
-              if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+            const parent = localParents[id]
+            if (parent) (localNodes[parent]?.children ?? []).forEach(sib => {
+              if (sib !== id) { next.delete(sib); localDescendants(sib).forEach(d => next.delete(d)) }
             })
           }
         }
@@ -3154,32 +3207,29 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
   }
 
   const handleMobileSelect = (id: string) => {
-    loadTree(tree)
     setMobileFocId(id)
-    if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && NODES[id]?.children.length) return
+    if (!multiActive && !localFocusPath.has(id) && localNodes[id]?.children.length) return
     setMobileExpIds(prev => {
       const next = new Set(prev)
-      loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
+      localPathTo(id).forEach(p => { if (localNodes[p]?.children.length) next.add(p) })
       return next
     })
   }
 
   const handleMobileToggle = (id: string) => {
-    loadTree(tree)
-    const node = NODES[id]; if (!node?.children.length) return
-    if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return
+    const node = localNodes[id]; if (!node?.children.length) return
+    if (!multiActive && !localFocusPath.has(id)) return
     setMobileExpIds(prev => {
       const next = new Set(prev)
-      loadTree(tree)
       if (next.has(id)) {
-        next.delete(id); descendants(id).forEach(d => next.delete(d))
-        if (pathTo(mobileFocId).includes(id)) setMobileFocId(id)
+        next.delete(id); localDescendants(id).forEach(d => next.delete(d))
+        if (localPathTo(mobileFocId).includes(id)) setMobileFocId(id)
       } else {
         next.add(id)
         if (!multiActive) {
-          const parent = PARENTS[id]
-          if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
-            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+          const parent = localParents[id]
+          if (parent) (localNodes[parent]?.children ?? []).forEach(sib => {
+            if (sib !== id) { next.delete(sib); localDescendants(sib).forEach(d => next.delete(d)) }
           })
         }
       }
@@ -3187,7 +3237,10 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     })
   }
 
-  // Ensure globals are set for this tree before rendering chart components
+  // Load globals for child chart components (DesktopChart/VerticalChart/MobileTreeNode)
+  // that still read from the module-level globals. This is safe here because it happens
+  // at the very end of this component's render, right before its own JSX is returned —
+  // no parent NOTES/ROOT_ID reads follow this in the parent's render cycle.
   loadTree(tree)
 
   const revealDepth = maxTreeDepth
