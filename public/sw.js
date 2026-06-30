@@ -1,7 +1,7 @@
 // Service worker for Case CompendiumX
 // Caches app shell on install, serves offline for repository + case pages.
 
-const CACHE = 'ccx-shell-v4'
+const CACHE = 'ccx-shell-v5'
 
 // App shell: pages that must survive offline
 const SHELL = [
