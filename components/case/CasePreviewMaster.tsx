@@ -4095,6 +4095,10 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                 </div>
               </div>
 
+              {/* Re-assert primary tree globals — AdditionalFrameworkPanel.loadTree corrupts
+                  module-level NODES/ROOT_ID/NOTES during its render; reset before any read. */}
+              {(() => { loadTree(tree); return null })()}
+
               {/* ── Notes below chart (forum open only, desktop) ── */}
               {forumOpen && NOTES.length > 0 && (
                 <div className="mt-4 hidden lg:grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(NOTES.length, 3)}, 1fr)` }}>
@@ -5134,6 +5138,9 @@ export function CaseInterviewerMaster({
                   </div>
                 </div>
               </div>
+
+              {/* Re-assert primary tree globals after AdditionalFrameworkPanel renders. */}
+              {(() => { loadTree(tree); return null })()}
 
               {/* Notes — brownie points + questions (outside the card, same as preview) */}
               {NOTES.length > 0 && (
