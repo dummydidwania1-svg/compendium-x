@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { usePathname, useRouter } from 'next/navigation';
 import MarketingAuthPanel from '@/components/auth/MarketingAuthPanel';
+import ProfileOverlay from '@/components/profile/ProfileOverlay';
 import { auth } from '@/lib/firebase/config';
 import { useIsPreview } from './DashboardContext';
 
@@ -16,6 +17,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
   const [scrolled, setScrolled]             = useState(false);
   const [isSignedIn, setIsSignedIn]         = useState(false);
   const [showAuthModal, setShowAuthModal]   = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -180,14 +182,14 @@ const Navbar = ({ currentPage }: NavbarProps) => {
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Auth buttons */}
             {isSignedIn ? (
-              <Link
-                href="/profile"
+              <button
+                onClick={() => setShowProfileModal(true)}
                 style={{ fontFamily: "'Work Sans', sans-serif" }}
-                className="flex items-center gap-1.5 border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 whitespace-nowrap"
+                className="flex items-center gap-1.5 border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 whitespace-nowrap cursor-pointer bg-transparent"
               >
                 <span className="material-symbols-outlined text-[16px] leading-none" style={{ fontSize: '16px' }}>account_circle</span>
                 My Account
-              </Link>
+              </button>
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
@@ -256,14 +258,13 @@ const Navbar = ({ currentPage }: NavbarProps) => {
 
             {isSignedIn ? (
               <div className="mt-2 border-t border-[#3D5A35]/10 pt-2 space-y-0.5">
-                <Link
-                  href="/profile"
+                <button
+                  onClick={() => { setMobileMenuOpen(false); setShowProfileModal(true) }}
                   style={{ fontFamily: "'Work Sans', sans-serif" }}
-                  className="block px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#3D5A35] font-medium border-l-2 border-transparent pl-3 hover:border-[#3D5A35] transition-colors duration-200"
-                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-left px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#3D5A35] font-medium border-l-2 border-transparent pl-3 hover:border-[#3D5A35] transition-colors duration-200"
                 >
                   My Account
-                </Link>
+                </button>
                 <button
                   onClick={() => { setMobileMenuOpen(false); handleLogout() }}
                   style={{ fontFamily: "'Work Sans', sans-serif" }}
@@ -295,6 +296,8 @@ const Navbar = ({ currentPage }: NavbarProps) => {
           />
         </div>
       ) : null}
+
+      {showProfileModal ? <ProfileOverlay onClose={() => setShowProfileModal(false)} /> : null}
     </>
   );
 };
