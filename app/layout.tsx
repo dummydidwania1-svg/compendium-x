@@ -1,10 +1,30 @@
 import type { Metadata } from 'next'
+import { Newsreader, Work_Sans } from 'next/font/google'
 import GlobalStyles from '@/components/GlobalStyles'
 import Analytics from '@/components/Analytics';
 import OfflineSetup from '@/components/OfflineSetup'
 import OfflineBanner from '@/components/OfflineBanner'
 // @ts-ignore - CSS side-effect import is supported by Next.js
 import './globals.css'
+
+// Self-hosted via next/font — zero extra DNS/TCP/TLS round-trip, no render blocking,
+// automatic font-display:swap, and only the weights we actually use.
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-newsreader',
+  display: 'swap',
+  preload: true,
+})
+
+const workSans = Work_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-work-sans',
+  display: 'swap',
+  preload: true,
+})
 
 const CCX_KEYWORDS = [
   // Primary intent: case prep, front-loaded
@@ -121,18 +141,17 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
+        {/* Material Symbols still loaded from Google Fonts — it's an icon font
+            not available via next/font. preconnect is already handled by Next.js
+            when using next/font, so only this one external font remains. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Work+Sans:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL@20..48,100..700,0..1&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body>
+      <body className={`${newsreader.variable} ${workSans.variable}`}>
         <Analytics />
         <GlobalStyles />
         <OfflineSetup />

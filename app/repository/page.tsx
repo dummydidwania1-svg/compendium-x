@@ -832,11 +832,31 @@ const grouped = useMemo(() => {
 const prefetchCase = useCallback((caseItem: CaseListItem) => {
   if (prefetchedCasesRef.current.has(caseItem.id)) return
   prefetchedCasesRef.current.add(caseItem.id)
+
+  // 1. Prefetch the JS bundle for the destination route.
   const destination =
     selectionMode && lobbyId
       ? `/case/${caseItem.id}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${sessionMode}`
       : `/case/${caseItem.slug ?? slugifyCase(caseItem.title)}`
   router.prefetch(destination)
+
+  // 2. Warm the case-document localStorage cache used by InterviewerExperience.
+  //    If it's already cached, skip the Firestore read. If not, fetch it now at
+  //    low priority so it's ready by the time the user clicks.
+  const cacheKey = `compendium-case-v9-${caseItem.id}`
+  if (typeof window !== 'undefined' && !localStorage.getItem(cacheKey)) {
+    import('firebase/firestore').then(({ getDoc }) => {
+      import('@/lib/firebase/collections').then(({ caseDoc }) => {
+        getDoc(caseDoc(caseItem.id))
+          .then(snap => {
+            if (snap.exists()) {
+              try { localStorage.setItem(cacheKey, JSON.stringify(snap.data())) } catch { /* quota */ }
+            }
+          })
+          .catch(() => { /* ignore — just a best-effort prefetch */ })
+      })
+    })
+  }
 }, [selectionMode, lobbyId, sessionMode, router])
 
   const handleSelectCase = async (caseId: string, caseTitle?: string) => {

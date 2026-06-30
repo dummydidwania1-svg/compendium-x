@@ -6,6 +6,7 @@ import { getDocs, limit, query, where } from 'firebase/firestore'
 import { casesCol } from '@/lib/firebase/collections'
 import PlatformLoader from '@/components/PlatformLoader'
 import { InterviewerPageInner } from './interviewer/InterviewerExperience'
+import { SLUG_TO_DOC_ID } from '@/lib/slugMap'
 
 function CaseBySlug({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -16,13 +17,24 @@ function CaseBySlug({ params }: { params: Promise<{ id: string }> }) {
     let cancelled = false
     const resolve = async () => {
       const { id: slug } = await params
+
+      // Fast path: resolve slug → docId from the static map (no network round-trip).
+      // Falls back to a Firestore query only for slugs not in the map (new cases not
+      // yet deployed, legacy direct-docId links like /case/case-1).
+      const mapped = SLUG_TO_DOC_ID[slug]
+      if (mapped) {
+        if (!cancelled) setDocId(mapped)
+        return
+      }
+
+      // Slow path: slug not in static map — try Firestore lookup.
       try {
         const snap = await getDocs(query(casesCol, where('slug', '==', slug), limit(1)))
         if (cancelled) return
         if (!snap.empty) {
           setDocId(snap.docs[0].id)
         } else {
-          // Fallback: treat the param as a raw doc id (e.g. older /case/case-1 links)
+          // Final fallback: treat the param as a raw doc id (e.g. /case/case-42)
           setDocId(slug)
         }
       } catch {

@@ -12,6 +12,25 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+
+  // Serve modern image formats (WebP/AVIF) automatically for next/image.
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+  },
+
+  // Tree-shake heavy packages — only imports actually used end up in the bundle.
+  // Firebase ships dozens of modules; this alone can halve its bundle footprint.
+  experimental: {
+    optimizePackageImports: [
+      'firebase/app',
+      'firebase/auth',
+      'firebase/firestore',
+      'firebase/storage',
+      'recharts',
+    ],
+  },
+
   webpack: (config) => {
     config.plugins ??= [];
     config.plugins.push(

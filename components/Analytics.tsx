@@ -184,9 +184,9 @@ export default function Analytics() {
         `}
       </Script>
 
-      {/* ── Microsoft Clarity (heatmaps + recordings) ── */}
+      {/* ── Microsoft Clarity (heatmaps + recordings) — deferred until idle ── */}
       {CLARITY_ID && (
-        <Script id="clarity-init" strategy="afterInteractive">
+        <Script id="clarity-init" strategy="lazyOnload">
           {`
             (function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
