@@ -355,7 +355,6 @@ export default function MarketingAuthPanel({
 
         try {
           const result = await createUserWithEmailAndPassword(auth, normalizedEmail, password)
-          await signOut(auth)
           setPreferFallback(false)
 
           if (fullName.trim()) {
@@ -370,6 +369,7 @@ export default function MarketingAuthPanel({
             }
           }
 
+          await signOut(auth)
           setVerificationEmail(normalizedEmail)
           setVerificationSent(true)
           return
