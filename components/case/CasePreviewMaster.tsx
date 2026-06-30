@@ -3237,17 +3237,8 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     })
   }
 
-  // Load globals for child chart components (DesktopChart/VerticalChart/MobileTreeNode)
-  // that still read from the module-level globals. This is safe here because it happens
-  // at the very end of this component's render, right before its own JSX is returned —
-  // no parent NOTES/ROOT_ID reads follow this in the parent's render cycle.
-  loadTree(tree)
-
   const revealDepth = maxTreeDepth
 
-  // Renders just the chart — no outer card, no notes sidebar.
-  // Callers embed this directly inside the existing right-side column (desktop)
-  // or below the primary mobile tree.
   return (
     <>
       {/* Thin divider with label */}
@@ -3263,9 +3254,10 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
         <div className="mt-6" />
       )}
 
-      {/* Chart — desktop */}
+      {/* Chart — desktop. Pass tree prop so DesktopChart/VerticalChart call
+          loadTree(tree) inside their own render scope, not ours. */}
       <div className="hidden lg:block">
-        {ROOT_ID && (
+        {localRootId && (
           <div
             ref={(el) => { chartRef.current = el; overlayHostRef.current = el }}
             style={{
@@ -3285,11 +3277,11 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
         <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} />
       </div>
 
-      {/* Chart — mobile */}
+      {/* Chart — mobile. Use localRootId (not global ROOT_ID). */}
       <div className="lg:hidden">
         <Reveal>
           <div className="space-y-3">
-            <MobileTreeNode nodeId={ROOT_ID} focusedId={mobileFocId} expandedIds={mobileExpIds}
+            <MobileTreeNode nodeId={localRootId} focusedId={mobileFocId} expandedIds={mobileExpIds}
               onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
           </div>
         </Reveal>
@@ -4061,10 +4053,10 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                       >
                         {useVerticalLayout ? (
                           <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds}
-                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} tree={tree} />
                         ) : (
                           <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds}
-                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} tree={tree} />
                         )}
                       </div>
                       )}
@@ -5113,9 +5105,9 @@ export function CaseInterviewerMaster({
                           transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
                         }}>
                           {useVerticalLayout ? (
-                            <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                            <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} tree={tree} />
                           ) : (
-                            <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} />
+                            <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} tree={tree} />
                           )}
                         </div>
                         )}
