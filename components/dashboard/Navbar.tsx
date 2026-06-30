@@ -180,16 +180,14 @@ const Navbar = ({ currentPage }: NavbarProps) => {
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Auth buttons */}
             {isSignedIn ? (
-              <>
-                <button
-                  onClick={handleLogout}
-                  style={{ fontFamily: "'Work Sans', sans-serif" }}
-                  className="border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap"
-                >
-                  LOG OUT
-                </button>
-                <span className="material-symbols-outlined text-[#3D5A35] hidden sm:inline-block text-[32px]">account_circle</span>
-              </>
+              <Link
+                href="/profile"
+                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                className="flex items-center gap-1.5 border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 whitespace-nowrap"
+              >
+                <span className="material-symbols-outlined text-[16px] leading-none" style={{ fontSize: '16px' }}>account_circle</span>
+                My Account
+              </Link>
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
@@ -255,6 +253,26 @@ const Navbar = ({ currentPage }: NavbarProps) => {
                 {label}
               </Link>
             ))}
+
+            {isSignedIn ? (
+              <div className="mt-2 border-t border-[#3D5A35]/10 pt-2 space-y-0.5">
+                <Link
+                  href="/profile"
+                  style={{ fontFamily: "'Work Sans', sans-serif" }}
+                  className="block px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#3D5A35] font-medium border-l-2 border-transparent pl-3 hover:border-[#3D5A35] transition-colors duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Account
+                </Link>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); handleLogout() }}
+                  style={{ fontFamily: "'Work Sans', sans-serif" }}
+                  className="block w-full text-left px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#92400e] border-l-2 border-transparent pl-3 hover:border-[#92400e] transition-colors duration-200"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : null}
           </div>
         )}
       </nav>

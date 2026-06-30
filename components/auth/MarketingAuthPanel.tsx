@@ -176,6 +176,7 @@ export default function MarketingAuthPanel({
 
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [fullName, setFullName] = useState('')
+  const [college, setCollege] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -230,6 +231,7 @@ export default function MarketingAuthPanel({
   const validateForm = (): string | null => {
     const trimmedEmail = email.trim()
     if (isSignUp && !fullName.trim()) return 'Enter your full name.'
+    if (isSignUp && !college.trim()) return 'Enter your university or college.'
     if (!trimmedEmail) return 'Enter your email.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return 'Enter a valid email.'
     if (!password) return 'Enter your password.'
@@ -244,6 +246,7 @@ export default function MarketingAuthPanel({
     setMessageTone('error')
     setVerificationSent(false)
     setVerificationEmail('')
+    setCollege('')
   }
 
   const finishAuth = async (uid: string, newUser = false) => {
@@ -337,14 +340,14 @@ export default function MarketingAuthPanel({
             try {
               await setDoc(
                 doc(db, 'profiles', credential.user.uid),
-                { fullName: fullName.trim(), updatedAt: serverTimestamp() },
+                { fullName: fullName.trim(), university: college.trim(), updatedAt: serverTimestamp() },
                 { merge: true }
               )
             } catch {
               // onboarding will collect it
             }
           }
-          setMessage('Account created. Redirecting to complete your profile...')
+          setMessage('Account created. Redirecting...')
           setMessageTone('info')
           await finishAuth(credential.user.uid, true)
           return
@@ -359,7 +362,7 @@ export default function MarketingAuthPanel({
             try {
               await setDoc(
                 doc(db, 'profiles', result.user.uid),
-                { fullName: fullName.trim(), updatedAt: serverTimestamp() },
+                { fullName: fullName.trim(), university: college.trim(), updatedAt: serverTimestamp() },
                 { merge: true }
               )
             } catch {
@@ -378,14 +381,14 @@ export default function MarketingAuthPanel({
               try {
                 await setDoc(
                   doc(db, 'profiles', credential.user.uid),
-                  { fullName: fullName.trim(), updatedAt: serverTimestamp() },
+                  { fullName: fullName.trim(), university: college.trim(), updatedAt: serverTimestamp() },
                   { merge: true }
                 )
               } catch {
                 // onboarding will collect it
               }
             }
-            setMessage('Account created. Redirecting to complete your profile...')
+            setMessage('Account created. Redirecting...')
             setMessageTone('info')
             await finishAuth(credential.user.uid, true)
             return
@@ -590,21 +593,38 @@ export default function MarketingAuthPanel({
         className="marketing-auth-form"
       >
         {isSignUp ? (
-          <div className="marketing-auth-input-wrap" style={FIELD_WRAPPER_STYLE}>
-            <input
-              className="marketing-auth-field"
-              type="text"
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-bwignore="true"
-              style={INPUT_STYLE}
-            />
-          </div>
+          <>
+            <div className="marketing-auth-input-wrap" style={FIELD_WRAPPER_STYLE}>
+              <input
+                className="marketing-auth-field"
+                type="text"
+                placeholder="Full Name"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                style={INPUT_STYLE}
+              />
+            </div>
+            <div className="marketing-auth-input-wrap" style={FIELD_WRAPPER_STYLE}>
+              <input
+                className="marketing-auth-field"
+                type="text"
+                placeholder="University / College"
+                value={college}
+                onChange={(event) => setCollege(event.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                style={INPUT_STYLE}
+              />
+            </div>
+          </>
         ) : null}
 
         <div className="marketing-auth-input-wrap" style={FIELD_WRAPPER_STYLE}>

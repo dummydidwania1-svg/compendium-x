@@ -861,11 +861,11 @@ export function InterviewerPageInner({
 
 	// When overlay is in success state and upload is done, start the 3s countdown.
 	// Local/split-screen: window.close() works (tab opened by script) — fires at 0.
-	// Remote: window.close() is blocked — show manual-close card instead.
+	// Remote: redirect to homepage instead.
 	useEffect(() => {
 		if (!overlaySuccess) return
 		if (interviewerUploadState === 'uploading') return
-		if (isRemoteMode) return
+		if (isRemoteMode) { router.push('/'); return }
 		setOverlayAutoClose(3)
 		const iv = setInterval(() => {
 			setOverlayAutoClose(prev => {
@@ -882,11 +882,11 @@ export function InterviewerPageInner({
 	}, [overlaySuccess, interviewerUploadState, isRemoteMode])
 
 	// Auto-close for currentView='success' (non-overlay path, e.g. skip-to-success).
-	// Only fires in local mode — remote tab can't be closed by script.
+	// Local: window.close(). Remote: redirect to homepage.
 	useEffect(() => {
 		if (currentView !== 'success') return
 		if (interviewerUploadState === 'uploading') return
-		if (isRemoteMode) return
+		if (isRemoteMode) { router.push('/'); return }
 		setSuccessAutoClose(3)
 		const iv = setInterval(() => {
 			setSuccessAutoClose(prev => {
@@ -932,6 +932,7 @@ export function InterviewerPageInner({
 	const lastInterviewerFlushMimeTypeRef = useRef<string>('audio/webm')
 	const recordingFinalizedRef = useRef(false)
 	const cachedAuthTokenRef = useRef<string | null>(null)
+	const selectingGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	// Mid-session mic-LOSS recovery (manual block). Raises the recovery banner when
 	// a previously-granted mic flips to 'denied'. Hard-suppressed when the interviewer
@@ -1033,6 +1034,14 @@ export function InterviewerPageInner({
 			// D9: Seed inactivity clocks from server timestamps on the first snapshot.
 			// Also capture selectedAt for dual-mic startOffsetMs calculation.
 			if (!seedApplied && status === 'in_progress') {
+				// select-case confirmed — cancel the fallback redirect timer and clear marker.
+				if (selectingGraceTimerRef.current) {
+					clearTimeout(selectingGraceTimerRef.current)
+					selectingGraceTimerRef.current = null
+				}
+				if (lobbyId) {
+					try { localStorage.removeItem(`compendium-selecting-${lobbyId}`) } catch { /* ignore */ }
+				}
 				const selectedAt = (data.selectedAt as { toDate: () => Date; toMillis: () => number } | undefined)
 				if (selectedAt) {
 					const age = Date.now() - selectedAt.toDate().getTime()
@@ -1074,6 +1083,34 @@ export function InterviewerPageInner({
 			// D10: Session cancelled by candidate or expired — return interviewer to lobby.
 			if (status === 'waiting' || status === 'abandoned') {
 				if (view !== 'success') {
+					// If the interviewer just navigated here from the case picker before
+					// select-case finished, suppress the immediate redirect and schedule a
+					// fallback instead. When select-case writes in_progress the snapshot
+					// fires again and cancels the timer. If it never arrives (API error,
+					// network failure), the timer fires and returns the interviewer to lobby.
+					if (status === 'waiting' && lobbyId) {
+						try {
+							const raw = localStorage.getItem(`compendium-selecting-${lobbyId}`)
+							if (raw) {
+								const marker = JSON.parse(raw) as { ts?: number }
+								const age = Date.now() - (marker.ts ?? 0)
+								if (age < 12_000) {
+									if (!selectingGraceTimerRef.current) {
+										const lobbyMode = searchParams.get('sessionMode') ?? 'remote'
+										selectingGraceTimerRef.current = setTimeout(() => {
+											selectingGraceTimerRef.current = null
+											try { localStorage.removeItem(`compendium-selecting-${lobbyId}`) } catch { /* ignore */ }
+											if (currentViewRef.current !== 'success') {
+												router.replace(`/lobby/${encodeURIComponent(lobbyId)}?role=interviewer&mode=${lobbyMode}`)
+											}
+										}, 12_000 - age + 500)
+									}
+									return
+								}
+								localStorage.removeItem(`compendium-selecting-${lobbyId}`)
+							}
+						} catch { /* ignore */ }
+					}
 					router.replace(`/lobby/${encodeURIComponent(lobbyId)}?role=interviewer&mode=${searchParams.get('sessionMode') ?? 'remote'}`)
 				}
 			}
@@ -1105,7 +1142,14 @@ export function InterviewerPageInner({
 			},
 		)
 
-		return () => { unsubscribe(); clearPoll() }
+		return () => {
+			unsubscribe()
+			clearPoll()
+			if (selectingGraceTimerRef.current) {
+				clearTimeout(selectingGraceTimerRef.current)
+				selectingGraceTimerRef.current = null
+			}
+		}
 	// isRemoteMode, lobbyId, previewMode are stable for the session lifetime
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isRemoteMode, lobbyId, previewMode])
