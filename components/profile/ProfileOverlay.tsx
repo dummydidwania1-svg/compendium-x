@@ -17,6 +17,8 @@ type ProfileOverlayProps = {
   onClose: () => void
 }
 
+type Section = 'profile' | 'account' | 'security'
+
 function initials(name: string | null, email: string | null): string {
   if (name?.trim()) return name.trim()[0].toUpperCase()
   if (email) return email[0].toUpperCase()
@@ -27,10 +29,15 @@ function isEmailProvider(user: User) {
   return user.providerData.some((p) => p.providerId === 'password')
 }
 
+const fieldClass =
+  'w-full border border-[#c3c8bd] bg-[#faf3e9] px-3.5 py-2.5 text-[13px] text-[#1e1b15] outline-none transition-colors focus:border-[#3D5A35]'
+const labelClass = 'mb-1 block text-[10px] font-medium uppercase tracking-[0.16em] text-[#5c4033]/65'
+
 export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [authReady, setAuthReady] = useState(false)
+  const [section, setSection] = useState<Section>('profile')
 
   // Profile fields
   const [fullName, setFullName] = useState('')
@@ -152,216 +159,227 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     router.refresh()
   }
 
+  const emailProvider = user ? isEmailProvider(user) : false
+
+  const NAV_ITEMS: Array<{ id: Section; label: string; icon: string }> = [
+    { id: 'profile', label: 'Profile', icon: 'person' },
+    { id: 'account', label: 'Account', icon: 'mail' },
+    ...(emailProvider ? [{ id: 'security' as Section, label: 'Security', icon: 'lock' }] : []),
+  ]
+
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto px-4 py-10 sm:items-center"
+      className="fixed inset-0 z-[200] flex items-center justify-center px-4 py-8"
       style={{ background: 'rgba(30,27,21,0.45)', backdropFilter: 'blur(4px)' }}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
     >
       <div
-        className="relative w-full max-w-[600px] rounded-2xl bg-[#fff8f0] px-6 py-7 md:px-9 md:py-8"
-        style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.22)', fontFamily: "'Work Sans', sans-serif" }}
+        className="relative flex w-full max-w-[680px] overflow-hidden rounded-2xl bg-[#fff8f0]"
+        style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.22)', fontFamily: "'Work Sans', sans-serif", minHeight: '420px' }}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-[#73796f] text-2xl leading-none bg-transparent border-none cursor-pointer hover:text-[#453a2a] transition-colors"
+          className="absolute top-3.5 right-4 z-10 text-[#73796f] text-2xl leading-none bg-transparent border-none cursor-pointer hover:text-[#453a2a] transition-colors"
           aria-label="Close"
         >
           &times;
         </button>
 
-        <p className="text-[10px] uppercase tracking-[0.32em] text-[#3D5A35]/55 font-semibold">
-          Compendium X · Account
-        </p>
-        <h1
-          className="mt-1 mb-6 text-3xl font-light tracking-tight text-[#453a2a]"
-          style={{ fontFamily: "'Newsreader', serif" }}
-        >
-          My Profile
-        </h1>
-
         {!authReady || profileLoading || !user ? (
-          <div className="py-16 text-center text-[14px] text-[#5c4033]">Loading...</div>
+          <div className="flex w-full items-center justify-center py-16 text-center text-[14px] text-[#5c4033]">Loading...</div>
         ) : (
           <>
-            {/* ── Card 1: Profile ── */}
-            <section className="mb-5 rounded-2xl border border-[#b48a57]/16 bg-[rgba(255,248,240,0.85)] px-5 py-6 md:px-7 md:py-7" style={{ boxShadow: '0 4px 18px rgba(59,47,47,0.05)' }}>
-              <div className="mb-5 flex items-center gap-4">
-                <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white"
-                  style={{ background: '#3D5A35', fontFamily: "'Newsreader', serif" }}
-                >
-                  {initials(fullName || user.displayName, user.email)}
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.22em] text-[#5c4033]/60 font-medium">Profile</p>
-                  <p className="text-[15px] font-medium text-[#453a2a]">{fullName || user.displayName || user.email}</p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveProfile} className="space-y-4">
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-[#5c4033]/65">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
-                    className="w-full border border-[#c3c8bd] bg-[#faf3e9] px-4 py-3 text-[14px] text-[#1e1b15] outline-none transition-colors focus:border-[#3D5A35]"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-[#5c4033]/65">
-                    University / College
-                  </label>
-                  <input
-                    type="text"
-                    value={university}
-                    onChange={(e) => setUniversity(e.target.value)}
-                    placeholder="e.g. SRCC, FMS, IIM Ahmedabad"
-                    className="w-full border border-[#c3c8bd] bg-[#faf3e9] px-4 py-3 text-[14px] text-[#1e1b15] outline-none transition-colors focus:border-[#3D5A35]"
-                  />
-                </div>
-
-                {profileMsg ? (
-                  <div
-                    className="px-4 py-3 text-[13px]"
-                    style={{
-                      border: `1px solid ${profileMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
-                      background: profileMsg.ok ? 'rgba(61,90,53,0.05)' : 'rgba(146,64,14,0.05)',
-                      color: profileMsg.ok ? '#3D5A35' : '#92400e',
-                    }}
-                  >
-                    {profileMsg.text}
-                  </div>
-                ) : null}
-
-                <button
-                  type="submit"
-                  disabled={profileSaving}
-                  className="w-full py-3 text-[11px] uppercase tracking-[0.22em] font-medium text-white transition-opacity disabled:opacity-60"
-                  style={{ background: '#3D5A35' }}
-                >
-                  {profileSaving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </form>
-            </section>
-
-            {/* ── Card 2: Account ── */}
-            <section className="mb-5 rounded-2xl border border-[#b48a57]/16 bg-[rgba(255,248,240,0.85)] px-5 py-6 md:px-7 md:py-7" style={{ boxShadow: '0 4px 18px rgba(59,47,47,0.05)' }}>
-              <p className="mb-4 text-[11px] uppercase tracking-[0.22em] text-[#5c4033]/60 font-medium">Account</p>
-
-              <div className="space-y-4">
-                <div>
-                  <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-[#5c4033]/50 font-medium">Email Address</p>
-                  <p className="text-[14px] text-[#453a2a] font-medium">{user.email ?? '—'}</p>
-                </div>
-                <div>
-                  <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-[#5c4033]/50 font-medium">Sign-In Method</p>
-                  <span
-                    className="inline-block px-3 py-1 text-[11px] uppercase tracking-[0.15em] font-medium"
-                    style={{
-                      border: '1px solid rgba(61,90,53,0.2)',
-                      background: 'rgba(61,90,53,0.06)',
-                      color: '#3D5A35',
-                    }}
-                  >
-                    {isEmailProvider(user) ? 'Email & Password' : 'Google'}
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* ── Card 3: Security (email users only) ── */}
-            {isEmailProvider(user) ? (
-              <section className="mb-5 rounded-2xl border border-[#b48a57]/16 bg-[rgba(255,248,240,0.85)] px-5 py-6 md:px-7 md:py-7" style={{ boxShadow: '0 4px 18px rgba(59,47,47,0.05)' }}>
-                <p className="mb-4 text-[11px] uppercase tracking-[0.22em] text-[#5c4033]/60 font-medium">Security</p>
-
-                <form onSubmit={handleChangePassword} className="space-y-4">
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-[#5c4033]/65">
-                      Current Password
-                    </label>
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter current password"
-                      autoComplete="current-password"
-                      className="w-full border border-[#c3c8bd] bg-[#faf3e9] px-4 py-3 text-[14px] text-[#1e1b15] outline-none transition-colors focus:border-[#3D5A35]"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-[#5c4033]/65">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="At least 6 characters"
-                      autoComplete="new-password"
-                      className="w-full border border-[#c3c8bd] bg-[#faf3e9] px-4 py-3 text-[14px] text-[#1e1b15] outline-none transition-colors focus:border-[#3D5A35]"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-[#5c4033]/65">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Repeat new password"
-                      autoComplete="new-password"
-                      className="w-full border border-[#c3c8bd] bg-[#faf3e9] px-4 py-3 text-[14px] text-[#1e1b15] outline-none transition-colors focus:border-[#3D5A35]"
-                    />
-                  </div>
-
-                  {passwordMsg ? (
-                    <div
-                      className="px-4 py-3 text-[13px]"
-                      style={{
-                        border: `1px solid ${passwordMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
-                        background: passwordMsg.ok ? 'rgba(61,90,53,0.05)' : 'rgba(146,64,14,0.05)',
-                        color: passwordMsg.ok ? '#3D5A35' : '#92400e',
-                      }}
-                    >
-                      {passwordMsg.text}
-                    </div>
-                  ) : null}
-
+            {/* ── Left sidebar ── */}
+            <div className="w-[180px] shrink-0 border-r border-[#b48a57]/16 bg-[rgba(247,238,225,0.6)] px-3 py-6 sm:w-[200px]">
+              <p className="mb-4 px-2 text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]/55 font-semibold">
+                My Profile
+              </p>
+              <nav className="space-y-0.5">
+                {NAV_ITEMS.map((item) => (
                   <button
-                    type="submit"
-                    disabled={passwordSaving}
-                    className="w-full py-3 text-[11px] uppercase tracking-[0.22em] font-medium text-white transition-opacity disabled:opacity-60"
-                    style={{ background: '#3D5A35' }}
+                    key={item.id}
+                    type="button"
+                    onClick={() => setSection(item.id)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors"
+                    style={{
+                      background: section === item.id ? 'rgba(61,90,53,0.1)' : 'transparent',
+                      color: section === item.id ? '#3D5A35' : '#5c4033',
+                      fontWeight: section === item.id ? 500 : 400,
+                    }}
                   >
-                    {passwordSaving ? 'Updating...' : 'Update Password'}
+                    <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>{item.icon}</span>
+                    {item.label}
                   </button>
-                </form>
-              </section>
-            ) : null}
+                ))}
+              </nav>
 
-            {/* ── Sign Out ── */}
-            <div className="mt-6 border-t border-[#b48a57]/16 pt-6">
-              <button
-                onClick={handleSignOut}
-                className="w-full py-3 text-[11px] uppercase tracking-[0.22em] font-medium transition-colors"
-                style={{
-                  border: '1px solid rgba(146,64,14,0.25)',
-                  background: 'rgba(146,64,14,0.04)',
-                  color: '#92400e',
-                }}
-              >
-                Sign Out
-              </button>
-              <p className="mt-2 text-center text-[11px] text-[#9b8f81]">Signs you out on this device.</p>
+              <div className="mt-4 border-t border-[#b48a57]/16 pt-3">
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-[rgba(146,64,14,0.07)]"
+                  style={{ color: '#92400e' }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>logout</span>
+                  Sign Out
+                </button>
+              </div>
+            </div>
+
+            {/* ── Right content ── */}
+            <div className="flex-1 px-6 py-6 sm:px-7">
+              {section === 'profile' ? (
+                <>
+                  <div className="mb-5 flex items-center gap-3">
+                    <div
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-semibold text-white"
+                      style={{ background: '#3D5A35', fontFamily: "'Newsreader', serif" }}
+                    >
+                      {initials(fullName || user.displayName, user.email)}
+                    </div>
+                    <div>
+                      <p className="text-[15px] font-medium text-[#453a2a]" style={{ fontFamily: "'Newsreader', serif" }}>Profile</p>
+                      <p className="text-[12px] text-[#5c4033]/60">{fullName || user.displayName || user.email}</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSaveProfile} className="space-y-3.5">
+                    <div>
+                      <label className={labelClass}>Full Name</label>
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Your full name"
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>University / College</label>
+                      <input
+                        type="text"
+                        value={university}
+                        onChange={(e) => setUniversity(e.target.value)}
+                        placeholder="e.g. SRCC, FMS, IIM Ahmedabad"
+                        className={fieldClass}
+                      />
+                    </div>
+
+                    {profileMsg ? (
+                      <div
+                        className="px-3.5 py-2.5 text-[12px]"
+                        style={{
+                          border: `1px solid ${profileMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
+                          background: profileMsg.ok ? 'rgba(61,90,53,0.05)' : 'rgba(146,64,14,0.05)',
+                          color: profileMsg.ok ? '#3D5A35' : '#92400e',
+                        }}
+                      >
+                        {profileMsg.text}
+                      </div>
+                    ) : null}
+
+                    <button
+                      type="submit"
+                      disabled={profileSaving}
+                      className="px-5 py-2.5 text-[11px] uppercase tracking-[0.2em] font-medium text-white transition-opacity disabled:opacity-60"
+                      style={{ background: '#3D5A35' }}
+                    >
+                      {profileSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </form>
+                </>
+              ) : null}
+
+              {section === 'account' ? (
+                <>
+                  <p className="mb-5 text-[15px] font-medium text-[#453a2a]" style={{ fontFamily: "'Newsreader', serif" }}>Account</p>
+                  <div className="space-y-4">
+                    <div>
+                      <p className={labelClass.replace('mb-1', 'mb-1')}>Email Address</p>
+                      <p className="text-[13px] text-[#453a2a] font-medium">{user.email ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p className={labelClass}>Sign-In Method</p>
+                      <span
+                        className="inline-block px-3 py-1 text-[11px] uppercase tracking-[0.15em] font-medium"
+                        style={{
+                          border: '1px solid rgba(61,90,53,0.2)',
+                          background: 'rgba(61,90,53,0.06)',
+                          color: '#3D5A35',
+                        }}
+                      >
+                        {emailProvider ? 'Email & Password' : 'Google'}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
+              {section === 'security' && emailProvider ? (
+                <>
+                  <p className="mb-5 text-[15px] font-medium text-[#453a2a]" style={{ fontFamily: "'Newsreader', serif" }}>Security</p>
+                  <form onSubmit={handleChangePassword} className="space-y-3.5">
+                    <div>
+                      <label className={labelClass}>Current Password</label>
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="Enter current password"
+                        autoComplete="current-password"
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>New Password</label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="At least 6 characters"
+                        autoComplete="new-password"
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Confirm New Password</label>
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Repeat new password"
+                        autoComplete="new-password"
+                        className={fieldClass}
+                      />
+                    </div>
+
+                    {passwordMsg ? (
+                      <div
+                        className="px-3.5 py-2.5 text-[12px]"
+                        style={{
+                          border: `1px solid ${passwordMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
+                          background: passwordMsg.ok ? 'rgba(61,90,53,0.05)' : 'rgba(146,64,14,0.05)',
+                          color: passwordMsg.ok ? '#3D5A35' : '#92400e',
+                        }}
+                      >
+                        {passwordMsg.text}
+                      </div>
+                    ) : null}
+
+                    <button
+                      type="submit"
+                      disabled={passwordSaving}
+                      className="px-5 py-2.5 text-[11px] uppercase tracking-[0.2em] font-medium text-white transition-opacity disabled:opacity-60"
+                      style={{ background: '#3D5A35' }}
+                    >
+                      {passwordSaving ? 'Updating...' : 'Update Password'}
+                    </button>
+                  </form>
+                </>
+              ) : null}
             </div>
           </>
         )}
