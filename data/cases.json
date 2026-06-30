@@ -9851,6 +9851,242 @@
 
 
 {
+  "id": 38,
+  "docId": "case-38",
+  "title": "Make India Great Again",
+  "industry": "Industry Agnostic",
+  "difficulty": "Easy",
+  "case_type": "Unconventional",
+  "company": "Dalberg",
+  "round": "Partner",
+  "prompt": "You're a politician in India and your objective is to increase the number of people who vote in the next municipal election. How would you go about it?",
+  "frameworkTree": {
+    "nodes": {
+      "number-of-people-who-vote": { "id": "number-of-people-who-vote", "label": "Number Of People Who Vote", "tone": "root", "children": ["eligible-population", "want-to-vote", "able-to-vote"] },
+      "eligible-population": { "id": "eligible-population", "label": "Eligible Population", "tone": "support", "children": [] },
+      "want-to-vote": { "id": "want-to-vote", "label": "% Who Want To Vote", "tone": "branch", "children": ["awareness", "voting-centres", "counters-per-centre", "amenities", "anonymity"] },
+      "awareness": { "id": "awareness", "label": "Awareness", "tone": "leaf", "children": [] },
+      "voting-centres": { "id": "voting-centres", "label": "Voting Centres", "tone": "leaf", "children": [] },
+      "counters-per-centre": { "id": "counters-per-centre", "label": "Counters Per Centre", "tone": "leaf", "children": [] },
+      "amenities": { "id": "amenities", "label": "Amenities", "tone": "leaf", "children": [] },
+      "anonymity": { "id": "anonymity", "label": "Anonymity", "tone": "leaf", "children": [] },
+      "able-to-vote": { "id": "able-to-vote", "label": "% Who Are Able To Vote", "tone": "branch", "children": ["timings", "day-chosen", "disability-friendly", "incentives", "day-care"] },
+      "timings": { "id": "timings", "label": "Timings", "tone": "leaf", "children": [] },
+      "day-chosen": { "id": "day-chosen", "label": "Day Chosen", "tone": "leaf", "children": [] },
+      "disability-friendly": { "id": "disability-friendly", "label": "Disability-Friendly", "tone": "leaf", "children": [] },
+      "incentives": { "id": "incentives", "label": "Incentives", "tone": "leaf", "children": [] },
+      "day-care": { "id": "day-care", "label": "Day Care Facilities", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["number-of-people-who-vote", "want-to-vote"],
+    "defaultFocusedId": "want-to-vote",
+    "notes": [
+      { "title": "Questions", "items": ["When is the next election?", "How much power do we have?", "Is there a specific objective?"] },
+      { "title": "Keep In Mind", "items": ["Scope the problem using power and timeline"] },
+      { "title": "Brownie Points", "items": ["Ensuring anonymity to guarantee voter safety", "Ruling out eligibility given the timeline"] }
+    ]
+  },
+  "visualisations": [
+    { "type": "formula", "title": "Votes Cast", "lhs": "Number Of People Who Vote", "rhs": "Eligible Population x % Who Want To Vote x % Who Are Able To Vote" }
+  ],
+  "abbreviations": ["EVM: Electronic Voting Machine"],
+  "framework": "Candidate: Interesting. I would like to begin by understanding how far we are from the next election, and whether we have a specific objective in mind.\nInterviewer: You can assume the election takes place in a week, and the only objective is to increase the number of people who show up to cast a vote.\nCandidate: Got it. We can look at this situation through a simple relation.\n^ Number of people who vote = Eligible Population * % Who Want To Vote * % Who Are Able To Vote\nGiven that we only have a week left, we cannot change the eligibility to vote, because issuing voter ID cards takes time.\nInterviewer: Correct. You can look at the percentage who want to vote first, and then move on to the next one.\nCandidate: Sure. Is it fair to assume that this politician has substantial power to implement changes, such as policy changes?\nInterviewer: Yes, you can assume that.\nCandidate: Under willingness, we can look at:\n1) Awareness: with the right funding, multiple ad campaigns can be run to draw voters.\n2) Number of voting centres: they must be located in convenient areas.\n3) Counters per voting centre: increasing the number of booths reduces the time taken per person, and EVMs can be used to reduce turnover time.\n4) Amenities: drinking water, a waiting area, washrooms and similar facilities must be available at every booth.\n5) Anonymity: the anonymity of every vote must be ensured to guarantee the safety of voters.\nInterviewer: Anything else under willingness? Otherwise we can move to the percentage who are able to vote.\nCandidate: We can move to the second part. Under ability, we can look at:\n1) Timings: the number of hours in which one can vote can be increased, and optimum timings can be chosen.\n2) Day chosen: if a weekend is chosen, it is convenient for working professionals to vote.\n3) Disability-friendly: wheelchair facilities, ramps and similar arrangements can be ensured so that disabled and elderly people are able to cast their vote.\n4) Incentives: companies must be encouraged to give people time off if they can prove they are voting, and monetary incentives can also be implemented.\n5) Day care facilities: free day care for one day can be implemented to enable people with children to vote.\nInterviewer: Great. We can close the case now.\n\nMake India Great Again Framework\nINCREASING THE NUMBER OF VOTES CAST\nClarifying Questions: When is the next election? How much power do we have? Is there a specific objective?\nBrownie Points: Ensuring anonymity to guarantee voter safety. Ruling out eligibility given the timeline.\nKeep In Mind: Scope the problem using the politician's power and the timeline."
+},
+{
+  "id": 39,
+  "docId": "case-39",
+  "title": "Mo Money, Mo Problems",
+  "industry": "Industry Agnostic",
+  "difficulty": "Easy",
+  "case_type": "Unconventional",
+  "company": "Dalberg",
+  "round": "Buddy",
+  "prompt": "Your client is the Government of India. They have approached you to help increase the number of digital transactions in the country.",
+  "frameworkTree": {
+    "nodes": {
+      "digital-transactions": { "id": "digital-transactions", "label": "Digital Transactions", "tone": "root", "children": ["people-transacting-digitally", "transactions-per-person"] },
+      "people-transacting-digitally": { "id": "people-transacting-digitally", "label": "People Transacting Digitally", "tone": "branch", "children": ["need", "awareness", "accessibility", "affordability", "experience"] },
+      "need": { "id": "need", "label": "Need", "tone": "leaf", "children": [] },
+      "awareness": { "id": "awareness", "label": "Awareness", "tone": "branch", "children": ["advertisements", "presence"] },
+      "advertisements": { "id": "advertisements", "label": "Advertisements", "tone": "leaf", "children": [] },
+      "presence": { "id": "presence", "label": "Presence", "tone": "leaf", "children": [] },
+      "accessibility": { "id": "accessibility", "label": "Accessibility", "tone": "leaf", "children": [] },
+      "affordability": { "id": "affordability", "label": "Affordability", "tone": "leaf", "children": [] },
+      "experience": { "id": "experience", "label": "Experience", "tone": "branch", "children": ["security", "seamless-experience"] },
+      "security": { "id": "security", "label": "Security", "tone": "leaf", "children": [] },
+      "seamless-experience": { "id": "seamless-experience", "label": "Seamless Experience", "tone": "leaf", "children": [] },
+      "transactions-per-person": { "id": "transactions-per-person", "label": "Transactions Per Person", "tone": "branch", "children": ["acceptability", "incentives", "utility"] },
+      "acceptability": { "id": "acceptability", "label": "Acceptability", "tone": "leaf", "children": [] },
+      "incentives": { "id": "incentives", "label": "Incentives", "tone": "leaf", "children": [] },
+      "utility": { "id": "utility", "label": "Utility", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["digital-transactions", "people-transacting-digitally", "awareness"],
+    "defaultFocusedId": "awareness",
+    "notes": [
+      { "title": "Questions", "items": ["What are digital transactions?", "What constraints are we under?", "What is the target and timeframe?"] },
+      { "title": "Keep In Mind", "items": ["Split the metric into users and frequency"] },
+      { "title": "Brownie Points", "items": ["Reducing small-denomination currency in the system", "Adding utility via bill splitting and expense management"] }
+    ]
+  },
+  "abbreviations": ["NEFT: National Electronic Funds Transfer", "RTGS: Real Time Gross Settlement", "UPI: Unified Payments Interface", "BHIM: Bharat Interface for Money", "OTP: One Time Password"],
+  "framework": "Candidate: Interesting. Do they have a target as to how much they want to increase digital transactions by, and in what time frame? Are there any budgetary or other constraints we must keep in mind?\nInterviewer: They want to increase it by as much as possible in the next six to twelve months. There are no constraints.\nCandidate: I also want to clarify what we mean by digital transactions. Are we referring to NEFT, RTGS, Card, UPI and e-Wallet payments?\nInterviewer: Precisely.\nCandidate: Okay, there is a lot we can do. I would like to break down the problem using the following relation.\n^ Number of digital transactions = Number of people transacting digitally * Number of digital transactions per person\nFirst, we can look at ways in which we can bring more people to try digital payments. Next, we can look at increasing the number of transactions they perform digitally. In order to increase the number of people, we can look at Need, Awareness, Accessibility, Affordability and Experience.\nInterviewer: Sure, I am interested to see the suggestions you come up with.\nCandidate: First, it is important to establish a need for digital modes of payment. In order to do this, the government can consider passing laws to make digital payments compulsory in certain cases, for example, payments larger than twenty thousand rupees cannot be made in cash. One advantage of digital payments is that there is no problem of loose change. The government can cut the flow of currency notes of low denominations in the system and nudge people towards digital transactions.\nUnder Awareness, the government can look at two things: Advertisements and a prominent Presence. The advantages of digital transactions can be marketed to people through television ads, hoardings and similar channels. A drive can be conducted to get more shops, including those in rural areas, to introduce digital payment options so that more people know about these platforms. This should first be implemented across all government undertakings, including post offices and ration shops.\nAccessibility is of utmost importance when it comes to digital transactions. Most of these payments require a bank account, so the option of creating zero-balance bank accounts must be pushed to citizens. Since smartphones and the internet still have limited penetration, the government must push these simultaneously. However, six to twelve months may not be enough to do this, so we can look at creating an alternative, say a feature on BHIM where payments can be made by purchasers simply by giving their UPI ID and an OTP.\nUnder Affordability, most digital payment platforms like Google Pay and PayTM are already free for users. However, an attempt can be made to reduce debit and credit card charges across the country. Subsidised smartphones and data plans will also contribute to the cause.\nUnder Experience, I would like to look at two things: establishing trust and building a seamless experience. It must be reinforced to citizens that digital transactions are safe. This can be done through publicity, public assurances and similar measures. Linking this to other consumer welfare programs, we can ensure adequate compensation in case of any mishandling of money by vendors or payment intermediaries.\nInterviewer: This seems very comprehensive. Is there anything else you would like to touch upon?\nCandidate: Yes, we are still left with the task of increasing the number of transactions per person. This can be done by increasing the acceptability of digital transactions, incentivising a higher volume of transactions, and increasing utility. Under Acceptability, it should be ensured that digital payments are accepted by more and more vendors. For example, electricity bills and gas bills should allow UPI payment, and laws can be eased for cross-country digital transactions. Under Incentives, platforms can offer cashbacks, loyalty bonuses and similar rewards. Platforms can also offer other services like expense management and bill splitting to increase utility.\nInterviewer: Excellent! The government thanks you for your help.\n\nMo Money, Mo Problems Framework\nINCREASE THE NUMBER OF DIGITAL TRANSACTIONS IN THE COUNTRY\nClarifying Questions: What are digital transactions? What constraints are we under? What is the target and timeframe?\nBrownie Points: Reducing small-denomination currency in the system. Adding utility via bill splitting and expense management.\nKeep In Mind: Split the metric into users and frequency."
+},
+{
+  "id": 40,
+  "docId": "case-40",
+  "title": "Gold Digger",
+  "industry": "Industry Agnostic",
+  "difficulty": "Easy",
+  "case_type": "Unconventional",
+  "company": "Kearney",
+  "round": "Manager",
+  "prompt": "Your client is the Ministry of Sports under the Government of India. It has been concerned with India's performance in the track and field events at the Olympics. It has hired you to come up with a plan of action to improve India's performance and increase the number of gold medals it wins.",
+  "frameworkTree": {
+    "nodes": {
+      "increase-tally": { "id": "increase-tally", "label": "Increase Gold Medal Tally To 5", "tone": "root", "children": ["pre", "during", "post"] },
+      "pre": { "id": "pre", "label": "Preparatory Phase", "tone": "branch", "children": ["resources", "implementation"] },
+      "resources": { "id": "resources", "label": "Resources", "tone": "branch", "children": ["infrastructure", "equipment", "support-staff", "athletes"] },
+      "infrastructure": { "id": "infrastructure", "label": "Infrastructure", "tone": "leaf", "children": [] },
+      "equipment": { "id": "equipment", "label": "Equipment", "tone": "leaf", "children": [] },
+      "support-staff": { "id": "support-staff", "label": "Support Staff", "tone": "leaf", "children": [] },
+      "athletes": { "id": "athletes", "label": "Athletes", "tone": "branch", "children": ["by-whom", "how-many", "by-when"] },
+      "by-whom": { "id": "by-whom", "label": "By Whom", "tone": "leaf", "children": [] },
+      "how-many": { "id": "how-many", "label": "How Many", "tone": "leaf", "children": [] },
+      "by-when": { "id": "by-when", "label": "By When", "tone": "leaf", "children": [] },
+      "implementation": { "id": "implementation", "label": "Implementation", "tone": "branch", "children": ["direct-efforts", "indirect-efforts"] },
+      "direct-efforts": { "id": "direct-efforts", "label": "Direct Efforts", "tone": "branch", "children": ["training", "coordination", "chemistry", "familiarity"] },
+      "training": { "id": "training", "label": "Training", "tone": "leaf", "children": [] },
+      "coordination": { "id": "coordination", "label": "Coordination", "tone": "leaf", "children": [] },
+      "chemistry": { "id": "chemistry", "label": "Squad Chemistry", "tone": "leaf", "children": [] },
+      "familiarity": { "id": "familiarity", "label": "Familiarity With Conditions", "tone": "leaf", "children": [] },
+      "indirect-efforts": { "id": "indirect-efforts", "label": "Indirect Efforts", "tone": "branch", "children": ["opponent-research", "internal-motivation"] },
+      "opponent-research": { "id": "opponent-research", "label": "Opponent Research", "tone": "leaf", "children": [] },
+      "internal-motivation": { "id": "internal-motivation", "label": "Internal Motivation", "tone": "leaf", "children": [] },
+      "during": { "id": "during", "label": "During Event", "tone": "branch", "children": ["opponent-strategy", "motivation"] },
+      "opponent-strategy": { "id": "opponent-strategy", "label": "Opponent Strategy", "tone": "branch", "children": ["lobbying"] },
+      "lobbying": { "id": "lobbying", "label": "Schedule Lobbying", "tone": "leaf", "children": [] },
+      "motivation": { "id": "motivation", "label": "Motivation", "tone": "branch", "children": ["game-day", "media", "stadium-crowd"] },
+      "game-day": { "id": "game-day", "label": "Game-Day Readiness", "tone": "leaf", "children": [] },
+      "media": { "id": "media", "label": "Media Coverage", "tone": "leaf", "children": [] },
+      "stadium-crowd": { "id": "stadium-crowd", "label": "Stadium Crowd", "tone": "leaf", "children": [] },
+      "post": { "id": "post", "label": "Post Event", "tone": "branch", "children": ["recognition", "monetary-incentives", "rest-next-olympics"] },
+      "recognition": { "id": "recognition", "label": "Recognition", "tone": "branch", "children": ["sports-awards"] },
+      "sports-awards": { "id": "sports-awards", "label": "Sports Awards", "tone": "leaf", "children": [] },
+      "monetary-incentives": { "id": "monetary-incentives", "label": "Monetary Incentives", "tone": "leaf", "children": [] },
+      "rest-next-olympics": { "id": "rest-next-olympics", "label": "Rest Before Next Olympics", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["increase-tally", "pre", "resources", "athletes"],
+    "defaultFocusedId": "by-when",
+    "notes": [
+      { "title": "Questions", "items": ["What does improving performance mean?", "How many gold medals are we targeting?", "What is the time horizon?", "Are there any constraints?"] },
+      { "title": "Keep In Mind", "items": ["Phase the problem into pre, during, and post.", "Open-ended cases need at least three layers."] },
+      { "title": "Brownie Points", "items": ["Catching the trick question on the Olympics year.", "Planning ahead for the next Olympics too."] }
+    ]
+  },
+  "framework": "Candidate: Interesting. I would like to understand the problem a little better. What do we mean by improving performance? How many gold medals does the ministry want to raise its tally to? And what is the time horizon to achieve this?\n\nInterviewer: Sure. Improving performance basically means increasing the gold medal tally. Let us say the number it wants to reach is five gold medals, and it would like to get there by the 2026 Olympics.\n\nCandidate: Forgive me, but isn't the Olympics scheduled for 2024 and then 2028?\n\nInterviewer: Good catch. Let us proceed with the 2028 Olympics.\n\nCandidate: Great. So that gives us about seven years to work with. Lastly, are there any constraints I should keep in mind?\n\nInterviewer: No, there are none. Go ahead with your approach.\n\nCandidate: I see roughly three phases of work here: a preparatory phase, a during the event phase, and a post event phase. The preparatory phase is the most important, so I will start there. I would split it into two parts, resources and implementation.\n\nUnder resources, I would look at the quality of the athletes, the infrastructure, the equipment, and the support staff. For the athletes in particular, I would think about by whom they are selected, how many we need, and by when this selection has to be done.\n\nInterviewer: Go ahead. What would you do once those resources are in place?\n\nCandidate: Under implementation, I want to make the best use of these resources, so I would separate it into direct efforts and indirect efforts. Direct efforts act on the athletes themselves: structured training programmes, team coordination, building chemistry within the squad, and familiarity with the playing conditions. One important step here is acclimatising the athletes to the host country by arranging a trip about a year before the event. Indirect efforts happen around the athletes: research and analysis of the other teams, and internal motivational schemes to keep the squad driven.\n\nInterviewer: Got it. What about during and after the event?\n\nCandidate: In the during the event phase, I would look at two things, opponent strategy and motivation. Under opponent strategy, I would analyse the individual teams and athletes we are up against and build a specific game day plan for each of them. This also includes lobbying, where the ministry can request that the schedule and travel for the Indian athletes are not made too strenuous.\n\nUnder motivation, I would start with game day readiness, such as proper hydration and rest before each event. I would also use the media and the home crowd. We can subsidise and encourage Indians, both from home and those already living in the host country, to attend the events. A full stadium means constant cheering and a real lift for our athletes.\n\nInterviewer: That covers it. And after the event?\n\nCandidate: The post event phase is about the incentives that exist once athletes bring home medals. I would look at recognition, such as national level sports awards, and monetary incentives, such as cash bonuses. We can also name stadiums and grounds after the athletes as a lasting honour. Finally, I would make sure they get enough rest before we begin preparing them for the next Olympics.\n\nInterviewer: Solid. I like that you also thought about preparing for the Olympics beyond the one in question. We can end the case here.\n\nGOLD DIGGER FRAMEWORK & RECOMMENDATIONS\n\nINCREASE THE GOLD MEDAL TALLY TO 5\n\nClarifying Questions: What does improving performance mean? How many gold medals are we targeting? What is the time horizon? Are there any constraints?\n\nBrownie Points: Catching the trick question on the Olympics year. Planning ahead for the next Olympics too.\n\nKeep In Mind: Phase the problem into pre, during, and post. Open-ended cases need at least three layers."
+},
+{
+  "id": 41,
+  "docId": "case-41",
+  "title": "Rating Neil, Nitin and Mukesh",
+  "industry": "Industry Agnostic",
+  "difficulty": "Easy",
+  "case_type": "Unconventional",
+  "company": "Kearney",
+  "round": "Principal",
+  "prompt": "We need to develop an online portal to rate actors and actresses in Bollywood. Develop a framework to rate them.",
+  "abbreviations": [
+    { "short": "IMDb", "full": "Internet Movie Database" },
+    { "short": "IIFA", "full": "International Indian Film Academy" }
+  ],
+  "frameworkTree": {
+    "nodes": {
+      "rating": { "id": "rating", "label": "Rating", "tone": "root", "children": ["movies", "recognition", "personality"] },
+      "movies": { "id": "movies", "label": "Movies", "tone": "branch", "children": ["movie-count", "diversity", "years", "outside"] },
+      "movie-count": { "id": "movie-count", "label": "Number and Quality", "tone": "leaf", "children": [] },
+      "diversity": { "id": "diversity", "label": "Diversity of Roles", "tone": "leaf", "children": [] },
+      "years": { "id": "years", "label": "Number of Years", "tone": "leaf", "children": [] },
+      "outside": { "id": "outside", "label": "Presence Outside Bollywood", "tone": "leaf", "children": [] },
+      "recognition": { "id": "recognition", "label": "Recognition", "tone": "branch", "children": ["awards", "popularity"] },
+      "awards": { "id": "awards", "label": "Awards", "tone": "branch", "children": ["award-shows"] },
+      "award-shows": { "id": "award-shows", "label": "Filmfare, IIFA", "tone": "leaf", "children": [] },
+      "popularity": { "id": "popularity", "label": "Popularity", "tone": "branch", "children": ["social-reach"] },
+      "social-reach": { "id": "social-reach", "label": "Social Reach", "tone": "leaf", "children": [] },
+      "personality": { "id": "personality", "label": "Personality", "tone": "branch", "children": ["charity-conduct", "other-ventures"] },
+      "charity-conduct": { "id": "charity-conduct", "label": "Charity and Conduct", "tone": "leaf", "children": [] },
+      "other-ventures": { "id": "other-ventures", "label": "Other Ventures", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["rating", "movies"],
+    "defaultFocusedId": "movies",
+    "notes": [
+      { "title": "Questions", "items": ["Purpose behind the ratings?", "Who will use the portal?", "An app or a website?", "What permissions are required?"] },
+      { "title": "Keep In Mind", "items": ["Weight parameters by objectivity, not just importance.", "Bucket criteria first, then score and weight."] },
+      { "title": "Brownie Points", "items": ["Accounting for the artist's personality", "Highlighting the importance of social endeavours"] }
+    ]
+  },
+  "framework": "Interviewer: Let's get started.\nCandidate: May I know the purpose behind rating these actors and actresses? This will help me come up with the relevant parameters to include in the approach.\nInterviewer: The portal will be for the general public who follow the industry. Think of it as an IMDb for actors and actresses.\nCandidate: Got it. Should we also look at how the portal will be set up, whether it will be an app or a website, and what permissions we will need to obtain?\nInterviewer: That will not be necessary. We are only interested in the rating approach.\nCandidate: Okay. My approach would be to first list the relevant parameters that the artists will be judged on. Next, we can assign weights to each of these parameters to complete the structure. If time permits, we can try rating a famous actor or actress using this scale and see if it makes sense. Shall I go ahead with this?\nInterviewer: Sure, go ahead.\nCandidate: I would like to divide the parameters into three buckets: Movies, Recognition, and Personality.\nUnder Movies, we should look at the number and quality of movies done by the artist. This shows how much the artist is in demand, which is usually an indicator of skill and popularity. Movies that perform better can be assigned bonus points. Next, we can look at the diversity of roles played by the artist. Actors like Amitabh Bachchan have played diverse roles, which shows their versatility. Third, the number of years the artist has been in the industry is a testament to their experience and continuing relevance in a cut-throat industry. Lastly, we can look at the artist's presence outside Bollywood. For example, Priyanka Chopra has worked alongside names like Zac Efron and enjoys a fan following across the globe.\nMoving on to Recognition, we can look at two things: Awards and Popularity. Their performance in award shows like Filmfare and IIFA provides an objective source to judge their performance. This will also lend credibility to our rating. Popularity can be judged by their fan following on social media platforms, the number of times their names appear in Google searches, surveys, and so on.\nIn today's world, personality is of increasing importance. People look up to artists not just for the work they do but also for their public image. Actors like Sonu Sood have led the way with their social endeavours. While positive activities like charity events can bring points to the artist, negative activities such as hit-and-run cases can lead to a deduction in points. Additionally, many actors and actresses have a well-rounded personality. In addition to acting, some have even ventured into production, singing, and more. We can keep this in mind as well.\nIs there anything else we should include in the approach?\nInterviewer: It seems very comprehensive. I like your point about including personality. Not many would have thought of that. You can briefly discuss how you will assign weights to the parameters. Then we can end the case.\nCandidate: Sure. First, we can make a list of all the parameters in decreasing order of importance. For example, \"diversity of roles\" will certainly be prioritized over \"number of charity events done by the artist\". Accordingly, we will assign a higher weight to the parameter higher up in the list. While we make the list, we can also keep in mind the reliability of the parameter. For example, the \"number of awards won\" can be given a higher weight, as it is a more objective parameter compared to \"presence outside Bollywood\".\nInterviewer: Great.\n\nRating Neil, Nitin and Mukesh Framework & Recommendations\nDEVELOPING AN ONLINE PORTAL FOR RATING ACTORS IN BOLLYWOOD\nClarifying Questions: Purpose behind the ratings? Who will use the portal? An app or a website? What permissions are required?\nBrownie Points: Accounting for the artist's personality. Highlighting the importance of social endeavours.\nKeep In Mind: Weight parameters by objectivity, not just importance. Bucket criteria first, then score and weight."
+},
+{
+  "id": 42,
+  "docId": "case-42",
+  "title": "Left Me High and Dry",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Unconventional",
+  "company": "Kepler Cannon",
+  "round": "Buddy",
+  "prompt": "Your client is an online retailer of clothes and has been facing a problem of high churn rate on their payment gateway. You need to analyse why this is happening and give recommendations accordingly.",
+  "frameworkTree": {
+    "nodes": {
+      "churn": { "id": "churn", "label": "High Churn Rate", "tone": "root", "children": ["directing", "payment"] },
+      "directing": { "id": "directing", "label": "Directing To Page", "tone": "branch", "children": ["obstruction", "convenience", "security", "success"] },
+      "obstruction": { "id": "obstruction", "label": "Obstruction (Banners)", "tone": "leaf", "children": [] },
+      "convenience": { "id": "convenience", "label": "Convenience (Load Time)", "tone": "leaf", "children": [] },
+      "security": { "id": "security", "label": "Security (Connection)", "tone": "leaf", "children": [] },
+      "success": { "id": "success", "label": "Success Rate", "tone": "leaf", "children": [] },
+      "payment": { "id": "payment", "label": "Making The Payment", "tone": "branch", "children": ["interface", "time", "charges"] },
+      "interface": { "id": "interface", "label": "Interface", "tone": "leaf", "children": [] },
+      "time": { "id": "time", "label": "Time", "tone": "branch", "children": ["otp"] },
+      "otp": { "id": "otp", "label": "OTP", "tone": "branch", "children": ["info_relay", "otp_send"] },
+      "info_relay": { "id": "info_relay", "label": "Information To Bank/Wallet", "tone": "leaf", "children": [] },
+      "otp_send": { "id": "otp_send", "label": "OTP To Payee", "tone": "leaf", "children": [] },
+      "charges": { "id": "charges", "label": "Additional Charges", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["churn", "payment", "time", "otp"],
+    "defaultFocusedId": "info_relay",
+    "notes": [
+      { "title": "Clarifying Questions", "items": ["What clothes and target market?", "When did the problem start?", "Decline uniform across modes?", "Are competitors facing this?", "Do we use a third party?"] },
+      { "title": "Keep In Mind", "items": ["Map every step of the payment journey."] },
+      { "title": "Brownie Points", "items": ["Isolating the OTP delay as company-specific."] },
+      { "title": "Recommendations", "items": ["Change the payment gateway", "Improve the efficiency of the current gateway"] }
+    ]
+  },
+  "additionalFrameworkTrees": [
+    {
+      "title": "What should we do",
+      "nodes": {
+        "solution": { "id": "solution", "label": "What Should We Do", "tone": "root", "children": ["stick", "switch", "build"] },
+        "stick": { "id": "stick", "label": "Stick With Gateway", "tone": "branch", "children": ["improve", "penalties", "commission", "disclaimer"] },
+        "improve": { "id": "improve", "label": "Improve Efficiency", "tone": "leaf", "children": [] },
+        "penalties": { "id": "penalties", "label": "Recover Via Penalties", "tone": "leaf", "children": [] },
+        "commission": { "id": "commission", "label": "Commission Model", "tone": "leaf", "children": [] },
+        "disclaimer": { "id": "disclaimer", "label": "Interim Disclaimer", "tone": "leaf", "children": [] },
+        "switch": { "id": "switch", "label": "Switch Third Party", "tone": "support", "children": [] },
+        "build": { "id": "build", "label": "Build Own Gateway", "tone": "support", "children": [] }
+      },
+      "defaultExpanded": ["solution", "stick"],
+      "defaultFocusedId": "stick"
+    }
+  ],
+  "framework": "Candidate: Interesting problem. Before I get into the analysis, I would like to understand our client a little better. What kind of clothes do they sell, and who is the target market?\n\nInterviewer: Our client sells jeans for both men and women, and the target market is everyone in the age bracket of 18 to 50.\n\nCandidate: Got it. A few more clarifiers. Since when have we been facing this problem? Is the churn uniform across modes, and have our competitors reported anything similar? For context, churn rate here is the share of customers who stop using the product over a given period.\n\nInterviewer: This has been the case ever since the website launched. You can consider the churn high enough that we need to act on it, and you do not need to size it. Our competitors have reported no such issues.\n\nCandidate: Sure. What are the modes of payment the website offers, and is the decline uniform across all of them? Also, is it fair to assume we use a third-party payment gateway?\n\nInterviewer: We offer credit and debit cards, PayTM and Google Pay. The decline is fairly uniform across all modes. And yes, we have a partnership with a third party.\n\nCandidate: Understood. I would like to analyse the high churn by breaking the payment journey into two stages, the stage of directing the user to the payment gateway and the stage of actually making the payment.\n\nIn the first stage, directing the user to the gateway, I would look at:\n1) Obstruction, such as banners appearing on the screen\n2) Convenience, mainly the time taken to load the page\n3) Security, whether the connection is secure, usually shown by a lock icon in the address bar\n4) Success rate, the number of times the redirection itself fails\n\nIn the second stage, making the payment, I would look at:\n1) Interface, how easy it is to navigate and whether all options are clearly displayed\n2) Time, the time taken to send the OTP and to move between pages\n3) Additional charges, whether any extra charges show up at this stage\n\nInterviewer: That covers it well. We have found that the time taken to send the OTP is about 3 minutes.\n\nCandidate: From my own experience, 3 minutes feels like a long time for an OTP. To judge whether that is really the issue, do we know how long other websites take?\n\nInterviewer: Yes. Other websites take 5 to 10 seconds.\n\nCandidate: That is a big gap. The time taken to send the OTP can be split into two parts:\n1) The information being sent from our payment partner to the wallet or bank\n2) The OTP being generated and sent to the payee\n\nSince other websites manage this in seconds, I think it is fair to assume the delay sits on our partner's side, in relaying the information to the wallet or bank. Our competitors are not seeing this, so it points to something specific to our own setup rather than the payment mode itself.\n\nInterviewer: Correct. So what do you think we should do?\n\nCandidate: I see a few ways to improve the situation. We could stick with the same payment gateway and:\n1) Push them to improve their efficiency\n2) Recover the lost sales from the third party through penalties\n3) Introduce a commission-based model that rewards better performance\n4) In the interim, add a short note telling customers the OTP may take a little time and asking them to be patient\n\nAlternatively, we could move to a different third party, or build our own payment gateway. Both of those should only be done after a proper cost-benefit analysis.\n\nInterviewer: Great. We can close the case here.\n\nLeft Me High and Dry Framework & Recommendations\nLOST SALES DUE TO HIGH CHURN RATE OF PAYMENT GATEWAY\nClarifying Questions: What kind of clothes and who is the target market? When did the problem start? Is the decline uniform across payment modes? Are competitors facing the same issue? Do we use a third-party gateway?\nBrownie Points: Isolating the OTP delay as a company-specific problem rather than an industry-wide one.\nKeep In Mind: Map every step of the payment journey to build an exhaustive list of drop-off points.\nRECOMMENDATIONS:\nChange the payment gateway\nImprove the efficiency of the current gateway"
+},
+
+
+
+
+
+
+
+{
   "id": 57,
   "docId": "case-57",
   "title": "Money Heist",
