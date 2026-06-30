@@ -65,7 +65,6 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const [university, setUniversity] = useState('')
   const [originalFullName, setOriginalFullName] = useState('')
   const [originalUniversity, setOriginalUniversity] = useState('')
-  const [editingProfile, setEditingProfile] = useState(false)
   const [profileLoading, setProfileLoading] = useState(true)
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState<{ text: string; ok: boolean } | null>(null)
@@ -138,16 +137,6 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const isPasswordReady =
     currentPassword.length > 0 && newPassword.length >= 6 && confirmPassword.length > 0
 
-  const handleToggleEditProfile = () => {
-    if (editingProfile) {
-      // Cancel — revert any unsaved changes
-      setFullName(originalFullName)
-      setUniversity(originalUniversity)
-      setProfileMsg(null)
-    }
-    setEditingProfile((v) => !v)
-  }
-
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !isProfileDirty) return
@@ -161,7 +150,6 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       )
       setOriginalFullName(fullName.trim())
       setOriginalUniversity(university.trim())
-      setEditingProfile(false)
       showProfileMsg('Profile saved.', true)
     } catch {
       showProfileMsg('Could not save profile. Please try again.', false)
@@ -251,16 +239,10 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
           from { opacity: 0; transform: translateY(10px) scale(0.985); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .profile-edit-fab {
-          transition: background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
-        }
-        .profile-edit-fab:hover {
-          transform: scale(1.06);
-        }
       `}</style>
 
       <div
-        className="profile-overlay-panel relative flex w-full max-w-[700px] overflow-hidden rounded-[36px] bg-[#fff8f0]"
+        className="profile-overlay-panel relative flex w-full max-w-[760px] overflow-hidden rounded-[44px] bg-[#fff8f0]"
         style={{
           boxShadow: '0 28px 70px rgba(43,33,24,0.28), 0 1px 0 rgba(255,255,255,0.4) inset',
           fontFamily: "'Work Sans', sans-serif",
@@ -332,89 +314,47 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
             <div className="flex-1 px-7 py-7 sm:px-9">
               {section === 'profile' ? (
                 <>
-                  <div className="mb-5 flex items-center justify-between">
-                    <p className={sectionTitleClass} style={sectionTitleStyle}>Profile</p>
-                    <button
-                      type="button"
-                      onClick={handleToggleEditProfile}
-                      aria-label={editingProfile ? 'Cancel editing' : 'Edit profile'}
-                      className="profile-edit-fab mr-9 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                      style={{
-                        background: editingProfile ? 'rgba(146,64,14,0.1)' : 'rgba(61,90,53,0.1)',
-                        color: editingProfile ? '#92400e' : '#3D5A35',
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                        {editingProfile ? 'close' : 'edit'}
-                      </span>
-                    </button>
-                  </div>
+                  <p className={`${sectionTitleClass} mb-5`} style={sectionTitleStyle}>Profile</p>
 
-                  {editingProfile ? (
-                    <form onSubmit={handleSaveProfile} className="space-y-4">
-                      <div>
-                        <label className={labelClass}>Full Name</label>
-                        <input
-                          type="text"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          placeholder="Your full name"
-                          className={fieldClass}
-                          autoFocus
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>University / College</label>
-                        <input
-                          type="text"
-                          value={university}
-                          onChange={(e) => setUniversity(e.target.value)}
-                          placeholder="e.g. SRCC, FMS, IIM Ahmedabad"
-                          className={fieldClass}
-                        />
-                      </div>
-
-                      {profileMsg ? (
-                        <div
-                          className="rounded-xl px-4 py-2.5 text-[12px]"
-                          style={{
-                            border: `1px solid ${profileMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
-                            background: profileMsg.ok ? 'rgba(61,90,53,0.06)' : 'rgba(146,64,14,0.06)',
-                            color: profileMsg.ok ? '#3D5A35' : '#92400e',
-                          }}
-                        >
-                          {profileMsg.text}
-                        </div>
-                      ) : null}
-
-                      <SubmitButton active={isProfileDirty} disabled={!isProfileDirty || profileSaving}>
-                        {profileSaving ? 'Saving...' : 'Save Changes'}
-                      </SubmitButton>
-                    </form>
-                  ) : (
-                    <div className="space-y-5">
-                      <div>
-                        <p className={labelClass}>Full Name</p>
-                        <p className="text-[13.5px] text-[#453a2a] font-medium">{fullName || '—'}</p>
-                      </div>
-                      <div>
-                        <p className={labelClass}>University / College</p>
-                        <p className="text-[13.5px] text-[#453a2a] font-medium">{university || '—'}</p>
-                      </div>
-                      {profileMsg ? (
-                        <div
-                          className="rounded-xl px-4 py-2.5 text-[12px]"
-                          style={{
-                            border: `1px solid ${profileMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
-                            background: profileMsg.ok ? 'rgba(61,90,53,0.06)' : 'rgba(146,64,14,0.06)',
-                            color: profileMsg.ok ? '#3D5A35' : '#92400e',
-                          }}
-                        >
-                          {profileMsg.text}
-                        </div>
-                      ) : null}
+                  <form onSubmit={handleSaveProfile} className="space-y-4">
+                    <div>
+                      <label className={labelClass}>Full Name</label>
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Your full name"
+                        className={fieldClass}
+                      />
                     </div>
-                  )}
+                    <div>
+                      <label className={labelClass}>University / College</label>
+                      <input
+                        type="text"
+                        value={university}
+                        onChange={(e) => setUniversity(e.target.value)}
+                        placeholder="e.g. SRCC, FMS, IIM Ahmedabad"
+                        className={fieldClass}
+                      />
+                    </div>
+
+                    {profileMsg ? (
+                      <div
+                        className="rounded-xl px-4 py-2.5 text-[12px]"
+                        style={{
+                          border: `1px solid ${profileMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
+                          background: profileMsg.ok ? 'rgba(61,90,53,0.06)' : 'rgba(146,64,14,0.06)',
+                          color: profileMsg.ok ? '#3D5A35' : '#92400e',
+                        }}
+                      >
+                        {profileMsg.text}
+                      </div>
+                    ) : null}
+
+                    <SubmitButton active={isProfileDirty} disabled={!isProfileDirty || profileSaving}>
+                      {profileSaving ? 'Saving...' : 'Save Changes'}
+                    </SubmitButton>
+                  </form>
                 </>
               ) : null}
 
