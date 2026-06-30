@@ -32,10 +32,27 @@ function isEmailProvider(user: User) {
 const fieldClass =
   'profile-input w-full rounded-xl px-4 py-2.5 text-[13px] text-[#1e1b15] outline-none'
 const labelClass = 'mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5c4033]/60'
-const sectionTitleClass = 'mb-5 text-[17px] font-medium text-[#3B2F2F]'
+const sectionTitleClass = 'text-[17px] font-medium text-[#3B2F2F]'
 const sectionTitleStyle = { fontFamily: "'Newsreader', serif" }
-const primaryBtnClass =
-  'profile-btn-primary rounded-full px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#fff8f0] disabled:opacity-55 disabled:cursor-not-allowed'
+
+function SubmitButton({ active, disabled, children }: { active: boolean; disabled: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      type="submit"
+      disabled={disabled}
+      className={`rounded-full px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] transition-all duration-200 disabled:cursor-not-allowed ${
+        active ? 'profile-btn-primary text-[#fff8f0]' : ''
+      }`}
+      style={
+        !active
+          ? { background: 'rgba(92,64,51,0.10)', color: 'rgba(92,64,51,0.4)' }
+          : undefined
+      }
+    >
+      {children}
+    </button>
+  )
+}
 
 export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const router = useRouter()
@@ -46,6 +63,9 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   // Profile fields
   const [fullName, setFullName] = useState('')
   const [university, setUniversity] = useState('')
+  const [originalFullName, setOriginalFullName] = useState('')
+  const [originalUniversity, setOriginalUniversity] = useState('')
+  const [editingProfile, setEditingProfile] = useState(false)
   const [profileLoading, setProfileLoading] = useState(true)
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState<{ text: string; ok: boolean } | null>(null)
@@ -77,8 +97,12 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
         const snap = await getDoc(doc(db, 'profiles', user.uid))
         if (snap.exists()) {
           const data = snap.data()
-          setFullName(typeof data.fullName === 'string' ? data.fullName : '')
-          setUniversity(typeof data.university === 'string' ? data.university : '')
+          const loadedName = typeof data.fullName === 'string' ? data.fullName : ''
+          const loadedUniversity = typeof data.university === 'string' ? data.university : ''
+          setFullName(loadedName)
+          setUniversity(loadedUniversity)
+          setOriginalFullName(loadedName)
+          setOriginalUniversity(loadedUniversity)
         }
       } finally {
         setProfileLoading(false)
@@ -108,9 +132,25 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     passwordMsgTimer.current = setTimeout(() => setPasswordMsg(null), 5000)
   }
 
+  const isProfileDirty =
+    fullName.trim() !== originalFullName.trim() || university.trim() !== originalUniversity.trim()
+
+  const isPasswordReady =
+    currentPassword.length > 0 && newPassword.length >= 6 && confirmPassword.length > 0
+
+  const handleToggleEditProfile = () => {
+    if (editingProfile) {
+      // Cancel — revert any unsaved changes
+      setFullName(originalFullName)
+      setUniversity(originalUniversity)
+      setProfileMsg(null)
+    }
+    setEditingProfile((v) => !v)
+  }
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
+    if (!user || !isProfileDirty) return
     if (!fullName.trim()) { showProfileMsg('Full name cannot be empty.', false); return }
     setProfileSaving(true)
     try {
@@ -119,6 +159,9 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
         { fullName: fullName.trim(), university: university.trim(), updatedAt: serverTimestamp() },
         { merge: true }
       )
+      setOriginalFullName(fullName.trim())
+      setOriginalUniversity(university.trim())
+      setEditingProfile(false)
       showProfileMsg('Profile saved.', true)
     } catch {
       showProfileMsg('Could not save profile. Please try again.', false)
@@ -129,9 +172,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !user.email) return
-    if (!currentPassword) { showPasswordMsg('Enter your current password.', false); return }
-    if (newPassword.length < 6) { showPasswordMsg('New password must be at least 6 characters.', false); return }
+    if (!user || !user.email || !isPasswordReady) return
     if (newPassword !== confirmPassword) { showPasswordMsg('Passwords do not match.', false); return }
     setPasswordSaving(true)
     try {
@@ -210,6 +251,12 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
           from { opacity: 0; transform: translateY(10px) scale(0.985); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        .profile-edit-fab {
+          transition: background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+        }
+        .profile-edit-fab:hover {
+          transform: scale(1.06);
+        }
       `}</style>
 
       <div
@@ -285,53 +332,95 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
             <div className="flex-1 px-7 py-7 sm:px-9">
               {section === 'profile' ? (
                 <>
-                  <p className={sectionTitleClass} style={sectionTitleStyle}>Profile</p>
-
-                  <form onSubmit={handleSaveProfile} className="space-y-4">
-                    <div>
-                      <label className={labelClass}>Full Name</label>
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Your full name"
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>University / College</label>
-                      <input
-                        type="text"
-                        value={university}
-                        onChange={(e) => setUniversity(e.target.value)}
-                        placeholder="e.g. SRCC, FMS, IIM Ahmedabad"
-                        className={fieldClass}
-                      />
-                    </div>
-
-                    {profileMsg ? (
-                      <div
-                        className="rounded-xl px-4 py-2.5 text-[12px]"
-                        style={{
-                          border: `1px solid ${profileMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
-                          background: profileMsg.ok ? 'rgba(61,90,53,0.06)' : 'rgba(146,64,14,0.06)',
-                          color: profileMsg.ok ? '#3D5A35' : '#92400e',
-                        }}
-                      >
-                        {profileMsg.text}
-                      </div>
-                    ) : null}
-
-                    <button type="submit" disabled={profileSaving} className={primaryBtnClass}>
-                      {profileSaving ? 'Saving...' : 'Save Changes'}
+                  <div className="mb-5 flex items-center justify-between">
+                    <p className={sectionTitleClass} style={sectionTitleStyle}>Profile</p>
+                    <button
+                      type="button"
+                      onClick={handleToggleEditProfile}
+                      aria-label={editingProfile ? 'Cancel editing' : 'Edit profile'}
+                      className="profile-edit-fab flex h-8 w-8 items-center justify-center rounded-full"
+                      style={{
+                        background: editingProfile ? 'rgba(146,64,14,0.1)' : 'rgba(61,90,53,0.1)',
+                        color: editingProfile ? '#92400e' : '#3D5A35',
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+                        {editingProfile ? 'close' : 'edit'}
+                      </span>
                     </button>
-                  </form>
+                  </div>
+
+                  {editingProfile ? (
+                    <form onSubmit={handleSaveProfile} className="space-y-4">
+                      <div>
+                        <label className={labelClass}>Full Name</label>
+                        <input
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="Your full name"
+                          className={fieldClass}
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>University / College</label>
+                        <input
+                          type="text"
+                          value={university}
+                          onChange={(e) => setUniversity(e.target.value)}
+                          placeholder="e.g. SRCC, FMS, IIM Ahmedabad"
+                          className={fieldClass}
+                        />
+                      </div>
+
+                      {profileMsg ? (
+                        <div
+                          className="rounded-xl px-4 py-2.5 text-[12px]"
+                          style={{
+                            border: `1px solid ${profileMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
+                            background: profileMsg.ok ? 'rgba(61,90,53,0.06)' : 'rgba(146,64,14,0.06)',
+                            color: profileMsg.ok ? '#3D5A35' : '#92400e',
+                          }}
+                        >
+                          {profileMsg.text}
+                        </div>
+                      ) : null}
+
+                      <SubmitButton active={isProfileDirty} disabled={!isProfileDirty || profileSaving}>
+                        {profileSaving ? 'Saving...' : 'Save Changes'}
+                      </SubmitButton>
+                    </form>
+                  ) : (
+                    <div className="space-y-5">
+                      <div>
+                        <p className={labelClass}>Full Name</p>
+                        <p className="text-[13.5px] text-[#453a2a] font-medium">{fullName || '—'}</p>
+                      </div>
+                      <div>
+                        <p className={labelClass}>University / College</p>
+                        <p className="text-[13.5px] text-[#453a2a] font-medium">{university || '—'}</p>
+                      </div>
+                      {profileMsg ? (
+                        <div
+                          className="rounded-xl px-4 py-2.5 text-[12px]"
+                          style={{
+                            border: `1px solid ${profileMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(146,64,14,0.2)'}`,
+                            background: profileMsg.ok ? 'rgba(61,90,53,0.06)' : 'rgba(146,64,14,0.06)',
+                            color: profileMsg.ok ? '#3D5A35' : '#92400e',
+                          }}
+                        >
+                          {profileMsg.text}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                 </>
               ) : null}
 
               {section === 'account' ? (
                 <>
-                  <p className={sectionTitleClass} style={sectionTitleStyle}>Account</p>
+                  <p className={`${sectionTitleClass} mb-5`} style={sectionTitleStyle}>Account</p>
                   <div className="space-y-5">
                     <div>
                       <p className={labelClass}>Email Address</p>
@@ -356,7 +445,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
 
               {section === 'security' && emailProvider ? (
                 <>
-                  <p className={sectionTitleClass} style={sectionTitleStyle}>Security</p>
+                  <p className={`${sectionTitleClass} mb-5`} style={sectionTitleStyle}>Security</p>
                   <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>
                       <label className={labelClass}>Current Password</label>
@@ -405,9 +494,9 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                       </div>
                     ) : null}
 
-                    <button type="submit" disabled={passwordSaving} className={primaryBtnClass}>
+                    <SubmitButton active={isPasswordReady} disabled={!isPasswordReady || passwordSaving}>
                       {passwordSaving ? 'Updating...' : 'Update Password'}
-                    </button>
+                    </SubmitButton>
                   </form>
                 </>
               ) : null}
