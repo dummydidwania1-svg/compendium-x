@@ -9994,10 +9994,7 @@
   "company": "Kearney",
   "round": "Principal",
   "prompt": "We need to develop an online portal to rate actors and actresses in Bollywood. Develop a framework to rate them.",
-  "abbreviations": [
-    { "short": "IMDb", "full": "Internet Movie Database" },
-    { "short": "IIFA", "full": "International Indian Film Academy" }
-  ],
+  "abbreviations": ["IMDb: Internet Movie Database", "IIFA: International Indian Film Academy"],
   "frameworkTree": {
     "nodes": {
       "rating": { "id": "rating", "label": "Rating", "tone": "root", "children": ["movies", "recognition", "personality"] },
@@ -10054,15 +10051,14 @@
     "defaultExpanded": ["churn", "payment", "time", "otp"],
     "defaultFocusedId": "info_relay",
     "notes": [
-      { "title": "Clarifying Questions", "items": ["What clothes and target market?", "When did the problem start?", "Decline uniform across modes?", "Are competitors facing this?", "Do we use a third party?"] },
+      { "title": "Questions", "items": ["What clothes and target market?", "When did the problem start?", "Decline uniform across modes?", "Are competitors facing this?", "Do we use a third party?"] },
       { "title": "Keep In Mind", "items": ["Map every step of the payment journey."] },
-      { "title": "Brownie Points", "items": ["Isolating the OTP delay as company-specific."] },
-      { "title": "Recommendations", "items": ["Change the payment gateway", "Improve the efficiency of the current gateway"] }
+      { "title": "Brownie Points", "items": ["Isolating the OTP delay as company-specific."] }
     ]
   },
   "additionalFrameworkTrees": [
     {
-      "title": "What should we do",
+      "label": "What Should We Do",
       "nodes": {
         "solution": { "id": "solution", "label": "What Should We Do", "tone": "root", "children": ["stick", "switch", "build"] },
         "stick": { "id": "stick", "label": "Stick With Gateway", "tone": "branch", "children": ["improve", "penalties", "commission", "disclaimer"] },
