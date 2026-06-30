@@ -10075,9 +10075,790 @@
   ],
   "framework": "Candidate: Interesting problem. Before I get into the analysis, I would like to understand our client a little better. What kind of clothes do they sell, and who is the target market?\n\nInterviewer: Our client sells jeans for both men and women, and the target market is everyone in the age bracket of 18 to 50.\n\nCandidate: Got it. A few more clarifiers. Since when have we been facing this problem? Is the churn uniform across modes, and have our competitors reported anything similar? For context, churn rate here is the share of customers who stop using the product over a given period.\n\nInterviewer: This has been the case ever since the website launched. You can consider the churn high enough that we need to act on it, and you do not need to size it. Our competitors have reported no such issues.\n\nCandidate: Sure. What are the modes of payment the website offers, and is the decline uniform across all of them? Also, is it fair to assume we use a third-party payment gateway?\n\nInterviewer: We offer credit and debit cards, PayTM and Google Pay. The decline is fairly uniform across all modes. And yes, we have a partnership with a third party.\n\nCandidate: Understood. I would like to analyse the high churn by breaking the payment journey into two stages, the stage of directing the user to the payment gateway and the stage of actually making the payment.\n\nIn the first stage, directing the user to the gateway, I would look at:\n1) Obstruction, such as banners appearing on the screen\n2) Convenience, mainly the time taken to load the page\n3) Security, whether the connection is secure, usually shown by a lock icon in the address bar\n4) Success rate, the number of times the redirection itself fails\n\nIn the second stage, making the payment, I would look at:\n1) Interface, how easy it is to navigate and whether all options are clearly displayed\n2) Time, the time taken to send the OTP and to move between pages\n3) Additional charges, whether any extra charges show up at this stage\n\nInterviewer: That covers it well. We have found that the time taken to send the OTP is about 3 minutes.\n\nCandidate: From my own experience, 3 minutes feels like a long time for an OTP. To judge whether that is really the issue, do we know how long other websites take?\n\nInterviewer: Yes. Other websites take 5 to 10 seconds.\n\nCandidate: That is a big gap. The time taken to send the OTP can be split into two parts:\n1) The information being sent from our payment partner to the wallet or bank\n2) The OTP being generated and sent to the payee\n\nSince other websites manage this in seconds, I think it is fair to assume the delay sits on our partner's side, in relaying the information to the wallet or bank. Our competitors are not seeing this, so it points to something specific to our own setup rather than the payment mode itself.\n\nInterviewer: Correct. So what do you think we should do?\n\nCandidate: I see a few ways to improve the situation. We could stick with the same payment gateway and:\n1) Push them to improve their efficiency\n2) Recover the lost sales from the third party through penalties\n3) Introduce a commission-based model that rewards better performance\n4) In the interim, add a short note telling customers the OTP may take a little time and asking them to be patient\n\nAlternatively, we could move to a different third party, or build our own payment gateway. Both of those should only be done after a proper cost-benefit analysis.\n\nInterviewer: Great. We can close the case here.\n\nLeft Me High and Dry Framework & Recommendations\nLOST SALES DUE TO HIGH CHURN RATE OF PAYMENT GATEWAY\nClarifying Questions: What kind of clothes and who is the target market? When did the problem start? Is the decline uniform across payment modes? Are competitors facing the same issue? Do we use a third-party gateway?\nBrownie Points: Isolating the OTP delay as a company-specific problem rather than an industry-wide one.\nKeep In Mind: Map every step of the payment journey to build an exhaustive list of drop-off points.\nRECOMMENDATIONS:\nChange the payment gateway\nImprove the efficiency of the current gateway"
 },
-
-
-
+{
+  "id": 43,
+  "docId": "case-43",
+  "title": "Zero Dark Thirty",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Unconventional",
+  "company": "Dalberg",
+  "round": "Buddy",
+  "prompt": "You need to advise the government on how to reduce terrorism in India.",
+  "frameworkTree": {
+    "nodes": {
+      "terrorism": { "id": "terrorism", "label": "Terrorism", "tone": "root", "children": ["preventive-measures", "handling-the-situation"] },
+      "preventive-measures": { "id": "preventive-measures", "label": "Preventive Measures", "tone": "branch", "children": ["geographic-classification", "pattern-analysis", "prediction-and-training", "penalties"] },
+      "geographic-classification": { "id": "geographic-classification", "label": "Geographic Classification", "tone": "branch", "children": ["domestic-terrorists", "international-terrorists"] },
+      "domestic-terrorists": { "id": "domestic-terrorists", "label": "Domestic Terrorists", "tone": "branch", "children": ["gun-regulation", "inter-state-security", "military-deployment"] },
+      "gun-regulation": { "id": "gun-regulation", "label": "Gun Regulation", "tone": "leaf", "children": [] },
+      "inter-state-security": { "id": "inter-state-security", "label": "Inter-State Security", "tone": "leaf", "children": [] },
+      "military-deployment": { "id": "military-deployment", "label": "Military Deployment", "tone": "leaf", "children": [] },
+      "international-terrorists": { "id": "international-terrorists", "label": "International Terrorists", "tone": "branch", "children": ["mode-of-entry"] },
+      "mode-of-entry": { "id": "mode-of-entry", "label": "Mode Of Entry", "tone": "branch", "children": ["location-identification", "army-deployment"] },
+      "location-identification": { "id": "location-identification", "label": "Location Identification", "tone": "leaf", "children": [] },
+      "army-deployment": { "id": "army-deployment", "label": "Army Deployment", "tone": "leaf", "children": [] },
+      "pattern-analysis": { "id": "pattern-analysis", "label": "Pattern Analysis", "tone": "branch", "children": ["festivals", "crowded-places"] },
+      "festivals": { "id": "festivals", "label": "Festivals", "tone": "leaf", "children": [] },
+      "crowded-places": { "id": "crowded-places", "label": "Crowded Places", "tone": "leaf", "children": [] },
+      "prediction-and-training": { "id": "prediction-and-training", "label": "Prediction And Training", "tone": "branch", "children": ["special-force", "training"] },
+      "special-force": { "id": "special-force", "label": "Special Force", "tone": "leaf", "children": [] },
+      "training": { "id": "training", "label": "Training", "tone": "leaf", "children": [] },
+      "penalties": { "id": "penalties", "label": "Penalties", "tone": "leaf", "children": [] },
+      "handling-the-situation": { "id": "handling-the-situation", "label": "Handling The Situation", "tone": "branch", "children": ["area-identification", "regulatory-barriers", "no-media-coverage"] },
+      "area-identification": { "id": "area-identification", "label": "Area Identification", "tone": "leaf", "children": [] },
+      "regulatory-barriers": { "id": "regulatory-barriers", "label": "Regulatory Barriers", "tone": "leaf", "children": [] },
+      "no-media-coverage": { "id": "no-media-coverage", "label": "No Media Coverage", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["terrorism", "preventive-measures", "geographic-classification"],
+    "defaultFocusedId": "domestic-terrorists",
+    "notes": [
+      { "title": "Questions", "items": ["What counts as terrorism?", "What target and timeline?", "Any budgetary constraints?"] },
+      { "title": "Keep In Mind", "items": ["Pick one structure and fold others in"] },
+      { "title": "Brownie Points", "items": ["Noting that a strong response procedure deters future attacks", "Segmenting terrorists into domestic and international"] }
+    ]
+  },
+  "framework": "Candidate: Sure. What exactly do we mean by terrorism? Are we talking about cyber terrorism, bomb blasts, and the like?\nInterviewer: By terrorism, we mean the number of bomb blasts and shootings that take place in India.\nCandidate: Got it. By how much do we have to reduce terrorism, and by when do we need to achieve this goal? Are there any budgetary constraints I should be aware of?\nInterviewer: You need to reduce terrorism by as much as possible. There is no fixed timeline, and there are no budgetary constraints.\nCandidate: Alright. We can look to reduce terrorism in two stages: preventive measures, and handling the situation, for example defusing bombs based on tips.\nUnder preventive measures, I would start by segmenting on the basis of geography and following different strategies for Indian and overseas terrorists.\nFor terrorists within India, we can look at:\n1) Banning or regulating guns and ammunition.\n2) Better inter-state security by checking at borders.\n3) Deploying the military at domestic airports and prominent buildings, in addition to regular security.\nFor international terrorists, the key is the mode of entry. Airports, land and sea, all the places through which international militants can enter, must be strictly guarded. This requires:\n1) Identifying these locations.\n2) Deploying the army at them.\nNext, we can analyse the pattern of attacks:\n1) Festivals: since most attacks happen around festival times, the police must be on high alert during such periods.\n2) Places: crowded markets, malls and hotels are prone to attacks and must be well protected.\nWe can also work on prediction and training:\n1) Special force: a dedicated team must exist that works solely on monitoring and anticipating terrorist activities.\n2) Training: the military should be well prepared in terms of training and equipment to handle the situation better.\nFinally, extremely harsh penalties must be imposed on such activities.\nIt is important to note that sometimes a single attack comprises multiple bomb blasts, so we must also look at how situations are handled. A good response procedure in place will also discourage future terrorism.\nUnder handling the situation, we can look at:\n1) Identifying the key locations near the epicentre of the attack, issuing a high alert, and evacuating those areas.\n2) Reducing regulatory barriers and the permissions required, so that immediate action can be taken.\n3) Ensuring that no media coverage is allowed during terrorist attacks.\nIn the long run, we can also identify ways to reduce the number of terrorists and cut funding to notorious organisations.\nInterviewer: Good job.\n\nZero Dark Thirty Framework\nREDUCE TERRORISM IN INDIA\nClarifying Questions: What counts as terrorism? What target and timeline? Any budgetary constraints?\nBrownie Points: Noting that a strong response procedure deters future attacks. Segmenting terrorists into domestic and international.\nKeep In Mind: Pick one structure and fold others in."
+},
+{
+  "id": 44,
+  "docId": "case-44",
+  "title": "Ups and Downs",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Unconventional",
+  "company": "Bain & Company",
+  "round": "Manager",
+  "prompt": "Your client owns a theme park. The client is concerned about the increasing wait time for its rides and has hired you to look into it.",
+  "frameworkTree": {
+    "nodes": {
+      "waiting-period": { "id": "waiting-period", "label": "Waiting Period", "tone": "root", "children": ["waiting-time", "waiting-experience"] },
+      "waiting-time": { "id": "waiting-time", "label": "Waiting Time", "tone": "branch", "children": ["number-of-people", "time-per-ride", "number-of-seats"] },
+      "number-of-people": { "id": "number-of-people", "label": "Number Of People", "tone": "branch", "children": ["managing-demand", "alternate-attractions", "number-of-hours"] },
+      "managing-demand": { "id": "managing-demand", "label": "Managing Demand", "tone": "branch", "children": ["additional-fee", "relocate-attraction", "cross-promote-rides", "height-age-limit"] },
+      "additional-fee": { "id": "additional-fee", "label": "Additional Fee", "tone": "leaf", "children": [] },
+      "relocate-attraction": { "id": "relocate-attraction", "label": "Relocate Attraction", "tone": "leaf", "children": [] },
+      "cross-promote-rides": { "id": "cross-promote-rides", "label": "Cross-Promote Rides", "tone": "leaf", "children": [] },
+      "height-age-limit": { "id": "height-age-limit", "label": "Height Or Age Limit", "tone": "leaf", "children": [] },
+      "alternate-attractions": { "id": "alternate-attractions", "label": "Alternate Attractions", "tone": "branch", "children": ["nine-d-cinema", "new-thrill-rides", "another-coaster"] },
+      "nine-d-cinema": { "id": "nine-d-cinema", "label": "9D Cinema", "tone": "leaf", "children": [] },
+      "new-thrill-rides": { "id": "new-thrill-rides", "label": "New Thrill Rides", "tone": "leaf", "children": [] },
+      "another-coaster": { "id": "another-coaster", "label": "Another Roller Coaster", "tone": "leaf", "children": [] },
+      "number-of-hours": { "id": "number-of-hours", "label": "Number Of Hours", "tone": "leaf", "children": [] },
+      "time-per-ride": { "id": "time-per-ride", "label": "Time Taken Per Ride", "tone": "branch", "children": ["boarding", "ride-time", "de-boarding", "idle-time"] },
+      "boarding": { "id": "boarding", "label": "Boarding", "tone": "branch", "children": ["pre-brief", "staff-training", "centralised-belts"] },
+      "pre-brief": { "id": "pre-brief", "label": "Pre-Brief Next Group", "tone": "leaf", "children": [] },
+      "staff-training": { "id": "staff-training", "label": "Staff Training", "tone": "leaf", "children": [] },
+      "centralised-belts": { "id": "centralised-belts", "label": "Centralised Seat Belts", "tone": "leaf", "children": [] },
+      "ride-time": { "id": "ride-time", "label": "Ride Time", "tone": "branch", "children": ["increase-speed", "reduce-length"] },
+      "increase-speed": { "id": "increase-speed", "label": "Increase Speed", "tone": "leaf", "children": [] },
+      "reduce-length": { "id": "reduce-length", "label": "Reduce Length", "tone": "leaf", "children": [] },
+      "de-boarding": { "id": "de-boarding", "label": "De-Boarding", "tone": "branch", "children": ["staff-assistance", "opposite-side-exit"] },
+      "staff-assistance": { "id": "staff-assistance", "label": "Staff Assistance", "tone": "leaf", "children": [] },
+      "opposite-side-exit": { "id": "opposite-side-exit", "label": "Opposite-Side Exit", "tone": "leaf", "children": [] },
+      "idle-time": { "id": "idle-time", "label": "Idle Time", "tone": "branch", "children": ["staff-rotation", "automated-checks"] },
+      "staff-rotation": { "id": "staff-rotation", "label": "Staff Rotation", "tone": "leaf", "children": [] },
+      "automated-checks": { "id": "automated-checks", "label": "Automated Checks", "tone": "leaf", "children": [] },
+      "number-of-seats": { "id": "number-of-seats", "label": "Number Of Seats", "tone": "branch", "children": ["capacity", "occupancy"] },
+      "capacity": { "id": "capacity", "label": "Capacity", "tone": "leaf", "children": [] },
+      "occupancy": { "id": "occupancy", "label": "Occupancy", "tone": "leaf", "children": [] },
+      "waiting-experience": { "id": "waiting-experience", "label": "Waiting Experience", "tone": "branch", "children": ["digital-queueing", "token-system", "representative-queueing", "in-queue-attractions"] },
+      "digital-queueing": { "id": "digital-queueing", "label": "Digital Queueing", "tone": "leaf", "children": [] },
+      "token-system": { "id": "token-system", "label": "Token System", "tone": "leaf", "children": [] },
+      "representative-queueing": { "id": "representative-queueing", "label": "Representative Queueing", "tone": "leaf", "children": [] },
+      "in-queue-attractions": { "id": "in-queue-attractions", "label": "In-Queue Attractions", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["waiting-period", "waiting-time", "time-per-ride", "boarding"],
+    "defaultFocusedId": "boarding",
+    "notes": [
+      { "title": "Questions", "items": ["What are the different attractions?", "What is the exact issue?", "Is there a target or timeline?", "Are there any budget constraints?"] },
+      { "title": "Keep In Mind", "items": ["Break wait time into people, turnover, and seats."] },
+      { "title": "Brownie Points", "items": ["Digital queueing", "Token system", "Making the wait time enjoyable"] }
+    ]
+  },
+  "visualisations": [
+    { "title": "Waiting Time", "type": "formula", "lhs": "Waiting Time", "rhs": "(People in Queue x Turnover Time per Ride) / Number of Seats" }
+  ],
+  "framework": "Candidate: Okay. I would like to know a little more about the theme park. Where is it located, and what are the different attractions in the park?\n\nInterviewer: The park is located in Pune. It has water rides as well as land rides, and there are also food stalls placed around the park.\n\nCandidate: Got it. What exactly is the issue? Do we need to bring down the wait time for both the water rides and the land rides?\n\nInterviewer: In fact, the complaints have specifically been about the park's roller coaster. There are long queues for it at all times.\n\nCandidate: That is unfortunate. Do we have a specific target for how much we want to reduce the waiting time, and by when? Also, are there any budget constraints I should keep in mind?\n\nInterviewer: There are no such targets. You can look at both short term and long term solutions, and there are no budget constraints.\n\nCandidate: Let us see what we can do. I will divide my approach into two parts: reducing the actual waiting time for the roller coaster, and making the waiting experience itself better.\n\nLet me start with the waiting time. The waiting time equals the number of people in the queue multiplied by the turnover time per ride, divided by the number of seats on the roller coaster. So I can pull three levers here: the number of people, the time taken per ride, and the number of seats.\n\nTo reduce the number of people in the queue, I would first look at managing demand. We could charge an additional fee since this is a top attraction. We could relocate the attraction, though that may not be feasible given the nature of the ride. We could promote and market the other attractions well so that footfall is spread more evenly across rides. We could also raise the height or age requirement. On top of that, we could introduce alternate attractions, such as a 9D cinema, new thrill rides, or even a second roller coaster. Finally, the operating hours of both the park and the roller coaster can be extended so that demand is dispersed across the day.\n\nInterviewer: We can consider building another roller coaster. Move on to the next factor.\n\nCandidate: Sure. Next is the time taken per ride, which I would break into four stages: boarding, the ride itself, de-boarding, and idle time.\n\nFor boarding, we can brief the next set of people about the safety measures and how to fasten their seat belts while the coaster is still in use, which saves time. Staff can be properly trained so there are no delays. Some parks have also introduced centralised fastening of seat belts, which removes the need to check each person individually.\n\nFor the ride itself, we can increase the speed of the coaster if it is safe to do so, or reduce its length as long as the overall experience is not affected much.\n\nFor de-boarding, trained staff should help people get off smoothly, and de-boarding can be done from the opposite side of the coaster to reduce crowding and keep the process efficient.\n\nFor idle time, a routine check is usually carried out every hour or so, and staff are given short breaks. Proper rotation of staff would limit this idle time, and the routine check should be organised and automated as much as possible, with a checklist to help the staff move quicker.\n\nInterviewer: Great suggestions. What would you like to look at next?\n\nCandidate: The number of seats on the ride. We can increase the capacity by adding more seats and upgrading the machinery to support them. We can also improve occupancy: if broken seats are reducing the usable count, those should be repaired on priority.\n\nInterviewer: We are done with the first part. You can go ahead with the second part.\n\nCandidate: To make the waiting experience better, I would introduce a few things. A digital queue, where an application lets people book the ride and wait virtually. A token system, so people hold a token instead of physically standing in line. A representative option, where one person can stand in the queue on behalf of their companions, which also reduces crowding. And attractions around the queue, such as parades and people in costumes, so guests can enjoy themselves while they wait.\n\nInterviewer: Not required. Let us close the case here.\n\nUPS AND DOWNS FRAMEWORK & RECOMMENDATIONS\n\nREDUCING WAIT TIME OF RIDES\n\nClarifying Questions: What are the different attractions? What is the exact issue? Is there a target or timeline? Are there any budget constraints?\n\nBrownie Points: Digital queueing. Token system. Making the wait time enjoyable.\n\nKeep In Mind: Break wait time into people, turnover, and seats."
+},
+{
+  "id": 45,
+  "docId": "case-45",
+  "title": "Young Poets Society",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Unconventional",
+  "company": "BCG",
+  "round": "Partner",
+  "prompt": "We are working with Teach For India for their flagship programme, under which they hire Fellows for a 2-year time period. They have been facing a problem in recruitment in terms of not getting enough candidates. They want you to draft a Campus Recruitment Strategy for them.",
+  "frameworkTree": {
+    "nodes": {
+      "application-count": { "id": "application-count", "label": "Application Count", "tone": "root", "children": ["awareness", "interest"] },
+      "awareness": { "id": "awareness", "label": "Awareness", "tone": "support", "children": [] },
+      "interest": { "id": "interest", "label": "Interest", "tone": "branch", "children": ["recruitment-system", "opportunity-match"] },
+      "recruitment-system": { "id": "recruitment-system", "label": "Recruitment System", "tone": "branch", "children": ["time-commitment", "corporate-structure", "compensation", "placement-timing"] },
+      "time-commitment": { "id": "time-commitment", "label": "Time Commitment", "tone": "leaf", "children": [] },
+      "corporate-structure": { "id": "corporate-structure", "label": "Corporate Structure", "tone": "leaf", "children": [] },
+      "compensation": { "id": "compensation", "label": "Compensation", "tone": "leaf", "children": [] },
+      "placement-timing": { "id": "placement-timing", "label": "Placement Timing", "tone": "leaf", "children": [] },
+      "opportunity-match": { "id": "opportunity-match", "label": "Opportunity Match", "tone": "branch", "children": ["perception", "preference"] },
+      "perception": { "id": "perception", "label": "Perception", "tone": "leaf", "children": [] },
+      "preference": { "id": "preference", "label": "Preference", "tone": "branch", "children": ["disinterested", "uncertain", "interested-willing"] },
+      "disinterested": { "id": "disinterested", "label": "Disinterested", "tone": "leaf", "children": [] },
+      "uncertain": { "id": "uncertain", "label": "Uncertain", "tone": "leaf", "children": [] },
+      "interested-willing": { "id": "interested-willing", "label": "Interested & Willing", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["application-count", "interest", "opportunity-match", "preference"],
+    "defaultFocusedId": "uncertain",
+    "notes": [
+      { "title": "Questions", "items": ["What does the role involve?", "Which campuses are we targeting?", "What are the exit opportunities?", "What is the implementation timeframe?"] },
+      { "title": "Keep In Mind", "items": ["Reflect the social-sector angle at every step.", "Target the uncertain fence-sitters, not the decided."] },
+      { "title": "Brownie Points", "items": ["Asking about exit opportunities", "Using social clubs as an interest indicator", "Proposing internships and volunteering as entry paths"] }
+    ]
+  },
+  "additionalFrameworkTrees": [
+    {
+      "label": "Increasing Applications",
+      "nodes": {
+        "increase-applications": { "id": "increase-applications", "label": "Increase Applications", "tone": "root", "children": ["colleges-visited", "recruits-per-college"] },
+        "colleges-visited": { "id": "colleges-visited", "label": "Colleges Visited", "tone": "branch", "children": ["college-potential"] },
+        "college-potential": { "id": "college-potential", "label": "College Potential", "tone": "branch", "children": ["final-year-base", "social-wings", "course-diversity", "non-corporate-paths", "alumni-trends"] },
+        "final-year-base": { "id": "final-year-base", "label": "Final-Year Base", "tone": "leaf", "children": [] },
+        "social-wings": { "id": "social-wings", "label": "Social Wings", "tone": "leaf", "children": [] },
+        "course-diversity": { "id": "course-diversity", "label": "Course Diversity", "tone": "leaf", "children": [] },
+        "non-corporate-paths": { "id": "non-corporate-paths", "label": "Non-Corporate Paths", "tone": "leaf", "children": [] },
+        "alumni-trends": { "id": "alumni-trends", "label": "Alumni & Trends", "tone": "leaf", "children": [] },
+        "recruits-per-college": { "id": "recruits-per-college", "label": "Recruits Per College", "tone": "support", "children": [] }
+      },
+      "defaultExpanded": ["increase-applications", "colleges-visited", "college-potential"],
+      "defaultFocusedId": "social-wings",
+      "notes": []
+    }
+  ],
+  "framework": "Interviewer: Let's get started.\nCandidate: Sure. I'd like to start by understanding the situation better. What exactly does the role involve, and are there any course or college restrictions on eligibility? Is this problem specific to our client, and since when have they been facing it?\nInterviewer: The selected fellows go on the ground to teach students in primary and middle classes who go to government schools and live in slums. Teach For India is fine with students coming in from all undergraduate courses and recruits from all colleges across Tier-1 cities. We don't know about other companies, but this has been true for us since our recruiting began, around four years ago.\nCandidate: Understood. I'd like to understand the benefits associated with the role, both in terms of the salary and other perks. Additionally, what kind of exit opportunities do fellows usually get? Also, are there other such social fellowship opportunities available?\nInterviewer: Being a social organisation, Teach For India offers a stipend of around 20,000 rupees per month, which is competitive for similar fellowships. Although other jobs pay much more, that is acceptable to us because of the inherent type of individuals we wish to attract. Exits are quite prestigious, with graduating fellows joining top global MBA programmes and corporates. About other alternatives, there aren't many with the repute that Teach For India offers.\nCandidate: Got it. Should we focus on the recruitment strategy, or should we also consider changes to the programme structure that might make it more attractive? Also, what is the timeframe of implementation that I should keep in mind?\nInterviewer: Let's keep the programme structure out of scope and start off with solutions that can be implemented soon, even for the next round.\nCandidate: Alright. Ultimately, since we need enough selections, I would like to dive into the recruitment process. First, we would hold a Pre-Placement Talk to inform students about our opportunity, then invite applications and conduct some form of shortlisting through CVs, tests, or essays. Then, we would hold Group Discussions, Personal Interviews, or other forms of rounds to identify the right candidates. Lastly, we would have to retain the students we select, since they might choose another offer. Have I laid the process out correctly, and do we know which step is becoming a hurdle?\nInterviewer: The process seems fine. We are not receiving enough applications in the first place.\nCandidate: For a student to apply, there are two major requirements: awareness and interest. Can I know how we spread the word about the opportunity?\nInterviewer: All students are informed by their Placement Cells of the opportunity, so interest seems to be lacking.\nCandidate: This gap can arise from two sources: a mismatch between students and the opportunity, and the system. Students might not be drawn toward such social roles in general. As far as the system is concerned, the time commitment in terms of the number and intensity of the rounds, the lack of corporate structures in the role, or the limited compensation might be issues. The system-related barriers might involve our opportunity coming in late into the placement season, being categorised as a lower grade, or clashing with other firms in terms of when the process is taking place.\nInterviewer: Why would students not be drawn toward social roles?\nCandidate: There are preference-driven factors and perception-driven factors at play here. In terms of preference, students can have three types of views: disinterested, uncertain about committing full-time, and strongly interested and willing. The first is not part of our relevant target group due to the misalignment of goals, and the last would be applying even in status quo. We should focus on the middle bucket, as they are the fence-sitters who can be tapped if they are convinced about the opportunity. On the other hand, perception also plays a role, as familial or social pressures might make students unwilling to pursue the role.\nInterviewer: Fair enough. What can we do about this then?\nCandidate: The basic formula I would like to work with is the number of colleges visited multiplied by the recruits per college. While the former might require more resources from our side, the latter might call for a revision in our selection process.\nInterviewer: Suppose we want to focus on the former. How will you identify which colleges have the maximum potential for applications?\nCandidate: Here, I believe that the number of students in their final year is a base to start off with. To this base, we can apply various other parameters to measure the potential more accurately.\nInterviewer: Okay, so what are the other parameters which are relevant here?\nCandidate: Naturally, we will have to look for substitutes which might indicate a higher preference, due to a lack of direct indicators. These can include the presence of social wings, societies, and cells; the diversity in courses at the college; the percentage of students who opt for non-corporate paths after their degree; and the past trends of social fellowship applications, along with the presence of alumni in a similar space, if available.\nInterviewer: Great. One last question: what do you think we can do to increase such applications in the long term?\nCandidate: I believe the experience that this fellowship offers is immensely valuable and enriching for those interested in pursuing a relevant career path, given the grassroot interaction and impact it offers. Thus, if students are exposed to it, a good number will be interested in it full-time. I foresee three ways to facilitate this interaction. The first would be launching a summer internship programme and ultimately looking at potential full-time recruits, similar to how a Pre-Placement Offer works. We can establish Teach For India Chapters in various colleges, where the cell would generate awareness about the organisation and take up local efforts on similar lines. Lastly, we can also look at an annual system of volunteering, where a volunteer is required to fulfil a defined number of hours to complete their tenure. Through these, we should have a larger funnel at the entry point.\nInterviewer: Brilliant, thank you for your suggestions.\n\nYoung Poets Society Framework & Recommendations\nCAMPUS RECRUITMENT STRATEGY FOR A SOCIAL FELLOWSHIP\nClarifying Questions: Details on the role and eligibility. Target campuses. Benefits of the job and exit opportunities. Timeframe of implementation.\nBrownie Points: Asking about exit opportunities. Considering social clubs as an indicator of interest. Internships and volunteering as entry paths.\nKeep In Mind: Given the client is a social organisation with a unique role, it is critical to reflect this feature in every step of the analysis.\nRECOMMENDATIONS: To generate greater interest among students for the fellowship, Teach For India needs to increase its engagement with college students. There are three potential avenues to achieve this:\nSummer internship program and offering full-time opportunities to appropriate candidates.\nTeach For India chapters in various colleges to generate greater awareness as well as interest among students organically.\nAnnual volunteering opportunity with a required number of hours to be completed."
+},
+{
+  "id": 46,
+  "docId": "case-46",
+  "title": "An Apple a Day Keeps the Doctor Away",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Unconventional",
+  "company": "Dalberg",
+  "round": "Partner",
+  "prompt": "Your client is the Ministry of Health. They want you to improve the health of Indian citizens.",
+  "frameworkTree": {
+    "nodes": {
+      "root": { "id": "root", "label": "Measures To Improve Health", "tone": "root", "children": ["preventive", "curative"] },
+      "preventive": { "id": "preventive", "label": "Preventive", "tone": "branch", "children": ["awareness", "incentives", "investments", "encouragement", "externalities"] },
+      "awareness": { "id": "awareness", "label": "Awareness", "tone": "leaf", "children": [] },
+      "incentives": { "id": "incentives", "label": "Incentives", "tone": "leaf", "children": [] },
+      "investments": { "id": "investments", "label": "Investments", "tone": "leaf", "children": [] },
+      "encouragement": { "id": "encouragement", "label": "Encouragement", "tone": "leaf", "children": [] },
+      "externalities": { "id": "externalities", "label": "Externalities", "tone": "leaf", "children": [] },
+      "curative": { "id": "curative", "label": "Curative", "tone": "branch", "children": ["diagnostic", "admitting", "treatment", "postTreatment"] },
+      "diagnostic": { "id": "diagnostic", "label": "Diagnostic", "tone": "branch", "children": ["earlyDiagnosis", "affordability"] },
+      "earlyDiagnosis": { "id": "earlyDiagnosis", "label": "Early Diagnosis", "tone": "leaf", "children": [] },
+      "affordability": { "id": "affordability", "label": "Affordability", "tone": "branch", "children": ["feeCap", "subsidizedConsult"] },
+      "feeCap": { "id": "feeCap", "label": "Consulting Fee Cap", "tone": "leaf", "children": [] },
+      "subsidizedConsult": { "id": "subsidizedConsult", "label": "Subsidised Consultations", "tone": "leaf", "children": [] },
+      "admitting": { "id": "admitting", "label": "Admitting", "tone": "branch", "children": ["paperwork", "beds"] },
+      "paperwork": { "id": "paperwork", "label": "Paperwork", "tone": "leaf", "children": [] },
+      "beds": { "id": "beds", "label": "Availability Of Beds", "tone": "leaf", "children": [] },
+      "treatment": { "id": "treatment", "label": "Treatment", "tone": "branch", "children": ["doctors", "qualityTreatment", "sanitation"] },
+      "doctors": { "id": "doctors", "label": "Availability Of Doctors", "tone": "leaf", "children": [] },
+      "qualityTreatment": { "id": "qualityTreatment", "label": "Quality Treatment", "tone": "leaf", "children": [] },
+      "sanitation": { "id": "sanitation", "label": "Sanitation", "tone": "leaf", "children": [] },
+      "postTreatment": { "id": "postTreatment", "label": "Post Treatment", "tone": "branch", "children": ["followUps", "medication"] },
+      "followUps": { "id": "followUps", "label": "Regular Follow-ups", "tone": "leaf", "children": [] },
+      "medication": { "id": "medication", "label": "Medication", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["root", "curative", "diagnostic", "affordability"],
+    "defaultFocusedId": "affordability",
+    "notes": [
+      { "title": "Questions", "items": ["What is the objective and timeline?", "Are there any budgetary constraints?", "Any particular region in mind?"] },
+      { "title": "Keep In Mind", "items": ["Segment by rural, urban, or city tier.", "Map the patient journey, not just treatment."] },
+      { "title": "Brownie Points", "items": ["Setting up more medical institutes nationwide.", "Tying externalities like pollution and water to disease."] }
+    ]
+  },
+  "framework": "Candidate: Quite an interesting problem. Before I begin, I would like to understand a few things. What is the objective our client wants to achieve, and by when do we need to meet it? Are there any budgetary constraints?\n\nInterviewer: Good questions. The objective is to improve the general well-being of the citizens. The plan can be both short term and long term, and there are no such constraints.\n\nCandidate: Understood. Do we have any particular region or regions in mind?\n\nInterviewer: You can look at improving well-being across the country.\n\nCandidate: Great, I think I can begin now. I would approach this by focusing on two broad sets of measures. First, preventive measures that stop people from falling ill in the first place. Second, curative measures that help people recover once they fall ill.\n\nInterviewer: Sounds reasonable. Walk me through the preventive side first.\n\nCandidate: Sure. Under preventive measures, I see five government led levers:\n1. Awareness. We need to spread knowledge about various diseases. This can be done through television and radio advertisements. A good example is the Amitabh Bachchan advertisements on tuberculosis.\n2. Incentives. The government should formulate policies that encourage employers to provide medical insurance to their employees.\n3. Investments. The government must invest in building hospitals, setting up labs, funding medicinal research, running vaccination drives, improving the accessibility of medicines and vaccines, and improving the state of cleanliness and hygiene.\n4. Encouragement. Individuals should be encouraged to improve their lifestyle, get vaccinated, and get regular health check ups done.\n5. Externalities. Bringing pollution under control and ensuring safe drinking water can reduce the incidence and severity of diseases.\n\nInterviewer: That covers prevention well. Now take me through the curative side.\n\nCandidate: On the curative side, I would walk through the patient journey in four stages.\n\nFirst, diagnostic. Two things matter here:\n1. Early diagnosis. We should encourage people to visit clinics or hospitals as soon as they experience any symptoms.\n2. Affordability. We can put a cap on consulting fees and subsidise consultations in rural areas so that cost is not a barrier.\n\nSecond, admitting. Here I would focus on two points:\n1. Reducing the paperwork required for admission.\n2. Ensuring the availability of beds and staff.\n\nThird, treatment. I see three priorities:\n1. Ensuring an adequate availability of doctors by setting up medical institutes across the country.\n2. Ensuring quality treatment by making the best medical devices available and setting performance standards for doctors and nurses.\n3. Ensuring that the hospital is sanitised and there is limited spread of diseases within the premises.\n\nFourth, post treatment. Two measures stand out:\n1. Regular follow ups should be scheduled to monitor recovery.\n2. Medication. We must ensure the availability of both general and specialised medicines, along with measures to ensure the patient is actually taking the prescribed medicines.\n\nInterviewer: This approach seems great, we can close the case now."
+},
+{
+  "id": 47,
+  "docId": "case-47",
+  "title": "Bad Teacher",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Unconventional",
+  "company": "Dalberg",
+  "round": "Buddy",
+  "prompt": "Your client is the Education Ministry of Rajasthan and it wants to improve the class 10 and class 12 board exam results.",
+  "frameworkTree": {
+    "nodes": {
+      "board-exam-results": { "id": "board-exam-results", "label": "Board Exam Results", "tone": "root", "children": ["eligibility", "preparation", "examination", "evaluation"] },
+      "eligibility": { "id": "eligibility", "label": "Eligibility", "tone": "branch", "children": ["new-admits", "already-enrolled"] },
+      "new-admits": { "id": "new-admits", "label": "New Admits", "tone": "leaf", "children": [] },
+      "already-enrolled": { "id": "already-enrolled", "label": "Already Enrolled", "tone": "leaf", "children": [] },
+      "preparation": { "id": "preparation", "label": "Preparation", "tone": "branch", "children": ["infrastructure", "teachers", "course", "motivation"] },
+      "infrastructure": { "id": "infrastructure", "label": "Infrastructure", "tone": "branch", "children": ["laboratories", "libraries", "classrooms", "extra-curricular-opportunities", "cleanliness-and-hygiene"] },
+      "laboratories": { "id": "laboratories", "label": "Laboratories", "tone": "leaf", "children": [] },
+      "libraries": { "id": "libraries", "label": "Libraries", "tone": "leaf", "children": [] },
+      "classrooms": { "id": "classrooms", "label": "Classrooms", "tone": "leaf", "children": [] },
+      "extra-curricular-opportunities": { "id": "extra-curricular-opportunities", "label": "Extra-Curricular Opportunities", "tone": "leaf", "children": [] },
+      "cleanliness-and-hygiene": { "id": "cleanliness-and-hygiene", "label": "Cleanliness And Hygiene", "tone": "leaf", "children": [] },
+      "teachers": { "id": "teachers", "label": "Teachers", "tone": "branch", "children": ["teacher-training", "teacher-accountability", "student-teacher-ratio"] },
+      "teacher-training": { "id": "teacher-training", "label": "Teacher Training", "tone": "leaf", "children": [] },
+      "teacher-accountability": { "id": "teacher-accountability", "label": "Teacher Accountability", "tone": "leaf", "children": [] },
+      "student-teacher-ratio": { "id": "student-teacher-ratio", "label": "Student-Teacher Ratio", "tone": "leaf", "children": [] },
+      "course": { "id": "course", "label": "Course", "tone": "branch", "children": ["subject-availability", "passing-marks", "number-of-attempts", "syllabus-revision", "flexible-timetable", "multiple-mocks"] },
+      "subject-availability": { "id": "subject-availability", "label": "Subject Availability", "tone": "leaf", "children": [] },
+      "passing-marks": { "id": "passing-marks", "label": "Passing Marks", "tone": "leaf", "children": [] },
+      "number-of-attempts": { "id": "number-of-attempts", "label": "Number Of Attempts", "tone": "leaf", "children": [] },
+      "syllabus-revision": { "id": "syllabus-revision", "label": "Syllabus Revision", "tone": "leaf", "children": [] },
+      "flexible-timetable": { "id": "flexible-timetable", "label": "Flexible Timetable", "tone": "leaf", "children": [] },
+      "multiple-mocks": { "id": "multiple-mocks", "label": "Multiple Mocks", "tone": "leaf", "children": [] },
+      "motivation": { "id": "motivation", "label": "Motivation", "tone": "branch", "children": ["monetary-incentives", "alumni-examples", "awards-and-recognition"] },
+      "monetary-incentives": { "id": "monetary-incentives", "label": "Monetary Incentives", "tone": "leaf", "children": [] },
+      "alumni-examples": { "id": "alumni-examples", "label": "Alumni Examples", "tone": "leaf", "children": [] },
+      "awards-and-recognition": { "id": "awards-and-recognition", "label": "Awards And Recognition", "tone": "leaf", "children": [] },
+      "examination": { "id": "examination", "label": "Examination", "tone": "branch", "children": ["multiple-languages", "disability-accommodations", "exam-centres"] },
+      "multiple-languages": { "id": "multiple-languages", "label": "Multiple Languages", "tone": "leaf", "children": [] },
+      "disability-accommodations": { "id": "disability-accommodations", "label": "Disability Accommodations", "tone": "leaf", "children": [] },
+      "exam-centres": { "id": "exam-centres", "label": "Exam Centres", "tone": "leaf", "children": [] },
+      "evaluation": { "id": "evaluation", "label": "Evaluation", "tone": "branch", "children": ["revaluation", "examiner-accountability"] },
+      "revaluation": { "id": "revaluation", "label": "Revaluation", "tone": "leaf", "children": [] },
+      "examiner-accountability": { "id": "examiner-accountability", "label": "Examiner Accountability", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["board-exam-results", "preparation", "course"],
+    "defaultFocusedId": "course",
+    "notes": [
+      { "title": "Questions", "items": ["What does improve mean?", "Any timeline in mind?", "Which board?", "Which segment of schools?", "Any budgetary constraints?"] },
+      { "title": "Keep In Mind", "items": ["Structure the fix across each exam stage"] },
+      { "title": "Brownie Points", "items": ["Making exam centres disability-friendly", "Offering the exam in more languages"] }
+    ]
+  },
+  "abbreviations": ["CBSE: Central Board of Secondary Education", "ICSE: Indian Certificate of Secondary Education"],
+  "framework": "Candidate: Alright. I want to begin by understanding the problem in more specific terms. What exactly do we mean by improve? Do we have a timeline in mind?\nInterviewer: By improve, we mean increasing the pass percentage. The client would like to implement the solutions as soon as you are ready with them.\nCandidate: Thank you. Next, I want to know if we are talking about a specific board, such as the state board, CBSE, or ICSE.\nInterviewer: We can restrict this case to the local state board only.\nCandidate: Sure. Are we looking at a particular segment of schools in which we need to improve performance?\nInterviewer: You need to focus on only public schools.\nCandidate: Thank you. Are there any budgetary constraints that I need to be aware of?\nInterviewer: No. You can proceed.\nCandidate: I would like to focus on the children who are already enrolled and improve their performance. The total number of students who pass equals the number enrolled multiplied by the percentage who pass, so since we are concerned with improving the result, we need to increase the percentage of children who pass.\nWe can look at this problem as a process with four stages: eligibility, preparation, examination, and evaluation.\nStarting with eligibility, this stage can be divided into two parts. For new admits, new students must meet the required standards, and these standards can also be revised. For already enrolled students, schools should ensure that the pass criteria are rigidly defined for classes 9 and 11, so that only students who are prepared to take the board exams in the subsequent year are promoted.\nNext is preparation, which can be divided into infrastructure, teachers, course, and motivation.\nUnder infrastructure, we can look at the number and quality of computer and science laboratories, libraries, classrooms, extra-curricular opportunities, and cleanliness and hygiene.\nUnder teachers, we can look at the training of teachers, establishing accountability through regular evaluations, and maintaining an optimum student-teacher ratio so that all students get sufficient attention.\nUnder course, we can look at ensuring the availability of different subjects and combinations, reducing the marks required for passing, the number of attempts per student, reducing and revising the syllabus, implementing a flexible timetable such as access to recorded lectures, and having multiple mocks like pre-boards and chapter-wise tests.\nUnder motivation, we can give monetary incentives to students who perform well, such as free uniforms, scholarships, and fee waivers, give examples of alumni who have gone on to do well in life, and confer awards on and ensure recognition of top performers.\nThe third stage is examination. Here we can increase the number of languages the paper can be attempted in, provide and improve the means of taking the examination for disabled students, and ensure accessible and quality exam centres.\nThe final stage is evaluation. Here we can offer the option of revaluation of papers, and establish accountability by imposing penalties in case of misconduct by any examiner.\nInterviewer: That will be all for this case. All the best.\n\nBad Teacher Framework\nIMPROVING THE CLASS 10 AND 12 BOARD EXAM RESULTS\nClarifying Questions: What does improve mean? Any timeline in mind? Which board? Which segment of schools? Any budgetary constraints?\nBrownie Points: Making exam centres disability-friendly. Offering the exam in more languages.\nKeep In Mind: Structure the fix across each exam stage."
+},
+{
+  "id": 48,
+  "docId": "case-48",
+  "title": "Finding Bambi",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Unconventional",
+  "company": "McKinsey & Co.",
+  "round": "Buddy",
+  "prompt": "Your client is the Ministry of Environment, Forest and Climate Change, Government of India. They have recently observed that the deer population has significantly declined. You have been hired to figure out why this is happening.",
+  "frameworkTree": {
+    "nodes": {
+      "decline": { "id": "decline", "label": "Decline In Deer Population", "tone": "root", "children": ["decrease-births", "increase-deaths"] },
+      "decrease-births": { "id": "decrease-births", "label": "Decrease In Births", "tone": "branch", "children": ["number-of-deer", "pct-reproductive-age", "pct-successful", "avg-births"] },
+      "number-of-deer": { "id": "number-of-deer", "label": "Number Of Deer", "tone": "leaf", "children": [] },
+      "pct-reproductive-age": { "id": "pct-reproductive-age", "label": "% In Reproductive Age", "tone": "leaf", "children": [] },
+      "pct-successful": { "id": "pct-successful", "label": "% Successful", "tone": "branch", "children": ["biological-constraints", "environmental-requirements", "geographical-proximity"] },
+      "biological-constraints": { "id": "biological-constraints", "label": "Biological Constraints", "tone": "branch", "children": ["illness", "disease"] },
+      "illness": { "id": "illness", "label": "Illness", "tone": "leaf", "children": [] },
+      "disease": { "id": "disease", "label": "Disease", "tone": "leaf", "children": [] },
+      "environmental-requirements": { "id": "environmental-requirements", "label": "Environmental Requirements", "tone": "branch", "children": ["external-conditions", "internal-conditions"] },
+      "external-conditions": { "id": "external-conditions", "label": "External Conditions", "tone": "leaf", "children": [] },
+      "internal-conditions": { "id": "internal-conditions", "label": "Internal Conditions", "tone": "leaf", "children": [] },
+      "geographical-proximity": { "id": "geographical-proximity", "label": "Geographical Proximity", "tone": "branch", "children": ["not-able-to", "not-willing-to"] },
+      "not-able-to": { "id": "not-able-to", "label": "Not Able To", "tone": "branch", "children": ["natural-constraints", "man-made-constraints"] },
+      "natural-constraints": { "id": "natural-constraints", "label": "Natural Constraints", "tone": "branch", "children": ["rivers", "valleys", "natural-blockades"] },
+      "rivers": { "id": "rivers", "label": "Rivers", "tone": "leaf", "children": [] },
+      "valleys": { "id": "valleys", "label": "Valleys", "tone": "leaf", "children": [] },
+      "natural-blockades": { "id": "natural-blockades", "label": "Natural Blockades", "tone": "leaf", "children": [] },
+      "man-made-constraints": { "id": "man-made-constraints", "label": "Man-Made Constraints", "tone": "branch", "children": ["roads", "bridges", "dams", "relocation"] },
+      "roads": { "id": "roads", "label": "Roads", "tone": "leaf", "children": [] },
+      "bridges": { "id": "bridges", "label": "Bridges", "tone": "leaf", "children": [] },
+      "dams": { "id": "dams", "label": "Dams", "tone": "leaf", "children": [] },
+      "relocation": { "id": "relocation", "label": "Relocation", "tone": "leaf", "children": [] },
+      "not-willing-to": { "id": "not-willing-to", "label": "Not Willing To", "tone": "leaf", "children": [] },
+      "avg-births": { "id": "avg-births", "label": "Average Births Per Deer", "tone": "leaf", "children": [] },
+      "increase-deaths": { "id": "increase-deaths", "label": "Increase In Deaths", "tone": "branch", "children": ["natural-causes", "unnatural-causes"] },
+      "natural-causes": { "id": "natural-causes", "label": "Natural Causes", "tone": "branch", "children": ["old-age"] },
+      "old-age": { "id": "old-age", "label": "Old Age", "tone": "leaf", "children": [] },
+      "unnatural-causes": { "id": "unnatural-causes", "label": "Unnatural Causes", "tone": "branch", "children": ["human-caused", "other-animals", "environmental-deaths", "genetic-conditions"] },
+      "human-caused": { "id": "human-caused", "label": "Human-Caused", "tone": "leaf", "children": [] },
+      "other-animals": { "id": "other-animals", "label": "Other Animals", "tone": "leaf", "children": [] },
+      "environmental-deaths": { "id": "environmental-deaths", "label": "Environmental", "tone": "leaf", "children": [] },
+      "genetic-conditions": { "id": "genetic-conditions", "label": "Genetic Conditions", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["decline", "decrease-births", "pct-successful", "geographical-proximity", "not-able-to", "man-made-constraints"],
+    "defaultFocusedId": "roads",
+    "notes": [
+      { "title": "Questions", "items": ["What is the magnitude and duration?", "Is the decline area-specific?", "Which other animals share the biosphere?", "What is their lifespan and reproductive age?"] },
+      { "title": "Keep In Mind", "items": ["Recent, sudden declines usually have man-made causes."] },
+      { "title": "Brownie Points", "items": ["Eliminating genetic causes since the decline is recent", "Breaking births into a multiplicative function"] }
+    ]
+  },
+  "visualisations": [
+    { "title": "Total Births", "type": "formula", "lhs": "Total Births", "rhs": "Number of Deer x % in Reproductive Age x % Successful x Average Births per Deer" }
+  ],
+  "framework": "Candidate: Do we have any information on the magnitude and duration of this decline?\n\nInterviewer: Yes. The rate of decline has been about 10 percent every year, and this has been happening for the past two years.\n\nCandidate: Is the decline uniform across the country, or is it more prevalent in a specific area?\n\nInterviewer: Good question. It has been a bigger phenomenon in one of the biosphere reserves in North East India, which is a closed area that shelters many animals.\n\nCandidate: Could you give me more details about the animals in this biosphere?\n\nInterviewer: Several animals such as cheetahs, tigers and zebras live in this biosphere.\n\nCandidate: Is the decline happening across all types of deer? What is their average lifespan, and when do they start reproducing?\n\nInterviewer: It is, sadly, across all types of deer. They start reproducing one to two years after birth and live for about ten years on average.\n\nCandidate: Alright. Since the overall population is falling, there are broadly three reasons: deaths have increased, births have decreased, or some combination of the two. Would you like me to probe a specific one, or should I walk through all of them?\n\nInterviewer: Let us go over each, and begin with deaths.\n\nCandidate: Sure. A deer can die from either natural or unnatural causes. Natural causes would be a deer growing old and reaching the end of its expected lifespan. Unnatural causes can be split further into deaths caused by humans, deaths caused by other animals, and deaths caused by the surrounding environment, which includes access to resources like water and food. Genetic conditions are also possible, but that seems unlikely, because the decline is recent and is happening all at once.\n\nInterviewer: That is very comprehensive. However, we have reason to believe the number of deaths has not increased. Why don't you explore births instead?\n\nCandidate: I would like to break births down into a clear function. The total number of births equals the number of deer, multiplied by the percentage of deer in the reproductive age, multiplied by the percentage of deer successful in reproduction, multiplied by the average number of births per deer. So a fall in total births could come from fewer deer in the reproductive age, a lower success rate in mating, or each deer bearing fewer fawns.\n\nInterviewer: Good breakdown. We know the deer have not been successful in their mating activities. Can you figure out why?\n\nCandidate: Interesting. This could be due to biological constraints, environmental requirements, or a lack of geographical proximity. Under biological constraints, there may be reasons that make the deer physically incapable of producing offspring, such as an illness or a disease. Under environmental requirements, I would look at external conditions like temperature and weather, as well as internal conditions like proper nutrition and water intake. A lack of geographical proximity could be a third factor keeping them from reproducing.\n\nInterviewer: Very well. Let us drill down on geographical proximity.\n\nCandidate: If the deer are not in close physical proximity, it could come down to either ability or constraint. Are they not willing to be together, or are they constrained from being together?\n\nInterviewer: Let us focus on the latter.\n\nCandidate: Alright. I would divide these constraints into natural constraints and man-made constraints. Natural constraints would be things like rivers, valleys, or any natural blockade that separates the deer. Man-made constraints would be the construction of roads, bridges or dams, or the relocation of deer caused by any of these. Given that this decline is fairly recent, I believe the cause is more likely man-made, because natural constraints usually take a long time to develop.\n\nInterviewer: Spot on. A road was recently constructed in the biosphere reserve to allow easier mobility. Since it is fenced on both sides, much of the population has been scattered and separated. That is what is leading to the decline in mating activity, and in turn the deer population.\n\nFINDING BAMBI FRAMEWORK & RECOMMENDATIONS\n\nSIGNIFICANT DECLINE IN DEER POPULATION\n\nClarifying Questions: What is the magnitude and duration of the decline? Is the decline area-specific? Which other animals share the biosphere? What is the deer's lifespan and reproductive age?\n\nBrownie Points: Eliminating genetic causes since the decline is recent. Breaking births into a multiplicative function.\n\nKeep In Mind: Recent, sudden declines usually have man-made causes."
+},
+{
+  "id": 49,
+  "docId": "case-49",
+  "title": "Houston, We Have a Problem!",
+  "industry": "Industry Agnostic",
+  "difficulty": "Medium",
+  "case_type": "Unconventional",
+  "company": "By the Authors",
+  "round": "N/A",
+  "prompt": "Sylvester, the mayor of Houston, Texas has approached you. There has been an unprecedented rise in criminal activity in the city. Families in Houston are concerned about their safety. With elections approaching, the Mayor would like your advice on how the criminal activity can be brought under control.",
+  "frameworkTree": {
+    "nodes": {
+      "crimes": { "id": "crimes", "label": "Crimes", "tone": "root", "children": ["thefts", "kidnappings", "homicides", "sexual-harassment", "others-crimes"] },
+      "thefts": { "id": "thefts", "label": "Thefts", "tone": "support", "children": [] },
+      "kidnappings": { "id": "kidnappings", "label": "Kidnappings", "tone": "support", "children": [] },
+      "homicides": { "id": "homicides", "label": "Homicides", "tone": "branch", "children": ["population", "pct-criminals", "pct-homicide", "homicides-per-criminal"] },
+      "population": { "id": "population", "label": "Population of Houston", "tone": "leaf", "children": [] },
+      "pct-criminals": { "id": "pct-criminals", "label": "% of Criminals", "tone": "leaf", "children": [] },
+      "pct-homicide": { "id": "pct-homicide", "label": "% Committing Homicide", "tone": "leaf", "children": [] },
+      "homicides-per-criminal": { "id": "homicides-per-criminal", "label": "Homicides per Criminal", "tone": "branch", "children": ["poisoning", "shooting", "stabbing", "others-manner"] },
+      "poisoning": { "id": "poisoning", "label": "Poisoning", "tone": "leaf", "children": [] },
+      "shooting": { "id": "shooting", "label": "Shooting", "tone": "branch", "children": ["motives", "facilitative-environment"] },
+      "motives": { "id": "motives", "label": "Motives", "tone": "branch", "children": ["monetary", "non-monetary"] },
+      "monetary": { "id": "monetary", "label": "Monetary Motives", "tone": "leaf", "children": [] },
+      "non-monetary": { "id": "non-monetary", "label": "Non-Monetary Motives", "tone": "leaf", "children": [] },
+      "facilitative-environment": { "id": "facilitative-environment", "label": "Facilitative Environment", "tone": "branch", "children": ["inefficient-enforcement", "reduced-punishment", "access-weapons"] },
+      "inefficient-enforcement": { "id": "inefficient-enforcement", "label": "Inefficient Enforcement", "tone": "leaf", "children": [] },
+      "reduced-punishment": { "id": "reduced-punishment", "label": "Reduced Punishment", "tone": "leaf", "children": [] },
+      "access-weapons": { "id": "access-weapons", "label": "Access to Weapons", "tone": "leaf", "children": [] },
+      "stabbing": { "id": "stabbing", "label": "Stabbing", "tone": "leaf", "children": [] },
+      "others-manner": { "id": "others-manner", "label": "Others", "tone": "leaf", "children": [] },
+      "sexual-harassment": { "id": "sexual-harassment", "label": "Sexual Harassment", "tone": "support", "children": [] },
+      "others-crimes": { "id": "others-crimes", "label": "Others", "tone": "support", "children": [] }
+    },
+    "defaultExpanded": ["crimes", "homicides", "homicides-per-criminal", "shooting", "facilitative-environment"],
+    "defaultFocusedId": "access-weapons",
+    "defaultFocusedIds": ["pct-homicide", "access-weapons"],
+    "notes": [
+      { "title": "Questions", "items": ["What defines the rise in crime?", "How much, and since when?", "Have other states faced this?", "Which crime types have risen?"] },
+      { "title": "Keep In Mind", "items": ["Decompose the metric into its formula drivers.", "A protective law can fuel new crime."] },
+      { "title": "Brownie Points", "items": ["Recommending background checks before issuing guns", "Building a formula to pinpoint the homicide driver", "Asking the new law's rationale before reacting"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "title": "Number of Homicides",
+      "type": "formula",
+      "lhs": "Number of Homicides",
+      "rhs": "Population of Houston x % Criminals x % Committing Homicide x Homicides per Criminal"
+    }
+  ],
+  "framework": "Interviewer: Let's get started.\nCandidate: Sounds like an interesting problem. Basically, the mayor wants us to identify the reason behind the increase in criminal activity and come up with suitable suggestions to bring it under control and help him secure the faith of the people again. Is that right?\nInterviewer: Correct.\nCandidate: Alright. Before we do that, I would like to know what we mean by an increase in criminal activity. Have the number of crimes committed gone up?\nInterviewer: Yes, that is right.\nCandidate: Okay. Do we know by how much crimes have increased and since when this has been happening? Also, have other states faced a similar problem?\nInterviewer: Crime rates have gone up by 20 percent in the last four months. Other states have not faced such an issue.\nCandidate: That is a cause for concern. I believe the state will have a segmentation of the different types of crimes: thefts, kidnappings, homicides, sexual harassment, and so on. Have all types of crimes gone up, or is it specific to some? It is also possible that certain ethnicities or groups are being targeted.\nInterviewer: Homicides have been increasing of late. We don't have a segmentation of our victims. Other crimes have been steadily decreasing due to the new CCTV cameras installed across the city.\nCandidate: That is intriguing. Homicides have seen an increase despite the CCTV cameras. We can get to the number of homicides by constructing the following formula: the number of homicides equals the population of Houston multiplied by the percentage that are criminals, multiplied by the percentage of criminals that commit homicides, multiplied by the number of homicides per criminal. It is unlikely that the population of Houston has seen a significant increase in such a short period. However, it is possible that the percentage of criminals has seen an increase because of factors such as the formation of a new gang. Since other crimes have seen a decline, my hypothesis is that there has been an increase in the percentage of criminals that commit homicides, as well as the number of homicides per criminal. Is this true?\nInterviewer: Spot on. What would you like to do next?\nCandidate: To further isolate the problem, we can analyse how the homicides are being committed. Some common ways in which a person can be murdered are poisoning, shooting, and stabbing. Do we know if there has been an increase in a specific manner of killing?\nInterviewer: Yes. The number of shootings has increased.\nCandidate: This could either be because of an increase in motives to commit homicides or a more facilitative environment that makes it easier to carry out these shootings. Motives can be further divided into monetary motives, like stealing jewellery or securing control of new territory, or non-monetary motives, such as hate crimes and revenge. A facilitative environment could mean poor law enforcement, such as inefficient policemen or a reduction in punishments, or easier access to weapons, in this case, guns.\nInterviewer: Excellent. Four months ago, Texas passed a law making it easier to procure a gun license. This has resulted in an increasing number of shootings. What should the authorities do now?\nCandidate: First, I would like to know the reason behind the new law.\nInterviewer: The rationale behind the new law was that families would be better able to defend themselves against intruders if they had a gun at home.\nCandidate: Makes sense. This has probably been a factor behind the reduction in other crimes. I would suggest a two-step approach to tackle the problem. First, the law must be reconsidered. Other ways, such as night patrolling by policemen and installing CCTV cameras within houses, can be considered as alternatives to the threats posed by intruders. Second, since there has already been an increase in the number of guns with criminals, there has to be an attempt to seize these guns again and clamp down on the criminals. Conducting psychological tests and checking previous criminal records would be one method. We can explore this further if needed.\nInterviewer: That will not be necessary. The mayor thanks you for helping him get a step closer to getting re-elected.\n\nHouston, We Have a Problem! Framework & Recommendations\nINCREASING CRIMINAL ACTIVITY IN TEXAS\nClarifying Questions: What do we mean by increase in criminal activity? Have other states faced a similar issue?\nBrownie Points: Background checks before handing out guns.\nKeep In Mind: Asking the right preliminary questions is important, especially in unconventional cases.\nRECOMMENDATIONS: Reconsider the law granting easier access to arms. Night patrolling by policemen. CCTV cameras. Seize existing guns."
+},
+{
+  "id": 50,
+  "docId": "case-50",
+  "title": "Crash Course",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Unconventional",
+  "company": "Dalberg",
+  "round": "Partner",
+  "prompt": "There have been an increasing number of deaths by car accidents in Delhi. You need to analyse why this is happening.",
+  "frameworkTree": {
+    "nodes": {
+      "root": { "id": "root", "label": "Total Car Deaths", "tone": "root", "children": ["carAccidentsDaily", "pctCausingDeaths", "deathsPerAccident"] },
+      "carAccidentsDaily": { "id": "carAccidentsDaily", "label": "Car Accidents Daily", "tone": "branch", "children": ["carsOnRoad", "pctMeetingAccident"] },
+      "pctCausingDeaths": { "id": "pctCausingDeaths", "label": "% Causing Deaths", "tone": "support", "children": [] },
+      "deathsPerAccident": { "id": "deathsPerAccident", "label": "Deaths Per Accident", "tone": "support", "children": [] },
+      "carsOnRoad": { "id": "carsOnRoad", "label": "Cars On Road Daily", "tone": "leaf", "children": [] },
+      "pctMeetingAccident": { "id": "pctMeetingAccident", "label": "% Meeting Accident", "tone": "branch", "children": ["car", "road", "victims", "legal"] },
+      "car": { "id": "car", "label": "Car", "tone": "branch", "children": ["model", "rules", "maintenance", "rashDriving"] },
+      "model": { "id": "model", "label": "Model", "tone": "leaf", "children": [] },
+      "rules": { "id": "rules", "label": "Rules", "tone": "leaf", "children": [] },
+      "maintenance": { "id": "maintenance", "label": "Maintenance", "tone": "leaf", "children": [] },
+      "rashDriving": { "id": "rashDriving", "label": "Rash Driving", "tone": "leaf", "children": [] },
+      "road": { "id": "road", "label": "Road", "tone": "branch", "children": ["trafficLights", "barricades", "parking", "zebraCrossing", "roadCondition", "signage"] },
+      "trafficLights": { "id": "trafficLights", "label": "Traffic Lights", "tone": "leaf", "children": [] },
+      "barricades": { "id": "barricades", "label": "Barricades", "tone": "leaf", "children": [] },
+      "parking": { "id": "parking", "label": "Parking", "tone": "leaf", "children": [] },
+      "zebraCrossing": { "id": "zebraCrossing", "label": "Zebra Crossing", "tone": "leaf", "children": [] },
+      "roadCondition": { "id": "roadCondition", "label": "Condition", "tone": "leaf", "children": [] },
+      "signage": { "id": "signage", "label": "Signage", "tone": "leaf", "children": [] },
+      "victims": { "id": "victims", "label": "Victims", "tone": "branch", "children": ["homeless", "shops", "protests"] },
+      "homeless": { "id": "homeless", "label": "Homeless", "tone": "leaf", "children": [] },
+      "shops": { "id": "shops", "label": "Shops", "tone": "leaf", "children": [] },
+      "protests": { "id": "protests", "label": "Protests", "tone": "leaf", "children": [] },
+      "legal": { "id": "legal", "label": "Legal", "tone": "branch", "children": ["roadRules", "license", "enforcement"] },
+      "roadRules": { "id": "roadRules", "label": "Road Rules", "tone": "leaf", "children": [] },
+      "license": { "id": "license", "label": "License", "tone": "leaf", "children": [] },
+      "enforcement": { "id": "enforcement", "label": "Enforcement", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["root", "carAccidentsDaily", "pctMeetingAccident", "victims"],
+    "defaultFocusedId": "homeless",
+    "notes": [
+      { "title": "Questions", "items": ["How much, and since when?", "Any time or area segmentation?", "Deaths inside or outside the car?"] },
+      { "title": "Keep In Mind", "items": ["Add exhaustive branches, flag the unlikely ones."] },
+      { "title": "Brownie Points", "items": ["Linking easy licensing to more accidents."] }
+    ]
+  },
+  "visualisations": [
+    {
+      "title": "Total Car Deaths",
+      "type": "formula",
+      "lhs": "Total Car Deaths",
+      "rhs": "Total Car Accidents x % Causing Deaths x Deaths per Accident"
+    },
+    {
+      "title": "Total Car Accidents per Day",
+      "type": "formula",
+      "lhs": "Total Car Accidents per Day",
+      "rhs": "Avg Cars on Road x % Meeting an Accident"
+    },
+    {
+      "id": "homeless-estimate",
+      "type": "table",
+      "title": "Homeless People in Delhi",
+      "header": "Homeless People in Delhi",
+      "noTitle": true,
+      "columns": ["Ref", "Step", "Calculation", "Value"],
+      "columnWidths": ["8%", "37%", "33%", "22%"],
+      "summaryRows": [3],
+      "rows": [
+        ["A", "Population of Delhi", "Given estimate", "1.4 crore"],
+        ["B", "Below Poverty Line", "30% of A", "42 lakh"],
+        ["C", "Rounded BPL Base", "Approximated from B", "~ 40 lakh"],
+        ["D", "Homeless People", "1 in 5 of C, i.e. C / 5", "8 lakh"]
+      ],
+      "insight": "People below the poverty line either live in slums, live in temporary establishments, or are homeless. We assume 1 in 5 are homeless at any given point in time."
+    }
+  ],
+  "framework": "Candidate: Interesting. Before I dig in, I would like to understand the problem better. How much have deaths gone up by, and since when have we been facing this?\n\nInterviewer: We have been facing this for the past one year. Deaths are up by 10 percent.\n\nCandidate: Alright. Do we have any segmentation on when the deaths happen, such as day versus night, or a particular area in Delhi that has been worst affected?\n\nInterviewer: Most accidents take place during the day, and East Delhi has the highest number of deaths.\n\nCandidate: I see. I want to understand the numbers a little better. When we say an increase in deaths, do we mean the people inside the car or outside it?\n\nInterviewer: Good question. The number of deaths of people outside the car has increased.\n\nCandidate: Thank you. Let me lay out how the total deaths break down. The total number of deaths equals the total number of car accidents multiplied by the percentage of accidents that cause deaths multiplied by the number of deaths per accident. Do we know which of these has increased?\n\nInterviewer: Analyse the total number of car accidents.\n\nCandidate: Sure. The total number of car accidents in a day equals the average number of cars on the road in a day multiplied by the percentage that meet with an accident. It is unlikely that the average number of cars on the road would rise significantly in just one year, so do we know what has changed?\n\nInterviewer: That is a good observation. The percentage of cars that meet with an accident has gone up.\n\nCandidate: Thank you. I would understand this by looking at four areas:\n1. Car\n2. Road\n3. Victims\n4. Legal\n\nUnder Car, I would look at:\n1. Whether a particular vehicle is more prone to accidents.\n2. Rules such as the number of years for which a car is allowed to run, which is presently 15 years in Delhi.\n3. Servicing and maintenance issues, for example brake failures.\n4. Rash or careless driving from factors such as phone usage by drivers.\n\nUnder Road, I would look at:\n1. The number of traffic lights and whether they are functioning.\n2. Barricades and traffic that increase road rage due to impatience.\n3. The condition of the roads, since the last monsoon may have increased the number of potholes.\n4. Parking, if there is excessive parking taking place on the road.\n5. Zebra crossings, their number and placement.\n6. Signage on the road.\n\nUnder Victims, I would look at:\n1. The number of beggars and homeless people on the road.\n2. The nature of protests taking place.\n3. Shops and fairs that may have opened up along the road and caused crowding.\n\nUnder Legal, I would look at:\n1. Changes in regulations on rash driving, speed limits, and the penalties attached to offences.\n2. The ease of securing a driving license.\n3. Enforcement, or how well the laws are being enforced by the police.\n\nInterviewer: This looks good, you have identified the reason. The number of homeless people on the road has gone up. I need you to quickly estimate the number of homeless people in Delhi.\n\nCandidate: Sure, that makes sense, since the roads in East Delhi are narrow and that causes more accidents. Let me estimate it. The number of homeless people in Delhi equals the population of Delhi multiplied by the percentage below the poverty line multiplied by the percentage without a house.\n\nThe population of Delhi is about 1.4 crore. Around 30 percent are below the poverty line, so 30 percent of 1,40,00,000 = 42,00,000, which is about 40 lakh people below the poverty line.\n\nThese people either live in slums, live in temporary establishments, or are homeless. I would assume that 1 in 5 people below the poverty line is homeless at any given point in time. That gives us 40,00,000 / 5 = 8,00,000, or about 8 lakh homeless people in Delhi.\n\nInterviewer: Sure. We can close this case here."
+},
+{
+  "id": 51,
+  "docId": "case-51",
+  "title": "Take Me to Mosque",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Unconventional",
+  "company": "McKinsey & Co.",
+  "round": "Buddy",
+  "prompt": "Your client is the government of Saudi Arabia. You have been hired to increase the number of people coming for Haj and Umrah.",
+  "frameworkTree": {
+    "nodes": {
+      "ability-to-attend": { "id": "ability-to-attend", "label": "% That Have the Ability to Attend", "tone": "root", "children": ["affordability", "time-constraints", "demographics", "geo-political-and-legal"] },
+      "affordability": { "id": "affordability", "label": "Affordability", "tone": "branch", "children": ["budget-stays", "cheap-transport", "affordable-food", "airline-tie-ups"] },
+      "budget-stays": { "id": "budget-stays", "label": "Budget Stays", "tone": "leaf", "children": [] },
+      "cheap-transport": { "id": "cheap-transport", "label": "Cheap Transport", "tone": "leaf", "children": [] },
+      "affordable-food": { "id": "affordable-food", "label": "Affordable Food", "tone": "leaf", "children": [] },
+      "airline-tie-ups": { "id": "airline-tie-ups", "label": "Airline Tie-Ups", "tone": "leaf", "children": [] },
+      "time-constraints": { "id": "time-constraints", "label": "Time Constraints", "tone": "branch", "children": ["year-round-haj", "weekend-plans"] },
+      "year-round-haj": { "id": "year-round-haj", "label": "Year-Round Haj", "tone": "leaf", "children": [] },
+      "weekend-plans": { "id": "weekend-plans", "label": "Weekend Plans", "tone": "leaf", "children": [] },
+      "demographics": { "id": "demographics", "label": "Demographics", "tone": "branch", "children": ["eligibility-expansion", "elderly-and-disabled"] },
+      "eligibility-expansion": { "id": "eligibility-expansion", "label": "Eligibility Expansion", "tone": "leaf", "children": [] },
+      "elderly-and-disabled": { "id": "elderly-and-disabled", "label": "Elderly And Disabled", "tone": "leaf", "children": [] },
+      "geo-political-and-legal": { "id": "geo-political-and-legal", "label": "Geo-Political And Legal", "tone": "branch", "children": ["easy-visa", "international-relations"] },
+      "easy-visa": { "id": "easy-visa", "label": "Easy Visa", "tone": "leaf", "children": [] },
+      "international-relations": { "id": "international-relations", "label": "International Relations", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["ability-to-attend", "affordability", "time-constraints", "demographics", "geo-political-and-legal"],
+    "defaultFocusedId": "ability-to-attend",
+    "notes": [
+      { "title": "Questions", "items": ["What are Haj and Umrah?", "How do they differ?", "What objective and timeline?", "Current numbers and target?", "Any capacity constraints?"] },
+      { "title": "Keep In Mind", "items": ["Stay sensitive in religious or political cases", "It is fine to admit unfamiliarity here"] },
+      { "title": "Brownie Points", "items": ["Using the fear factor to drive attendance", "Making the pilgrimage disability-friendly", "Improving international relations to ease travel"] }
+    ]
+  },
+  "additionalFrameworkTrees": [
+    {
+      "label": "% That Have the Willingness to Attend",
+      "nodes": {
+        "willingness-to-attend": { "id": "willingness-to-attend", "label": "% That Have the Willingness to Attend", "tone": "root", "children": ["before", "during", "after"] },
+        "before": { "id": "before", "label": "Before", "tone": "branch", "children": ["awareness", "social-reasons"] },
+        "awareness": { "id": "awareness", "label": "Awareness", "tone": "leaf", "children": [] },
+        "social-reasons": { "id": "social-reasons", "label": "Social Reasons", "tone": "branch", "children": ["fear", "belief"] },
+        "fear": { "id": "fear", "label": "Fear", "tone": "leaf", "children": [] },
+        "belief": { "id": "belief", "label": "Belief", "tone": "leaf", "children": [] },
+        "during": { "id": "during", "label": "During", "tone": "branch", "children": ["pilgrimage-experience", "tourist-activities"] },
+        "pilgrimage-experience": { "id": "pilgrimage-experience", "label": "Pilgrimage Experience", "tone": "leaf", "children": [] },
+        "tourist-activities": { "id": "tourist-activities", "label": "Tourist Activities", "tone": "leaf", "children": [] },
+        "after": { "id": "after", "label": "After", "tone": "branch", "children": ["word-of-mouth", "token-of-memory"] },
+        "word-of-mouth": { "id": "word-of-mouth", "label": "Word Of Mouth", "tone": "leaf", "children": [] },
+        "token-of-memory": { "id": "token-of-memory", "label": "Token Of Memory", "tone": "leaf", "children": [] }
+      },
+      "defaultExpanded": ["willingness-to-attend", "before", "social-reasons"],
+      "defaultFocusedId": "social-reasons",
+      "notes": []
+    }
+  ],
+  "visualisations": [
+    {
+      "title": "Total Attendance",
+      "type": "formula",
+      "lhs": "Total Attendance",
+      "rhs": "World Population x % That Have the Ability to Attend x % That Have the Willingness to Attend"
+    }
+  ],
+  "framework": "Candidate: Alright. I would like to understand the problem a little better. I want to begin by understanding the objective that the government has in mind and by when we have to achieve it.\nInterviewer: The government wants to increase the number of tourists visiting Saudi Arabia in order to improve the reach of the pilgrimages, and there is no fixed timeline for this project.\nCandidate: Next, I would like to understand what Haj and Umrah are. From what I know, these are holy pilgrimages attended by Muslims from across the world.\nInterviewer: Yes, that is correct.\nCandidate: I would also like to know how they are different from each other.\nInterviewer: Haj is a compulsion for Muslims to attend once a year. It happens in Mecca, and a special week is designated for this pilgrimage. Umrah is not a compulsion and happens throughout the year in the city of Medina.\nCandidate: That is extremely helpful. I want to now gauge the current situation by understanding how many visitors we have annually for Haj and Umrah, and whether we have a target in mind.\nInterviewer: Currently, we have 2 million people coming for Haj and 5 million for Umrah. We want to take this number to 10 million for Haj and 15 million for Umrah.\nCandidate: This growth target is quite significant, so I would like to know if there are any capacity constraints to keep in mind while solving this case.\nInterviewer: Good observation. Capacity is not a concern.\nCandidate: Thank you. I would like to now lay out my overall approach. We can break the problem down using a simple relationship: the total number of attendees equals the population of the world multiplied by the percentage that have the ability to attend multiplied by the percentage that are willing to attend.\nInterviewer: Looks fine. We can look at each of these separately.\nCandidate: I would like to begin by analysing the ability of people to attend these pilgrimages. The factors affecting ability are affordability, time constraints, demographics, and geo-political and legal constraints.\nUnder affordability, budget hotels and hostels can be opened in these locations, cheap transport facilities such as public buses and metros can be operated, affordable restaurants and food trucks can be opened, and tie-ups with airline operators can offer discounts on travel to these locations.\nUnder time constraints, we can explore the possibility of making Haj an all-year-round pilgrimage too, or else make a strategic selection of the week keeping our target groups in mind, for example during popular holiday seasons. We can also introduce compact weekend plans to draw more people.\nUnder demographics, we can increase the number of people eligible to undertake the pilgrimage by easing restrictions on children, women, and others, and we can also consider opening it up to non-Muslims. For the elderly and disabled populations, we can make the pilgrimage disability-friendly and provide assistance at all stages.\nUnder geo-political and legal constraints, we can ease visa application and acceptance rules, and make efforts towards better international relations.\nInterviewer: Great, this is extremely detailed. We can now move to the second part.\nCandidate: Thank you. The second aspect deals with the willingness to attend the pilgrimages. The trip can be divided into three stages: before, during, and after.\nBefore the trip, we can build awareness through multiple modes of advertising on social and print media, tying up with religious institutes across the globe to nudge more people to undertake the pilgrimage. There are also social reasons we can tap into. One is fear, by spreading the narrative that not undertaking the pilgrimage can lead to consequences. The other is belief, by reinforcing that it is auspicious to undertake the pilgrimage, similar to how attending the Vaishno Devi temple is considered auspicious for a newly-wed couple.\nDuring the trip, we can improve the pilgrimage experience itself through easy transport availability, a good ambience inside the mosque, folk songs, and the like, and we can improve the general infrastructure of Mecca and Medina for other tourist activities.\nAfter the trip, we can encourage word of mouth by getting people to post pictures and entice others to undertake the pilgrimage, and we can offer a token of memory, such as photo booths, so that every time people look at the picture they are reminded of the trip and encouraged to undertake the pilgrimage again.\nInterviewer: Quite insightful suggestions. We can close the case now. Have a great day.\n\nTake Me to Mosque Framework\nINCREASING ATTENDEES OF HAJ AND UMRAH\nClarifying Questions: What are Haj and Umrah? How do they differ? What objective and timeline? Current numbers and target? Any capacity constraints?\nBrownie Points: Using the fear factor to drive attendance. Making the pilgrimage disability-friendly. Improving international relations to ease travel.\nKeep In Mind: Stay sensitive in religious or political cases. It is fine to admit unfamiliarity here."
+},
+{
+  "id": 52,
+  "docId": "case-52",
+  "title": "Cash Me If You Can",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Unconventional",
+  "company": "BCG",
+  "round": "Partner",
+  "prompt": "Your client is a steel manufacturing company. They have excess cash available on their balance sheet. How should they deal with it?",
+  "frameworkTree": {
+    "nodes": {
+      "potential-cash": { "id": "potential-cash", "label": "Potential Cash Spending", "tone": "root", "children": ["non-business-activities", "business-activities"] },
+      "non-business-activities": { "id": "non-business-activities", "label": "Non-Business Activities", "tone": "branch", "children": ["investments-financial-assets", "returning-money"] },
+      "investments-financial-assets": { "id": "investments-financial-assets", "label": "Investments In Financial Assets", "tone": "branch", "children": ["real-estate", "venture-capital", "financial-derivatives"] },
+      "real-estate": { "id": "real-estate", "label": "Real Estate", "tone": "leaf", "children": [] },
+      "venture-capital": { "id": "venture-capital", "label": "Venture Capital", "tone": "leaf", "children": [] },
+      "financial-derivatives": { "id": "financial-derivatives", "label": "Financial Derivatives", "tone": "leaf", "children": [] },
+      "returning-money": { "id": "returning-money", "label": "Returning Money To Investors", "tone": "branch", "children": ["issuing-dividends", "share-buyback"] },
+      "issuing-dividends": { "id": "issuing-dividends", "label": "Issuing Dividends", "tone": "leaf", "children": [] },
+      "share-buyback": { "id": "share-buyback", "label": "Share Buyback", "tone": "leaf", "children": [] },
+      "business-activities": { "id": "business-activities", "label": "Business Activities", "tone": "branch", "children": ["capacity-expansion", "strategic-investments"] },
+      "capacity-expansion": { "id": "capacity-expansion", "label": "Capacity Expansion", "tone": "branch", "children": ["domestic-expansion", "global-expansion"] },
+      "domestic-expansion": { "id": "domestic-expansion", "label": "Domestic Expansion", "tone": "leaf", "children": [] },
+      "global-expansion": { "id": "global-expansion", "label": "Global Expansion", "tone": "leaf", "children": [] },
+      "strategic-investments": { "id": "strategic-investments", "label": "Strategic Investments", "tone": "branch", "children": ["same-industry", "adjacent-industries"] },
+      "same-industry": { "id": "same-industry", "label": "Within The Same Industry", "tone": "branch", "children": ["forward-linkages-same", "backward-linkages-same"] },
+      "forward-linkages-same": { "id": "forward-linkages-same", "label": "Forward Linkages", "tone": "leaf", "children": [] },
+      "backward-linkages-same": { "id": "backward-linkages-same", "label": "Backward Linkages", "tone": "leaf", "children": [] },
+      "adjacent-industries": { "id": "adjacent-industries", "label": "Adjacent Industries", "tone": "branch", "children": ["forward-linkages-adjacent", "backward-linkages-adjacent"] },
+      "forward-linkages-adjacent": { "id": "forward-linkages-adjacent", "label": "Forward Linkages", "tone": "leaf", "children": [] },
+      "backward-linkages-adjacent": { "id": "backward-linkages-adjacent", "label": "Backward Linkages", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["potential-cash", "non-business-activities", "investments-financial-assets"],
+    "defaultFocusedId": "investments-financial-assets",
+    "notes": [
+      { "title": "Questions", "items": ["What is the specific objective?", "How is excess cash defined?", "What type of steel is manufactured?", "Who are the main competitors?"] },
+      { "title": "Keep In Mind", "items": ["Split cash uses into business and non-business."] },
+      { "title": "Brownie Points", "items": ["Identifying special steel use-cases like white goods", "Looking at multiple macro trends for capacity expansion"] }
+    ]
+  },
+  "framework": "Candidate: Can you tell me a little more about the company? What is its desired objective?\n\nInterviewer: Sure. The client is based in India and supplies steel across the country to other businesses. The objective is to use the cash in a way that benefits the company in the long run.\n\nCandidate: What kind of steel does the client manufacture?\n\nInterviewer: The client manufactures low-carbon steel, which is the most widely used type across multiple sectors. It is a standardised product with no variants.\n\nCandidate: Do we have any information on the competitors?\n\nInterviewer: Yes. The market is dominated by three main players within the closed geography of India. Other players exist but are insignificant.\n\nCandidate: Got it. For clarity, how exactly is excess cash defined here? Do we have a specific figure?\n\nInterviewer: You can think of excess cash as the cash available over and above what is needed to run the company. We do not have a specific figure, but it is more than industry standards.\n\nCandidate: Understood. I would like to split the potential cash spending into two parts: non-business activities and business activities. Non-business activities would mean putting the cash into things outside the main business, while business activities would mean retaining the cash to further our business prospects.\n\nUnder non-business activities, I would look at investments in financial asset classes, as well as the option of returning money to investors. Under business activities, I would look at capacity expansion in the current business, both domestic and global, and strategic investments through mergers and acquisitions. I would like to start with non-business activities.\n\nInterviewer: Sure. Go ahead.\n\nCandidate: Are we open to investing in specific asset classes? These could include financial derivatives, real estate, venture capital and the like.\n\nInterviewer: The client is not very keen on making such investments. How else can the cash be used to return money to investors?\n\nCandidate: We can issue dividends to our investors. Depending on the type of company, we can also consider a share buyback, provided we have enough liquidity and are confident it will create the most value over the long term.\n\nInterviewer: Those are interesting ideas, but I would like you to now discuss some ways of using this cash for business purposes.\n\nCandidate: Sure. As I mentioned, capacity expansion and strategic investments can add long-term value from a business perspective. We can either expand or acquire within the existing value chain, or diversify across it.\n\nInterviewer: How would you decide whether capacity expansion is a good idea?\n\nCandidate: I would look at our existing capacity and check whether there is enough demand for it in the market. If we are already operating at a full hundred percent utilisation rate and there is still unmet demand, we can consider scaling up. We should also judge future demand before deciding whether producing more makes sense. Do we have any data on our current production capability?\n\nInterviewer: Yes. The client produces 10 million tonnes of steel, which is currently at par with all three leading competitors. How would you judge future demand?\n\nCandidate: I would analyse the growth rate of the main industries where low-carbon steel is used. That gives a fair idea of how demand will develop.\n\nInterviewer: Good approach. Can you identify a few such industries and suggest how you would ballpark their growth rates?\n\nCandidate: Some of the industries where low-carbon steel is used are construction, white goods such as home appliances and refrigerators, capital goods, and automobiles. I would judge the potential of each using factors like the business cycle, the impact of inflation, and a comparison with GDP growth. If an industry is growing faster than a benchmark, say India's GDP growth rate, that supports investing in capacity expansion.\n\nInterviewer: That makes sense. Can we quickly go over strategic investments as well?\n\nCandidate: Sure. These would be any activity that furthers the business. Strategic investments can be made in two ways: within the same business, such as moving into other qualities of steel, or in adjacent industries, such as cement, which is also used in construction like steel. Under both, we can look at forward linkages, such as building our own distributor and retailer network, as well as backward linkages, such as sourcing key raw material inputs, to build dominance across the value chain.\n\nInterviewer: Those are some really good ideas. We can close the case here.\n\nCASH ME IF YOU CAN FRAMEWORK & RECOMMENDATIONS\n\nDEALING WITH THE EXCESS CASH ON THE BALANCE SHEET\n\nClarifying Questions: What is the specific objective? How is excess cash defined? What type of steel is manufactured? Who are the main competitors?\n\nBrownie Points: Identifying special steel use-cases like white goods. Looking at multiple macro trends for capacity expansion.\n\nKeep In Mind: Split cash uses into business and non-business."
+},
+{
+  "id": 53,
+  "docId": "case-53",
+  "title": "The Godfather",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Unconventional",
+  "company": "By the Authors",
+  "round": "N/A",
+  "prompt": "Hey, let's begin with a quick case. The scene is set in Italy. You have been abducted by Mr. Alessandro, the head of a mafia. He has reported an increase in the number of men being killed in his gang. He wants you to identify the reason behind the same within the next 30 minutes if you wish to walk out alive.",
+  "frameworkTree": {
+    "nodes": {
+      "people-killed": { "id": "people-killed", "label": "People Killed", "tone": "root", "children": ["gang-size", "higher-rank-share", "percentage-killed"] },
+      "gang-size": { "id": "gang-size", "label": "Gang Size", "tone": "support", "children": [] },
+      "higher-rank-share": { "id": "higher-rank-share", "label": "Higher-Rank Share", "tone": "support", "children": [] },
+      "percentage-killed": { "id": "percentage-killed", "label": "Percentage Killed", "tone": "branch", "children": ["killers", "advantage"] },
+      "killers": { "id": "killers", "label": "Killers", "tone": "branch", "children": ["rival-gang", "police", "general-public", "deal-counterparty", "rogue-members"] },
+      "rival-gang": { "id": "rival-gang", "label": "Rival Gang", "tone": "leaf", "children": [] },
+      "police": { "id": "police", "label": "Police", "tone": "leaf", "children": [] },
+      "general-public": { "id": "general-public", "label": "General Public", "tone": "leaf", "children": [] },
+      "deal-counterparty": { "id": "deal-counterparty", "label": "Deal Counterparty", "tone": "leaf", "children": [] },
+      "rogue-members": { "id": "rogue-members", "label": "Rogue Members", "tone": "leaf", "children": [] },
+      "advantage": { "id": "advantage", "label": "Their Advantage", "tone": "branch", "children": ["information", "equipment", "hitmen", "skill-level", "external"] },
+      "information": { "id": "information", "label": "Information", "tone": "branch", "children": ["planning", "travel", "during-deal", "leaving"] },
+      "planning": { "id": "planning", "label": "Planning", "tone": "branch", "children": ["alessandro", "top-members", "security-staff", "bugging", "family"] },
+      "alessandro": { "id": "alessandro", "label": "Alessandro", "tone": "leaf", "children": [] },
+      "top-members": { "id": "top-members", "label": "Top 5 Members", "tone": "leaf", "children": [] },
+      "security-staff": { "id": "security-staff", "label": "Security & Staff", "tone": "leaf", "children": [] },
+      "bugging": { "id": "bugging", "label": "Bugging", "tone": "leaf", "children": [] },
+      "family": { "id": "family", "label": "Family", "tone": "branch", "children": ["intentional", "unintentional"] },
+      "intentional": { "id": "intentional", "label": "Intentional Leak", "tone": "leaf", "children": [] },
+      "unintentional": { "id": "unintentional", "label": "Unintentional Leak", "tone": "branch", "children": ["wife", "mother", "daughters"] },
+      "wife": { "id": "wife", "label": "Wife", "tone": "leaf", "children": [] },
+      "mother": { "id": "mother", "label": "Mother", "tone": "leaf", "children": [] },
+      "daughters": { "id": "daughters", "label": "Daughters", "tone": "leaf", "children": [] },
+      "travel": { "id": "travel", "label": "Travel", "tone": "leaf", "children": [] },
+      "during-deal": { "id": "during-deal", "label": "During Deal", "tone": "leaf", "children": [] },
+      "leaving": { "id": "leaving", "label": "Leaving", "tone": "leaf", "children": [] },
+      "equipment": { "id": "equipment", "label": "Equipment & Guns", "tone": "leaf", "children": [] },
+      "hitmen": { "id": "hitmen", "label": "Number of Hitmen", "tone": "leaf", "children": [] },
+      "skill-level": { "id": "skill-level", "label": "Skill Level", "tone": "leaf", "children": [] },
+      "external": { "id": "external", "label": "External Advantage", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["people-killed", "percentage-killed", "advantage", "information", "planning", "family", "unintentional"],
+    "defaultFocusedId": "daughters",
+    "notes": [
+      { "title": "Questions", "items": ["How many men, and since when?", "What is the gang's line of business?", "Which ranks are getting killed?", "How are the deaths occurring?"] },
+      { "title": "Keep In Mind", "items": ["Probe an unexpected node like family.", "Locate the single stage where the leak happens."] },
+      { "title": "Brownie Points", "items": ["Splitting the leak into intentional versus unintentional", "Mapping the deal's stages to locate the leak", "Considering family as an unintentional information source", "Separating an absolute rise from a percentage rise"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "title": "Number of People Killed",
+      "type": "formula",
+      "lhs": "Number of People Killed",
+      "rhs": "Number of Men in Gang x % in Higher Ranks x % Being Killed"
+    }
+  ],
+  "framework": "Interviewer: Let's get started.\nCandidate: Oh wow. I'd like to get a better understanding of the problem that Mr. Alessandro is facing. Do we have numbers on how many men have been dying and since when?\nInterviewer: Enough men for it to be a concern, and since the last four months.\nCandidate: Okay. What exactly is Alessandro's line of activity? Can I assume he is into a majority of illegal activities like drug-dealing, arms, and betting?\nInterviewer: Fair enough. He also has certain legal businesses to cover his illegal activities.\nCandidate: Great. Do we know if there is a particular segmentation of men, in terms of the work they do, that are getting killed? Maybe more field agents are found dead? Do we have any information on any rival gangs, and whether they have been losing men too?\nInterviewer: Good question. You can say more men from the higher ranks are being found dead. Also, there is one more prominent gang operating in Italy, the Mazzerati gang. We don't have conclusive information, but Alessandro's informants have noticed minimal deaths in the rival gang.\nCandidate: Do we know how the deaths are occurring? It could be shootings, accidents, hand fights, and so on.\nInterviewer: They are being shot dead.\nCandidate: Do we have information on where these men are being found dead? Here, I would like to divide it into work-related and non-work-related. Non-work-related would include diseases and other factors that are not directly related to the work the men are doing.\nInterviewer: Good question. You can say more men are being found dead in the place of conducting our deals. The clock is ticking, start with your structure.\nCandidate: Okay, I believe the number of people getting killed equals the number of men in the gang multiplied by the percentage of them that are in higher ranks, multiplied by the percentage of them that are being killed. Do we know which factor has increased in the last five months?\nInterviewer: What is the relevance of the first two buckets?\nCandidate: Maybe the number of deaths isn't a sign of worry because we have been hiring more people in the last five months, which would lead to an absolute increase in the number of deaths, but percentage-wise it would remain similar. Also, the second bucket has the same logic, but maybe more people are being promoted to higher ranks, leading to an absolute increase in the number of high-ranking officers being killed.\nInterviewer: Fair enough. You can say the percentage of them being killed has gone up.\nCandidate: Given that we know the people are getting killed during deals, I would like to identify who the killers are. It could be men from the rival gang, the police, the general public if there is a bounty on our gang members, the party they are conducting the deal with where the deal falls through at the last minute leading to a shootout, or members from our own gang that have gone rogue.\nInterviewer: Great. You can say that mainly members from the rival gang and some police officers have been killing our men.\nCandidate: Okay. I would like to analyse why these two groups have been able to get the better of us in the last five months and what has changed. It could be because they have an advantage with respect to better information, leading to a tactical advantage; better equipment and guns than us; the number of people being sent for deals, where they might have an advantage with a greater number of hitmen; their skill level, relating to the skills and quality of the men in their gang; or external advantages, such as the location.\nInterviewer: Perfect. You can say that they have an advantage with regard to information about our gang and its functioning.\nCandidate: Okay. The information about our gang can slip out during the planning stage, the travel to the location, during the deal itself, or at the time of leaving. Do we know at which step information is being leaked?\nInterviewer: Look into the planning stage.\nCandidate: Sure. Do we have any information on where the planning is done and by whom? Has this process changed in the last five months?\nInterviewer: Great. The planning is done at Alessandro's house with the five top-ranking members of his gang. The planning has always been done like this.\nCandidate: Here, since the planning is done at Alessandro's house, information could be leaked by Alessandro himself, any of the top five ranking members, the security and staff present at the house, or any mics or cameras present in the house due to bugging.\nInterviewer: Are you missing anyone?\nCandidate: Oh yes. His family members are present in the house too. Who are the family members that live in his house?\nInterviewer: That's right. Analyse his family. He lives with his wife, mother, and two teenage daughters.\nCandidate: That is interesting. I'd like to divide the information being leaked into two buckets: intentionally and unintentionally. Under intentionally, I would try to understand the different incentives that his family members would have to betray him and his operations. Under unintentionally, I would like to understand the amount of information they have and the various people they might discuss it with by mistake or without knowing its importance.\nInterviewer: Great. We have no reason to believe that anyone in his family would intentionally leak information. Under unintentionally, who do you think might be the prime candidate?\nCandidate: The daughters. They might not understand the seriousness of the issue due to their age. They also interact with plenty of people at school, playgrounds, malls, and other places they might visit.\nInterviewer: Kudos. You've cracked it. It has been understood that Sophia, his younger daughter, used to talk about matters of these meetings with Pedro, a boy in her grade. The rival gang had gathered that Sophia and Pedro were good friends. Roughly five months back, they inducted Pedro as an informant in their gang. Thank you for your help, you may now leave. Keep in mind, if you reveal these discussions to anyone, you won't see the light of morning.\n\nThe Godfather Framework & Recommendations\nRISE IN GANG MEMBERS BEING KILLED\nClarifying Questions: How many men, and since when? What is the gang's line of business? Which ranks are getting killed? How are the deaths occurring?\nBrownie Points: Splitting the leak into intentional versus unintentional. Mapping the deal's stages to locate the leak. Considering family as an unintentional information source. Separating an absolute rise from a percentage rise.\nKeep In Mind: Probe an unexpected node like family. Locate the single stage where the leak happens."
+},
+{
+  "id": 54,
+  "docId": "case-54",
+  "title": "Where's Perry?",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Unconventional",
+  "company": "McKinsey & Co.",
+  "round": "Buddy",
+  "prompt": "Hey. Let's go back 5 years to 2016. Imagine you've just been hired as a Business Analyst and your first task is intriguing. Mr. Perry, a Senior Partner at the firm, used to be disciplined and punctual. However, off-late, he arrives 30 minutes late to the office every day. This is a cause of concern and you have been approached to understand the issue without directly asking him as it may upset him.",
+  "framework": "Candidate: Interesting. Before I dive in, I would like to understand a few things. Since when has this been happening? And is it just that he arrives late, or does he also leave early?\nInterviewer: Sure. This has been happening for the last 2 weeks. No, he leaves on time.\nCandidate: I see. I would like to understand a bit more about his role. Which project has he been working on, which team, and have the office hours changed in the last 2 weeks?\nInterviewer: Great question. In fact, he is incredibly satisfied with his work, and none of this has changed in the last 6 months.\nCandidate: Sure. Where does he stay? Have there been any notable changes in his personal life, such as a medical issue or anything similar?\nInterviewer: Not at all. He has lived in Delhi for the last 10 years. We do not suspect any personal problems either.\nCandidate: Understood. Lastly, are there any other partners at the firm who have also been coming in late?\nInterviewer: We are not entirely sure of that. In the higher ranks, he is the only one coming late, which makes this an immediate cause of concern.\nCandidate: As per the information given, I am willing to rule out any personal or motivational reasons for coming late. Instead, I would like to map Mr. Perry's journey from his house to the office and identify where the delay is arising. His journey would look like this:\nWakes Up ~ Morning Routine ~ Gets Ready ~ Travels to Office ~ Arrives at Office ~ Reaches His Desk\nI would like to analyse each step. Has the time he wakes up changed? Is there any new delay in his morning routine? Is there extra preparatory work for the office? There is a good chance the problem lies in the travel phase. Once he arrives, has his parking changed? And finally, is there a system or attendance issue at check-in that makes him appear late even if he arrives on time?\nInterviewer: Great. You were right. Everything else has been the same. However, his time taken to commute has increased, causing him to reach late.\nCandidate: Sure. Since _Commute Time = (Total Distance / Average Speed) + Time Spent in Stoppages_, I will analyse each component.\nUnder Distance, the route might have changed, or the starting or ending points might have shifted.\nUnder Average Speed, road quality may have deteriorated, traffic may have increased, new speed limits may have been introduced, or more signals and speed bumps may be slowing him down.\nUnder Time Spent in Stoppages, he might be taking a restroom break, a snack break, or stopping at a toll booth.\nInterviewer: Perfect. His time spent at the toll booth has increased. Can you analyse why?\nCandidate: Sure. _Toll Booth Time = (Number of Cars / Number of Operational Booths) x Turnover Time per Car_. Has there been a change in any of these factors?\nInterviewer: The turnover time per car has increased. Look into that.\nCandidate: The _Turnover Time = Entry Time + Time at Booth + Gate Opening Time_. Since the delay is roughly 30 minutes, I hypothesise the time spent at the booth itself has increased. This could be due to poor staff, a faulty or inefficient system, transactional problems, or a policy change causing longer processing time.\nInterviewer: What would you include under transactional problems?\nCandidate: There might be delays due to credit or debit card machines not being operational, a lack of change with Mr. Perry or the toll booth, or difficulty in issuing a ticket.\nInterviewer: Perfect. There has been an overall lack of change at the toll booth as well as with Mr. Perry. Can you analyse why?\nCandidate: Let me think... Could it have something to do with the year? It is 2016. Demonetisation!\nInterviewer: Exactly. Demonetisation has led to a lack of change in the system, causing an increase in wait-time at the toll booth over the last 2 weeks. It was great interacting with you. Thank you.\n\nWhere's Perry? Framework & Recommendations\nDETECTING THE REASON BEHIND MR PERRY'S UNPUNCTUAL BEHAVIOUR\nClarifying Questions: Since when has the delay been happening and whether he also leaves early. Whether his role, project, or office hours have changed. Whether there are personal life changes. Whether other partners are also coming late.\nBrownie Points: Questioning whether a system discrepancy at check-in may make him appear late when he is actually on time.\nKeep In Mind: Tie the timeframe and year to external events.\nRECOMMENDATIONS: Mr. Perry can do either of the following. Keep more change with himself by planning ahead to ensure his turn is completed quicker. Buy a monthly or yearly pass; an express pass also makes sense to reduce time in transactional delays.",
+  "frameworkTree": {
+    "nodes": {
+      "perryJourney": { "id": "perryJourney", "label": "Mr Perry's Journey", "tone": "root", "children": ["wakesUp", "morningRoutine", "travelToOffice", "arrivalAtOffice", "reachingDesk"] },
+      "wakesUp": { "id": "wakesUp", "label": "Wakes Up", "tone": "support", "children": [] },
+      "morningRoutine": { "id": "morningRoutine", "label": "Morning Routine", "tone": "support", "children": [] },
+      "travelToOffice": { "id": "travelToOffice", "label": "Travel To Office", "tone": "support", "children": [] },
+      "arrivalAtOffice": { "id": "arrivalAtOffice", "label": "Arrival At Office", "tone": "support", "children": [] },
+      "reachingDesk": { "id": "reachingDesk", "label": "Reaching The Desk", "tone": "support", "children": [] }
+    },
+    "defaultExpanded": ["perryJourney"],
+    "defaultFocusedId": "travelToOffice",
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "Since when, and leaving early?",
+          "Any change in role or work?",
+          "Any personal life changes?",
+          "Are other partners coming late?"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": ["Tie the timeframe and year to external events."]
+      },
+      {
+        "title": "Brownie Points",
+        "items": ["Considering a system discrepancy may make him appear late when he is actually on time."]
+      }
+    ]
+  },
+  "additionalFrameworkTrees": [
+    {
+      "label": "Commute Time",
+      "nodes": {
+        "commuteTime": { "id": "commuteTime", "label": "Commute Time", "tone": "root", "children": ["distance", "averageSpeed", "stoppages"] },
+        "distance": { "id": "distance", "label": "Distance", "tone": "branch", "children": ["routeChange", "endpointChange"] },
+        "routeChange": { "id": "routeChange", "label": "Route Change", "tone": "leaf", "children": [] },
+        "endpointChange": { "id": "endpointChange", "label": "Endpoint Change", "tone": "leaf", "children": [] },
+        "averageSpeed": { "id": "averageSpeed", "label": "Average Speed", "tone": "branch", "children": ["roadQuality", "traffic", "speedLimits", "signalsAndBumps"] },
+        "roadQuality": { "id": "roadQuality", "label": "Road Quality", "tone": "leaf", "children": [] },
+        "traffic": { "id": "traffic", "label": "Traffic", "tone": "leaf", "children": [] },
+        "speedLimits": { "id": "speedLimits", "label": "Speed Limits", "tone": "leaf", "children": [] },
+        "signalsAndBumps": { "id": "signalsAndBumps", "label": "Signals And Bumps", "tone": "leaf", "children": [] },
+        "stoppages": { "id": "stoppages", "label": "Stoppages", "tone": "branch", "children": ["restroom", "snack", "tollBooth"] },
+        "restroom": { "id": "restroom", "label": "Restroom", "tone": "leaf", "children": [] },
+        "snack": { "id": "snack", "label": "Snack", "tone": "leaf", "children": [] },
+        "tollBooth": { "id": "tollBooth", "label": "Toll Booth", "tone": "branch", "children": ["numOfCars", "numOfBooths", "turnoverTime"] },
+        "numOfCars": { "id": "numOfCars", "label": "No. Of Cars", "tone": "leaf", "children": [] },
+        "numOfBooths": { "id": "numOfBooths", "label": "No. Of Booths", "tone": "leaf", "children": [] },
+        "turnoverTime": { "id": "turnoverTime", "label": "Turnover Time", "tone": "branch", "children": ["staff", "policyChange", "faultySystem", "transactionalDelays"] },
+        "staff": { "id": "staff", "label": "Staff", "tone": "leaf", "children": [] },
+        "policyChange": { "id": "policyChange", "label": "Policy Change", "tone": "leaf", "children": [] },
+        "faultySystem": { "id": "faultySystem", "label": "Faulty System", "tone": "leaf", "children": [] },
+        "transactionalDelays": { "id": "transactionalDelays", "label": "Transactional Delays", "tone": "branch", "children": ["cardMachines", "lackOfChange", "ticketIssues"] },
+        "cardMachines": { "id": "cardMachines", "label": "Card Machines", "tone": "leaf", "children": [] },
+        "lackOfChange": { "id": "lackOfChange", "label": "Lack Of Change", "tone": "leaf", "children": [] },
+        "ticketIssues": { "id": "ticketIssues", "label": "Ticket Issues", "tone": "leaf", "children": [] }
+      },
+      "defaultExpanded": ["commuteTime", "stoppages", "tollBooth", "turnoverTime", "transactionalDelays"],
+      "defaultFocusedId": "lackOfChange"
+    }
+  ],
+  "visualisations": [
+    {
+      "title": "Commute Time",
+      "type": "formula",
+      "lhs": "Commute Time",
+      "rhs": "(Total Distance / Average Speed) + Time Spent in Stoppages"
+    },
+    {
+      "title": "Toll Booth Time",
+      "type": "formula",
+      "lhs": "Toll Booth Time",
+      "rhs": "(Number of Cars / Number of Operational Booths) x Turnover Time per Car"
+    },
+    {
+      "title": "Turnover Time",
+      "type": "formula",
+      "lhs": "Turnover Time",
+      "rhs": "Entry Time + Time at Booth + Gate Opening Time"
+    }
+  ]
+},
+{
+  "id": 55,
+  "docId": "case-55",
+  "title": "Dallas Buyers Club",
+  "industry": "Industry Agnostic",
+  "difficulty": "Hard",
+  "case_type": "Unconventional",
+  "company": "McKinsey & Co.",
+  "round": "Buddy",
+  "prompt": "A pharma company's R&D department created a new drug recently, for which a pilot was held. But, the pilot failed. We're here to understand why that happened and give suggestions for further action on this.",
+  "frameworkTree": {
+    "nodes": {
+      "problem-identification": { "id": "problem-identification", "label": "Problem Identification", "tone": "root", "children": ["production", "distribution", "demand"] },
+      "production": { "id": "production", "label": "Production", "tone": "leaf", "children": [] },
+      "distribution": { "id": "distribution", "label": "Distribution", "tone": "branch", "children": ["delivery", "storage", "selling"] },
+      "delivery": { "id": "delivery", "label": "Delivery", "tone": "branch", "children": ["timings", "frequency"] },
+      "timings": { "id": "timings", "label": "Timings", "tone": "leaf", "children": [] },
+      "frequency": { "id": "frequency", "label": "Frequency", "tone": "leaf", "children": [] },
+      "storage": { "id": "storage", "label": "Storage", "tone": "branch", "children": ["shelf-life", "need-for-refrigeration"] },
+      "shelf-life": { "id": "shelf-life", "label": "Shelf Life", "tone": "leaf", "children": [] },
+      "need-for-refrigeration": { "id": "need-for-refrigeration", "label": "Need For Refrigeration", "tone": "leaf", "children": [] },
+      "selling": { "id": "selling", "label": "Selling", "tone": "branch", "children": ["unattractive-packaging", "poor-shelf-visibility"] },
+      "unattractive-packaging": { "id": "unattractive-packaging", "label": "Unattractive Packaging", "tone": "leaf", "children": [] },
+      "poor-shelf-visibility": { "id": "poor-shelf-visibility", "label": "Poor Shelf Visibility", "tone": "leaf", "children": [] },
+      "demand": { "id": "demand", "label": "Demand", "tone": "branch", "children": ["need", "awareness", "affordability", "accessibility", "experience"] },
+      "need": { "id": "need", "label": "Need", "tone": "leaf", "children": [] },
+      "awareness": { "id": "awareness", "label": "Awareness", "tone": "branch", "children": ["public-information", "doctor-partnerships"] },
+      "public-information": { "id": "public-information", "label": "Public Information", "tone": "leaf", "children": [] },
+      "doctor-partnerships": { "id": "doctor-partnerships", "label": "Doctor Partnerships", "tone": "leaf", "children": [] },
+      "affordability": { "id": "affordability", "label": "Affordability", "tone": "leaf", "children": [] },
+      "accessibility": { "id": "accessibility", "label": "Accessibility", "tone": "branch", "children": ["offline-channels", "online-channels"] },
+      "offline-channels": { "id": "offline-channels", "label": "Offline Channels", "tone": "leaf", "children": [] },
+      "online-channels": { "id": "online-channels", "label": "Online Channels", "tone": "leaf", "children": [] },
+      "experience": { "id": "experience", "label": "Experience", "tone": "branch", "children": ["store-level", "consumer-level"] },
+      "store-level": { "id": "store-level", "label": "Store Level", "tone": "leaf", "children": [] },
+      "consumer-level": { "id": "consumer-level", "label": "Consumer Level", "tone": "leaf", "children": [] }
+    },
+    "defaultExpanded": ["problem-identification", "distribution", "storage"],
+    "defaultFocusedId": "storage",
+    "notes": [
+      { "title": "Questions", "items": ["What are the drug's specifications?", "What is the company's standing?", "What did the pilot target?"] },
+      { "title": "Keep In Mind", "items": ["In cost-benefit comparisons, it is important to look at all levels in the value chain, from producers and distributors to retailers and customers"] },
+      { "title": "Brownie Points", "items": ["Considering frequency to be a medical parameter", "Offering contextual ideas like online delivery of medicines", "Highlighting the importance of in-store positioning and the value of shelf space"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "title": "Tablets Sold",
+      "type": "formula",
+      "lhs": "Tablets Sold",
+      "rhs": "Number of Pharmacies x Diabetic Patients per Pharmacy x Sales Conversion Rate x Purchase Frequency x Basket Size"
+    },
+    {
+      "title": "Setting the Target",
+      "type": "formula",
+      "lhs": "Target Units",
+      "rhs": "UP Population x % Diabetic x % Diagnosed x % Can Afford x % Prefer Pills x Market Share x Purchase Frequency x Pilot Duration"
+    }
+  ],
+  "framework": "Candidate: Sure. Before diving into the case, I would like to understand the situation better on three fronts: the company, the drug, and the pilot study. On the drug, what use is it meant for, what is the form of intake, and what stage of approval is it at?\nInterviewer: Good questions. The new drug is a substitute for insulin taken by diabetic individuals, provided in tablet form. We received clinical approval, so the drug was made available over-the-counter.\nCandidate: Understood. On the company, I wanted to know the kind of reputation it enjoys in the market for other products, since that is a key factor especially given the significance of medical consumption. Also, have our client or other competitors carried out similar pilots for similar products? This would help us get some direction about the nature of the problem.\nInterviewer: Sure. Our client has a strong reputation and has other successful products. Insulin as medicine is well-established, and our major innovation was the mode of intake. So, there have been successful pilots for the usual mode.\nCandidate: Got it. Then, on the pilot study, why did we undertake it, what was the location and duration, and how are we defining failure here?\nInterviewer: The pilot was to test the product's performance in the market. We did it across Uttar Pradesh over a 6-month period and were able to sell only one lakh units compared to our target of five lakh.\nCandidate: Just to understand it better, when we say Uttar Pradesh, was it full-scale in terms of the pharmacies and stores it was sold in, or a sample proportion? Also, why did we choose this particular state?\nInterviewer: We chose UP because of its large population and covered it in its entirety, so full-scale.\nCandidate: Alright. I will take a moment and work out a mathematical expression for the tablets sold.\nInterviewer: Sure, take your time.\nCandidate: I believe we should express the figure as: Number of Pharmacies multiplied by the Average Number of Diabetic Customers per Pharmacy, multiplied by the Sales Conversion Rate, Purchase Frequency, and Basket Size. Here, the sales conversion rate would be the percentage of diabetic customers who visit a typical pharmacy and end up purchasing our product. Using this, we should be able to pinpoint the source of the problem. Do we have any numbers on these lines?\nInterviewer: Yes, we do. Working with 80 clinics, we had 25 customers purchasing our drug regularly, 2 per week.\nCandidate: Understood. So we are taking it for roughly 25 weeks. When I look at the key drivers here, since we covered the entire population and frequency is a medical parameter, the 25 customers per clinic would have to be 125, or 5x, for our original target to have been met.\nInterviewer: That is right. Why do you think the gap existed?\nCandidate: I would like to analyse this across 5 key features: Need, Awareness, Affordability, Accessibility, and Experience.\nOn Need, since the number of people with diabetes in UP is expected to be much larger than the customer base we got, this should not be a problem. The only caveat is that the drug should satisfy their need appropriately, which seems true given clinical approval.\nOn Awareness, I would like to understand how we informed the public about our new drug. Also, partnering with doctors to push the product would be important given how their recommendations generally drive consumption.\nOn Affordability, do we have any information on the price point of our drug and those of competitors?\nOn Accessibility, since we covered all the clinics in the state, where people would also be buying our competitors' drugs, this does not appear to be the issue. Did we also look at online delivery channels like 1mg?\nOn Experience, at the drugstore level, we can dive deeper into where the product is placed, how it is stored and packaged, and the convenience of the whole process. Further, on the consumers' side, the preferred method of intake and publicity around the drug could also affect sales.\nInterviewer: Brilliant. The client wants to expand to online stores only after we establish a strong physical presence. On the price, one pill from our competitors costs Rs 100 and is taken daily. Our pill costs Rs 250.\nCandidate: Right, so on a weekly basis, our pill is actually more cost-effective when we compare Rs 700 and Rs 500. But this might lead to issues on the store owner's front as their quantum of revenue decreases and the margins they can earn are squeezed.\nInterviewer: Exactly right. Can you think of other problems they might be facing?\nCandidate: I would like to look at production, distribution, and demand to visualise the whole process. Since the problem revolves around the shopkeepers, we can eliminate production. On distribution, there might be concerns about the timings and frequency with which our drug was being delivered to them. Once it reaches, there might be storage-related issues due to the need for refrigerators, limited shelf life, or unusual package dimensions. In terms of selling to customers, the packaging might not be attractive and space on visible shelves might be unavailable.\nInterviewer: Great, seems like you have understood the major pain points. What can we do about them?\nCandidate: I would like to structure my suggestions into financial and non-financial. On the financial side, we need to improve the economic value our drug offers to store owners, by offering them bulk discounts, easier credit terms, higher margins, or by increasing the price of the drug itself. On the non-financial side, we should engage with store owners to get specific feedback about the customer experience. Some suggestions here would be smaller-sized packaging to save precious shelf and storage space, improved package design for ease in storage and a more attractive name for the drug, and developing a variant that can be stored at room temperature.\nInterviewer: Those are some good ideas. But take a step back. Does not matching up to the target necessarily mean the pilot failed?\nCandidate: It does not. We implicitly assumed that the target was justified as a base for comparison.\nInterviewer: Precisely. So, without going into calculations, quickly tell me how you would set the target here.\nCandidate: I would start with UP's population and then narrow it down to the subset that has diabetes, and then those who know they have it. Then, we would segment it based on income distribution and estimate the proportion that can afford our drug. This would bring us to the relevant market size. The last filter would be to zero down on the segment comfortable taking a pill instead of an insulin shot or any other alternate solutions including non-allopathic ones. With this final number, we would multiply it by our market share, the purchase frequency per week, and the number of weeks of the pilot.\nInterviewer: Thank you for your insights. Good job.\n\nDallas Buyers Club Framework & Recommendations\nANALYSING WHY A DRUG PILOT FAILED\nClarifying Questions: What are the drug's specifications? What is the company's standing? What did the pilot target?\nBrownie Points: Considering frequency to be a medical parameter. Offering contextual ideas like online delivery of medicines. Highlighting the importance of in-store positioning and the value of shelf space.\nKeep In Mind: In cost-benefit comparisons, it is important to look at all levels in the value chain, from producers and distributors to retailers and customers.\n\nRECOMMENDATIONS\nTo enhance the shopkeeper's value proposition, we can:\n- Economic benefits by bulk discounts, easy credit terms and higher margins.\n- For non-financial incentives, we should reconsider the package size for space and storage optimization. Also, develop a room-temperature friendly variant to eliminate additional costs and hassle of storage.\n- Look at the marketing strategy and drug name to make it more appealing."
+},
 
 
 
