@@ -260,7 +260,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       `}</style>
 
       <div
-        className="profile-overlay-panel relative flex w-full max-w-[700px] overflow-hidden rounded-[28px] bg-[#fff8f0]"
+        className="profile-overlay-panel relative flex w-full max-w-[700px] overflow-hidden rounded-[36px] bg-[#fff8f0]"
         style={{
           boxShadow: '0 28px 70px rgba(43,33,24,0.28), 0 1px 0 rgba(255,255,255,0.4) inset',
           fontFamily: "'Work Sans', sans-serif",
@@ -270,7 +270,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center rounded-full text-[#8a7c6a] text-xl leading-none bg-[rgba(180,138,87,0.08)] border-none cursor-pointer hover:bg-[rgba(180,138,87,0.16)] hover:text-[#453a2a] transition-colors"
+          className="absolute top-5 right-5 z-20 flex h-8 w-8 items-center justify-center rounded-full text-[#8a7c6a] text-xl leading-none bg-[rgba(180,138,87,0.08)] border-none cursor-pointer hover:bg-[rgba(180,138,87,0.16)] hover:text-[#453a2a] transition-colors"
           aria-label="Close"
         >
           &times;
@@ -338,7 +338,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                       type="button"
                       onClick={handleToggleEditProfile}
                       aria-label={editingProfile ? 'Cancel editing' : 'Edit profile'}
-                      className="profile-edit-fab flex h-8 w-8 items-center justify-center rounded-full"
+                      className="profile-edit-fab mr-9 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
                       style={{
                         background: editingProfile ? 'rgba(146,64,14,0.1)' : 'rgba(61,90,53,0.1)',
                         color: editingProfile ? '#92400e' : '#3D5A35',
