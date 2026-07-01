@@ -380,8 +380,6 @@ function layoutDesktop(
   }, { minX: Infinity, maxX: -Infinity })
 
   if (isFinite(bounds.minX)) {
-    const effectiveFootprint = (id: string) => (effW.get(id) ?? estNodeW(id)) + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
-
     const shiftVisibleSubtree = (id: string, delta: number) => {
       if (!delta) return
       const point = pos.get(id)
@@ -389,6 +387,21 @@ function layoutDesktop(
       ;(NODES[id]?.children ?? [])
         .filter((childId) => vis.has(childId))
         .forEach((childId) => shiftVisibleSubtree(childId, delta))
+    }
+
+    // Post-scale subtree bounds using actual pos values — never raw pre-scale sub.
+    // Snapshot before shifting so siblings read each other's pre-shift extents.
+    const subtreeBounds = (id: string): { min: number; max: number; span: number; center: number } => {
+      let min = Infinity, max = -Infinity
+      const walk = (n: string) => {
+        const p = pos.get(n); if (!p) return
+        const nw = (effW.get(n) ?? estNodeW(n))
+        min = Math.min(min, p.x - nw / 2); max = Math.max(max, p.x + nw / 2)
+        ;(NODES[n]?.children ?? []).filter(c => vis.has(c)).forEach(walk)
+      }
+      walk(id)
+      if (min === Infinity) { const w = estNodeW(id); return { min: 0, max: w, span: w, center: w / 2 } }
+      return { min, max, span: max - min, center: (min + max) / 2 }
     }
 
     const parentIds = ids
@@ -402,31 +415,24 @@ function layoutDesktop(
       const children = (NODES[parentId]?.children ?? []).filter((childId) => vis.has(childId))
       if (children.length <= 1) return
 
-      const rowLeft = parentId === ROOT_ID ? laneL : aL
-      const rowRight = parentId === ROOT_ID ? laneR : aR
-      const rowWidth = Math.max(rowRight - rowLeft, 1)
+      // Snapshot all subtree bounds BEFORE shifting any child
+      const childBoundsSnap = new Map(children.map(c => [c, subtreeBounds(c)]))
+
       const defaultGap = gapFor(children.length, nodeDepth(parentId))
-      const footprintSum = children.reduce((sum, childId) => sum + effectiveFootprint(childId), 0)
-      const packedGap =
-        children.length > 1
-          ? parentId === ROOT_ID
-            ? Math.max(defaultGap, (rowWidth - footprintSum) / (children.length - 1))
-            : Math.max(8, Math.min(defaultGap, (rowWidth - footprintSum) / (children.length - 1)))
-          : defaultGap
-      const groupWidth = footprintSum + packedGap * Math.max(children.length - 1, 0)
-      const desiredLeft =
-        parentId === ROOT_ID
-          ? Math.max(rowLeft, Math.min((rowLeft + rowRight - groupWidth) / 2, rowRight - groupWidth))
-          : Math.max(rowLeft, Math.min(parentPoint.x - groupWidth / 2, rowRight - groupWidth))
+      // Always use compact gap — never spread to fill lane (same policy for root and non-root)
+      const gap = Math.max(8, Math.min(defaultGap, defaultGap))
+      const footprintSum = children.reduce((sum, c) => sum + (childBoundsSnap.get(c)?.span ?? 0), 0)
+      const groupWidth = footprintSum + gap * Math.max(children.length - 1, 0)
+      // Center the group under the parent (same behavior for root and non-root)
+      const desiredLeft = parentPoint.x - groupWidth / 2
 
       let cursor = desiredLeft
       children.forEach((childId) => {
-        const footprint = effectiveFootprint(childId)
-        const currentPoint = pos.get(childId)
-        if (!currentPoint) return
-        const targetX = cursor + footprint / 2
-        shiftVisibleSubtree(childId, targetX - currentPoint.x)
-        cursor += footprint + packedGap
+        const b = childBoundsSnap.get(childId)
+        if (!b) return
+        const targetCenter = cursor + b.span / 2
+        shiftVisibleSubtree(childId, targetCenter - b.center)
+        cursor += b.span + gap
       })
     })
 
@@ -450,63 +456,51 @@ function layoutDesktop(
     if (bounds.minX + shift < laneL) shift += laneL - (bounds.minX + shift)
     if (shift) ids.forEach(id => { const p = pos.get(id); if (p) pos.set(id, { x: p.x + shift, y: p.y }) })
 
+    // Pass E — ROOT-children re-pack.
+    // Early-return for <=1 visible child: Pass B already centered it correctly; do nothing.
     const rootPoint = pos.get(ROOT_ID)
     const rootNode = NODES[ROOT_ID]
     const visibleRootChildren = rootNode ? rootNode.children.filter((childId) => vis.has(childId)) : []
-    if (rootPoint && visibleRootChildren.length > 0) {
-      bounds = ids.reduce((b, id) => {
-        const p = pos.get(id)
-        const labelW = effW.get(id) ?? estNodeW(id)
-        if (!p) return b
-        const footprint = labelW + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
-        return { minX: Math.min(b.minX, p.x - labelW / 2), maxX: Math.max(b.maxX, p.x - labelW / 2 + footprint) }
+    if (rootPoint && visibleRootChildren.length > 1) {
+      // Snapshot subtree bounds before shifting — no read-after-write drift
+      const rootChildSnaps = new Map(visibleRootChildren.map(id => [id, subtreeBounds(id)]))
+      const gap = gapFor(visibleRootChildren.length, 0)
+      const groupWidth = visibleRootChildren.reduce((s, id) => s + (rootChildSnaps.get(id)?.span ?? 0), 0)
+        + gap * Math.max(visibleRootChildren.length - 1, 0)
+      // Center the group under the ROOT node — compact, no lane-filling spread
+      let cursor = rootPoint.x - groupWidth / 2
+      visibleRootChildren.forEach((childId) => {
+        const b = rootChildSnaps.get(childId)
+        if (!b) return
+        const targetCenter = cursor + b.span / 2
+        shiftVisibleSubtree(childId, targetCenter - b.center)
+        cursor += b.span + gap
+      })
+
+      // Reposition ROOT node above center of its children's new positions
+      const newChildBounds = visibleRootChildren.reduce((acc, childId) => {
+        const b = subtreeBounds(childId)
+        return { minX: Math.min(acc.minX, b.min), maxX: Math.max(acc.maxX, b.max) }
       }, { minX: Infinity, maxX: -Infinity })
-
-      const targetSideGap = isFinite(bounds.minX) ? Math.max(bounds.minX - aL, 0) : 0
-      const currentRootLeft = visibleRootChildren.reduce((acc, childId) => {
-        const childPoint = pos.get(childId)
-        if (!childPoint) return acc
-        const childWidth = effW.get(childId) ?? estNodeW(childId)
-        return Math.min(acc, childPoint.x - childWidth / 2)
-      }, Infinity)
-
-      if (isFinite(currentRootLeft)) {
-        const footprintSum = visibleRootChildren.reduce((sum, childId) => sum + effectiveFootprint(childId), 0)
-        const targetRight = aR - targetSideGap
-        const availableWidth = Math.max(targetRight - currentRootLeft, footprintSum)
-        const rootGap =
-          visibleRootChildren.length > 1
-            ? Math.max(gapFor(visibleRootChildren.length, 0), (availableWidth - footprintSum) / (visibleRootChildren.length - 1))
-            : 0
-
-        let cursor = currentRootLeft
-        visibleRootChildren.forEach((childId) => {
-          const footprint = effectiveFootprint(childId)
-          const currentPoint = pos.get(childId)
-          if (!currentPoint) return
-          const targetX = cursor + footprint / 2
-          shiftVisibleSubtree(childId, targetX - currentPoint.x)
-          cursor += footprint + rootGap
-        })
+      if (isFinite(newChildBounds.minX) && isFinite(newChildBounds.maxX)) {
+        const rootWidth = effW.get(ROOT_ID) ?? estNodeW(ROOT_ID)
+        const minRootX = laneL + rootWidth / 2
+        const maxRootX = laneR - rootWidth / 2
+        const targetRootX = Math.max(minRootX, Math.min((newChildBounds.minX + newChildBounds.maxX) / 2, maxRootX))
+        pos.set(ROOT_ID, { x: targetRootX, y: rootPoint.y })
       }
 
-      const childBounds = visibleRootChildren.reduce((acc, childId) => {
-        const childPoint = pos.get(childId)
-        if (!childPoint) return acc
-        const childWidth = effW.get(childId) ?? estNodeW(childId)
-        return {
-          minX: Math.min(acc.minX, childPoint.x - childWidth / 2),
-          maxX: Math.max(acc.maxX, childPoint.x + childWidth / 2),
-        }
+      // Post-pass lane clamp — ensure nothing overflows [laneL, laneR] after shifting
+      const allBounds = ids.reduce((b, id) => {
+        const p = pos.get(id); if (!p) return b
+        const lw = effW.get(id) ?? estNodeW(id)
+        return { minX: Math.min(b.minX, p.x - lw / 2), maxX: Math.max(b.maxX, p.x + lw / 2) }
       }, { minX: Infinity, maxX: -Infinity })
-
-      if (isFinite(childBounds.minX) && isFinite(childBounds.maxX)) {
-        const rootWidth = effW.get(ROOT_ID) ?? estNodeW(ROOT_ID)
-        const rootFootprint = rootWidth + ((rootNode?.children.length ?? 0) > 0 ? 34 : 0)
-        const minRootX = laneL + rootWidth / 2
-        const maxRootX = laneR - rootFootprint + rootWidth / 2
-        const targetRootX = Math.max(minRootX, Math.min((childBounds.minX + childBounds.maxX) / 2, maxRootX))
-        pos.set(ROOT_ID, { x: targetRootX, y: rootPoint.y })
+      if (isFinite(allBounds.minX)) {
+        let clampShift = 0
+        if (allBounds.maxX + clampShift > laneR) clampShift += laneR - (allBounds.maxX + clampShift)
+        if (allBounds.minX + clampShift < laneL) clampShift += laneL - (allBounds.minX + clampShift)
+        if (clampShift) ids.forEach(id => { const p = pos.get(id); if (p) pos.set(id, { x: p.x + clampShift, y: p.y }) })
       }
     }
   }
@@ -3064,8 +3058,6 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     while (cur) { cur = localParents[cur]; if (cur) depth++ }
     return depth
   }), 0) : 0
-  const useVerticalLayout = forceVertical || shouldUseVerticalLayout('preview')
-
   const localFocusPath = useMemo(() => {
     const ids = (tree.defaultFocusedIds?.length ? tree.defaultFocusedIds : tree.defaultFocusedId ? [tree.defaultFocusedId] : [])
     const out = new Set<string>()
@@ -3077,16 +3069,28 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tree])
 
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-    if (multiActive) return new Set(tree.defaultExpanded)
-    return new Set([...tree.defaultExpanded].filter(id => localFocusPath.has(id)))
-  })
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
-  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
-    if (multiActive) return new Set(tree.defaultExpanded)
-    return new Set([...tree.defaultExpanded].filter(id => localFocusPath.has(id)))
-  })
+  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
+
+  const useVerticalLayout = useMemo(() => {
+    if (forceVertical) return true
+    if (!localRootId) return false
+    const threshold = 9
+    const collectLocalVisible = (id: string, expanded: Set<string>, out: Set<string>) => {
+      out.add(id)
+      if (!expanded.has(id)) return
+      for (const ch of (localNodes[id]?.children ?? [])) collectLocalVisible(ch, expanded, out)
+    }
+    const visible = new Set<string>()
+    collectLocalVisible(localRootId, expandedIds, visible)
+    const localDepth = (id: string) => { let d = 0; let cur: string | undefined = id; while ((cur = localParents[cur])) d++; return d }
+    const byDepth: Record<number, number> = {}
+    visible.forEach(id => { const d = localDepth(id); byDepth[d] = (byDepth[d] ?? 0) + 1 })
+    return Object.values(byDepth).some(count => count >= threshold)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedIds, localRootId])
   const [mobileFocId, setMobileFocId] = useState(() => tree.defaultFocusedId || '')
   const [chartVisible, setChartVisible] = useState(false)
   const chartRef = useRef<HTMLDivElement>(null)
@@ -3428,10 +3432,7 @@ export default function CasePreviewMaster({
   ]
 
   // ─── Chart state ─────────────────────────────
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
-  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
-})
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   // Add this after the focusedId state declaration:
@@ -3503,10 +3504,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
 
   // (horizontal swipe navigation intentionally removed; native browser back/forward gesture is restored here)
 
-  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
-  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
-  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
-})
+  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
   const [mobileFocId, setMobileFocId] = useState(() => tree.defaultFocusedId || '')
 
   // ─── Derived data ────────────────────────────
@@ -3575,8 +3573,6 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   const handleToggle = (id: string) => {
   loadTree(tree)
   const node = NODES[id]; if (!node?.children.length) return
-  // Inactive (off chosen-path) nodes never expand in-chart — they use the hover/tap overlay.
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return
     startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
@@ -3586,10 +3582,6 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
           if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
         } else {
           next.add(id)
-          const parent = PARENTS[id]
-          if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
-            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
-          })
         }
         return next
       })
@@ -3611,7 +3603,6 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   const handleMobileToggle = (id: string) => {
   loadTree(tree)
   const node = NODES[id]; if (!node?.children.length) return
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → tap overlay only
     setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree)
@@ -3620,10 +3611,6 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
         if (pathTo(mobileFocId).includes(id)) setMobileFocId(id)
       } else {
         next.add(id)
-        const parent = PARENTS[id]
-        if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
-          if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
-        })
       }
       return next
     })
@@ -4747,16 +4734,10 @@ export function CaseInterviewerMaster({
     { label: 'Drill Down',  number: 2 },
   ]
 
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
-  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
-})
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
   const [focusedId, setFocusedId]     = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
-  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
-  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
-  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
-})
+  const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => new Set(tree.defaultExpanded))
   const [mobileFocId, setMobileFocId]   = useState(() => tree.defaultFocusedId || '')
 
   const HEADER_OFFSET = 144
@@ -4851,13 +4832,13 @@ export function CaseInterviewerMaster({
   }
   const handleToggle = (id: string) => {
   loadTree(tree)
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → overlay only
+  const node = NODES[id]; if (!node?.children.length) return
   startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
         loadTree(tree)
         if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)) }
-        else { next.add(id); const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
+        else { next.add(id) }
         return next
       })
       setEdgeAnimKey(k => k + 1)
@@ -4866,12 +4847,11 @@ export function CaseInterviewerMaster({
   const handleMobileSelect = (id: string) => { loadTree(tree); setMobileFocId(id); if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && NODES[id]?.children.length) return; setMobileExpIds(prev => { const next = new Set(prev); loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
   const handleMobileToggle = (id: string) => {
   loadTree(tree)
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → tap overlay only
   setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree)
       if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)); if (pathTo(mobileFocId).includes(id)) setMobileFocId(id) }
-      else { next.add(id); const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
+      else { next.add(id) }
       return next
     })
   }
