@@ -370,7 +370,8 @@ function layoutDesktop(
     })
   }
 
-  // Centre-shift
+  // Centre-shift: nudge the whole tree so it sits centred inside the lane.
+  // Pass B already produced the correct compact positions; we only globalshift here.
   bounds = ids.reduce((b, id) => {
     const p = pos.get(id)
     const labelW = effW.get(id) ?? estNodeW(id)
@@ -389,8 +390,7 @@ function layoutDesktop(
         .forEach((childId) => shiftVisibleSubtree(childId, delta))
     }
 
-    // Post-scale subtree bounds using actual pos values — never raw pre-scale sub.
-    // Snapshot before shifting so siblings read each other's pre-shift extents.
+    // Subtree bounding box using post-scale pos values.
     const subtreeBounds = (id: string): { min: number; max: number; span: number; center: number } => {
       let min = Infinity, max = -Infinity
       const walk = (n: string) => {
@@ -404,103 +404,61 @@ function layoutDesktop(
       return { min, max, span: max - min, center: (min + max) / 2 }
     }
 
-    const parentIds = ids
-      .filter((id) => (NODES[id]?.children ?? []).some((childId) => vis.has(childId)))
-      .sort((left, right) => nodeDepth(left) - nodeDepth(right))
-
-    parentIds.forEach((parentId) => {
-      const parentPoint = pos.get(parentId)
-      if (!parentPoint) return
-
-      const children = (NODES[parentId]?.children ?? []).filter((childId) => vis.has(childId))
-      if (children.length <= 1) return
-
-      // Snapshot all subtree bounds BEFORE shifting any child
-      const childBoundsSnap = new Map(children.map(c => [c, subtreeBounds(c)]))
-
-      const defaultGap = gapFor(children.length, nodeDepth(parentId))
-      // Always use compact gap — never spread to fill lane (same policy for root and non-root)
-      const gap = Math.max(8, Math.min(defaultGap, defaultGap))
-      const footprintSum = children.reduce((sum, c) => sum + (childBoundsSnap.get(c)?.span ?? 0), 0)
-      const groupWidth = footprintSum + gap * Math.max(children.length - 1, 0)
-      // Center the group under the parent (same behavior for root and non-root)
-      const desiredLeft = parentPoint.x - groupWidth / 2
-
-      let cursor = desiredLeft
-      children.forEach((childId) => {
-        const b = childBoundsSnap.get(childId)
-        if (!b) return
-        const targetCenter = cursor + b.span / 2
-        shiftVisibleSubtree(childId, targetCenter - b.center)
-        cursor += b.span + gap
-      })
-    })
-
-    bounds = ids.reduce((b, id) => {
-      const p = pos.get(id)
-      const labelW = effW.get(id) ?? estNodeW(id)
-      if (!p) return b
-      const footprint = labelW + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
-      return { minX: Math.min(b.minX, p.x - labelW / 2), maxX: Math.max(b.maxX, p.x - labelW / 2 + footprint) }
-    }, { minX: Infinity, maxX: -Infinity })
-
+    // Global centre-shift: move entire tree to sit centred in the lane.
     const treeW = bounds.maxX - bounds.minX
     const freeSpace = Math.max(laneW - treeW, 0)
-    const preferredLeft =
-      treeW < laneW
-        ? laneL + freeSpace / 2
-        : laneL
-
+    const preferredLeft = treeW < laneW ? laneL + freeSpace / 2 : laneL
     let shift = preferredLeft - bounds.minX
     if (bounds.maxX + shift > laneR) shift += laneR - (bounds.maxX + shift)
     if (bounds.minX + shift < laneL) shift += laneL - (bounds.minX + shift)
     if (shift) ids.forEach(id => { const p = pos.get(id); if (p) pos.set(id, { x: p.x + shift, y: p.y }) })
 
     // Pass E — ROOT-children re-pack.
-    // Early-return for <=1 visible child: Pass B already centered it correctly; do nothing.
+    // Only runs when ROOT has >1 visible child AND >1 of those children is itself
+    // expanded (i.e. multiple sibling subtrees exist that could collide).
+    // For the single-active-branch case Pass B is already correct — skip entirely.
     const rootPoint = pos.get(ROOT_ID)
     const rootNode = NODES[ROOT_ID]
     const visibleRootChildren = rootNode ? rootNode.children.filter((childId) => vis.has(childId)) : []
-    if (rootPoint && visibleRootChildren.length > 1) {
-      // Snapshot subtree bounds before shifting — no read-after-write drift
-      const rootChildSnaps = new Map(visibleRootChildren.map(id => [id, subtreeBounds(id)]))
+    const expandedRootChildren = visibleRootChildren.filter(
+      (childId) => (NODES[childId]?.children ?? []).some((gc) => vis.has(gc))
+    )
+    if (rootPoint && expandedRootChildren.length > 1) {
+      // Snapshot subtree bounds BEFORE any shift — no read-after-write drift.
+      const snaps = new Map(visibleRootChildren.map(id => [id, subtreeBounds(id)]))
       const gap = gapFor(visibleRootChildren.length, 0)
-      const groupWidth = visibleRootChildren.reduce((s, id) => s + (rootChildSnaps.get(id)?.span ?? 0), 0)
+      const groupWidth = visibleRootChildren.reduce((s, id) => s + (snaps.get(id)?.span ?? 0), 0)
         + gap * Math.max(visibleRootChildren.length - 1, 0)
-      // Center the group under the ROOT node — compact, no lane-filling spread
+      // Centre the group under the ROOT node — compact, no lane-filling spread.
       let cursor = rootPoint.x - groupWidth / 2
       visibleRootChildren.forEach((childId) => {
-        const b = rootChildSnaps.get(childId)
+        const b = snaps.get(childId)
         if (!b) return
-        const targetCenter = cursor + b.span / 2
-        shiftVisibleSubtree(childId, targetCenter - b.center)
+        shiftVisibleSubtree(childId, (cursor + b.span / 2) - b.center)
         cursor += b.span + gap
       })
 
-      // Reposition ROOT node above center of its children's new positions
-      const newChildBounds = visibleRootChildren.reduce((acc, childId) => {
-        const b = subtreeBounds(childId)
-        return { minX: Math.min(acc.minX, b.min), maxX: Math.max(acc.maxX, b.max) }
-      }, { minX: Infinity, maxX: -Infinity })
-      if (isFinite(newChildBounds.minX) && isFinite(newChildBounds.maxX)) {
+      // Move ROOT above the centre of its children's new positions.
+      const afterSnaps = visibleRootChildren.map(id => subtreeBounds(id))
+      const minX = Math.min(...afterSnaps.map(b => b.min))
+      const maxX = Math.max(...afterSnaps.map(b => b.max))
+      if (isFinite(minX) && isFinite(maxX)) {
         const rootWidth = effW.get(ROOT_ID) ?? estNodeW(ROOT_ID)
-        const minRootX = laneL + rootWidth / 2
-        const maxRootX = laneR - rootWidth / 2
-        const targetRootX = Math.max(minRootX, Math.min((newChildBounds.minX + newChildBounds.maxX) / 2, maxRootX))
+        const targetRootX = Math.max(laneL + rootWidth / 2, Math.min((minX + maxX) / 2, laneR - rootWidth / 2))
         pos.set(ROOT_ID, { x: targetRootX, y: rootPoint.y })
       }
 
-      // Post-pass lane clamp — ensure nothing overflows [laneL, laneR] after shifting
-      const allBounds = ids.reduce((b, id) => {
+      // Lane clamp after Pass E so nothing overflows [laneL, laneR].
+      const ab = ids.reduce((b, id) => {
         const p = pos.get(id); if (!p) return b
         const lw = effW.get(id) ?? estNodeW(id)
         return { minX: Math.min(b.minX, p.x - lw / 2), maxX: Math.max(b.maxX, p.x + lw / 2) }
       }, { minX: Infinity, maxX: -Infinity })
-      if (isFinite(allBounds.minX)) {
-        let clampShift = 0
-        if (allBounds.maxX + clampShift > laneR) clampShift += laneR - (allBounds.maxX + clampShift)
-        if (allBounds.minX + clampShift < laneL) clampShift += laneL - (allBounds.minX + clampShift)
-        if (clampShift) ids.forEach(id => { const p = pos.get(id); if (p) pos.set(id, { x: p.x + clampShift, y: p.y }) })
+      if (isFinite(ab.minX)) {
+        let cs = 0
+        if (ab.maxX + cs > laneR) cs += laneR - (ab.maxX + cs)
+        if (ab.minX + cs < laneL) cs += laneL - (ab.minX + cs)
+        if (cs) ids.forEach(id => { const p = pos.get(id); if (p) pos.set(id, { x: p.x + cs, y: p.y }) })
       }
     }
   }
