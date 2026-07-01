@@ -3094,8 +3094,25 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     if (multiActive) return new Set(tree.defaultExpanded)
     return new Set([...tree.defaultExpanded].filter(id => localFocusPath.has(id)))
   })
+  // Local vertical-layout check — uses localNodes/localParents/localRootId
+  // so we never touch the module-level globals that belong to the primary tree.
+  const useVerticalLayout = useMemo(() => {
+    if (forceVertical) return true
+    if (!localRootId) return false
+    const threshold = 9
+    const collectLocalVisible = (id: string, expanded: Set<string>, out: Set<string>) => {
+      out.add(id)
+      if (!expanded.has(id)) return
+      for (const ch of (localNodes[id]?.children ?? [])) collectLocalVisible(ch, expanded, out)
+    }
+    const visible = new Set<string>()
+    collectLocalVisible(localRootId, expandedIds, visible)
+    const localDepth = (id: string) => { let d = 0; let cur: string | undefined = id; while ((cur = localParents[cur])) d++; return d }
+    const byDepth: Record<number, number> = {}
+    visible.forEach(id => { const d = localDepth(id); byDepth[d] = (byDepth[d] ?? 0) + 1 })
+    return Object.values(byDepth).some(count => count >= threshold)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const useVerticalLayout = useMemo(() => forceVertical || shouldUseVerticalLayout(expandedIds, 'preview'), [expandedIds])
+  }, [expandedIds, localRootId])
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
