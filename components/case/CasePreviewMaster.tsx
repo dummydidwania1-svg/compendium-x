@@ -4520,6 +4520,7 @@ export function CaseInterviewerMaster({
   // ─── Notes textarea smart-formatting ───────────────────────
   const notesTaRef = useRef<HTMLTextAreaElement>(null)
   const [notesCtxMenu, setNotesCtxMenu] = useState<{ x: number; y: number } | null>(null)
+  const [notesExpanded, setNotesExpanded] = useState(false)
 
   useEffect(() => {
     if (!notesCtxMenu) return
@@ -4528,6 +4529,14 @@ export function CaseInterviewerMaster({
     document.addEventListener('contextmenu', close)
     return () => { document.removeEventListener('click', close); document.removeEventListener('contextmenu', close) }
   }, [notesCtxMenu])
+
+  // Esc collapses the expanded notes overlay
+  useEffect(() => {
+    if (!notesExpanded) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setNotesExpanded(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [notesExpanded])
 
   function nextRoman(s: string): string { return toRoman(fromRoman(s) + 1) }
 
@@ -4544,7 +4553,7 @@ export function CaseInterviewerMaster({
     if (kind === 'number') return '1' + sep + ' '
     if (kind === 'roman') return 'i' + sep + ' '
     if (kind === 'letter') return 'a' + sep + ' '
-    return '• '
+    return '- '
   }
 
   // Detect what type and value a line's marker is.
@@ -4607,13 +4616,14 @@ export function CaseInterviewerMaster({
     const rest = fullLine.slice(indent.length)
     const parsed = parseMarker(rest)
 
-    // Auto-convert dash+space to bullet
+    // Auto-convert asterisk+space to a dash bullet. A typed dash '- ' is already a
+    // valid bullet and is left exactly as-is (dash is our only bullet style).
     if (e.key === ' ' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
       const lineUpToCursor = val.slice(lineStart, cur)
-      if (/^(\s*)-$/.test(lineUpToCursor)) {
+      if (/^(\s*)\*$/.test(lineUpToCursor)) {
         e.preventDefault()
         const ind = (lineUpToCursor.match(/^( *)/)?.[1] ?? '')
-        setNotes(val.slice(0, lineStart) + ind + '• ' + val.slice(cur))
+        setNotes(val.slice(0, lineStart) + ind + '- ' + val.slice(cur))
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = lineStart + ind.length + 2 })
         return
       }
@@ -4647,6 +4657,9 @@ export function CaseInterviewerMaster({
         // Find the nearest line at newLevel (scanning upward, stopping if we cross above newLevel)
         let parentParsed: ReturnType<typeof parseMarker> = null
         for (let i = aboveLines.length - 1; i >= 0; i--) {
+          // Skip blank lines. split('\n') on the text above always yields a trailing
+          // empty string; treating it as level-0 would wrongly terminate the scan.
+          if (aboveLines[i].trim() === '') continue
           const aboveIndent = (aboveLines[i].match(/^( *)/)?.[1] ?? '')
           const aboveLevel = Math.floor(aboveIndent.length / 2)
           if (aboveLevel < newLevel) break  // crossed above parent level — stop
@@ -4710,7 +4723,7 @@ export function CaseInterviewerMaster({
     const eol = lineEndIdx === -1 ? val.length : lineEndIdx
     const line = val.slice(lineStart, eol)
     const clean = line.replace(/^(\s*)(\d+[.):-]\s|[ivxlcdm]+[.):-]\s|[a-z][).]\s|[•–-]\s)/, '$1')
-    const newLine = format === 'bullet' ? clean.replace(/^(\s*)/, '$1• ') : format === 'numbered' ? clean.replace(/^(\s*)/, '$11. ') : clean
+    const newLine = format === 'bullet' ? clean.replace(/^(\s*)/, '$1- ') : format === 'numbered' ? clean.replace(/^(\s*)/, '$11. ') : clean
     if (newLine !== line) {
       const delta = newLine.length - line.length
       setNotes(val.slice(0, lineStart) + newLine + val.slice(eol))
@@ -4719,6 +4732,82 @@ export function CaseInterviewerMaster({
     setNotesCtxMenu(null)
   }
   // ────────────────────────────────────────────────────────────
+
+  // Renumber consecutive numbered lists after any deletion.
+  // Only affects digit-prefixed items (1. 2. 3.); roman/letter/bullet lists are left alone.
+  function renumberLists(text: string): string {
+    const lines = text.split('\n')
+    const result: string[] = []
+    // key = "${indentLevel}:${sep}", tracks the running count and last index seen
+    const counters = new Map<string, { count: number; lastIdx: number }>()
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      const indent = (line.match(/^( *)/)?.[1] ?? '')
+      const indentLevel = Math.floor(indent.length / 2)
+      const rest = line.slice(indent.length)
+      const numMatch = rest.match(/^(\d+)([.):])(\s.*)$/)
+
+      if (numMatch) {
+        const sep = numMatch[2]
+        const afterNum = numMatch[3]
+        const key = `${indentLevel}:${sep}`
+        const prev = counters.get(key)
+        let nextNum = 1
+
+        if (prev) {
+          // Check if any non-blank line at the same or lower indent level interrupted
+          let broken = false
+          for (let j = prev.lastIdx + 1; j < i; j++) {
+            if (lines[j].trim() === '') continue
+            const jLevel = Math.floor((lines[j].match(/^( *)/)?.[1]?.length ?? 0) / 2)
+            if (jLevel <= indentLevel) { broken = true; break }
+          }
+          if (!broken) nextNum = prev.count + 1
+        }
+
+        counters.set(key, { count: nextNum, lastIdx: i })
+        result.push(`${indent}${nextNum}${sep}${afterNum}`)
+      } else {
+        // Non-numbered line at a given indent resets that indent's counter
+        if (line.trim() !== '') {
+          const lvl = Math.floor(indent.length / 2)
+          for (const k of [...counters.keys()]) {
+            if (parseInt(k.split(':')[0]) === lvl) counters.delete(k)
+          }
+        }
+        result.push(line)
+      }
+    }
+
+    return result.join('\n')
+  }
+
+  function handleNotesChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const ta = e.currentTarget
+    const newVal = e.target.value
+    const sel = ta.selectionStart
+
+    if (newVal.length < notes.length) {
+      const renumbered = renumberLists(newVal)
+      if (renumbered !== newVal) {
+        // Compute cursor delta: sum length changes of all full lines before the cursor's line
+        const linesOrig = newVal.slice(0, sel).split('\n')
+        const linesNew = renumbered.split('\n')
+        let delta = 0
+        for (let i = 0; i < linesOrig.length - 1; i++) {
+          delta += (linesNew[i]?.length ?? 0) - linesOrig[i].length
+        }
+        setNotes(renumbered)
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = Math.max(0, sel + delta)
+        })
+        return
+      }
+    }
+
+    setNotes(newVal)
+  }
 
   const revealDepth = maxTreeDepth
   const treeFullyRevealed = true
@@ -5320,203 +5409,260 @@ export function CaseInterviewerMaster({
           </main>
 
           {/* ── Right panel: notes + ratings + end case ── */}
-          <aside
-            className="hidden lg:flex flex-col flex-shrink-0"
-            style={{
-              width: '300px',
-              position: 'sticky',
-              top: '70px',
-              height: 'calc(100vh - 70px)',
-              paddingLeft: '20px',
-              paddingTop: '10px',
-              paddingBottom: '16px',
-            }}
-          >
-            <style>{`
-              .eval-range { -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; }
-              .eval-range:focus { outline:none; }
-              .eval-range::-webkit-slider-runnable-track { height:3px; border-radius:1px; background:rgba(92,64,51,0.16); }
-              .eval-range::-moz-range-track { height:3px; border-radius:2px; background:rgba(92,64,51,0.16); }
-              .eval-range::-moz-range-progress { height:3px; border-radius:2px; background:#3D5A35; }
-              .eval-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; margin-top:-6px; width:15px; height:15px; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
-              .eval-range::-moz-range-thumb { width:15px; height:15px; border:none; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
-              .eval-range.is-nr::-webkit-slider-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
-              .eval-range.is-nr::-moz-range-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
-              .eval-range.is-nr::-moz-range-progress { background:transparent; }
-              .notes-ta::-webkit-scrollbar { width:4px; }
-              .notes-ta::-webkit-scrollbar-track { background:transparent; }
-              .notes-ta::-webkit-scrollbar-thumb { background:rgba(92,64,51,0.18); border-radius:4px; }
-              .notes-ta::-webkit-scrollbar-thumb:hover { background:rgba(92,64,51,0.32); }
-            `}</style>
+          {/* ── Right panel: notes + ratings + end case ── */}
+<aside
+  className="hidden lg:flex flex-col flex-shrink-0"
+  style={ { width: '272px', position: 'sticky', top: '70px', height: 'calc(100vh - 86px)', paddingLeft: '24px' } }
+>
+  <style>{`
+    .eval-range { -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; }
+    .eval-range:focus { outline:none; }
+    .eval-range::-webkit-slider-runnable-track { height:3px; border-radius:1px; background:rgba(92,64,51,0.16); }
+    .eval-range::-moz-range-track { height:3px; border-radius:2px; background:rgba(92,64,51,0.16); }
+    .eval-range::-moz-range-progress { height:3px; border-radius:2px; background:#3D5A35; }
+    .eval-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; margin-top:-6px; width:15px; height:15px; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
+    .eval-range::-moz-range-thumb { width:15px; height:15px; border:none; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
+    .eval-range.is-nr::-webkit-slider-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
+    .eval-range.is-nr::-moz-range-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
+    .eval-range.is-nr::-moz-range-progress { background:transparent; }
+    .notes-ta::-webkit-scrollbar { width:4px; }
+    .notes-ta::-webkit-scrollbar-track { background:transparent; }
+    .notes-ta::-webkit-scrollbar-thumb { background:rgba(92,64,51,0.18); border-radius:4px; }
+    .notes-ta::-webkit-scrollbar-thumb:hover { background:rgba(92,64,51,0.32); }
+    .notes-hint { position:absolute; inset:0; padding:14px; pointer-events:none; overflow:hidden; }
+    .notes-hint-title { font-size:13px; font-style:italic; color:rgba(92,64,51,0.42); font-family:'Newsreader',serif; }
+    .notes-hint-lines { margin-top:12px; display:flex; flex-direction:column; gap:9px; }
+    .notes-hint-line { font-size:10.5px; line-height:1.45; color:rgba(92,64,51,0.5); }
+    .notes-hint-line b { font-weight:700; color:rgba(92,64,51,0.7); }
+  `}</style>
 
-            {/* Single unified panel — no internal scroll */}
-            <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] overflow-hidden">
+  {/* Single unified panel — no internal scroll */}
+<div className="relative flex flex-col flex-1 min-h-0 rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] overflow-hidden">
+  
+  {/* EXPANDED — GLASS OVERLAY (partial card, blurred sliders behind) */}
+  {notesExpanded && (
+    <>
+      {/* Blurred backdrop over the whole panel. NO onClick — click-outside intentionally disabled. */}
+      <div className="absolute inset-0 z-40 bg-[#3B2F2F]/10 backdrop-blur-[4px] rounded-2xl" />
 
-              {/* "Please pair with verbal feedback" at top of box */}
-              <p className="text-center text-[10px] px-4 py-2.5" style={{ color: '#5C4033', textShadow: '0 0 10px rgba(61,90,53,0.6), 0 0 24px rgba(61,90,53,0.25)', letterSpacing: '0.01em' }}>
-                Please pair with verbal feedback
-              </p>
+      {/* Floating notes card + helper */}
+      <div className="absolute inset-0 z-50 flex flex-col items-center px-3.5 pt-4 pb-3.5 pointer-events-none">
+        <div className="pointer-events-auto flex w-full flex-1 min-h-0 flex-col rounded-2xl border border-[#5C4033]/20 bg-[#FFF8F0] p-3.5 shadow-[0_18px_44px_rgba(50,34,20,0.28)]">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full bg-[#3B2F2F]/60" />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Interviewer Notes</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNotesExpanded(false)}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-[#5C4033]/60 transition-colors hover:bg-[#5C4033]/10 hover:text-[#5C4033]"
+              aria-label="Collapse notes"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+              </svg>
+            </button>
+          </div>
+          <textarea
+            autoFocus
+            value={notes}
+            onChange={handleNotesChange}
+            onKeyDown={handleNotesKeyDown}
+            placeholder=""
+            className="notes-ta flex-1 w-full resize-none rounded-xl border border-[#5C4033]/10 bg-[#FBF4EA] p-3 font-['Work_Sans'] text-[13.5px] leading-relaxed text-[#3B2F2F] placeholder:text-transparent focus:outline-none overflow-y-auto"
+          />
+        </div>
+        <p className="pointer-events-none mt-2 text-[11px] font-medium text-[#5C4033]/80 tracking-wide">
+          Press Esc or collapse button to shrink
+        </p>
+      </div>
+    </>
+  )}
 
-              {/* Notes section — grows to fill space above evaluation */}
-              <div className="px-4 pt-3 pb-3 flex flex-col gap-2 flex-1 min-h-0">
-                <div className="flex items-center gap-2">
-                  <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full" style={{ background: '#3D5A35', boxShadow: '0 0 7px rgba(61,90,53,0.75), 0 0 14px rgba(61,90,53,0.35)', animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Interviewer Notes</p>
-                </div>
-                <textarea
-                  ref={notesTaRef}
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  onKeyDown={handleNotesKeyDown}
-                  onContextMenu={e => { e.preventDefault(); setNotesCtxMenu({ x: e.clientX, y: e.clientY }) }}
-                  placeholder={"Jot observations here...\nTab = indent  ·  Shift+Tab = outdent  ·  Enter = continue list\n1.  i.  A.  a.  - (auto-bullet)  all work"}
-                  className="notes-ta flex-1 min-h-0 w-full resize-none rounded-[10px] border border-[#5C4033]/10 bg-[rgba(255,248,240,0.6)] p-3 text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:border-[#5C4033]/30 focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 transition-all overflow-y-auto"
-                  style={{ fontFamily: "'Work Sans', sans-serif" }}
+  {/* "Please pair with verbal feedback" at top of box */}
+  <p className="text-center text-[10px] px-4 py-2.5 text-[#5C4033]/80">
+    Please pair with verbal feedback
+  </p>
+
+  {/* Normal Notes section */}
+  <div className="px-4 pt-3 pb-3 flex flex-col gap-2 flex-1 min-h-0">
+    <div className="flex items-center gap-2">
+      <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full bg-[#3B2F2F]/60" />
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Interviewer Notes</p>
+    </div>
+    <div className="relative flex-1 min-h-[40px] w-full">
+      <textarea
+        ref={notesTaRef}
+        value={notes}
+        onChange={handleNotesChange}
+        onKeyDown={handleNotesKeyDown}
+        onContextMenu={e => { e.preventDefault(); setNotesCtxMenu({ x: e.clientX, y: e.clientY }) }}
+        placeholder={notes.trim() ? "" : "Jot observations here…."}
+        className="notes-ta absolute top-0 left-0 w-full h-full resize-none rounded-xl border border-[#5C4033]/10 bg-transparent p-3 pr-10 font-['Work_Sans'] text-[13px] leading-relaxed text-[#3B2F2F] placeholder:text-transparent focus:outline-none focus:ring-1 focus:ring-[#5C4033]/20 overflow-y-auto"
+      />
+      {!notes.trim() && (
+        <div className="notes-hint" aria-hidden="true">
+          <div className="notes-hint-title">Jot observations here….</div>
+          <div className="notes-hint-lines">
+            <div className="notes-hint-line">Type <b>1.</b> or <b>-</b> to make a list</div>
+            <div className="notes-hint-line"><b>Tab</b> to indent, <b>Shift+Tab</b> to outdent</div>
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); setNotesExpanded(true); }}
+        className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-md text-[#5C4033]/40 transition-colors hover:bg-[#5C4033]/10 hover:text-[#5C4033]"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+        </svg>
+      </button>
+    </div>
+    
+    {notesCtxMenu && (
+      <div
+        onMouseDown={e => e.preventDefault()}
+        className="fixed z-[9999] min-w-[180px] rounded-[10px] border border-[#5C4033]/15 bg-[rgba(255,248,240,0.95)] p-1.5 shadow-[0_12px_32px_-6px_rgba(59,47,47,0.15)] backdrop-blur-md"
+        style={{ top: notesCtxMenu.y, left: notesCtxMenu.x }}
+      >
+        {([
+          { label: '•  Bullet list', action: 'bullet' as const },
+          { label: '1.  Numbered list', action: 'numbered' as const },
+          { label: '   i.  Sub-item  (Tab)', action: null },
+          null,
+          { label: '✕  Clear formatting', action: 'clear' as const },
+        ] as const).map((item, idx) =>
+          item === null ? (
+            <div key={idx} className="my-1.5 h-px w-full bg-[#5C4033]/10" />
+          ) : (
+            <button
+              key={item.label}
+              type="button"
+              onMouseDown={e => { e.preventDefault(); if (item.action) applyNotesFormat(item.action) }}
+              disabled={!item.action}
+              className="w-full text-left px-3 py-1.5 text-[12px] font-medium rounded-md transition-colors text-[#3B2F2F] hover:bg-[#5C4033]/10"
+              style={{ opacity: item.action ? 1 : 0.4 }}
+            >
+              {item.label}
+            </button>
+          )
+        )}
+      </div>
+    )}
+  </div>
+
+  {/* Divider */}
+  <div className="mx-4 h-px bg-[#5C4033]/10" />
+
+  {/* Evaluation section */}
+  <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
+    <div className="flex items-center gap-2">
+      <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full bg-[#3B2F2F]/60" />
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Evaluation</p>
+    </div>
+    <div className="space-y-3">
+      {EVAL_CRITERIA.map(c => {
+        const committed = scores[c.id]
+        const isHovering = hoverScore?.id === c.id
+        const preview = isHovering ? hoverScore!.value : null
+        const displayVal = preview ?? committed
+        const rated = committed > 0
+        const pct = (displayVal / 5) * 100
+        const isPreviewing = isHovering && preview !== committed
+
+        return (
+          <div key={c.id}>
+            <div className="flex items-center gap-2">
+              <span className="flex-1 text-[12px] font-semibold leading-5 text-[#5C4033] whitespace-nowrap">{c.label}</span>
+              {(rated || isHovering) && (
+                <span
+                  className={`flex-shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] whitespace-nowrap transition-all duration-150 ${
+                    isPreviewing 
+                      ? "border border-dashed border-[#3D5A35]/40 text-[#3D5A35]/55 bg-transparent" 
+                      : "border border-[#3D5A35]/35 bg-[#AED0A1]/22 text-[#3D5A35]"
+                  }`}
+                >
+                  {displayVal}/5
+                </span>
+              )}
+            </div>
+            <div className="pb-0.5 pt-2">
+              {/* Custom hover-interactive track */}
+              <div
+                className="relative w-full max-w-[220px] h-[20px] cursor-pointer"
+                onMouseMove={e => {
+                  const now = Date.now()
+                  if (rated && evalClickCooldown.current > now) return
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                  const raw = (e.clientX - rect.left) / rect.width
+                  const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
+                  setHoverScore({ id: c.id, value: snapped })
+                }}
+                onMouseLeave={() => setHoverScore(null)}
+                onClick={e => {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                  const raw = (e.clientX - rect.left) / rect.width
+                  const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
+                  setScores({ ...scores, [c.id]: snapped })
+                  setHoverScore(null)
+                  evalClickCooldown.current = Date.now() + 4000
+                }}
+              >
+                {/* Track background */}
+                <div className="absolute inset-x-0 top-[7px] h-[6px] rounded-full bg-[#5C4033]/15" />
+                {/* Tick notches — replaces the old number ruler. Whole numbers 1–5 only. */}
+                {[1, 2, 3, 4, 5].map(n => {
+                  const tickPct = (n / 5) * 100
+                  const onFill = displayVal >= n
+                  return (
+                    <div
+                      key={`tick-${c.id}-${n}`}
+                      className="absolute top-[8px] w-[1.5px] h-[4px] rounded-full pointer-events-none"
+                      style={{
+                        left: `calc(${tickPct}% - 0.75px)`,
+                        background: onFill ? 'rgba(255,248,240,0.85)' : 'rgba(92,64,51,0.35)',
+                      }}
+                    />
+                  )
+                })}
+                {/* NR marker — sits just inside the left edge, same short height */}
+                <div
+                  className="absolute top-[7px] left-0 w-[2px] h-[6px] rounded-full pointer-events-none"
+                  style={{ background: 'rgba(154,140,125,0.6)' }}
                 />
-                {notesCtxMenu && (
+                {/* Filled portion */}
+                {displayVal > 0 && (
                   <div
-                    onMouseDown={e => e.preventDefault()}
-                    style={{ position: 'fixed', top: notesCtxMenu.y, left: notesCtxMenu.x, zIndex: 9500, background: '#fffdf9', borderRadius: '9px', boxShadow: '0 4px 18px rgba(59,47,47,0.13), 0 0 0 1px rgba(92,64,51,0.1)', padding: '4px', minWidth: '168px', fontFamily: "'Work Sans', sans-serif" }}
-                  >
-                    {([
-                      { label: '•  Bullet list', action: 'bullet' as const },
-                      { label: '1.  Numbered list', action: 'numbered' as const },
-                      { label: '   i.  Sub-item  (Tab)', action: null },
-                      null,
-                      { label: '✕  Clear formatting', action: 'clear' as const },
-                    ] as const).map((item, idx) =>
-                      item === null ? (
-                        <div key={idx} style={{ height: '1px', background: 'rgba(92,64,51,0.1)', margin: '3px 6px' }} />
-                      ) : (
-                        <button
-                          key={item.label}
-                          type="button"
-                          onMouseDown={e => { e.preventDefault(); if (item.action) applyNotesFormat(item.action) }}
-                          disabled={!item.action}
-                          style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '6px 10px', fontSize: '12px', borderRadius: '5px', color: item.action ? '#2e2318' : 'rgba(92,64,51,0.38)', cursor: item.action ? 'pointer' : 'default', fontFamily: "'Work Sans', sans-serif" }}
-                          onMouseEnter={e => { if (item.action) (e.currentTarget as HTMLElement).style.background = 'rgba(61,90,53,0.08)' }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none' }}
-                        >
-                          {item.label}
-                        </button>
-                      )
-                    )}
-                  </div>
+                    className={`absolute top-[7px] left-0 h-[6px] rounded-full transition-all duration-[80ms] ${isPreviewing ? 'bg-[#3D5A35]/40' : 'bg-[#3D5A35]'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                )}
+                {/* Thumb dot */}
+                {displayVal > 0 && (
+                  <div
+                    className={`absolute top-[5px] w-[11px] h-[11px] rounded-full transition-all duration-[80ms] pointer-events-none ${isPreviewing ? 'bg-[#3D5A35]/45 shadow-none' : 'bg-[#3D5A35] shadow-[0_0_0_3px_rgba(61,90,53,0.13)]'}`}
+                    style={{ left: `calc(${pct}% - 5.5px)` }}
+                  />
                 )}
               </div>
-
-              {/* Divider */}
-              <div className="mx-4 h-px bg-[#5C4033]/10" />
-
-              {/* Evaluation section */}
-              <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full" style={{ background: '#3D5A35', boxShadow: '0 0 7px rgba(61,90,53,0.75), 0 0 14px rgba(61,90,53,0.35)', animation: 'cpm-dot-breathe 2.5s ease-in-out infinite' }} />
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50">Evaluation</p>
-                </div>
-                <div className="space-y-3">
-                  {EVAL_CRITERIA.map(c => {
-                    const committed = scores[c.id]
-                    const isHovering = hoverScore?.id === c.id
-                    const preview = isHovering ? hoverScore!.value : null
-                    const displayVal = preview ?? committed
-                    const rated = committed > 0
-                    const pct = (displayVal / 5) * 100
-                    const isPreviewing = isHovering && preview !== committed
-
-                    return (
-                      <div key={c.id}>
-                        <div className="flex items-center gap-2">
-                          <span className="flex-1 text-[12px] font-semibold leading-5 text-[#5C4033] whitespace-nowrap">{c.label}</span>
-                          {(rated || isHovering) && (
-                            <span
-                              className="flex-shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] whitespace-nowrap transition-all duration-150"
-                              style={isPreviewing ? {
-                                border: '1px dashed rgba(61,90,53,0.4)',
-                                background: 'transparent',
-                                color: 'rgba(61,90,53,0.55)',
-                              } : {
-                                border: '1px solid rgba(61,90,53,0.35)',
-                                background: 'rgba(174,208,161,0.22)',
-                                color: '#3D5A35',
-                              }}
-                            >
-                              {displayVal}/5
-                            </span>
-                          )}
-                        </div>
-                        <div className="pb-0.5 pt-2">
-                          {/* Custom hover-interactive track */}
-                          <div
-                            className="relative w-full"
-                            style={{ height: '16px', cursor: 'pointer' }}
-                            onMouseMove={e => {
-                              const now = Date.now()
-                              if (rated && evalClickCooldown.current > now) return
-                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                              const raw = (e.clientX - rect.left) / rect.width
-                              const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
-                              setHoverScore({ id: c.id, value: snapped })
-                            }}
-                            onMouseLeave={() => setHoverScore(null)}
-                            onClick={e => {
-                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                              const raw = (e.clientX - rect.left) / rect.width
-                              const snapped = Math.round(Math.max(0, Math.min(1, raw)) * 10) / 2
-                              setScores({ ...scores, [c.id]: snapped })
-                              setHoverScore(null)
-                              evalClickCooldown.current = Date.now() + 4000
-                            }}
-                          >
-                            {/* Track background */}
-                            <div className="absolute inset-x-0" style={{ top: '6px', height: '3px', borderRadius: '2px', background: 'rgba(92,64,51,0.16)' }} />
-                            {/* Filled portion */}
-                            {displayVal > 0 && (
-                              <div
-                                className="absolute"
-                                style={{
-                                  top: '6px', left: 0, height: '3px', borderRadius: '2px',
-                                  width: `${pct}%`,
-                                  background: isPreviewing ? 'rgba(61,90,53,0.38)' : '#3D5A35',
-                                  transition: 'width 0.08s ease, background 0.15s ease',
-                                }}
-                              />
-                            )}
-                            {/* Thumb dot */}
-                            {displayVal > 0 && (
-                              <div
-                                className="absolute"
-                                style={{
-                                  top: '3px', width: '10px', height: '10px', borderRadius: '50%',
-                                  left: `calc(${pct}% - 5px)`,
-                                  background: isPreviewing ? 'rgba(61,90,53,0.45)' : '#3D5A35',
-                                  boxShadow: isPreviewing ? 'none' : '0 0 0 3px rgba(61,90,53,0.13)',
-                                  transition: 'left 0.08s ease, background 0.15s ease, box-shadow 0.15s ease',
-                                  pointerEvents: 'none',
-                                }}
-                              />
-                            )}
-                          </div>
-                          <div className="mt-1 flex justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-[#a99a87]">
-                            <span className="italic">NR</span>
-                            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
             </div>
+          </div>
+        )
+      })}
+    </div>
+  </div>
+</div>
 
-            {/* End case — always visible at bottom */}
-            <button
-              onClick={onEndCase}
-              className="mt-2 w-full flex-shrink-0 rounded-[18px] bg-[#3D5A35] py-3.5 text-[10px] font-bold uppercase tracking-[0.3em] text-[#efe8de] transition hover:bg-[#34502d]"
-            >
-              End Case & Evaluate
-            </button>
-          </aside>
+  {/* End case — always visible at bottom */}
+  <button
+    onClick={onEndCase}
+    className="mt-2 w-full flex-shrink-0 rounded-[18px] bg-[#3D5A35] py-3.5 text-[10px] font-bold uppercase tracking-[0.3em] text-[#efe8de] transition hover:bg-[#34502d]"
+  >
+    End Case & Evaluate
+  </button>
+</aside>
 
         </div>
       </div>
