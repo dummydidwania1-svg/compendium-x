@@ -380,8 +380,6 @@ function layoutDesktop(
   }, { minX: Infinity, maxX: -Infinity })
 
   if (isFinite(bounds.minX)) {
-    const effectiveFootprint = (id: string) => (effW.get(id) ?? estNodeW(id)) + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
-
     const shiftVisibleSubtree = (id: string, delta: number) => {
       if (!delta) return
       const point = pos.get(id)
@@ -389,6 +387,22 @@ function layoutDesktop(
       ;(NODES[id]?.children ?? [])
         .filter((childId) => vis.has(childId))
         .forEach((childId) => shiftVisibleSubtree(childId, delta))
+    }
+
+    // Returns the actual bounding box of id's entire visible subtree using
+    // current pos map values (post-scale). Used instead of node-box footprint
+    // so siblings don't collide when multiple branches are expanded (multiActive).
+    const subtreeBounds = (id: string): { min: number; max: number; span: number; center: number } => {
+      let min = Infinity, max = -Infinity
+      const walk = (n: string) => {
+        const p = pos.get(n); if (!p) return
+        const nw = (effW.get(n) ?? estNodeW(n))
+        min = Math.min(min, p.x - nw / 2); max = Math.max(max, p.x + nw / 2)
+        ;(NODES[n]?.children ?? []).filter(c => vis.has(c)).forEach(walk)
+      }
+      walk(id)
+      if (min === Infinity) { const w = estNodeW(id); return { min: 0, max: w, span: w, center: w / 2 } }
+      return { min, max, span: max - min, center: (min + max) / 2 }
     }
 
     const parentIds = ids
@@ -402,11 +416,15 @@ function layoutDesktop(
       const children = (NODES[parentId]?.children ?? []).filter((childId) => vis.has(childId))
       if (children.length <= 1) return
 
+      // Snapshot all subtree bounds BEFORE shifting any child, so siblings
+      // measure each other's pre-shift extents (avoids cascading offset errors).
+      const childBoundsSnap = new Map(children.map(c => [c, subtreeBounds(c)]))
+
       const rowLeft = parentId === ROOT_ID ? laneL : aL
       const rowRight = parentId === ROOT_ID ? laneR : aR
       const rowWidth = Math.max(rowRight - rowLeft, 1)
       const defaultGap = gapFor(children.length, nodeDepth(parentId))
-      const footprintSum = children.reduce((sum, childId) => sum + effectiveFootprint(childId), 0)
+      const footprintSum = children.reduce((sum, childId) => sum + (childBoundsSnap.get(childId)?.span ?? 0), 0)
       const packedGap =
         children.length > 1
           ? parentId === ROOT_ID
@@ -421,12 +439,12 @@ function layoutDesktop(
 
       let cursor = desiredLeft
       children.forEach((childId) => {
-        const footprint = effectiveFootprint(childId)
-        const currentPoint = pos.get(childId)
-        if (!currentPoint) return
-        const targetX = cursor + footprint / 2
-        shiftVisibleSubtree(childId, targetX - currentPoint.x)
-        cursor += footprint + packedGap
+        const snap = childBoundsSnap.get(childId)
+        if (!snap) return
+        // Centre the child's SUBTREE (not just its node box) at the target position
+        const targetCenter = cursor + snap.span / 2
+        shiftVisibleSubtree(childId, targetCenter - snap.center)
+        cursor += snap.span + packedGap
       })
     })
 
@@ -471,7 +489,9 @@ function layoutDesktop(
       }, Infinity)
 
       if (isFinite(currentRootLeft)) {
-        const footprintSum = visibleRootChildren.reduce((sum, childId) => sum + effectiveFootprint(childId), 0)
+        // Snapshot subtree bounds before shifting so siblings measure each other's pre-shift extents
+        const rootChildBoundsSnap = new Map(visibleRootChildren.map(c => [c, subtreeBounds(c)]))
+        const footprintSum = visibleRootChildren.reduce((sum, childId) => sum + (rootChildBoundsSnap.get(childId)?.span ?? 0), 0)
         const targetRight = aR - targetSideGap
         const availableWidth = Math.max(targetRight - currentRootLeft, footprintSum)
         const rootGap =
@@ -481,12 +501,11 @@ function layoutDesktop(
 
         let cursor = currentRootLeft
         visibleRootChildren.forEach((childId) => {
-          const footprint = effectiveFootprint(childId)
-          const currentPoint = pos.get(childId)
-          if (!currentPoint) return
-          const targetX = cursor + footprint / 2
-          shiftVisibleSubtree(childId, targetX - currentPoint.x)
-          cursor += footprint + rootGap
+          const snap = rootChildBoundsSnap.get(childId)
+          if (!snap) return
+          const targetCenter = cursor + snap.span / 2
+          shiftVisibleSubtree(childId, targetCenter - snap.center)
+          cursor += snap.span + rootGap
         })
       }
 
@@ -726,18 +745,13 @@ function walkthroughSpacingClass(block: WalkthroughBlock, previous?: Walkthrough
  *     drill-down state causes overlap in horizontal layout.
  */
 
-function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview'): boolean {
+function shouldUseVerticalLayout(expandedIds: Set<string>, mode: 'preview' | 'interviewer' = 'preview'): boolean {
   const threshold = 9
 
-  // Build the DEFAULT-VISIBLE set: green path expanded, inactive subtrees collapsed
-  const defaultPath = Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID))
-  const defaultExpanded = new Set(
-    Array.from(DEFAULT_EXPANDED).filter(id => defaultPath.includes(id))
-  )
   const visible = new Set<string>()
-  collectVisible(ROOT_ID, defaultExpanded, visible)
+  collectVisible(ROOT_ID, expandedIds, visible)
 
-  // Check 1: any depth row among the VISIBLE nodes hits threshold+
+  // Check: any depth row among the VISIBLE nodes hits threshold+
   const byDepth: Record<number, number> = {}
   Array.from(visible).forEach(id => {
     const d = pathTo(id).length - 1
@@ -3064,7 +3078,6 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     while (cur) { cur = localParents[cur]; if (cur) depth++ }
     return depth
   }), 0) : 0
-  const useVerticalLayout = forceVertical || shouldUseVerticalLayout('preview')
 
   const localFocusPath = useMemo(() => {
     const ids = (tree.defaultFocusedIds?.length ? tree.defaultFocusedIds : tree.defaultFocusedId ? [tree.defaultFocusedId] : [])
@@ -3081,6 +3094,8 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     if (multiActive) return new Set(tree.defaultExpanded)
     return new Set([...tree.defaultExpanded].filter(id => localFocusPath.has(id)))
   })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const useVerticalLayout = useMemo(() => forceVertical || shouldUseVerticalLayout(expandedIds, 'preview'), [expandedIds])
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
@@ -3542,9 +3557,9 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
     [expandedIds, tree]
   )
 
-  // Computed once — tree structure is static, no need to recompute per render
+  // Reactive to live expansion so vertical layout kicks in if user expands enough nodes
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout('preview') }, [])
+  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout(expandedIds, 'preview') }, [expandedIds])
 
   const [, startChartTransition] = useTransition()
 
@@ -4763,8 +4778,9 @@ export function CaseInterviewerMaster({
   const visibleIds = useMemo(() => { loadTree(tree); const s = new Set<string>(); if (ROOT_ID) collectVisible(ROOT_ID, expandedIds, s); return [...s] }, [expandedIds, tree])
   const chartMaxDepth = useMemo(() => { loadTree(tree); return Math.max(...visibleIds.map(nodeDepth), 0) }, [visibleIds, tree])
   const isChartFullyExpanded = useMemo(() => { loadTree(tree); return [...DEFAULT_EXPANDED].every(id => expandedIds.has(id)) }, [expandedIds, tree])
+  // Reactive to live expansion so vertical layout kicks in if user expands enough nodes
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout('interviewer') }, [])
+  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout(expandedIds, 'interviewer') }, [expandedIds])
   const recommendations = parsedFramework.recommendations
   const promptDisplayLines = useMemo<TranscriptDisplayLine[]>(
     () => promptLines.map(text => ({ text, speaker: 'interviewer' as const })),
