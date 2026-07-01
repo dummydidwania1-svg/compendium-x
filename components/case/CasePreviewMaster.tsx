@@ -3225,12 +3225,6 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
           if (focusedId && localPathTo(focusedId).includes(id)) setFocusedId(id)
         } else {
           next.add(id)
-          if (!multiActive) {
-            const parent = localParents[id]
-            if (parent) (localNodes[parent]?.children ?? []).forEach(sib => {
-              if (sib !== id) { next.delete(sib); localDescendants(sib).forEach(d => next.delete(d)) }
-            })
-          }
         }
         return next
       })
@@ -3618,10 +3612,6 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
           if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
         } else {
           next.add(id)
-          const parent = PARENTS[id]
-          if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
-            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
-          })
         }
         return next
       })
