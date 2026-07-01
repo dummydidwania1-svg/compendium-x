@@ -3225,6 +3225,12 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
           if (focusedId && localPathTo(focusedId).includes(id)) setFocusedId(id)
         } else {
           next.add(id)
+          if (!multiActive) {
+            const parent = localParents[id]
+            if (parent) (localNodes[parent]?.children ?? []).forEach(sib => {
+              if (sib !== id) { next.delete(sib); localDescendants(sib).forEach(d => next.delete(d)) }
+            })
+          }
         }
         return next
       })
@@ -3455,9 +3461,9 @@ export default function CasePreviewMaster({
 
   // ─── Chart state ─────────────────────────────
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
-  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
-})
+    const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
+    return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+  })
   const [focusedId, setFocusedId] = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   // Add this after the focusedId state declaration:
@@ -3612,6 +3618,10 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
           if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
         } else {
           next.add(id)
+          const parent = PARENTS[id]
+          if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
+            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+          })
         }
         return next
       })
@@ -4770,9 +4780,9 @@ export function CaseInterviewerMaster({
   ]
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-  const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
-  return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
-})
+    const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
+    return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
+  })
   const [focusedId, setFocusedId]     = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
