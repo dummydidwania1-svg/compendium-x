@@ -284,14 +284,16 @@ export default function CaseDetailOverlay({
   // Reset zoom whenever we open a different image or leave the expanded view
   useEffect(() => { setZoomed(false); setZoomXY({ x: 50, y: 50 }); }, [expandedUrl]);
 
-  // Zoom hint: show for 3s after lightbox opens, then fade away
+  // Zoom hint: greets the user for ~3s when the photo opens, fades away, then
+  // returns briefly when they zoom in (where the pan / zoom-out guidance is
+  // genuinely useful). Keyed on `zoomed` so each zoom change re-shows it.
   const [showZoomHint, setShowZoomHint] = useState(false);
   useEffect(() => {
     if (!expandedUrl) { setShowZoomHint(false); return; }
     setShowZoomHint(true);
     const t = window.setTimeout(() => setShowZoomHint(false), 3000);
     return () => window.clearTimeout(t);
-  }, [expandedUrl]);
+  }, [expandedUrl, zoomed]);
 
   // Lightbox: ESC closes the expanded photo, and we lock body scroll while it's
   // open so the page behind the frosted glass can't drift.
