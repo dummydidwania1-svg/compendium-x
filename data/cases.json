@@ -19528,9 +19528,6 @@
     "company": "Kearney",
     "round": "Manager",
     "prompt": "Our client is a vending machine manufacturing company that is struggling to grow its revenues. Suggest possible strategies for revenue growth.",
-    "abbreviations": [
-      "USP: Unique Selling Proposition"
-    ],
     "frameworkTree": {
       "nodes": {
         "drivers": {
@@ -19574,7 +19571,7 @@
         },
         "context": {
           "id": "context",
-          "label": "Context",
+          "label": "Conditions",
           "tone": "support",
           "children": []
         },
@@ -19633,32 +19630,87 @@
           "title": "Questions",
           "items": [
             "Is this client-specific or industry-wide?",
-            "Since when, and is it concentrated in a geography?"
+            "Since when, and is it concentrated in a geography?",
+            "Who are our competitors?"
           ]
         },
         {
           "title": "Keep In Mind",
           "items": [
-            "Market share splits into number of customers and revenue per customer",
+            "Think Nescafe stations, not vending machines",
             "Separate USP from price when diagnosing why customers shift"
           ]
         },
         {
           "title": "Brownie Points",
           "items": [
-            "Pinpointing variety as the specific USP gap: 8 varieties versus our 6",
-            "Solving creatively under tightening constraints"
+            "Proposing shift-based sachet rotation for 12+ varieties",
+            "Selling missing flavors as take-home sachets"
           ]
         }
       ]
     },
     "additionalFrameworkTrees": [
       {
-        "label": "Suggestions: Retain Customers Without Touching the Machines",
+        "label": "Expand Variety: Modify the Machine",
         "nodes": {
-          "retain": {
-            "id": "retain",
-            "label": "Retain Customers Without Touching the Machines",
+          "expand-variety": {
+            "id": "expand-variety",
+            "label": "Expand Variety",
+            "tone": "root",
+            "children": [
+              "modify-existing",
+              "shift-model",
+              "capacity-expansion"
+            ]
+          },
+          "modify-existing": {
+            "id": "modify-existing",
+            "label": "Modify Existing Machine",
+            "tone": "branch",
+            "children": [
+              "filling-caps",
+              "flavor-layers"
+            ]
+          },
+          "filling-caps": {
+            "id": "filling-caps",
+            "label": "Additional Filling Caps",
+            "tone": "leaf",
+            "children": []
+          },
+          "flavor-layers": {
+            "id": "flavor-layers",
+            "label": "New Flavor Layers",
+            "tone": "leaf",
+            "children": []
+          },
+          "shift-model": {
+            "id": "shift-model",
+            "label": "Shift Model",
+            "tone": "support",
+            "children": []
+          },
+          "capacity-expansion": {
+            "id": "capacity-expansion",
+            "label": "Expand Per-Machine Capacity",
+            "tone": "support",
+            "children": []
+          }
+        },
+        "defaultExpanded": [
+          "expand-variety",
+          "modify-existing"
+        ],
+        "defaultFocusedId": "modify-existing",
+        "notes": []
+      },
+      {
+        "label": "Expand Variety: Beyond the Machine",
+        "nodes": {
+          "beyond-machine": {
+            "id": "beyond-machine",
+            "label": "Beyond the Machine",
             "tone": "root",
             "children": [
               "complementary",
@@ -19682,7 +19734,7 @@
           },
           "snacks": {
             "id": "snacks",
-            "label": "Snacks Adjacent to Flavors",
+            "label": "Adjacent Snacks To Flavors",
             "tone": "leaf",
             "children": []
           },
@@ -19697,23 +19749,24 @@
           },
           "onsite": {
             "id": "onsite",
-            "label": "On-Site: 6 Variants",
+            "label": "6 Variants On-Site",
             "tone": "leaf",
             "children": []
           },
           "takehome": {
             "id": "takehome",
-            "label": "Take-Home: Missing Variants",
+            "label": "Missing Variants at Home",
             "tone": "leaf",
             "children": []
           }
         },
         "defaultExpanded": [
-          "retain",
+          "beyond-machine",
           "complementary",
           "sachets"
         ],
-        "defaultFocusedId": "sachets"
+        "defaultFocusedId": "sachets",
+        "notes": []
       }
     ],
     "framework": "Candidate: I'd like to reiterate the problem statement to make sure we are aligned. Our client manufactures vending machines, and the objective is to identify strategies to grow their revenues. This is a new and interesting industry for me, so I'd like to ask a few clarifying questions across three areas: the problem itself, the client, and the industry.\nStarting with the problem. Is this a client-specific issue, or an industry-wide trend?\nInterviewer: It is not industry-wide. It is specific to our client.\nCandidate: Since when have we been facing this, and is there a particular geography where it is concentrated?\nInterviewer: There is no specific start date, but it has emerged in the recent past. And there is no specific geography, it is across India.\nCandidate: Moving to the client. Could you walk me through the value chain? Who are our customers, and who are our end consumers?\nInterviewer: We are an end-to-end manufacturer, and we sell directly to customers, who in turn make the machines available to end consumers. Before you go further, let me ask you: who do you think our customers should be, and who our consumers should be?\nCandidate: Our customers could be both residential and commercial buyers, and the end consumers would be the people who actually use the machines for services like juices, coffee, and so on.\nInterviewer: Correct. I'd like you to dig deeper on the commercial side. Who do you think a commercial customer would be?\nCandidate: I can think of five major segments: schools and colleges, corporates and offices, airports, malls, and metro stations.\nInterviewer: Good, that covers it.\nCandidate: Lastly, on the industry. What does the competitive landscape look like, and who are our competitors?\nInterviewer: There are several emerging players, each holding around 10 to 15 percent market share. We have historically been the market leader with around 50 to 55 percent share, but we are now struggling to grow it as these emerging players have come up.\nCandidate: Thank you, I have the context I need. Since the underlying problem is a market share problem, I'd like to take two approaches in sequence. First, a diagnostic approach to understand why we are losing share. Second, once we have identified the root cause, a solution approach to figure out how to grow revenues.\nInterviewer: Correct. Go ahead.\nCandidate: Starting with the diagnostic. I'd express market share as a function of two components: the number of customers, and the revenue per customer.\nThe number of customers can be broken down into willingness to buy our machines, and ability to buy them even if willing. Revenue per customer can be broken down into the number of machines bought per customer, and the price per machine.\nInterviewer: The issue lies on the number-of-customers side. We have seen a dip in the number of customers buying from us. Walk me through what you would cover under willingness and ability.\nCandidate: Understood. With the rise of these emerging players, customers we previously had have been shifting to them. Within willingness, I'd look at three factors in sequence:\n- Need: customers may no longer feel the need for our machines\n- Affordability: customers may feel competitor machines are cheaper and so are not willing to buy from us\n- Customer experience: there may be issues with how customers have experienced our machines historically, which has led to the shift\nWithin ability, two factors:\n- Awareness: customers may not be aware of our offering, though this is unlikely given we have been the market leader\n- Accessibility: customers may not be able to access our machines even if they are willing\nMy hypothesis is that this is a willingness-side issue, most likely customer experience, since customers have gradually shifted away from us.\nInterviewer: Customer experience is the right direction. But don't narrow your thinking to just these buckets. Think more broadly. If a customer is shifting from us to a competitor, what are the major factors driving that decision?\nCandidate: Two major factors come to mind:\n- USP, or unique selling proposition: ours may have been matched or replaced by a stronger one from a competitor\n- Price point: a competitor may be offering the same proposition at a better price\nWithin USP, I'd look at two sub-factors: quantity, meaning how much the machine can serve per customer at a given time, and quality or efficiency, meaning the quality of service the machine offers.\nWithin price, I'd look at two sub-factors: setup cost, the price of installing the machine for a customer, and operating cost, the price of running the machine on an ongoing basis.\nInterviewer: Correct, USP is the major problem. A competitor's machine is offering something we are not. One clarification before you go further: don't think of these as coin-operated vending machines. Think of them more like the Nescafe stations you would find on a college campus, where a person serves customers through the machine. With that in mind, what different USPs could a competitor's machine have that we don't?\nCandidate: I can think of three factors along which a machine's USP could vary:\n1. Capacity or volume: the number of servings or different taps the machine can offer at once\n2. Variety: the number of distinct flavors or products the machine can serve\n3. Time or efficiency: how quickly the machine can fill a cup or serve a customer\nInterviewer: On the spot. You have identified the problem. The issue lies with variety. Competitors are offering 8 product varieties whereas we offer only 6. That is why customers are shifting from us to them. That is the diagnostic part. Now, knowing the problem, how would you drive revenue growth from here?\nCandidate: Before I get into the solution, let me quickly synthesize where we are. Our customer base has been shifting to emerging competitors because they offer 8 varieties while we offer only 6. We now want to grow revenues knowing this is the root cause.\nI'd like to look at this from both the demand side and the supply side, and explore growth levers at every step. Starting with demand, I'd split it into catering to more customer segments within the same flavor set, and growing our share within each segment. Within share per segment, I'd look at four levers: product, promotion, price, and customer experience. Within product, I'd look at how we can grow revenues with our current 6 varieties versus expanding to 8 or more to match or exceed competitors.\nInterviewer: Stop there. We already know the problem. To grow revenues, we just need to fix this specific issue. Looking at anything else doesn't actually solve the problem, because customers are leaving primarily because of the variety gap.\nCandidate: Understood. Since the problem is that we are selling fewer variants, the most direct fix is to start serving 8 variants ourselves, matching what the competitors offer.\nInterviewer: But you cannot add new machines to your installed base. How would you still solve this?\nCandidate: That is a real constraint. Let me think. I can see three ways to expand variety without adding new machines:\n1. Modify the existing machines. We could install additional filling caps or capacity slots on the left or right of the machine, or add a new layer of flavor filling either horizontally below the current layer or vertically alongside it.\n2. Move to a shift model. In one shift the machine serves a particular flavor set, and in the next shift we swap out the sachets and serve a different set. With a current capacity of 6, this would let us serve at least 12 distinct varieties across two shifts, and potentially more across additional shifts.\n3. Expand each machine through modification, physically increasing its capacity so it can hold sachets for more varieties.\nInterviewer: Interesting suggestions. Now let's say you can't modify the machines at all either. What would you do?\nCandidate: If we can't touch the machines at all, there are two things we can still do to retain customer traction:\n1. Complementary offerings alongside the machine. We could serve confectionery items like cookies or snacks alongside the current drink flavors, so customers can still experience flavors or product extensions the machine itself cannot offer.\n2. Take-home sachets of the unavailable flavors. Customers experience the machine on-site for the 6 flavors we have, and we let them take home sachets of the flavors we don't offer in the machine, so the broader 8-variety experience is still ours, just unbundled.\nInterviewer: Great suggestions. You did the case very well.\n\nVariety Is the Spice of Life Framework & Recommendations\nGROWING REVENUES FOR A VENDING MACHINE MANUFACTURER\nClarifying Questions: Is this client-specific or industry-wide? Since when, and is it concentrated in a geography?\nBrownie Points: Pinpointing variety as the specific USP gap, 8 varieties versus our 6. Solving creatively under tightening constraints.\nKeep In Mind: Market share splits into number of customers and revenue per customer. Separate USP from price when diagnosing why customers shift."
@@ -19983,7 +20036,7 @@
           "bottom-up-demand",
           "demand-by-industry"
         ],
-        "defaultFocusedId": "bottom-up-demand",
+        "defaultFocusedId": "demand-by-industry",
         "notes": []
       }
     ],
@@ -19994,8 +20047,9 @@
         "title": "Product x Market Matrix",
         "header": "Product x Market Matrix",
         "noTitle": true,
-                "summaryRows": [
-          1,2
+        "summaryRows": [
+          1,
+          2
         ],
         "columns": [
           "",
@@ -20023,5 +20077,513 @@
       }
     ],
     "framework": "Candidate: Before I begin, a few clarifying questions. Where does the company operate, how large is it, and are there any constraints on customer segment or product scope?\nInterviewer: It operates across India and the United States and is a market leader. Assume money is not a constraint, there are no regulatory bans, customer segment is open, and it sells a single product, or SKU.\nCandidate: And its competitive position and place in the value chain?\nInterviewer: It leads the market in India and is a new, upcoming player in the United States. Why don't you sketch the value chain?\nCandidate: For a mining and metals firm, I'd lay it out as research and development, exploration, inbound logistics, refining, outbound logistics, distribution, sales and marketing, and after-sales service, and I'd expect the client to span from research and development through distribution. Does it operate in any other industry, and what is the objective and any constraints?\nInterviewer: It is purely a mining and metals firm. The objective is to capture a wide market share, with no constraints. As you structure this, also consider whether to take the current product into new markets or grow in existing ones.\nCandidate: I'll use a product-versus-market matrix: existing or new product against existing or new markets. Since the goal is to enter new industries, I'll focus on new products.\nInterviewer: Good, focus on new products.\nCandidate: A new product could go into our existing markets, India and the United States, or new ones such as Asia, Southeast Asia, and Europe. To evaluate any entry, I'd weigh cost against risk; since money is not a constraint, cost is not binding, so I'd focus on risk: financial, operational, and competitive. This works for any industry, but first I'd screen candidate industries against the firm's strengths.\nInterviewer: What are its strengths?\nCandidate: Across the value chain: research and development, exploration, mining, logistics including metals handling and heavy transport, and refining, plus market leadership and a strong brand in India. Building on those, I'd escalate through options:\n1. A new SKU that varies our current product in the same space.\n2. Adjacent metals such as cobalt, nickel, or copper, which reuse the same competencies and infrastructure. But those metal markets offer limited growth, since major players already dominate an oligopoly.\n3. So I'd look to renewable energy, an upcoming, high-demand space with government support that fits the wide-share objective. Within renewables, beyond solar, wind, and geothermal, the option that excites me most is biofuel.\nInterviewer: Alright. Now, give me a general way to evaluate any industry for market expansion.\nCandidate: I'd assess an industry on three dimensions:\n- Financial attractiveness: its expected profitability, from market size, market share (roughly price minus variable cost) and costs (especially fixed costs), the competitive intensity read through the four Ps, and a positive growth rate.\n- Operational efficiency: how well we could serve it by tweaking our current model, through outsourcing, new facilities, or revamping operations.\n- Risk: industry risks such as market segmentation and barriers to entry, and country risks such as PESTEL factors and currency fluctuations.\nInterviewer: Looks good. How would you calculate market size, not with that formula, but through the factors you would consider, for a mining and metals company specifically?\nCandidate: For a mining and metals company I wouldn't lean on the top-down formula. I'd size the market from the factors that actually drive it:\n- Demand: both domestic and global, since the client already spans India and international markets.\n- Growth rate: the market is only worth entering if demand is growing at a healthy, positive rate.\n- Margins: what we would actually keep, looking at revenue against cost.\nTo build the demand number bottom-up rather than assume a single figure, I'd:\n- Compare underlying demand with actual consumption and study the gap between them, since that gap points to unmet or latent demand.\n- Break demand down by the industries that consume metals, such as electronics, automobiles, and construction.\n- Estimate each industry's share of total metal demand, then take a weighted average across them to reach a total demand figure.\n- Layer in each industry's own growth rate, using an 80/20 lens to focus on the vital few industries that drive most of the consumption.\nInterviewer: Good. Let's wrap up.\n\nFields of Gold Framework & Recommendations\nEVALUATING NEW-INDUSTRY ENTRY FOR A MINING AND METALS COMPANY\nClarifying Questions: Where does the client operate? Any customer segment constraint? Single product or SKU? Position on the value chain? Objective and constraints?\nBrownie Points: Escalating options from adjacent metals to renewables Ruling out metals as an oligopoly Sizing demand bottom-up by consuming industry\nKeep In Mind: Screen industries by existing strengths first Cost is moot when funding is unconstrained"
+  },
+  {
+    "id": 81,
+    "docId": "case-81",
+    "title": "Waddle We Eat?",
+    "industry": "Pet Food",
+    "difficulty": "Hard",
+    "case_type": "Guesstimate",
+    "company": "BCG",
+    "round": "Buddy",
+    "prompt": "Our client is a large pet food company, and one of its brands leads a small, specialized segment with a product called Penguin Power. Size the market for penguin food in the United States.",
+    "frameworkTree": {
+      "nodes": {
+        "us-habitats": {
+          "id": "us-habitats",
+          "label": "US Penguin Habitats",
+          "tone": "root",
+          "children": [
+            "wild",
+            "zoos"
+          ]
+        },
+        "wild": {
+          "id": "wild",
+          "label": "In the Wild (negligible)",
+          "tone": "branch",
+          "children": [
+            "islands",
+            "sanctuaries",
+            "coastal"
+          ]
+        },
+        "islands": {
+          "id": "islands",
+          "label": "Islands",
+          "tone": "leaf",
+          "children": []
+        },
+        "sanctuaries": {
+          "id": "sanctuaries",
+          "label": "Sanctuaries",
+          "tone": "leaf",
+          "children": []
+        },
+        "coastal": {
+          "id": "coastal",
+          "label": "Coastal Regions",
+          "tone": "leaf",
+          "children": []
+        },
+        "zoos": {
+          "id": "zoos",
+          "label": "US Zoos (~1,350)",
+          "tone": "branch",
+          "children": [
+            "habitable",
+            "inhabitable"
+          ]
+        },
+        "inhabitable": {
+          "id": "inhabitable",
+          "label": "Inhabitable Zoos (~1,150)",
+          "tone": "leaf",
+          "children": []
+        },
+        "habitable": {
+          "id": "habitable",
+          "label": "Habitable Zoos (~200)",
+          "tone": "branch",
+          "children": [
+            "captive-penguins"
+          ]
+        },
+        "captive-penguins": {
+          "id": "captive-penguins",
+          "label": "Captive Penguins (~2,400)",
+          "tone": "branch",
+          "children": [
+            "male",
+            "female",
+            "sibling"
+          ]
+        },
+        "male": {
+          "id": "male",
+          "label": "Male (~600)",
+          "tone": "branch",
+          "children": [
+            "male-feed"
+          ]
+        },
+        "male-feed": {
+          "id": "male-feed",
+          "label": "500 g/day",
+          "tone": "leaf",
+          "children": []
+        },
+        "female": {
+          "id": "female",
+          "label": "Female (~1,200)",
+          "tone": "branch",
+          "children": [
+            "female-feed"
+          ]
+        },
+        "female-feed": {
+          "id": "female-feed",
+          "label": "300 g/day (yearly average)",
+          "tone": "leaf",
+          "children": []
+        },
+        "sibling": {
+          "id": "sibling",
+          "label": "Sibling (~600)",
+          "tone": "branch",
+          "children": [
+            "sibling-feed"
+          ]
+        },
+        "sibling-feed": {
+          "id": "sibling-feed",
+          "label": "100 g/day",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "us-habitats",
+        "zoos",
+        "habitable",
+        "captive-penguins",
+        "male",
+        "female",
+        "sibling"
+      ],
+      "defaultFocusedId": "captive-penguins",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Feed made only for penguins?",
+            "Current annual market by value?",
+            "Which US settings actually buy feed?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Only zoos both keep penguins and pay for feed",
+            "Not all penguins eat alike, so split by role",
+            "Females eat far more for 2 to 3 months post-birth while males fast, so 300 g is a yearly blended average"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Anchoring feed amounts to a medium dog benchmark",
+            "Skewing the colony female because zoos run breeding programs",
+            "Rounding 365 to 300 days to keep the math clean"
+          ]
+        }
+      ]
+    },
+    "visualisations": [
+      {
+        "id": "feed-by-role",
+        "type": "table",
+        "title": "Feed by Role",
+        "header": "Feed by Role",
+        "noTitle": true,
+        "columns": [
+          "Role",
+          "Population",
+          "Daily Feed",
+          "Note"
+        ],
+        "columnWidths": [
+          "20%",
+          "20%",
+          "22%",
+          "38%"
+        ],
+        "rows": [
+          [
+            "Male",
+            "~600",
+            "500 g/day",
+            "Largest and most active swimmers"
+          ],
+          [
+            "Female",
+            "~1,200",
+            "300 g/day",
+            "Yearly average; eats far more for 2 to 3 months after giving birth"
+          ],
+          [
+            "Sibling",
+            "~600",
+            "100 g/day",
+            "Growing chick, a smaller portion"
+          ]
+        ],
+        "insight": "In the post-birth window females spike well above 300 g a day while males barely eat, so the female number is smoothed to a yearly average."
+      },
+      {
+        "id": "market-size-calc",
+        "type": "table",
+        "title": "Market Size Calculation",
+        "header": "Market Size Calculation",
+        "noTitle": true,
+        "columns": [
+          "Step",
+          "Calculation",
+          "Result"
+        ],
+        "columnWidths": [
+          "28%",
+          "44%",
+          "28%"
+        ],
+        "rows": [
+          [
+            "US zoos",
+            "45 states x 30 zoos",
+            "~1,350 zoos"
+          ],
+          [
+            "Zoos with penguins",
+            "1,350 x 15%",
+            "~200 zoos"
+          ],
+          [
+            "Captive penguins",
+            "200 zoos x 12 birds",
+            "~2,400 penguins"
+          ],
+          [
+            "Role split (1:2:1)",
+            "600 male, 1,200 female, 600 sibling",
+            "2,400 penguins"
+          ],
+          [
+            "Daily feed",
+            "600x500 + 1,200x300 + 600x100 g",
+            "~720,000 g/day"
+          ],
+          [
+            "Annual feed",
+            "720 kg/day x ~300 days",
+            "~216,000 kg/year"
+          ],
+          [
+            "Cans",
+            "216,000,000 g / 200 g per can",
+            "~1.08M cans/year"
+          ],
+          [
+            "Market Size",
+            "~1.08M cans x $1 per can",
+            "~$1M/year"
+          ]
+        ],
+        "summaryRows": [
+          8
+        ],
+        "insight": "Sizing bottom-up from captive penguins to feed to cans lands the US penguin food market at roughly $1M a year."
+      }
+    ],
+    "framework": "Candidate: Happy to. Two quick questions before I start. By penguin food, do we mean feed made specifically for penguins, sold to whoever keeps them? And are we after the current market by annual value?\nInterviewer: Yes to both. Feed made for penguins, annual value, in the United States.\nCandidate: Here is the equation I will fill in:\nCandidate: Market size = captive penguins in the US × annual food per penguin × price per unit of food\nCandidate: Before I start plugging in numbers, does that structure look sensible to you?\nInterviewer: It does. Go ahead.\nCandidate: Penguins in the US live in a few settings: zoos, islands, sanctuaries, and natural coastal stretches. Since the client sells packaged feed, the buyers who matter are the ones that both keep penguins and pay for their food, so I will focus on zoos and set the rest aside as negligible.\nCandidate: To get the penguin count, I will start from zoos. Of the 50 states, most have zoos, so call it around 45. Each state has a few big-city zoos and a longer tail of smaller ones, which nets out to something like 30 zoos per state, so roughly 45 times 30, or about 1,350 zoos nationwide.\nInterviewer: And how many of those actually keep penguins?\nCandidate: Not many, since penguins need cold or aquatic enclosures that most zoos simply do not have. I would say around 15 percent, which brings 1,350 down to roughly 200 zoos with penguins.\nCandidate: If each keeps a small colony, say about a dozen birds on average, that is 200 times 12, or around 2,400 captive penguins nationwide. Am I in the right ballpark so far?\nInterviewer: That is reasonable. Now think about how much they eat, but keep in mind that not all penguins eat alike.\nCandidate: Good point, I will not treat them as identical. Since zoos keep these as breeding colonies, the mix skews female, because a few males can cover many females, and each season the pairs raise roughly one surviving chick. On that logic I will assume about one male to two females to one offspring. Of 2,400 that is about 600 males, 1,200 females, and 600 offspring.\nCandidate: For the amounts, I will anchor on a familiar animal rather than guess in a vacuum. A medium dog eats on the order of 300 to 400 grams of prepared food a day, and an adult penguin sits in a similar weight class, so I will scale around that:\n- Male: about 500 grams a day, since the males are the largest and most active swimmers\n- Female: about 300 grams a day, as a yearly average, in line with the dog benchmark\n- Offspring: about 100 grams a day, roughly a growing pup's smaller portion\nInterviewer: Before you total that up, are you comfortable using a single female number for the whole year?\nCandidate: Good catch, not quite. For the two to three months after giving birth, females eat far more than usual while the males barely eat at all, so the 300 grams is me smoothing that swing into a yearly daily average rather than a steady daily figure.\nInterviewer: Fair enough. Carry it through to an annual figure.\nCandidate: Taking it role by role, then scaling to a year:\n- Males: 600 × 500 grams, so 300,000 grams a day\n- Females: 1,200 × 300 grams, so 360,000 grams a day\n- Offspring: 600 × 100 grams, so 60,000 grams a day\n- Total: about 720,000 grams a day, or roughly 720 kilograms a day\n- Across a year: 720 kilograms × about 300 days, rounding 365 down to keep it clean, so about 216,000 kilograms a year\nCandidate: So the whole captive population gets through on the order of 216,000 kilograms of feed a year. Shall I turn that into a market value?\nInterviewer: Yes. The feed sells in 200 gram cans at about a dollar a can. Take it through to a final number.\nCandidate: 216,000 kilograms is 216 million grams. At 200 grams per can, that is about 1.08 million cans a year. At roughly a dollar a can, the penguin food market in the United States comes to about one million dollars a year.\nCandidate: As a quick gut check on the price: a can retails at about a dollar to a dollar and a quarter, and after retailer and pet-store margins of roughly 20 to 25 percent the maker keeps something like 65 cents, with the fish and krill ingredients costing less again. So the client's own revenue from this segment is a slice of that one million dollar retail figure, not the whole of it.\nInterviewer: Good. That is a sensible number to land on. Let's stop there.\n\nWaddle We Eat? Framework & Recommendations\nSIZING THE US PENGUIN FOOD MARKET\nClarifying Questions: Feed made only for penguins? Current annual market by value? Which US settings actually buy feed?\nBrownie Points: Anchoring feed amounts to a medium dog benchmark Skewing the colony female because zoos run breeding programs Rounding 365 to 300 days to keep the math clean\nKeep In Mind: Only zoos both keep penguins and pay for feed Not all penguins eat alike, so split by role Females eat far more for 2 to 3 months post-birth while males fast, so 300 g is a yearly blended average"
+  },
+  {
+    "id": 82,
+    "docId": "case-82",
+    "title": "Tip Tip Barsa Paani",
+    "industry": "Agriculture",
+    "difficulty": "Hard",
+    "case_type": "Unconventional",
+    "company": "Dalberg",
+    "prompt": "Our client is the Asian Development Bank (ADB), which wants to raise the income of rural households in India that depend mainly on agriculture. How would you approach this?",
+    "abbreviations": [
+      "ADB: Asian Development Bank",
+      "Capex: Capital Expenditure"
+    ],
+    "frameworkTree": {
+      "nodes": {
+        "raise-income": {
+          "id": "raise-income",
+          "label": "Raise Rural Income",
+          "tone": "root",
+          "children": [
+            "agri-income",
+            "supplementary"
+          ]
+        },
+        "agri-income": {
+          "id": "agri-income",
+          "label": "Agriculture Income",
+          "tone": "branch",
+          "children": [
+            "pre-sowing",
+            "cultivation",
+            "post-harvest"
+          ]
+        },
+        "supplementary": {
+          "id": "supplementary",
+          "label": "Supplementary Streams",
+          "tone": "support",
+          "children": []
+        },
+        "pre-sowing": {
+          "id": "pre-sowing",
+          "label": "Pre-Sowing",
+          "tone": "leaf",
+          "children": []
+        },
+        "cultivation": {
+          "id": "cultivation",
+          "label": "Cultivation",
+          "tone": "branch",
+          "children": [
+            "sowing",
+            "crop-maintenance"
+          ]
+        },
+        "post-harvest": {
+          "id": "post-harvest",
+          "label": "Post-Harvest",
+          "tone": "leaf",
+          "children": []
+        },
+        "sowing": {
+          "id": "sowing",
+          "label": "Sowing",
+          "tone": "leaf",
+          "children": []
+        },
+        "crop-maintenance": {
+          "id": "crop-maintenance",
+          "label": "Crop Maintenance",
+          "tone": "branch",
+          "children": [
+            "irrigation",
+            "nutrition"
+          ]
+        },
+        "nutrition": {
+          "id": "nutrition",
+          "label": "Nutrition",
+          "tone": "leaf",
+          "children": []
+        },
+        "irrigation": {
+          "id": "irrigation",
+          "label": "Irrigation",
+          "tone": "branch",
+          "children": [
+            "traditional",
+            "new-tech"
+          ]
+        },
+        "traditional": {
+          "id": "traditional",
+          "label": "Traditional Sources",
+          "tone": "leaf",
+          "children": []
+        },
+        "new-tech": {
+          "id": "new-tech",
+          "label": "New Technology",
+          "tone": "branch",
+          "children": [
+            "drip"
+          ]
+        },
+        "drip": {
+          "id": "drip",
+          "label": "Drip Irrigation",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "raise-income",
+        "agri-income",
+        "cultivation",
+        "crop-maintenance",
+        "irrigation",
+        "new-tech"
+      ],
+      "defaultFocusedId": "drip",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Fixed income target or a directional lift?",
+            "All of rural India or a specific geography?",
+            "Is ADB open to any intervention or a particular area?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Water is the biggest swing factor in farm yield",
+            "Only medium and large farms can realistically afford drip",
+            "Willingness is far higher in water-scarce regions"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Splitting income into agri versus supplementary streams before diving in",
+            "Walking the crop value chain to locate the lever",
+            "Recommending ADB subsidize early-year costs to drive adoption"
+          ]
+        }
+      ]
+    },
+    "visualisations": [
+      {
+        "id": "market-size-calc",
+        "type": "table",
+        "title": "Market Size Calculation",
+        "header": "Market Size Calculation",
+        "noTitle": true,
+        "columns": [
+          "Step",
+          "Calculation",
+          "Result"
+        ],
+        "columnWidths": [
+          "30%",
+          "42%",
+          "28%"
+        ],
+        "rows": [
+          [
+            "Households in India",
+            "1.4 billion people / 5 per household",
+            "~280 million"
+          ],
+          [
+            "Agricultural households",
+            "280 million x 60%",
+            "~168 million"
+          ],
+          [
+            "Medium + large farms",
+            "168 million x 40% (10% large + 30% medium)",
+            "~67 million"
+          ],
+          [
+            "Water-scarce (arid)",
+            "67 million x 75%",
+            "~50 million"
+          ],
+          [
+            "Water-rich (arable)",
+            "67 million x 25%",
+            "~17 million"
+          ],
+          [
+            "Willing in arid",
+            "50 million x 50%",
+            "~25 million"
+          ],
+          [
+            "Willing in arable",
+            "17 million x 10%",
+            "~1.7 million"
+          ],
+          [
+            "Interested farms",
+            "25 million + 1.7 million",
+            "~27 million"
+          ],
+          [
+            "Market size",
+            "27 million farms x Rs 1 lakh per system",
+            "~Rs 2.7 lakh crore"
+          ]
+        ],
+        "summaryRows": [
+          7,
+          8
+        ],
+        "insight": "Sizing top-down from households to willing adopters lands about 27 million farms, or roughly Rs 2.7 lakh crore at about Rs 1 lakh per system."
+      },
+      {
+        "title": "Annual Gains",
+        "type": "formula",
+        "lhs": "Annual Gains",
+        "rhs": "Increase in Revenue (higher yield) + Decrease in Cost (less borewell and water spend)"
+      },
+      {
+        "title": "Annualized Cost",
+        "type": "formula",
+        "lhs": "Annualized Cost",
+        "rhs": "(Capex ÷ System Life) + Working Capital Costs"
+      },
+      {
+        "title": "Adoption Decision",
+        "type": "formula",
+        "lhs": "Adopt Drip",
+        "rhs": "Annual Gains > Annualized Cost"
+      }
+    ],
+    "framework": "Candidate: A few clarifying questions first. When we say raise income, are we aiming at a specific target, such as lifting incomes by a set percentage or by a fixed amount per household, or are we simply trying to move incomes meaningfully upward without a hard number in mind? Are we looking at all of rural India or a particular geography? And is ADB open to any kind of intervention, or is there a particular area it wants to back?\nInterviewer: Good questions. There is no fixed number to hit; the aim is simply to move incomes meaningfully upward across rural India, and ADB is open on the type of intervention for now.\nCandidate: Then at the top level I see two ways to raise these households' income: lift what they earn from agriculture itself, or add supplementary income streams outside farming, such as allied activities like dairy or off-season work. Which would you like me to go down?\nInterviewer: Let's just focus on agriculture.\nCandidate: Within agriculture I will walk the crop value chain and look for where income can improve. I would split it into three stages:\n- Pre-sowing: procuring seeds and preparing the land.\n- Cultivation: sowing, then crop maintenance, which itself breaks into irrigation and nutrition such as fertilizers and manure.\n- Post-harvest: the harvest itself, then storage, processing, and getting produce to market.\nInterviewer: Let's zero in on the agriculture-related lever. How would you increase that?\nCandidate: Higher farm income really comes from higher and more reliable yield, and water is the biggest swing factor there. On irrigation I see two paths: optimize the traditional sources farmers already use, such as canals and borewells, or bring in newer, more efficient technology such as drip irrigation, which delivers water straight to the roots and cuts waste.\nInterviewer: Let's focus on drip irrigation. What do you think the market size for that is in India?\nCandidate: Let me build it up. May I lay out my assumptions as I go?\nInterviewer: Please do.\nCandidate: Starting from the population:\n- India has roughly 1.4 billion people. At about 5 people a household, that is around 280 million households.\n- Around 60 percent of households depend on agriculture, so about 168 million agricultural households.\nCandidate: Not every farm is a realistic buyer, so I will segment by farm size:\n- About 10 percent own large farms, so roughly 17 million.\n- About 30 percent own medium farms, so roughly 50 million.\n- The remaining 60 percent are small or marginal farmers.\nCandidate: Drip irrigation needs upfront money and enough land to be worthwhile, so I will assume only medium and large farms are realistic buyers. That is the top 40 percent, or about 67 million farms, as my target market.\nInterviewer: Fair. But would all of them actually want it?\nCandidate: No, and that is my next cut, by water availability. As a sanity check on the split, close to half of India's farmland is rainfed rather than served by assured irrigation, and even many irrigated belts are turning water-stressed, so leaning the mix toward water-scarce land is fair. I will use roughly one quarter water-rich to three quarters water-scarce:\n- About 25 percent sit in arable, water-rich areas, so roughly 17 million.\n- About 75 percent sit in arid, water-scarce areas, so roughly 50 million.\nCandidate: The logic is that where water is already plentiful the pull toward a new system is weak, but where water is scarce the pull is strong. So I will apply different willingness rates:\n- Arable, water-rich: only about 10 percent willing, so roughly 1.7 million farms.\n- Arid, water-scarce: about 50 percent willing, so roughly 25 million farms.\nCandidate: Adding those gives about 27 million farms, or 2.7 crore, that would realistically adopt drip irrigation. To turn that count into a market value I would need a rough price per system. Do we have a figure to work with?\nInterviewer: Assume an average drip system costs about one lakh rupees per farm.\nCandidate: Then the market is about 27 million times one lakh rupees, or roughly 2.7 lakh crore rupees. I would treat the count of about 27 million farms as the core number and the rupee figure as an order-of-magnitude read.\nInterviewer: Good. Now a different angle. For a farmer, drip irrigation is an investment. If you had to weigh the gains from a drip system against the cost of installing it, so that it makes economic sense to adopt, how would you approach it? I am after the approach, not numbers.\nCandidate: I would set it up as annual gains versus annualized cost.\nCandidate: On the gains side, gains equal the increase in revenue plus the reduction in cost:\n- Higher revenue comes from higher crop yield, since steady water at the roots lifts output and can open up a second cropping cycle.\n- Lower cost comes from spending less on water and power, since the farm leans less on borewells and pumping and uses less water and fertilizer overall.\nCandidate: On the cost side, rather than charging the whole one-time installation to a single year, I would spread that upfront cost evenly across all the years the system will be in use, so it compares fairly against the yearly gains:\n- The capital expenditure, or Capex, spread over the useful life of the equipment, so Capex divided by the life of the system.\n- Plus any yearly running and working capital costs, such as maintenance and financing.\nCandidate: Adoption makes economic sense once the annual gains clear that annualized cost.\nInterviewer: And what would you recommend to ADB?\nCandidate: In the early years the gains may not cover the cost. The upfront outlay of about one lakh rupees is large next to what a medium farm clears in a year, while the yield gains and water savings build up only gradually over the first few seasons as farmers learn to run the new system. So a farmer weighing just the first year or two would see the cost loom larger than the benefit and would hesitate. Over the full life of the system, though, the economics turn positive. So my recommendation is that ADB steps in with financial support, subsidizing part of the installation cost or offering low-cost financing, so that farmers are willing to adopt now. Over time the higher yields and lower costs lift farm incomes, which is exactly the rural income increase ADB set out to achieve.\nInterviewer: Good. That is a solid place to close.\n\nTip Tip Barsa Paani Framework & Recommendations\nRAISING RURAL INCOMES THROUGH DRIP IRRIGATION\nClarifying Questions: Fixed income target or a directional lift? All of rural India or a specific geography? Is ADB open to any intervention or a particular area?\nBrownie Points: Splitting income into agri versus supplementary streams before diving in Walking the crop value chain to locate the lever Recommending ADB subsidize early-year costs to drive adoption\nKeep In Mind: Water is the biggest swing factor in farm yield Only medium and large farms can realistically afford drip Willingness is far higher in water-scarce regions"
   }
 ]
