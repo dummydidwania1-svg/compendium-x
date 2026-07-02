@@ -1429,12 +1429,13 @@ function buildSubtreeLayout(rootId: string, orient: 'TB' | 'LR' = 'TB') {
 }
 
 function InactiveDrilldownOverlay({
-  hostRef, visibleIds, mode = 'preview', tree,
+  hostRef, visibleIds, mode = 'preview', tree, excludeVisible = false,
 }: {
   hostRef: React.RefObject<HTMLDivElement | null>
   visibleIds?: string[]
   mode?: 'preview' | 'interviewer'
   tree?: FrameworkTree
+  excludeVisible?: boolean
 }) {
   const localNodes = tree?.nodes ?? NODES
   const defaultPath = useMemo(
@@ -1460,7 +1461,7 @@ function InactiveDrilldownOverlay({
   const closeNow = () => { pinnedRef.current = false; cancelClose(); setActive(null) }
   const visibleSet = useMemo(() => new Set(visibleIds ?? []), [visibleIds])
   const isDrillable = (id: string | null | undefined): id is string =>
-    !!id && !!localNodes[id] && !defaultPath.includes(id) && !visibleSet.has(id) && (localNodes[id].children?.length ?? 0) > 0
+    !!id && !!localNodes[id] && !defaultPath.includes(id) && (!excludeVisible || !visibleSet.has(id)) && (localNodes[id].children?.length ?? 0) > 0
   const openEl = (el: Element, pin: boolean) => {
   const id = el.getAttribute('data-node-id')
   if (!isDrillable(id)) return
@@ -3275,7 +3276,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
             )}
           </div>
         )}
-        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} />
+        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} excludeVisible />
       </div>
 
       {/* Chart — mobile. Use localRootId (not global ROOT_ID). */}
