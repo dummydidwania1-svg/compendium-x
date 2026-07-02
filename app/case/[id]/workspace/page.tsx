@@ -887,28 +887,25 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     setEndSessionOverlayKind(null)
 
     // Submit draft via candidate-safe route (uses session's interviewerId server-side).
-    // submit-draft is idempotent server-side (skips creation if an eval already
-    // exists) and also marks the session completed — no need to call /complete
-    // separately. We must NOT do a client-side `where('lobbyId', ...)` query here:
-    // Firestore rules only allow reading evaluations scoped to the caller's own
-    // candidateId/interviewerId, so a lobbyId-only query throws and would skip
-    // eval creation entirely (the original "entries not showing" bug).
+    // submit-draft is idempotent server-side and also marks the session completed —
+    // no need to call /complete separately. We submit even partial drafts (1-3 scores)
+    // so that whatever the interviewer filled in is never silently discarded.
     try {
       const draft = readDraftScores(lobbyId)
-      if (draft && isDraftAllRated(draft.scores)) {
-        // Interviewer rated all 4 in the draft (may or may not have formally
-        // submitted) — submit-draft creates the eval if missing, idempotent.
+      const hasAnyScore = draft && Object.values(draft.scores).some(s => (s ?? 0) > 0)
+      const hasNotes = draft && draft.notes.trim().length > 0
+      if (draft && (hasAnyScore || hasNotes)) {
         await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/submit-draft`, {
           scores: {
-            structure: draft.scores.structure as number,
-            understanding: draft.scores.understanding as number,
-            delivery: draft.scores.delivery as number,
-            creativity: draft.scores.creativity as number,
+            ...(draft.scores.structure ? { structure: draft.scores.structure } : {}),
+            ...(draft.scores.understanding ? { understanding: draft.scores.understanding } : {}),
+            ...(draft.scores.delivery ? { delivery: draft.scores.delivery } : {}),
+            ...(draft.scores.creativity ? { creativity: draft.scores.creativity } : {}),
           },
           notes: draft.notes,
         })
       } else {
-        // No complete local draft — the interviewer already submitted formally,
+        // No local draft at all — the interviewer already submitted formally,
         // so the eval exists server-side. Just mark the session complete.
         await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, { completedBy: 'candidate' })
       }
@@ -925,7 +922,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     setEndSessionActionInProgress(false)
     setEndSessionSavedKind('rated')
     setEndSessionSavedVisible(true)
-  }, [endSessionActionInProgress, lobbyId, readDraftScores, isDraftAllRated, stopRecordingAndFinalize])
+  }, [endSessionActionInProgress, lobbyId, readDraftScores, stopRecordingAndFinalize])
 
   const handleEndSessionSaveAudio = useCallback(async () => {
     if (endSessionActionInProgress || !lobbyId) return
@@ -937,10 +934,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     setCaptureErrorOverlayVisible(false)
     setEndSessionOverlayKind(null)
 
-    // Save audio as a completed-but-unrated case: creates an unrated evaluation
-    // doc + marks the session completed, so it appears in the dashboard now.
+    // Save audio and any partial draft scores the interviewer may have filled in.
+    // If a draft exists (even partial), submit it so ratings aren't discarded.
+    // Fall back to save-unrated if there's nothing to submit.
     try {
-      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/save-unrated`, {})
+      const draft = readDraftScores(lobbyId)
+      const hasAnyScore = draft && Object.values(draft.scores).some(s => (s ?? 0) > 0)
+      const hasNotes = draft && draft.notes.trim().length > 0
+      if (draft && (hasAnyScore || hasNotes)) {
+        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/submit-draft`, {
+          scores: {
+            ...(draft.scores.structure ? { structure: draft.scores.structure } : {}),
+            ...(draft.scores.understanding ? { understanding: draft.scores.understanding } : {}),
+            ...(draft.scores.delivery ? { delivery: draft.scores.delivery } : {}),
+            ...(draft.scores.creativity ? { creativity: draft.scores.creativity } : {}),
+          },
+          notes: draft.notes,
+        })
+      } else {
+        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/save-unrated`, {})
+      }
     } catch {
       // Non-fatal
     }
@@ -954,7 +967,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     setEndSessionActionInProgress(false)
     setEndSessionSavedKind('unrated')
     setEndSessionSavedVisible(true)
-  }, [endSessionActionInProgress, lobbyId, stopRecordingAndFinalize])
+  }, [endSessionActionInProgress, lobbyId, readDraftScores, stopRecordingAndFinalize])
 
   const handleEndSessionDrop = useCallback(async () => {
     if (endSessionActionInProgress || !lobbyId) return

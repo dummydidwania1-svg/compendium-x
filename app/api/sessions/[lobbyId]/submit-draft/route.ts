@@ -19,10 +19,10 @@ export const runtime = 'nodejs'
 
 const submitDraftInput = z.object({
   scores: z.object({
-    structure: z.number().min(0.5).max(5),
-    understanding: z.number().min(0.5).max(5),
-    delivery: z.number().min(0.5).max(5),
-    creativity: z.number().min(0.5).max(5),
+    structure: z.number().min(0.5).max(5).optional(),
+    understanding: z.number().min(0.5).max(5).optional(),
+    delivery: z.number().min(0.5).max(5).optional(),
+    creativity: z.number().min(0.5).max(5).optional(),
   }),
   notes: z.string().default(''),
 })
@@ -87,6 +87,9 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
     const evaluationRef = adminDb.collection('evaluations').doc()
     const batch = adminDb.batch()
 
+    const scoredCount = [input.scores.structure, input.scores.understanding, input.scores.delivery, input.scores.creativity]
+      .filter((s) => s !== undefined).length
+
     batch.set(evaluationRef, {
       caseId,
       caseTitle,
@@ -97,10 +100,11 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
       interviewerId,
       candidateName: candidateEmail ?? caller.email,
       interviewerEmail,
-      structureScore: input.scores.structure,
-      understandingScore: input.scores.understanding,
-      deliveryScore: input.scores.delivery,
-      creativityScore: input.scores.creativity,
+      ...(input.scores.structure !== undefined && { structureScore: input.scores.structure }),
+      ...(input.scores.understanding !== undefined && { understandingScore: input.scores.understanding }),
+      ...(input.scores.delivery !== undefined && { deliveryScore: input.scores.delivery }),
+      ...(input.scores.creativity !== undefined && { creativityScore: input.scores.creativity }),
+      ...(scoredCount < 4 && { isUnrated: true }),
       notes: input.notes,
       interviewerObservations: input.notes,
       createdAt: FieldValue.serverTimestamp(),

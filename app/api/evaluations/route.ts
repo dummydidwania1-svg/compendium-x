@@ -77,7 +77,11 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
     candidateEmail = caller.email
   }
 
-  // 3) Guard against duplicate submissions (e.g. interviewer opens two tabs).
+  // 3) Guard against duplicate submissions. If an evaluation already exists for
+  // this session, update it with fresh scores/notes (upsert). This covers the
+  // auto-save → formal-submit update path: when the candidate ends the session,
+  // the interviewer's scores are auto-saved; if the interviewer then formally
+  // submits with edited/complete scores, the formal submit wins.
   if (input.lobbyId) {
     const existing = await adminDb
       .collection('evaluations')
@@ -85,6 +89,19 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
       .limit(1)
       .get()
     if (!existing.empty) {
+      const scoredCount = [input.scores.structure, input.scores.understanding, input.scores.delivery, input.scores.creativity]
+        .filter((s) => s !== undefined).length
+      const updateData: Record<string, unknown> = {
+        notes: input.notes,
+        interviewerObservations: input.notes,
+        updatedAt: FieldValue.serverTimestamp(),
+      }
+      if (input.scores.structure !== undefined) updateData.structureScore = input.scores.structure
+      if (input.scores.understanding !== undefined) updateData.understandingScore = input.scores.understanding
+      if (input.scores.delivery !== undefined) updateData.deliveryScore = input.scores.delivery
+      if (input.scores.creativity !== undefined) updateData.creativityScore = input.scores.creativity
+      updateData.isUnrated = scoredCount < 4 ? true : FieldValue.delete()
+      await existing.docs[0].ref.set(updateData, { merge: true })
       return jsonOk({ ok: true, evaluationId: existing.docs[0].id })
     }
   }

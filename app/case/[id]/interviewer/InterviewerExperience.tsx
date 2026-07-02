@@ -968,6 +968,38 @@ export function InterviewerPageInner({
 	// ── Remote-mode overlays ─────────────────────────────────────────────────────
 	// A3/D10: Candidate ended the session before the interviewer submitted feedback.
 	const [candidateEndedSession, setCandidateEndedSession] = useState(false)
+	// Ref so the auto-submit effect fires exactly once per session-end event.
+	const autoSubmitOnEndRef = useRef(false)
+
+	// When the candidate ends the session, auto-save whatever the interviewer has
+	// entered so far (even partial scores). The /api/evaluations endpoint is now an
+	// upsert, so if the interviewer then formally submits via the overlay, their
+	// updated scores overwrite this auto-save.
+	useEffect(() => {
+		if (!candidateEndedSession || !isRemoteMode) return
+		if (autoSubmitOnEndRef.current) return
+		if (!resolvedCaseId || !caseData || !lobbyId) return
+		const hasScores = Object.values(scores).some(v => v > 0)
+		const hasNotes = notes.trim().length > 0
+		if (!hasScores && !hasNotes) return
+		autoSubmitOnEndRef.current = true
+		void (async () => {
+			try {
+				await apiPost('/api/evaluations', {
+					lobbyId,
+					caseId: resolvedCaseId,
+					scores: {
+						...(scores.structure > 0 && { structure: scores.structure }),
+						...(scores.understanding > 0 && { understanding: scores.understanding }),
+						...(scores.delivery > 0 && { delivery: scores.delivery }),
+						...(scores.creativity > 0 && { creativity: scores.creativity }),
+					},
+					notes,
+				})
+			} catch { /* best-effort — overlay still shows so interviewer can submit manually */ }
+		})()
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [candidateEndedSession])
 
 	// Read the gate's decline signal on mount so we never show the recovery banner
 	// for an interviewer who already said "I don't provide consent."
