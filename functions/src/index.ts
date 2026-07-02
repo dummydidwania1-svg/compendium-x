@@ -236,8 +236,11 @@ async function elevenLabsWords(
     form.append('timestamps_granularity', 'word')
     form.append('no_verbatim', 'true')
     form.append('temperature', '0')
-    // language_code intentionally omitted — auto-detect keeps Hindi in Roman
-    // script (Hinglish) rather than outputting Devanagari.
+    // language_code: 'en' forces Roman script output for single-speaker remote
+    // tracks. Without it, a predominantly Hindi speaker gets Devanagari since
+    // Scribe auto-detects Hindi as dominant on that track. Split-screen omits
+    // this because both speakers share one file and English stays dominant.
+    form.append('language_code', 'en')
     form.append(
       'file',
       new Blob([audioBytes], { type: mimeType || 'audio/mp4' }),
