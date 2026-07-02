@@ -65,24 +65,12 @@ const ELEVENLABS_API_KEY = defineSecret('ELEVENLABS_API_KEY')
 const ELEVENLABS_SPLITSCREEN_API_KEY = defineSecret('ELEVENLABS_SPLITSCREEN_API_KEY')
 const ELEVENLABS_MODEL = process.env.ELEVENLABS_MODEL || 'scribe_v2'
 const ELEVEN_TURN_GAP_MS = Number(process.env.ELEVEN_TURN_GAP_MS || 1500)
-// ElevenLabs is the fallback for remote mode if Cartesia fails.
+// ElevenLabs Scribe is the sole primary provider for remote (dual-mic) tracks;
+// Gemini remains the automatic fallback if ElevenLabs fails.
 const TRANSCRIBE_PROVIDER = process.env.TRANSCRIBE_PROVIDER || 'elevenlabs'
 // Independent flag for split-screen mode — defaults to 'elevenlabs'.
 const SPLITSCREEN_TRANSCRIBE_PROVIDER = process.env.SPLITSCREEN_TRANSCRIBE_PROVIDER || 'elevenlabs'
 const ELEVENLABS_STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text'
-
-// --- Cartesia Ink STT (batch) — primary provider for remote mode tracks ------
-// ink-whisper is Cartesia's batch model supporting pre-recorded file upload with
-// word-level timestamps. ink-2 (their best model) is realtime-only and not yet
-// available for batch. Set via:
-//   firebase functions:secrets:set CARTESIA_API_KEY
-const CARTESIA_API_KEY = defineSecret('CARTESIA_API_KEY')
-const CARTESIA_STT_URL = 'https://api.cartesia.ai/stt'
-const CARTESIA_MODEL = process.env.CARTESIA_MODEL || 'ink-whisper'
-const CARTESIA_VERSION = '2026-03-01'
-// Default is 'cartesia' — tries Cartesia first, falls back to ElevenLabs on error.
-// Override with CARTESIA_TRANSCRIBE_PROVIDER=elevenlabs to skip Cartesia entirely.
-const CARTESIA_TRANSCRIBE_PROVIDER = process.env.CARTESIA_TRANSCRIBE_PROVIDER || 'cartesia'
 
 // Server-side audio merge (dual-mic): time-align both mic recordings by their
 // startOffsetMs and mix into one mono file written to Storage as mergedAudioUrl.
@@ -293,49 +281,6 @@ function elevenWordsToTurns(words: ElevenWord[], gapMs: number = ELEVEN_TURN_GAP
   return grouped.map((t) => ({ offsetMs: t.offsetMs, text: t.text.trim() }))
 }
 
-// Call Cartesia batch STT with raw audio bytes and return words[] in ElevenWord shape.
-// ink-whisper supports webm/mp4/ogg/wav/mp3 directly — no conversion needed.
-// Response word shape: {word, start, end} → mapped to ElevenWord {text, start, end, type}.
-async function cartesiaWords(
-  audioBytes: ArrayBuffer,
-  mimeType: string,
-  apiKey: string,
-): Promise<ElevenWord[]> {
-  let lastError = ''
-  for (let attempt = 1; attempt <= GENERATION_MAX_ATTEMPTS; attempt += 1) {
-    const form = new FormData()
-    form.append('model', CARTESIA_MODEL)
-    form.append('language', 'en')
-    form.append('timestamp_granularities[]', 'word')
-    form.append(
-      'file',
-      new Blob([audioBytes], { type: mimeType || 'audio/mp4' }),
-      'audio.webm',
-    )
-    const response = await fetch(CARTESIA_STT_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Cartesia-Version': CARTESIA_VERSION,
-      },
-      body: form,
-    })
-    if (response.ok) {
-      const payload = (await response.json().catch(() => null)) as {
-        words?: Array<{ word: string; start: number; end: number }>
-      } | null
-      const words = payload?.words ?? []
-      // Map Cartesia word shape to ElevenWord shape so elevenWordsToTurns() can reuse as-is.
-      return words.map((w) => ({ text: w.word, start: w.start, end: w.end, type: 'word' }))
-    }
-    lastError = `Cartesia HTTP ${response.status}: ${(await response.text().catch(() => '')).slice(0, 300)}`
-    const retriable = response.status >= 500 || response.status === 429
-    if (!retriable || attempt === GENERATION_MAX_ATTEMPTS) break
-    await sleep(500 * 3 ** (attempt - 1))
-  }
-  throw new Error(lastError || 'Cartesia request failed.')
-}
-
 // ---- ElevenLabs split-screen (local/single-mic) helpers --------------------
 
 type ElevenWordDiarized = ElevenWord & { speaker_id?: string }
@@ -477,17 +422,14 @@ async function runTranscription(args: {
   storagePath: string
   apiKey: string
   elevenApiKey?: string
-  cartesiaApiKey?: string
 }): Promise<void> {
-  const { target, sessionId, audioUrl, requestedMimeType, storagePath, apiKey, elevenApiKey, cartesiaApiKey } = args
+  const { target, sessionId, audioUrl, requestedMimeType, storagePath, apiKey, elevenApiKey } = args
   // Tracks which provider actually produced the transcript, so writeSuccess can
   // record the right transcriptModel. Defaults to Gemini; set true only when the
   // ElevenLabs path succeeds for a dual-mic track.
   let usedEleven = false
-  let usedCartesia = false
   // Computed once provider paths settle; helper to keep writeSuccess + logger in sync.
   const getTranscriptModelLabel = () => {
-    if (usedCartesia) return `cartesia:${CARTESIA_MODEL}`
     if (usedEleven) return target.kind === 'embedded' ? `elevenlabs:${ELEVENLABS_MODEL}:diarized` : `elevenlabs:${ELEVENLABS_MODEL}`
     return GEMINI_MODEL
   }
@@ -686,8 +628,9 @@ async function runTranscription(args: {
       }
     }
 
-    // ---- ElevenLabs Scribe path (dual-mic only, tried first, auto-fallback) ----
-    // On any error we fall through to Cartesia, then Gemini — three-layer fallback.
+    // ---- ElevenLabs Scribe path (dual-mic only, sole primary, auto-fallback) --
+    // ElevenLabs is the only remote-mode provider. On any error we fall through
+    // to Gemini as the last-resort fallback.
     if (
       target.kind === 'subcollection' &&
       TRANSCRIBE_PROVIDER === 'elevenlabs' &&
@@ -702,43 +645,16 @@ async function runTranscription(args: {
         finalMimeType = sourceMimeType
         usedEleven = true
       } catch (elevenErr) {
-        logger.warn('elevenlabs_failed_fallback_cartesia', {
+        logger.warn('elevenlabs_failed_fallback_gemini', {
           sessionId,
           role: target.kind === 'subcollection' ? target.role : undefined,
           message: elevenErr instanceof Error ? elevenErr.message : String(elevenErr),
         })
-        // usedEleven stays false -> Cartesia block runs below.
+        // usedEleven stays false -> Gemini block runs below.
       }
     }
 
-    // ---- Cartesia ink-whisper path (dual-mic only, fallback if ElevenLabs fails) ----
-    // ink-whisper supports direct file upload (webm/mp4/ogg/wav) with word timestamps.
-    // On any error we fall through to Gemini.
-    if (
-      target.kind === 'subcollection' &&
-      !usedEleven &&
-      CARTESIA_TRANSCRIBE_PROVIDER === 'cartesia' &&
-      cartesiaApiKey
-    ) {
-      try {
-        const words = await cartesiaWords(audioBytes, sourceMimeType, cartesiaApiKey)
-        const cartesiaTurns = elevenWordsToTurns(words)
-        if (cartesiaTurns.length === 0) throw new Error('Cartesia returned no words.')
-        turns = cartesiaTurns
-        displayTranscript = cartesiaTurns.map((t) => t.text).join('\n')
-        finalMimeType = sourceMimeType
-        usedCartesia = true
-      } catch (cartesiaErr) {
-        logger.warn('cartesia_failed_fallback_gemini', {
-          sessionId,
-          role: target.kind === 'subcollection' ? target.role : undefined,
-          message: cartesiaErr instanceof Error ? cartesiaErr.message : String(cartesiaErr),
-        })
-        // usedCartesia stays false -> Gemini block runs below.
-      }
-    }
-
-    if (!usedEleven && !usedCartesia) {
+    if (!usedEleven) {
     const startUploadResponse = await fetch(
       `${GEMINI_API_BASE}/upload/v1beta/files?key=${encodeURIComponent(apiKey)}`,
       {
@@ -839,9 +755,9 @@ async function runTranscription(args: {
     usageMetadata =
       (generationPayload as { usageMetadata?: unknown } | null)?.usageMetadata ?? null
     finalMimeType = readyFile.mimeType || sourceMimeType
-    } // end if (!usedEleven && !usedCartesia) — Gemini path
+    } // end if (!usedEleven) — Gemini fallback path
 
-    // ---- Shared validation + write (both providers) ----
+    // ---- Shared validation + write (ElevenLabs or Gemini fallback) ----
     if (!displayTranscript) throw new Error('Transcription returned an empty transcript.')
     if (displayTranscript.length < MIN_TRANSCRIPT_CHARS) {
       throw new Error(
@@ -1386,7 +1302,7 @@ export const transcribeParticipantRecording = onDocumentWritten(
     region: 'us-central1',
     timeoutSeconds: 540,
     memory: '1GiB',
-    secrets: [GEMINI_API_KEY, ELEVENLABS_API_KEY, CARTESIA_API_KEY],
+    secrets: [GEMINI_API_KEY, ELEVENLABS_API_KEY],
     retry: false,
   },
   async (event) => {
@@ -1429,8 +1345,6 @@ export const transcribeParticipantRecording = onDocumentWritten(
       storagePath,
       apiKey: GEMINI_API_KEY.value(),
       elevenApiKey: ELEVENLABS_API_KEY.value(),
-      // Cartesia key — used when CARTESIA_TRANSCRIBE_PROVIDER === 'cartesia' (default).
-      cartesiaApiKey: CARTESIA_API_KEY.value(),
     })
   },
 )
