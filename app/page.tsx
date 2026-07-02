@@ -3,7 +3,6 @@
 import { useEffect } from 'react'
 import Navbar from '@/components/dashboard/Navbar'
 import Footer from '@/components/dashboard/Footer'
-import StructuredData from '@/components/seo/StructuredData'
 
 
 const PAGE_CSS = `
@@ -719,7 +718,8 @@ const tRemove = setTimeout(() => {
 
   return (
     <div className="ccx-page">
-      <StructuredData />
+      {/* Organization + WebSite JSON-LD now render site-wide from the root layout
+          (SiteStructuredData), so no per-homepage render is needed here. */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link

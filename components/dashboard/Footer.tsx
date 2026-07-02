@@ -17,19 +17,22 @@ const Footer = (_props: FooterProps) => (
             AI-powered case practice and performance analytics for consulting interviews.
           </p>
         </div>
+        {/* Whitespace text nodes ({' '}) between links keep a scraped Google
+            snippet from concatenating into "HomeThePlatformThe Team...". The
+            flex gap controls the real spacing, so these spaces are visually inert. */}
         <div className="flex flex-wrap gap-x-12 gap-y-4">
           <Link href="/" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             Home
-          </Link>
+          </Link>{' '}
           <Link href="/about-ccx" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             The Platform
-          </Link>
+          </Link>{' '}
           <Link href="/our-story" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             The Team
-          </Link>
+          </Link>{' '}
           <Link href="/collaborators" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             Acknowledgements
-          </Link>
+          </Link>{' '}
           <a href="mailto:saksham@casecompendiumx.in?subject=Compendium%20X%20Enquiry" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             Contact Us
           </a>

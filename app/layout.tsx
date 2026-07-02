@@ -4,6 +4,7 @@ import GlobalStyles from '@/components/GlobalStyles'
 import Analytics from '@/components/Analytics';
 import OfflineSetup from '@/components/OfflineSetup'
 import OfflineBanner from '@/components/OfflineBanner'
+import { SiteStructuredData } from '@/components/seo/StructuredData'
 // @ts-ignore - CSS side-effect import is supported by Next.js
 import './globals.css'
 
@@ -36,6 +37,10 @@ const CCX_KEYWORDS = [
   // Brand and variants (fights the autocorrect)
   'Case CompendiumX', 'Case Compendium X', 'casecompendiumx', 'case compendium x',
   'CompendiumX', 'Compendium X', 'CCX', 'case compendium 3rd edition',
+  'Case Compendium', 'Compendium', 'CaseCompendium', 'case compendium srcc',
+  'compendium srcc', 'casecompendium srcc', 'srcc case compendium',
+  'case compendium 2nd edition', 'case compendium x 2nd edition',
+  'case compendiumx 2nd edition', 'case compendiumx srcc',
   // Consulting firms and roles (full roster, not just MBB)
   'consulting interview', 'management consulting', 'MBB', 'consulting jobs',
   'consulting placements', 'strategy consulting', 'consultant interview questions',
@@ -61,22 +66,39 @@ const CCX_KEYWORDS = [
   'case prep India', 'consulting prep India', 'SRCC', 'Delhi University consulting',
   'IIM case prep', 'IIT consulting prep', 'undergraduate consulting prep',
   'MBA case interview prep', 'placement preparation', 'campus placements consulting',
+  // Framework-specific (high-intent, currently under-served pages)
+  'profitability framework', 'profitability case framework', 'market entry framework',
+  'market entry case', 'growth strategy case', 'growth framework', 'pricing case',
+  'pricing strategy framework', 'market sizing', 'market sizing questions',
+  'guesstimate', 'guesstimate examples', 'guesstimate questions', 'case interview cheat sheet',
+  'case interview frameworks list', 'unconventional case framework',
+  // Intent and how-to queries
+  'how to crack case interview', 'how to prepare for case interview',
+  'how to solve case interview', 'case interview tips', 'case interview questions and answers',
+  'best case interview prep', 'free case interview practice', 'case interview practice online',
   // Common misspellings and split forms
   'case compendia', 'case compendiam', 'case compedium', 'compendium x',
-  'casecompendium', 'case-compendium-x',
+  'casecompendium', 'case-compendium-x', 'case compendium download', 'case compendium pdf',
+  'case compendium srcc', 'case compendium book',
   // Hindi and Hinglish phrasings
   'case interview kaise kare', 'consulting kaise join kare', 'case prep kaise kare',
   'consulting interview ki taiyari', 'case study practice hindi',
+  'case interview kaise crack kare', 'consulting interview questions hindi',
 ]
+
+// Single source of truth for the homepage description. Used for meta,
+// openGraph AND twitter so Google never sees a divergent snippet for the
+// same URL (the normal-search vs site:search inconsistency).
+const HOME_DESCRIPTION =
+  'The third edition of Case Compendium, the case book a million readers grew up on, now AI first. Practice real McKinsey, BCG, Bain, Kearney, L.E.K., Strategy& and Accenture Strategy cases. Agents record and transcribe every mock, analyse it, surface your blind spots and track your goals to the offer. Built by SRCC students.'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.casecompendiumx.in'),
   title: {
     default: 'Case CompendiumX: Where Case Prep Gets Smarter',
-    template: '%s | Case CompendiumX',
+    template: 'Case CompendiumX: %s',
   },
-  description:
-    'The case book a million readers grew up on, now AI first. Agents record and transcribe every mock, analyse it, surface your blind spots and track your goals to the offer. Practice real McKinsey, BCG, Bain, Kearney, L.E.K., Strategy& and Accenture Strategy cases. Built by SRCC students.',
+  description: HOME_DESCRIPTION,
   applicationName: 'Case CompendiumX',
   keywords: CCX_KEYWORDS,
   authors: [{ name: 'Case CompendiumX' }],
@@ -89,8 +111,7 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'Case CompendiumX',
     title: 'Case CompendiumX: Where Case Prep Gets Smarter',
-    description:
-      'The case book a million readers grew up on, now AI first. Agents record, transcribe and analyse every mock, surface your blind spots and track your goals to the offer. Real McKinsey, BCG, Bain, Kearney and L.E.K. cases.',
+    description: HOME_DESCRIPTION,
     url: 'https://www.casecompendiumx.in',
     locale: 'en_IN',
     images: [
@@ -105,8 +126,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Case CompendiumX: Where Case Prep Gets Smarter',
-    description:
-      'The case book a million readers grew up on, now AI first. Agents record, transcribe and analyse every mock, surface blind spots and track your goals to the offer. Real McKinsey, BCG, Bain and Kearney cases.',
+    description: HOME_DESCRIPTION,
     images: ['/logo.png'],
   },
   icons: {
@@ -152,6 +172,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${newsreader.variable} ${workSans.variable}`}>
+        <SiteStructuredData />
         <Analytics />
         <GlobalStyles />
         <OfflineSetup />

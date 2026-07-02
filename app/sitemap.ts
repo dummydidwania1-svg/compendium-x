@@ -14,14 +14,20 @@ const FRAMEWORK_SLUGS = [
 ] as const
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const cases = casesData as Array<{ title?: string; slug?: string }>
+  const cases = casesData as Array<{ title?: string; slug?: string; updatedAt?: string; createdAt?: string }>
+  const buildDate = new Date()
 
   const caseUrls: MetadataRoute.Sitemap = cases
     .map((c) => {
       const slug = c.slug?.trim() || slugifyCase(c.title ?? '')
       if (!slug) return null
+      // Prefer the case's own timestamp so Google detects edits; fall back to
+      // the build date so newly added cases signal freshness on each deploy.
+      const stamp = c.updatedAt || c.createdAt
+      const lastModified = stamp ? new Date(stamp) : buildDate
       return {
         url: `${BASE_URL}/case/${slug}`,
+        lastModified,
         changeFrequency: 'monthly' as const,
         priority: 0.8,
       }
