@@ -341,9 +341,8 @@ async function cartesiaWords(
 type ElevenWordDiarized = ElevenWord & { speaker_id?: string }
 
 // Like elevenLabsWords() but enables diarization for a single mixed-mic file.
-// language_code is intentionally omitted — Scribe auto-detects English as dominant
-// and keeps Hindi words in Roman script (Hinglish), whereas setting 'en' forces
-// Devanagari transliteration of any Hindi speech.
+// language_code: 'en' forces Roman script output — same behaviour as remote mode
+// so Hindi speech stays in Hinglish rather than Devanagari.
 async function elevenLabsSplitScreenWords(
   audioBytes: ArrayBuffer,
   mimeType: string,
@@ -358,6 +357,7 @@ async function elevenLabsSplitScreenWords(
     form.append('num_speakers', '2')
     form.append('no_verbatim', 'true')
     form.append('temperature', '0')
+    form.append('language_code', 'en')
     form.append(
       'file',
       new Blob([audioBytes], { type: mimeType || 'audio/mp4' }),
@@ -686,37 +686,10 @@ async function runTranscription(args: {
       }
     }
 
-    // ---- Cartesia ink-whisper path (dual-mic only, tried first, auto-fallback) ----
-    // ink-whisper supports direct file upload (webm/mp4/ogg/wav) with word timestamps.
-    // On any error we fall through to ElevenLabs, then Gemini — three-layer fallback.
+    // ---- ElevenLabs Scribe path (dual-mic only, tried first, auto-fallback) ----
+    // On any error we fall through to Cartesia, then Gemini — three-layer fallback.
     if (
       target.kind === 'subcollection' &&
-      CARTESIA_TRANSCRIBE_PROVIDER === 'cartesia' &&
-      cartesiaApiKey
-    ) {
-      try {
-        const words = await cartesiaWords(audioBytes, sourceMimeType, cartesiaApiKey)
-        const cartesiaTurns = elevenWordsToTurns(words)
-        if (cartesiaTurns.length === 0) throw new Error('Cartesia returned no words.')
-        turns = cartesiaTurns
-        displayTranscript = cartesiaTurns.map((t) => t.text).join('\n')
-        finalMimeType = sourceMimeType
-        usedCartesia = true
-      } catch (cartesiaErr) {
-        logger.warn('cartesia_failed_fallback_elevenlabs', {
-          sessionId,
-          role: target.kind === 'subcollection' ? target.role : undefined,
-          message: cartesiaErr instanceof Error ? cartesiaErr.message : String(cartesiaErr),
-        })
-        // usedCartesia stays false -> ElevenLabs block runs below.
-      }
-    }
-
-    // ---- ElevenLabs Scribe path (dual-mic only, flag-gated, auto-fallback) ----
-    // Runs when Cartesia is disabled or failed. On any error falls through to Gemini.
-    if (
-      target.kind === 'subcollection' &&
-      !usedCartesia &&
       TRANSCRIBE_PROVIDER === 'elevenlabs' &&
       elevenApiKey
     ) {
@@ -729,12 +702,39 @@ async function runTranscription(args: {
         finalMimeType = sourceMimeType
         usedEleven = true
       } catch (elevenErr) {
-        logger.warn('elevenlabs_failed_fallback_gemini', {
+        logger.warn('elevenlabs_failed_fallback_cartesia', {
           sessionId,
           role: target.kind === 'subcollection' ? target.role : undefined,
           message: elevenErr instanceof Error ? elevenErr.message : String(elevenErr),
         })
-        // usedEleven stays false -> Gemini block runs below.
+        // usedEleven stays false -> Cartesia block runs below.
+      }
+    }
+
+    // ---- Cartesia ink-whisper path (dual-mic only, fallback if ElevenLabs fails) ----
+    // ink-whisper supports direct file upload (webm/mp4/ogg/wav) with word timestamps.
+    // On any error we fall through to Gemini.
+    if (
+      target.kind === 'subcollection' &&
+      !usedEleven &&
+      CARTESIA_TRANSCRIBE_PROVIDER === 'cartesia' &&
+      cartesiaApiKey
+    ) {
+      try {
+        const words = await cartesiaWords(audioBytes, sourceMimeType, cartesiaApiKey)
+        const cartesiaTurns = elevenWordsToTurns(words)
+        if (cartesiaTurns.length === 0) throw new Error('Cartesia returned no words.')
+        turns = cartesiaTurns
+        displayTranscript = cartesiaTurns.map((t) => t.text).join('\n')
+        finalMimeType = sourceMimeType
+        usedCartesia = true
+      } catch (cartesiaErr) {
+        logger.warn('cartesia_failed_fallback_gemini', {
+          sessionId,
+          role: target.kind === 'subcollection' ? target.role : undefined,
+          message: cartesiaErr instanceof Error ? cartesiaErr.message : String(cartesiaErr),
+        })
+        // usedCartesia stays false -> Gemini block runs below.
       }
     }
 
