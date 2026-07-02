@@ -2221,7 +2221,7 @@ if (previewMode && !forcePreview) {
 						actionLabel="Submit feedback"
 						onAction={() => { setCandidateEndedSession(false); setCurrentView('feedback') }}
 						secondaryActionLabel="Skip for now"
-						onSecondaryAction={() => { setCandidateEndedSession(false); setCurrentView('success') }}
+						onSecondaryAction={() => { setCandidateEndedSession(false); void stopInterviewerRecordingAndUpload(); setCurrentView('success') }}
 						onDismiss={() => setCandidateEndedSession(false)}
 					/>
 				)}
