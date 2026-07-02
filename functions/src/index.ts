@@ -297,7 +297,6 @@ async function elevenLabsSplitScreenWords(
     form.append('timestamps_granularity', 'word')
     form.append('diarize', 'true')
     form.append('num_speakers', '2')
-    form.append('tag_audio_events', 'true')
     form.append('no_verbatim', 'true')
     form.append('temperature', '0')
     form.append(
