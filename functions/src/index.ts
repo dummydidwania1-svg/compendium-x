@@ -91,7 +91,7 @@ const MIN_TRANSCRIPT_CHARS = 40
 // Grace window before declaring a partial transcript when the interviewer
 // track is absent. If the candidate track completes and we haven't heard from
 // the interviewer track within this window, we treat it as candidate-only.
-const MERGE_GRACE_MS = 5 * 60 * 1000 // 5 minutes
+const MERGE_GRACE_MS = 1 * 60 * 1000 // 1 minute
 
 type GeminiFile = {
   name?: string
@@ -1507,7 +1507,7 @@ export const promoteAbandonedSessions = onSchedule(
 /* -------------------------------------------------------------------------- */
 
 /**
- * Runs every 30 minutes to catch sessions where the interviewer never recorded
+ * Runs every 5 minutes to catch sessions where the interviewer never recorded
  * and never explicitly declined — meaning no realtime trigger would ever re-fire
  * the merge after the grace window elapses.
  *
@@ -1519,7 +1519,7 @@ export const promoteAbandonedSessions = onSchedule(
  */
 export const finalizePendingMerges = onSchedule(
   {
-    schedule: 'every 30 minutes',
+    schedule: 'every 5 minutes',
     region: 'us-central1',
     // Raised from 120s/256MiB: this sweep calls evaluateAndMerge, which now runs
     // a best-effort ffmpeg audio merge (download + opus re-encode) per session.

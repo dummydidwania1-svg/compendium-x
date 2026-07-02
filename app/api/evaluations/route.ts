@@ -133,5 +133,30 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
 
   await batch.commit()
 
+  // If the interviewer's recording track is stuck in 'recording' (periodic flush
+  // wrote the audio but the final upload beacon never arrived — common when the
+  // browser closes right after the session), flip it to 'pending' now so the
+  // transcription Cloud Function fires immediately rather than waiting for the
+  // 5-minute finalizePendingMerges sweep.
+  if (sessionRef && input.lobbyId) {
+    try {
+      const trackRef = adminDb
+        .collection('sessions')
+        .doc(input.lobbyId)
+        .collection('recordings')
+        .doc('interviewer')
+      const trackSnap = await trackRef.get()
+      const trackData = trackSnap.data()
+      if (trackSnap.exists && trackData?.transcriptStatus === 'recording' && trackData?.audioUrl) {
+        await trackRef.set(
+          { transcriptStatus: 'pending', updatedAt: FieldValue.serverTimestamp() },
+          { merge: true },
+        )
+      }
+    } catch {
+      // best-effort — don't fail the evaluation submission if this errors
+    }
+  }
+
   return jsonOk({ ok: true, evaluationId: evaluationRef.id })
 })
