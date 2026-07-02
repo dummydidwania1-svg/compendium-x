@@ -19,10 +19,13 @@ export type DashboardCaseEntry = {
   lobbyId: string | null
   name: string
   type: string
+  company: string | null
   industry: string | null
   level: string
   date: string
   createdAtMs: number
+  sessionMode: string
+  interviewerName: string | null
   structure: number | null
   analysis: number | null
   understanding: number | null
@@ -51,12 +54,14 @@ export type DashboardCaseMeta = {
   numericId: number | null
   title: string | null
   caseType: string | null
+  company: string | null
   industry: string | null
   difficulty: string | null
 }
 
 export type DashboardSessionMeta = {
   lobbyId: string
+  sessionMode: string
   transcript: string | null
   transcriptPreview: string | null
   transcriptStatus: string | null
@@ -137,6 +142,7 @@ export function mapCaseMeta(id: string, value: DocumentData): DashboardCaseMeta 
     numericId: asNumber(value.id),
     title: asString(value.title),
     caseType: asString(value.case_type) ?? asString(value.caseType),
+    company: asString(value.company),
     industry: asString(value.industry),
     difficulty: asString(value.difficulty),
   }
@@ -158,8 +164,25 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
   const transcriptError =
     asString(source.transcriptError) ?? asString(value?.mergedTranscriptError)
 
+  // Authoritative session mode: read from explicit fields, not inferred from mergedAudioUrl.
+  const rawMode =
+    asString(value?.sessionMode) ??
+    asString(value?.mode) ??
+    asString((source as Record<string, unknown>).mode)
+  let sessionMode: string
+  if (rawMode) {
+    const normalized = rawMode.toLowerCase().replace(/[_\s-]+/g, '')
+    sessionMode = normalized === 'samedevice' || normalized === 'local' ? 'Same Device' : 'Remote'
+  } else {
+    // Fallback for legacy records that pre-date the sessionMode field.
+    sessionMode = asString(value?.mergedAudioUrl) ? 'Remote' : 'Same Device'
+  }
+
+  const mergedAudioUrl = asString(value?.mergedAudioUrl)
+
   return {
     lobbyId: id,
+    sessionMode,
     transcript,
     transcriptPreview,
     transcriptStatus,
@@ -170,7 +193,7 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     audioUrl: asString(source.audioUrl) ?? asString(value?.candidateAudioUrl),
     // Server-side time-aligned combined audio (both mics), written to the doc root
     // by the Cloud Function. Preferred over a single mic track when present.
-    mergedAudioUrl: asString(value?.mergedAudioUrl),
+    mergedAudioUrl,
   }
 }
 
@@ -192,10 +215,13 @@ export function mapDashboardEntry(
     lobbyId: record.lobbyId,
     name: record.caseTitle || caseMeta?.title || 'Untitled Case',
     type: normalizeCaseType(record.caseType ?? caseMeta?.caseType ?? 'General'),
+    company: caseMeta?.company ?? null,
     industry: record.industry ?? caseMeta?.industry ?? null,
     level: normalizeDifficulty(record.difficulty ?? caseMeta?.difficulty),
     date,
     createdAtMs: timestampToMillis(record.createdAt),
+    sessionMode: sessionMeta?.sessionMode ?? 'Remote',
+    interviewerName: null,
     structure: record.scores.structure ?? null,
     analysis: record.scores.understanding ?? null,
     understanding: record.scores.understanding ?? null,

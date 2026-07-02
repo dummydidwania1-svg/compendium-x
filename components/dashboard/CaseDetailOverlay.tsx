@@ -320,7 +320,7 @@ export default function CaseDetailOverlay({
   const transcriptStatus = entry.transcriptStatus ?? null;
   const transcriptReason = entry.transcriptReason ?? null;
   const scoreVal         = entry.isUnrated ? null : (entry.score ?? null);
-  const sessionMode      = entry.mergedAudioUrl ? 'Remote' : 'Same Device';
+  const sessionMode      = entry.sessionMode;
   const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
 
   // Overview computed flags
@@ -564,7 +564,9 @@ export default function CaseDetailOverlay({
         </div>
         <div className="flex items-center gap-[8px] py-[7px]">
           <User className="w-[12px] h-[12px] shrink-0" style={{ color: 'rgba(92,64,51,.42)' }} />
-          <span className="text-[12.5px]" style={{ color: 'rgba(92,64,51,.62)' }}>Alex Morgan</span>
+          <span className="text-[12.5px]" style={{ color: 'rgba(92,64,51,.62)' }}>
+            {entry.interviewerName ?? <em>Interviewer name not available</em>}
+          </span>
         </div>
       </div>
     </div>
@@ -585,7 +587,7 @@ export default function CaseDetailOverlay({
       <div className="flex flex-col items-center">
         <div
           className="w-[126px] h-[126px] rounded-full inline-flex flex-col items-center justify-center"
-          style={{ border: `2px solid ${color}40`, boxShadow: `0 0 18px ${color}12` }}
+          style={{ border: `2px solid ${color}`, boxShadow: `0 0 18px ${color}12` }}
         >
           <span className="font-serif text-[44px] font-[500] leading-none tabular-nums" style={{ color }}>
             {entry.isUnrated ? '--' : displayScore}
@@ -599,7 +601,7 @@ export default function CaseDetailOverlay({
               <div className="flex-1 h-[4px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
                 {val != null ? (
                   <div className="h-full rounded-full transition-all duration-[900ms] ease-out"
-                    style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.42)' }} />
+                    style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.85)' }} />
                 ) : (
                   <div className="h-full rounded-full" style={{ background: 'repeating-linear-gradient(45deg, rgba(92,64,51,.06) 0 4px, transparent 4px 8px)' }} />
                 )}
@@ -621,7 +623,7 @@ export default function CaseDetailOverlay({
       <div className="flex flex-col items-center">
         <div
           className="w-[112px] h-[112px] rounded-full inline-flex flex-col items-center justify-center"
-          style={{ border: `2px solid ${color}40`, boxShadow: `0 0 18px ${color}12` }}
+          style={{ border: `2px solid ${color}`, boxShadow: `0 0 18px ${color}12` }}
         >
           <span className="font-serif text-[38px] font-[500] leading-none tabular-nums" style={{ color }}>
             {entry.isUnrated ? '--' : displayScore}
@@ -642,7 +644,7 @@ export default function CaseDetailOverlay({
                 <div className="h-[4px] rounded-full" style={{ background: 'rgba(217,208,196,.40)', maxWidth: '130px' }}>
                   {val != null ? (
                     <div className="h-full rounded-full transition-all duration-[900ms] ease-out"
-                      style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.42)' }} />
+                      style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.85)' }} />
                   ) : (
                     <div className="h-full rounded-full"
                       style={{ background: 'repeating-linear-gradient(45deg, rgba(92,64,51,.06) 0 4px, transparent 4px 8px)' }} />
@@ -755,13 +757,13 @@ export default function CaseDetailOverlay({
                 <span className="inline-block shrink-0" style={{ width: 6, height: 6, borderRadius: '50%', background: '#c98a3d' }} />
                 {entry.level}
               </span>
-              {/* Industry (nullable) */}
-              {entry.industry && (
+              {/* Company (nullable) */}
+              {entry.company && (
                 <span
                   className="inline-flex items-center text-[11px] font-medium px-[11px] py-[5px] rounded-full"
                   style={{ background: '#fff8f0', border: '1px solid rgba(92,64,51,.14)', color: '#5C4033' }}
                 >
-                  {entry.industry}
+                  {entry.company}
                 </span>
               )}
             </div>
@@ -890,7 +892,7 @@ export default function CaseDetailOverlay({
                 <SectionLabel>Transcript</SectionLabel>
 
                 {entry.hasTranscript && turns.length > 0 && (
-                  <div className="flex flex-col gap-[10px]">
+                  <div className="flex flex-col gap-[10px]" style={{ maxHeight: 'min(440px, calc(100vh - 260px))', overflowY: 'auto', scrollbarWidth: 'none' }}>
                     {(transcriptStatus === 'partial') && (
                       <div
                         className="text-[12px] leading-[1.65] px-[12px] py-[9px] rounded-[7px] mb-[3px]"
