@@ -259,6 +259,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     if (micBlockedReshowTimerRef.current) clearTimeout(micBlockedReshowTimerRef.current)
     if (uploadFailReshowTimerRef.current) clearTimeout(uploadFailReshowTimerRef.current)
     if (captureErrorReshowTimerRef.current) clearTimeout(captureErrorReshowTimerRef.current)
+    if (candidateFlushTimerRef.current) clearInterval(candidateFlushTimerRef.current)
   }, [stopTitlePulse])
 
   // Reactive microphone permission tracking. The hook subscribes to
@@ -283,6 +284,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const completionHandledRef = useRef(false)
   const stopInProgressRef = useRef(false)
   const caseIdRef = useRef('')
+  // Periodic flush (remote mode only) — mirrors the interviewer's flush architecture
+  const CANDIDATE_FLUSH_MS = 20_000
+  const candidateFlushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const candidateFlushInFlightRef = useRef(false)
+  const lastCandidateFlushUrlRef = useRef<string | null>(null)
+  const lastCandidateFlushPathRef = useRef<string | null>(null)
+  const lastCandidateFlushMimeTypeRef = useRef<string>('audio/webm')
+  const candidateUploadedRef = useRef(false)
+  const cachedCandidateTokenRef = useRef<string | null>(null)
   const autoStartAttemptedRef = useRef(false)
   // Only true when we've previously started recording (auto-start ran) AND
   // the page was then reloaded. Set AFTER autoStartAttemptedRef so a fresh
@@ -328,6 +338,64 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
     audioContextRef.current = null
   }, [])
+
+  const flushCandidateAudio = useCallback(async ({ final: isFinal }: { final: boolean }) => {
+    if (preferredRecordingModeRef.current === 'local' || !lobbyId || !currentUser) return
+    if (candidateFlushInFlightRef.current) return
+
+    const recorder = recorderRef.current
+    if (recorder && recorder.state === 'recording') {
+      try {
+        recorder.requestData()
+        await new Promise<void>((r) => setTimeout(r, 80))
+      } catch { /* ignore */ }
+    }
+
+    const chunks = chunksRef.current
+    if (chunks.length === 0) return
+
+    const mimeType = recorder?.mimeType || pickSupportedMimeType() || 'audio/mp4'
+    const blob = new Blob(chunks, { type: mimeType })
+
+    candidateFlushInFlightRef.current = true
+    try {
+      const ext = fileExtensionFromType(mimeType)
+      const storagePath = `session-recordings/${currentUser.uid}/${lobbyId}/candidate-live.${ext}`
+      const sRef = storageRef(storage, storagePath)
+      await uploadBytes(sRef, blob, { contentType: mimeType })
+      const audioUrl = await getDownloadURL(sRef)
+
+      lastCandidateFlushUrlRef.current = audioUrl
+      lastCandidateFlushPathRef.current = storagePath
+      lastCandidateFlushMimeTypeRef.current = mimeType
+
+      const nowMs = Date.now()
+      await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
+        status: 'uploaded',
+        mode: 'remote' as const,
+        role: 'candidate' as const,
+        startedAtMs: recordingStartMsRef.current ?? nowMs,
+        stoppedAtMs: nowMs,
+        durationMs: recordingStartMsRef.current ? nowMs - recordingStartMsRef.current : null,
+        stopReason: isFinal ? 'session_completed' : 'periodic_flush',
+        storagePath,
+        audioUrl,
+        mimeType,
+        byteSize: blob.size,
+        startOffsetMs: recordingStartMsRef.current !== null && selectedAtMsRef.current !== null
+          ? Math.max(0, recordingStartMsRef.current - selectedAtMsRef.current)
+          : undefined,
+        anchorSelectedAtMs: selectedAtMsRef.current ?? undefined,
+        live: !isFinal,
+      })
+
+      auth.currentUser?.getIdToken(false).then((t) => { cachedCandidateTokenRef.current = t }).catch(() => {})
+    } catch {
+      // Non-final flush failure is non-fatal — next tick will retry
+    } finally {
+      candidateFlushInFlightRef.current = false
+    }
+  }, [lobbyId, currentUser])
 
   const clearRemotePrep = useCallback(() => {
     for (const timer of remotePrepTimersRef.current) {
@@ -421,6 +489,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
           pendingBlobRef.current = null
           setCompletionPending(false)
+          candidateUploadedRef.current = true
           setRecordingState('uploaded')
 
           if (routeAfterUpload) {
@@ -477,6 +546,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (stopInProgressRef.current) return
       stopInProgressRef.current = true
       stopReasonRef.current = stopReason
+
+      // Stop periodic flush timer so no flush races with the final upload
+      if (candidateFlushTimerRef.current) {
+        clearInterval(candidateFlushTimerRef.current)
+        candidateFlushTimerRef.current = null
+      }
 
       const recorder = recorderRef.current
       if (!recorder || recorder.state === 'inactive') {
@@ -619,6 +694,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
         recorder.start(1000)
         setRecordingState('recording')
+
+        // Periodic cumulative flush for remote mode — mirrors the interviewer's flush.
+        // Every 20s we upload the cumulative blob to a stable storage path so that
+        // if the tab is closed before the final upload, the pagehide beacon can
+        // register the last-flushed URL and transcription still fires.
+        if (preferredRecordingModeRef.current !== 'local' && lobbyId) {
+          candidateFlushTimerRef.current = setInterval(() => {
+            void flushCandidateAudio({ final: false })
+          }, CANDIDATE_FLUSH_MS)
+          auth.currentUser?.getIdToken(false).then((t) => { cachedCandidateTokenRef.current = t }).catch(() => {})
+        }
+
         // microphonePermissionState is now reactive (via useMicPermission);
         // no manual sync needed — the browser fires onchange when getUserMedia
         // succeeds.
@@ -661,7 +748,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         setRecordingError(message)
       }
     },
-    [canStartRecording, currentUser, lobbyId, retryMicrophonePermission, stopRecordingAndFinalize, teardownMedia]
+    [canStartRecording, currentUser, lobbyId, retryMicrophonePermission, stopRecordingAndFinalize, teardownMedia, flushCandidateAudio]
   )
 
   const startCaptureFlow = useCallback(
@@ -1269,6 +1356,46 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             keepalive: true,
           })
         })
+      }
+      // Candidate audio beacon: if at least one periodic flush succeeded but the
+      // final upload was cancelled by the tab close, register the last flush URL
+      // as the final recording so transcription still fires.
+      if (
+        preferredRecordingModeRef.current !== 'local' &&
+        lobbyId &&
+        !candidateUploadedRef.current &&
+        lastCandidateFlushUrlRef.current &&
+        lastCandidateFlushPathRef.current &&
+        cachedCandidateTokenRef.current
+      ) {
+        const nowMs = Date.now()
+        fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${cachedCandidateTokenRef.current}`,
+          },
+          body: JSON.stringify({
+            status: 'uploaded',
+            mode: 'remote',
+            role: 'candidate',
+            live: false,
+            interrupted: true,
+            storagePath: lastCandidateFlushPathRef.current,
+            audioUrl: lastCandidateFlushUrlRef.current,
+            mimeType: lastCandidateFlushMimeTypeRef.current,
+            byteSize: 0,
+            startedAtMs: recordingStartMsRef.current ?? nowMs,
+            stoppedAtMs: nowMs,
+            durationMs: recordingStartMsRef.current ? nowMs - recordingStartMsRef.current : null,
+            stopReason: 'page_hide',
+            startOffsetMs: recordingStartMsRef.current !== null && selectedAtMsRef.current !== null
+              ? Math.max(0, recordingStartMsRef.current - selectedAtMsRef.current)
+              : undefined,
+            anchorSelectedAtMs: selectedAtMsRef.current ?? undefined,
+          }),
+          keepalive: true,
+        }).catch(() => {})
       }
     }
 

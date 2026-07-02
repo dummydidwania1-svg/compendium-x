@@ -92,11 +92,11 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         ...(body.anchorSelectedAtMs !== undefined ? { anchorSelectedAtMs: body.anchorSelectedAtMs } : {}),
       }
 
-      // For interviewer periodic flushes (live:true), keep transcriptStatus:'recording'
+      // For periodic flushes (live:true), keep transcriptStatus:'recording'
       // so transcription does NOT fire mid-session. Only the final upload or the
       // interrupted beacon sets 'pending' to trigger transcription.
       const transcriptStatusOnUpload =
-        role === 'interviewer' && body.status === 'uploaded' && body.live === true
+        body.status === 'uploaded' && body.live === true
           ? 'recording'
           : 'pending'
 
@@ -141,7 +141,7 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         // Denormalize fields onto the session doc so the dashboard can read them
         // without querying the subcollection, and merge triggers can fire.
         const sessionUpdate: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() }
-        if (role === 'candidate' && body.status === 'uploaded') {
+        if (role === 'candidate' && body.status === 'uploaded' && !body.live) {
           sessionUpdate.candidateAudioUrl = body.audioUrl
           if (!data.mergedTranscriptStatus) {
             sessionUpdate.mergedTranscriptStatus = 'pending'
