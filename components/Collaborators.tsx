@@ -4,24 +4,91 @@ import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Footer from '@/components/dashboard/Footer'
 
-const FIRMS = [
-  { name: 'Accenture Strategy',       people: ['Chhavi Atal', 'Kaavya Singhal', 'Latika Dutta'] },
-  { name: 'Auctus Advisors',          people: ['Khushi Goyal', 'Parineet Choudhary'] },
-  { name: 'Bain & Company',           people: ['Aarushi Gupta', 'Krtin Tandon', 'Vaibhav Garg', 'Vedant S. Jangam'] },
-  { name: 'Bain Capability Network',  people: ['Agrim Jain', 'Kinshuk Soperna', 'Mahir Dhariwal', 'Satvik Agarwal', 'Yashwardhan Saraf'] },
-  { name: 'Boston Consulting Group',  people: ['Anirudh Arya', 'Rishabh Bafna', 'Yash Ajmera'] },
-  { name: 'Dalberg',                  people: ['Harshit Jain', 'Jatin Jindal', 'Shreya Roy'] },
-  { name: 'FTI Consulting',           people: ['Ishaan Mittal'] },
-  { name: 'J.P. Morgan Chase & Co.', people: ['Neharika Garg'] },
-  { name: 'Kearney',                  people: ['Khushi Bhojnagarwala', 'Siddharth Bapna'] },
-  { name: 'L.E.K. Consulting',        people: ['Jasleen Allagh'] },
-  { name: 'McKinsey & Co.',           people: ['Aanam Ahmed', 'Ansh Aggarwal', 'Himanshu Chhabra', 'Jayani Shah', 'Kriteesha Janveja'] },
-  { name: 'Monitor Deloitte',         people: ['Amrit Chadha'] },
-  { name: 'Z.S. Associates',          people: ['Aarsh Nayyar', 'Chaitanya Sahwney', 'Kshitij Singh', 'Nakul Gupta'] },
+type Person = { name: string; linkedin: string }
+type Firm = { name: string; people: Person[] }
+
+const FIRMS: Firm[] = [
+  { name: 'Accenture Strategy', people: [
+    { name: 'Chhavi Atal',     linkedin: 'https://www.linkedin.com/in/chhavi-atal-876749149/' },
+    { name: 'Kaavya Singhal',  linkedin: 'https://www.linkedin.com/in/kaavya-singhal-598baa152/' },
+    { name: 'Latika Dutta',    linkedin: 'https://www.linkedin.com/in/latika-dutta/' },
+    { name: 'Saksham Kaila',   linkedin: 'https://www.linkedin.com/in/saksham-kaila-335500278/' },
+  ]},
+  { name: 'Bain & Company', people: [
+    { name: 'Satvik Agarwal',    linkedin: 'https://www.linkedin.com/in/satvikagarwal22/' },
+    { name: 'Vaibhav Garg',      linkedin: 'https://www.linkedin.com/in/vaibhav-garg-363716165/' },
+  ]},
+  { name: 'Bain Capability Network', people: [
+    { name: 'Aarushi Gupta',      linkedin: 'https://www.linkedin.com/in/aarushi-gupta-87630b16b/' },
+    { name: 'Kinshuk Soperna',    linkedin: 'https://www.linkedin.com/in/kinshuk-soperna-9a2276190/' },
+    { name: 'Mahir Dhariwal',     linkedin: 'https://www.linkedin.com/in/mahir-dhariwal-45480b190/' },
+    { name: 'Vedant S. Jangam',   linkedin: 'https://www.linkedin.com/in/vedant-s-jangam-a8610916a/' },
+  ]},
+  { name: 'Boston Consulting Group', people: [
+    { name: 'Anirudh Arya',    linkedin: 'https://www.linkedin.com/in/anirudh-arya-/' },
+    { name: 'Harshit Jain',    linkedin: 'https://www.linkedin.com/in/harshit-jain-srcc22/' },
+    { name: 'Krtin Tandon',    linkedin: 'https://www.linkedin.com/in/krtin-tandon/' },
+    { name: 'Manav Mahajan',   linkedin: 'https://www.linkedin.com/in/manav-mahajan-120653221/' },
+    { name: 'Rishabh Bafna',   linkedin: 'https://www.linkedin.com/in/rishabh-bafna/' },
+    { name: 'Shashwat Vyas',   linkedin: 'https://www.linkedin.com/in/shashwat-vyas-592554204/' },
+    { name: 'V Saikalayan',    linkedin: 'https://www.linkedin.com/in/v-saikalyan-626a6b257/' },
+    { name: 'Yash Ajmera',     linkedin: 'https://www.linkedin.com/in/yash-ajmera-731416185/' },
+  ]},
+  { name: 'Dalberg', people: [
+    { name: 'Bhavya Nayak',  linkedin: 'https://www.linkedin.com/in/bhavya-nayak/' },
+    { name: 'Daksh Kalra',   linkedin: 'https://www.linkedin.com/in/dakshkalra/' },
+    { name: 'Jatin Jindal',  linkedin: 'https://www.linkedin.com/in/jatin-jindal-485843196/' },
+    { name: 'Shreya Roy',    linkedin: 'https://www.linkedin.com/in/shreya-roy-69720391/' },
+  ]},
+  { name: 'FTI Consulting', people: [
+    { name: 'Ishaan Mittal', linkedin: 'https://www.linkedin.com/in/ishaan-mittal-cfa-04a730192/' },
+  ]},
+  { name: 'J.P. Morgan Chase & Co.', people: [
+    { name: 'Neharika Garg', linkedin: 'https://www.linkedin.com/in/neharika-garg-84370613b/' },
+  ]},
+  { name: 'Kearney', people: [
+    { name: 'Khushi Bhojnagarwala', linkedin: 'https://www.linkedin.com/in/khushibhojnagarwala/' },
+    { name: 'Shreyas Jain',         linkedin: 'https://www.linkedin.com/in/shreyasjainsrcc/' },
+    { name: 'Siddharth Bapna',      linkedin: 'https://www.linkedin.com/in/siddharthbapna/' },
+  ]},
+  { name: 'Kepler Cannon', people: [
+    { name: 'Paavni Dewan',      linkedin: 'https://www.linkedin.com/in/paavni-dewan/' },
+    { name: 'Shagun Fogla',      linkedin: 'https://www.linkedin.com/in/shagun-fogla-3687b8203/' },
+    { name: 'Yashwardhan Saraf', linkedin: 'https://www.linkedin.com/in/yash-vardhan-saraf/' },
+  ]},
+  { name: 'L.E.K. Consulting', people: [
+    { name: 'Jasleen Allagh', linkedin: 'https://www.linkedin.com/in/jasleen-a-20453b188/' },
+  ]},
+  { name: 'McKinsey & Co.', people: [
+    { name: 'Aanam Ahmed',        linkedin: 'https://www.linkedin.com/in/aanam-ahmed/' },
+    { name: 'Ananya Miriam Jose', linkedin: 'https://www.linkedin.com/in/ananya-miriam-jose-20a26b27b/' },
+    { name: 'Ansh Aggarwal',      linkedin: 'https://www.linkedin.com/in/ansh-aggarwal-15448a1a9/' },
+    { name: 'Himanshu Chhabra',   linkedin: 'https://www.linkedin.com/in/himanshuchhabra/' },
+    { name: 'Jayani Shah',        linkedin: 'https://www.linkedin.com/in/jayani-s-4b2417155/' },
+    { name: 'Kriteesha Janveja',  linkedin: 'https://www.linkedin.com/in/kriteesha-janveja-91571b144/' },
+    { name: 'Nimisha Dhawan',     linkedin: 'https://www.linkedin.com/in/nimisha-dhawan-3740bb259/' },
+    { name: 'Shreya Rohatgi',     linkedin: 'https://www.linkedin.com/in/shreya-rohatgi-72b2a8256/' },
+  ]},
+  { name: 'Monitor Deloitte', people: [
+    { name: 'Amrit Chadha', linkedin: 'https://www.linkedin.com/in/amrit-chadha-3a368718b/' },
+  ]},
+  { name: 'Strategy&', people: [
+    { name: 'Agrim Jain', linkedin: 'https://www.linkedin.com/in/agrim-jain-1650b3192/' },
+  ]},
+  { name: 'YCP Auctus', people: [
+    { name: 'Khushi Goyal',        linkedin: 'https://www.linkedin.com/in/khushi-goyal-445b41193/' },
+    { name: 'Parineet Choudhary',  linkedin: 'https://www.linkedin.com/in/parineet-kaur-chowdhury-0340aa192/' },
+  ]},
+  { name: 'Z.S. Associates', people: [
+    { name: 'Aarsh Nayyar',      linkedin: 'https://www.linkedin.com/in/aarsh-nayyar-62b660193/' },
+    { name: 'Chaitanya Sahwney', linkedin: 'https://www.linkedin.com/in/chaitanya-sawhney-3abb49193/' },
+    { name: 'Kshitij Singh',     linkedin: 'https://www.linkedin.com/in/kshitijsingh18/' },
+    { name: 'Nakul Gupta',       linkedin: 'https://www.linkedin.com/in/nakul-gupta1/' },
+  ]},
 ]
 
 const TOTAL_PEOPLE = FIRMS.reduce((s, f) => s + f.people.length, 0)
-const TOTAL_FIRMS  = FIRMS.length
+const TOTAL_FIRMS = FIRMS.length
 
 const PAGE_CSS = `
   /* ── Root ─────────────────────────────────────────── */
@@ -199,6 +266,7 @@ const PAGE_CSS = `
                 filter .7s cubic-bezier(.22,1,.36,1),
                 color .3s ease,
                 text-shadow .4s ease;
+    text-decoration: none;
   }
   .cl-firm .cl-name.name-active {
     opacity: 1;
@@ -217,7 +285,7 @@ const PAGE_CSS = `
     background: #3D5A35;
     transition: width .4s cubic-bezier(.22,1,.36,1);
   }
-  .cl-name:hover { color: #3D5A35; text-shadow: 0 0 28px rgba(61,90,53,.18); }
+  .cl-name:hover { color: #3D5A35; text-shadow: 0 0 28px rgba(61,90,53,.18); cursor: pointer; }
   .cl-name:hover::after { width: 100%; }
 
   /* Focus effect — hover one name, the rest recede */
@@ -444,9 +512,15 @@ export default function Collaborators() {
                 </div>
                 <div className="cl-names">
                   {firm.people.map((person) => (
-                    <span key={person} className="cl-name">
-                      {person}
-                    </span>
+                    <a
+                      key={person.name}
+                      href={person.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cl-name"
+                    >
+                      {person.name}
+                    </a>
                   ))}
                 </div>
               </div>
