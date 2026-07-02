@@ -736,9 +736,11 @@ const tRemove = setTimeout(() => {
           <div id="ccx-hero-grants">
             <span id="ccx-hero-grants__label">Supported by</span>
             <p id="ccx-hero-grants__credits">
-              <a href="https://cloud.google.com/startup" target="_blank" rel="noopener noreferrer">Google for Startups</a>
+              <a href="https://www.cartesia.ai/startups/" target="_blank" rel="noopener noreferrer">Cartesia</a>
               <span className="ccx-grants-dot">·</span>
               <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer">ElevenLabs</a>
+              <span className="ccx-grants-dot">·</span>
+              <a href="https://cloud.google.com/startup" target="_blank" rel="noopener noreferrer">Google for Startups</a>
             </p>
           </div>
 

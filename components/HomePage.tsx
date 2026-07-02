@@ -1953,11 +1953,15 @@ const handleMuteToggle = (e: React.MouseEvent) => {
         <div className="max-w-7xl mx-auto flex flex-col items-center gap-5">
           <p className="grant-label-reveal font-label text-[9px] uppercase tracking-[0.35em] font-semibold" style={{ color: '#b0a898' }}>Supported by</p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
-            <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer" className="grant-logo-link grant-slide-left grant-logo-pulse-1" data-delay="120">
+            <a href="https://www.cartesia.ai/startups/" target="_blank" rel="noopener noreferrer" className="grant-logo-link grant-slide-left grant-logo-pulse-1" data-delay="120">
+              <img src="/grants/Cartesia_Startups_Logo.png" alt="Cartesia for Startups" style={{ width: '192px', height: 'auto', display: 'block' }} />
+            </a>
+            <div style={{ width: '1px', height: '24px', background: 'rgba(69,58,42,0.12)' }} />
+            <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer" className="grant-logo-link grant-slide-left grant-logo-pulse-2" data-delay="200">
               <img src="/grants/elevenlabs-grants.webp" alt="ElevenLabs Grants" style={{ width: '200px', height: 'auto', display: 'block' }} />
             </a>
             <div style={{ width: '1px', height: '24px', background: 'rgba(69,58,42,0.12)' }} />
-            <a href="https://cloud.google.com/startup" target="_blank" rel="noopener noreferrer" className="grant-logo-link grant-slide-right grant-logo-pulse-2" data-delay="120" style={{ marginTop: '4px' }}>
+            <a href="https://cloud.google.com/startup" target="_blank" rel="noopener noreferrer" className="grant-logo-link grant-slide-right grant-logo-pulse-1" data-delay="120" style={{ marginTop: '4px' }}>
               <img src="/grants/google-for-startups-new.png" alt="Google for Startups" style={{ width: '175px', height: 'auto', display: 'block' }} />
             </a>
           </div>
