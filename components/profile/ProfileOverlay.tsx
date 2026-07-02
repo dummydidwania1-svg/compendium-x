@@ -234,7 +234,11 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
         }
         .profile-overlay-panel {
           animation: profile-overlay-in 0.22s cubic-bezier(0.22,1,0.36,1) both;
+          border-radius: 16px !important;
         }
+        .ccx-page .profile-overlay-panel { border-radius: 16px !important; }
+        .ccx-page .profile-overlay-panel .rounded-full { border-radius: 9999px !important; }
+        .ccx-page .profile-overlay-panel .rounded-xl { border-radius: 12px !important; }
         @keyframes profile-overlay-in {
           from { opacity: 0; transform: translateY(10px) scale(0.985); }
           to { opacity: 1; transform: translateY(0) scale(1); }
@@ -242,7 +246,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       `}</style>
 
       <div
-        className="profile-overlay-panel relative flex w-full max-w-[680px] overflow-hidden rounded-[56px] bg-[#fff8f0]"
+        className="profile-overlay-panel relative flex w-full max-w-[680px] overflow-hidden rounded-[16px] bg-[#fff8f0]"
         style={{
           boxShadow: '0 28px 70px rgba(43,33,24,0.28), 0 1px 0 rgba(255,255,255,0.4) inset',
           fontFamily: "'Work Sans', sans-serif",
