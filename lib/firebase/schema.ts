@@ -97,6 +97,14 @@ export type RecordingStatus = z.infer<typeof recordingStatus>
 export const transcriptStatus = z.enum(['pending', 'processing', 'completed', 'failed'])
 export type TranscriptStatus = z.infer<typeof transcriptStatus>
 
+/** A single speaker turn within a transcript (used by both local and remote sessions). */
+export const turnSchema = z.object({
+  offsetMs: z.number().nullable(),
+  text: z.string(),
+  speaker: z.string().optional(), // 'S1' | 'S2' for local diarized, 'candidate' | 'interviewer' for remote
+})
+export type Turn = z.infer<typeof turnSchema>
+
 /** The `recording` subdocument embedded on a session doc once recording starts. */
 export const sessionRecordingSchema = z
   .object({
@@ -131,6 +139,8 @@ export const sessionRecordingSchema = z
     transcriptByteSize: z.number().nullable().optional(),
     transcriptStoragePath: z.string().optional(),
     transcriptError: optionalString,
+    /** Structured diarized turns for local/split-screen ElevenLabs transcripts. */
+    transcriptTurns: z.array(turnSchema).optional(),
 
     error: z.string().optional(),
   })

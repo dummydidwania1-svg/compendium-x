@@ -29,7 +29,7 @@ function stripTs(raw: string): string {
     .trim();
 }
 
-type Speaker = 'Candidate' | 'Interviewer' | 'Unknown';
+type Speaker = 'Candidate' | 'Interviewer' | 'S1' | 'S2' | 'Unknown';
 interface Turn { speaker: Speaker; text: string }
 
 function parseTurns(raw: string): Turn[] {
@@ -47,8 +47,12 @@ function parseTurns(raw: string): Turn[] {
     if (!t) continue;
     const cand = t.match(/^Candidate:\s*(.*)/);
     const intv = t.match(/^Interviewer:\s*(.*)/);
+    const s1   = t.match(/^S1:\s*(.*)/);
+    const s2   = t.match(/^S2:\s*(.*)/);
     if (cand)      { flush(); speaker = 'Candidate';   if (cand[1]) lines.push(cand[1]); }
     else if (intv) { flush(); speaker = 'Interviewer'; if (intv[1]) lines.push(intv[1]); }
+    else if (s1)   { flush(); speaker = 'S1';          if (s1[1])   lines.push(s1[1]); }
+    else if (s2)   { flush(); speaker = 'S2';          if (s2[1])   lines.push(s2[1]); }
     else           { lines.push(t); }
   }
   flush();
@@ -898,34 +902,45 @@ export default function CaseDetailOverlay({
                       </div>
                     )}
                     {turns.map((turn, i) => {
-                      const isCandidate = turn.speaker === 'Candidate';
+                      // S1/S2 come from ElevenLabs diarized local sessions.
+                      // Candidate/Interviewer come from remote dual-mic sessions.
+                      // S1 and Candidate are styled as the "right" bubble (candidate-side);
+                      // S2 and Interviewer are styled as the "left" bubble (interviewer-side).
+                      const isRight = turn.speaker === 'Candidate' || turn.speaker === 'S1';
+                      const isDiarized = turn.speaker === 'S1' || turn.speaker === 'S2';
+                      const avatarLabel = isDiarized
+                        ? turn.speaker
+                        : (turn.speaker === 'Candidate' ? 'C' : 'I');
+                      const displayLabel = isDiarized
+                        ? turn.speaker
+                        : (turn.speaker === 'Candidate' ? 'You' : 'Interviewer');
                       return (
                         <div
                           key={i}
-                          className={`flex gap-[8px] items-start animate-turn-in ${isCandidate ? 'flex-row-reverse' : ''}`}
+                          className={`flex gap-[8px] items-start animate-turn-in ${isRight ? 'flex-row-reverse' : ''}`}
                           style={{ animationDelay: `${Math.min(i * 28, 260)}ms` }}
                         >
                           <div
                             className="w-[24px] h-[24px] rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-[16px]"
                             style={
-                              isCandidate
+                              isRight
                                 ? { background: 'rgba(92,64,51,.13)', color: '#5C4033', border: '1px solid rgba(92,64,51,.24)' }
                                 : { background: 'rgba(61,90,53,.16)', color: '#3D5A35', border: '1px solid rgba(61,90,53,.30)' }
                             }
                           >
-                            {isCandidate ? 'C' : 'I'}
+                            {avatarLabel}
                           </div>
-                          <div className={`flex flex-col max-w-[80%] ${isCandidate ? 'items-end' : 'items-start'}`}>
+                          <div className={`flex flex-col max-w-[80%] ${isRight ? 'items-end' : 'items-start'}`}>
                             <span
                               className="text-[9px] font-semibold uppercase tracking-[.07em] mb-[3px] px-[2px]"
-                              style={{ color: isCandidate ? 'rgba(92,64,51,.46)' : 'rgba(61,90,53,.60)' }}
+                              style={{ color: isRight ? 'rgba(92,64,51,.46)' : 'rgba(61,90,53,.60)' }}
                             >
-                              {isCandidate ? 'You' : 'Interviewer'}
+                              {displayLabel}
                             </span>
                             <div
                               className="px-[13px] py-[10px] text-[12.5px] leading-[1.65]"
                               style={
-                                isCandidate
+                                isRight
                                   ? { color: '#3B2F2F', background: 'rgba(92,64,51,.055)', border: '1px solid rgba(92,64,51,.13)', borderRadius: '12px 12px 3px 12px' }
                                   : { color: '#33402E', background: 'rgba(61,90,53,.075)', border: '1px solid rgba(61,90,53,.17)', borderLeft: '2.5px solid rgba(61,90,53,.34)', borderRadius: '4px 12px 12px 4px' }
                               }

@@ -59,6 +59,10 @@ const GEMINI_MODEL = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-2.5-flash'
 // 'gemini' so simply deploying this code changes nothing until the flag flips.
 // On any ElevenLabs error we fall back to the existing Gemini path per-track.
 const ELEVENLABS_API_KEY = defineSecret('ELEVENLABS_API_KEY')
+// Separate API key for split-screen (local) mode — independent of the remote-mode
+// key so grant budgets are tracked separately. Set via:
+//   firebase functions:secrets:set ELEVENLABS_SPLITSCREEN_API_KEY
+const ELEVENLABS_SPLITSCREEN_API_KEY = defineSecret('ELEVENLABS_SPLITSCREEN_API_KEY')
 const ELEVENLABS_MODEL = process.env.ELEVENLABS_MODEL || 'scribe_v2'
 const ELEVEN_TURN_GAP_MS = Number(process.env.ELEVEN_TURN_GAP_MS || 1500)
 // Default is now 'elevenlabs' (verified live on dual-mic sessions). Override
@@ -66,6 +70,9 @@ const ELEVEN_TURN_GAP_MS = Number(process.env.ELEVEN_TURN_GAP_MS || 1500)
 // functions/.env and redeploying. Per-track auto-fallback to Gemini on any
 // ElevenLabs error remains in place regardless of this default.
 const TRANSCRIBE_PROVIDER = process.env.TRANSCRIBE_PROVIDER || 'elevenlabs'
+// Independent flag for split-screen mode — defaults to 'elevenlabs'. Override
+// with SPLITSCREEN_TRANSCRIBE_PROVIDER=gemini to disable without touching remote.
+const SPLITSCREEN_TRANSCRIBE_PROVIDER = process.env.SPLITSCREEN_TRANSCRIBE_PROVIDER || 'elevenlabs'
 const ELEVENLABS_STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text'
 
 // Server-side audio merge (dual-mic): time-align both mic recordings by their
@@ -157,7 +164,7 @@ function stripTimestamps(value: string): string {
     .trim()
 }
 
-type Turn = { offsetMs: number | null; text: string }
+type Turn = { offsetMs: number | null; text: string; speaker?: string }
 
 /**
  * Parse per-turn timing markers produced by the dual-mic Gemini prompt.
@@ -270,6 +277,93 @@ function elevenWordsToTurns(words: ElevenWord[], gapMs: number = ELEVEN_TURN_GAP
   return grouped.map((t) => ({ offsetMs: t.offsetMs, text: t.text.trim() }))
 }
 
+// ---- ElevenLabs split-screen (local/single-mic) helpers --------------------
+
+type ElevenWordDiarized = ElevenWord & { speaker_id?: string }
+
+// Like elevenLabsWords() but enables diarization for a single mixed-mic file.
+// language_code is intentionally omitted — Scribe auto-detects English as dominant
+// and keeps Hindi words in Roman script (Hinglish), whereas setting 'en' forces
+// Devanagari transliteration of any Hindi speech.
+async function elevenLabsSplitScreenWords(
+  audioBytes: ArrayBuffer,
+  mimeType: string,
+  apiKey: string,
+): Promise<ElevenWordDiarized[]> {
+  let lastError = ''
+  for (let attempt = 1; attempt <= GENERATION_MAX_ATTEMPTS; attempt += 1) {
+    const form = new FormData()
+    form.append('model_id', ELEVENLABS_MODEL)
+    form.append('timestamps_granularity', 'word')
+    form.append('diarize', 'true')
+    form.append('num_speakers', '2')
+    form.append('tag_audio_events', 'true')
+    form.append('no_verbatim', 'true')
+    form.append('temperature', '0')
+    form.append(
+      'file',
+      new Blob([audioBytes], { type: mimeType || 'audio/mp4' }),
+      'audio.webm',
+    )
+    const response = await fetch(ELEVENLABS_STT_URL, {
+      method: 'POST',
+      headers: { 'xi-api-key': apiKey },
+      body: form,
+    })
+    if (response.ok) {
+      const payload = (await response.json().catch(() => null)) as { words?: ElevenWordDiarized[] } | null
+      return payload?.words ?? []
+    }
+    lastError = `ElevenLabs HTTP ${response.status}: ${(await response.text().catch(() => '')).slice(0, 300)}`
+    const retriable = response.status >= 500 || response.status === 429
+    if (!retriable || attempt === GENERATION_MAX_ATTEMPTS) break
+    await sleep(500 * 3 ** (attempt - 1))
+  }
+  throw new Error(lastError || 'ElevenLabs split-screen request failed.')
+}
+
+// Converts diarized Scribe words into speaker-labeled turns.
+// Groups consecutive words by speaker_id — a new turn starts when the speaker
+// changes OR when there's a silence gap >= gapMs. Maps the lowest speaker_id
+// seen to 'S1' and the other to 'S2'.
+function elevenSplitScreenToTurns(
+  words: ElevenWordDiarized[],
+  gapMs: number = ELEVEN_TURN_GAP_MS,
+): Turn[] {
+  const real = words.filter((w) => w.type === 'word' && typeof w.start === 'number')
+  if (real.length === 0) return []
+
+  // Build stable S1/S2 mapping from first-seen speaker_id.
+  const speakerMap = new Map<string, 'S1' | 'S2'>()
+  for (const w of real) {
+    if (w.speaker_id != null && speakerMap.size < 2 && !speakerMap.has(w.speaker_id)) {
+      speakerMap.set(w.speaker_id, speakerMap.size === 0 ? 'S1' : 'S2')
+    }
+  }
+  const labelFor = (id: string | undefined): string =>
+    (id != null ? speakerMap.get(id) : undefined) ?? 'S1'
+
+  const grouped: Array<{ offsetMs: number; text: string; speaker: string }> = []
+  let current: { offsetMs: number; text: string; speaker: string } | null = null
+  let prevEndMs: number | null = null
+
+  for (const word of real) {
+    const startMs = Math.round(word.start * 1000)
+    const label = labelFor(word.speaker_id)
+    const speakerChanged = current !== null && label !== current.speaker
+    const silenceGap = prevEndMs !== null && startMs - prevEndMs >= gapMs
+    if (current === null || speakerChanged || silenceGap) {
+      current = { offsetMs: startMs, text: word.text, speaker: label }
+      grouped.push(current)
+    } else {
+      current.text += (word.text.startsWith("'") ? '' : ' ') + word.text
+    }
+    prevEndMs = Math.round(word.end * 1000)
+  }
+
+  return grouped.map((t) => ({ offsetMs: t.offsetMs, text: t.text.trim(), speaker: t.speaker }))
+}
+
 async function waitForFileReady(fileName: string, apiKey: string): Promise<GeminiFile> {
   const endpoint = `${GEMINI_API_BASE}/v1beta/${fileName}?key=${encodeURIComponent(apiKey)}`
   for (let attempt = 0; attempt < FILE_READY_ATTEMPTS; attempt += 1) {
@@ -331,6 +425,13 @@ async function runTranscription(args: {
   // record the right transcriptModel. Defaults to Gemini; set true only when the
   // ElevenLabs path succeeds for a dual-mic track.
   let usedEleven = false
+  // Computed once ElevenLabs/Gemini paths settle; helper to keep logger in sync.
+  const getTranscriptModelLabel = () =>
+    usedEleven
+      ? target.kind === 'embedded'
+        ? `elevenlabs:${ELEVENLABS_MODEL}:diarized`
+        : `elevenlabs:${ELEVENLABS_MODEL}`
+      : GEMINI_MODEL
 
   const markProcessing = async () => {
     if (target.kind === 'embedded') {
@@ -366,12 +467,14 @@ async function runTranscription(args: {
     byteSize: number
     turns: Turn[]
   }) => {
+    const transcriptModelLabel = getTranscriptModelLabel()
+
     const successFields = {
       transcriptStatus: 'completed',
       transcript: fields.transcript,
       transcriptPreview: fields.transcriptPreview,
       transcriptCompletedAt: FieldValue.serverTimestamp(),
-      transcriptModel: usedEleven ? `elevenlabs:${ELEVENLABS_MODEL}` : GEMINI_MODEL,
+      transcriptModel: transcriptModelLabel,
       transcriptUsage: fields.usageMetadata,
       transcriptMimeType: fields.finalMimeType,
       transcriptByteSize: fields.byteSize,
@@ -379,8 +482,11 @@ async function runTranscription(args: {
       transcriptError: null,
     }
     if (target.kind === 'embedded') {
+      const embeddedExtra = usedEleven
+        ? { transcriptTurns: fields.turns }
+        : {}
       await target.sessionRef.set(
-        { recording: successFields, updatedAt: FieldValue.serverTimestamp() },
+        { recording: { ...successFields, ...embeddedExtra }, updatedAt: FieldValue.serverTimestamp() },
         { merge: true },
       )
     } else {
@@ -491,6 +597,35 @@ async function runTranscription(args: {
     let turns: Turn[] = []
     let usageMetadata: unknown = null
     let finalMimeType = sourceMimeType
+
+    // ---- ElevenLabs Scribe path — split-screen (embedded/local) mode ----------
+    // Single mixed-mic file with diarization: produces S1/S2 labeled turns.
+    // Uses a separate API key (ELEVENLABS_SPLITSCREEN_API_KEY) and a separate
+    // provider flag (SPLITSCREEN_TRANSCRIBE_PROVIDER) so each mode is toggled
+    // independently. On any error, falls through to Gemini below.
+    if (
+      target.kind === 'embedded' &&
+      SPLITSCREEN_TRANSCRIBE_PROVIDER === 'elevenlabs' &&
+      elevenApiKey
+    ) {
+      try {
+        const words = await elevenLabsSplitScreenWords(audioBytes, sourceMimeType, elevenApiKey)
+        const diarizedTurns = elevenSplitScreenToTurns(words)
+        if (diarizedTurns.length === 0) throw new Error('ElevenLabs returned no words.')
+        turns = diarizedTurns
+        // Build display transcript with S1:/S2: prefixes so the dashboard can
+        // parse and render speaker bubbles without extra Firestore fields.
+        displayTranscript = diarizedTurns.map((t) => `${t.speaker ?? 'S1'}: ${t.text}`).join('\n')
+        finalMimeType = sourceMimeType
+        usedEleven = true
+      } catch (elevenErr) {
+        logger.warn('elevenlabs_splitscreen_failed_fallback_gemini', {
+          sessionId,
+          message: elevenErr instanceof Error ? elevenErr.message : String(elevenErr),
+        })
+        // usedEleven stays false -> Gemini block runs below.
+      }
+    }
 
     // ---- ElevenLabs Scribe path (dual-mic only, flag-gated, auto-fallback) ----
     // When enabled, we transcribe with Scribe and SKIP the Gemini upload+generate
@@ -644,7 +779,7 @@ async function runTranscription(args: {
       kind: target.kind,
       role: target.kind === 'subcollection' ? target.role : undefined,
       bytes: byteSize,
-      model: usedEleven ? `elevenlabs:${ELEVENLABS_MODEL}` : GEMINI_MODEL,
+      model: getTranscriptModelLabel(),
       turnCount: turns.length,
     })
   } catch (err) {
@@ -1097,7 +1232,7 @@ export const transcribeRecording = onDocumentWritten(
     region: 'us-central1',
     timeoutSeconds: 540,
     memory: '1GiB',
-    secrets: [GEMINI_API_KEY],
+    secrets: [GEMINI_API_KEY, ELEVENLABS_SPLITSCREEN_API_KEY],
     retry: false,
   },
   async (event) => {
@@ -1145,6 +1280,8 @@ export const transcribeRecording = onDocumentWritten(
       requestedMimeType: recording.mimeType ?? '',
       storagePath,
       apiKey: GEMINI_API_KEY.value(),
+      // ElevenLabs split-screen key — used when SPLITSCREEN_TRANSCRIBE_PROVIDER === 'elevenlabs'.
+      elevenApiKey: ELEVENLABS_SPLITSCREEN_API_KEY.value(),
     })
   },
 )
