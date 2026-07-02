@@ -425,7 +425,7 @@ export default function PricingFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={PRICING_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={PRICING_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
           </div>

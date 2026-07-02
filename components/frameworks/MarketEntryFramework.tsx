@@ -381,7 +381,7 @@ export default function MarketEntryFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={MARKET_ENTRY_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={MARKET_ENTRY_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
           </div>
@@ -409,7 +409,7 @@ export default function MarketEntryFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={FINANCIAL_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={FINANCIAL_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
 
@@ -446,7 +446,7 @@ export default function MarketEntryFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={EXPECTED_PROFITS_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={EXPECTED_PROFITS_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
 

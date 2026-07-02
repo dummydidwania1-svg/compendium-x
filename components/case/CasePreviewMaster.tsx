@@ -3051,7 +3051,7 @@ function computeTreeLocals(tree: FrameworkTree) {
    notes sidebar.
    ═══════════════════════════════════════════════════════════ */
 
-export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hideHeader = false, noScroll = false, forceVertical = false }: { tree: FrameworkTree; label?: string; multiActive?: boolean; hideHeader?: boolean; noScroll?: boolean; forceVertical?: boolean }) {
+export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hideHeader = false, noScroll = false, forceVertical = false, excludeVisible = false }: { tree: FrameworkTree; label?: string; multiActive?: boolean; hideHeader?: boolean; noScroll?: boolean; forceVertical?: boolean; excludeVisible?: boolean }) {
   // Use local computation — never touch the shared module-level globals so the
   // primary tree's NODES/ROOT_ID/NOTES are never corrupted by this panel.
   const { nodes: localNodes, parents: localParents, rootId: localRootId } = useMemo(
@@ -3276,7 +3276,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
             )}
           </div>
         )}
-        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} excludeVisible />
+        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} excludeVisible={excludeVisible} />
       </div>
 
       {/* Chart — mobile. Use localRootId (not global ROOT_ID). */}

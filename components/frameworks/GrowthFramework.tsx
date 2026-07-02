@@ -424,7 +424,7 @@ export default function GrowthFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={GROWTH_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={GROWTH_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
           </div>
@@ -451,7 +451,7 @@ export default function GrowthFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={ORGANIC_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={ORGANIC_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
 
@@ -467,7 +467,7 @@ export default function GrowthFramework() {
                 </p>
               </div>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={NUM_CUSTOMERS_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={NUM_CUSTOMERS_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
 
@@ -482,7 +482,7 @@ export default function GrowthFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={REV_PER_CUSTOMER_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={REV_PER_CUSTOMER_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
           </div>
@@ -509,7 +509,7 @@ export default function GrowthFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={INORGANIC_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={INORGANIC_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
 

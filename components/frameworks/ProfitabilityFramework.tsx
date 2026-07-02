@@ -447,7 +447,7 @@ export default function ProfitabilityFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={PROFIT_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={PROFIT_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
           </div>
@@ -473,7 +473,7 @@ export default function ProfitabilityFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={REVENUE_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={REVENUE_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
 
@@ -488,7 +488,7 @@ export default function ProfitabilityFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={PRODUCTION_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={PRODUCTION_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
 
@@ -505,7 +505,7 @@ export default function ProfitabilityFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={DISTRIBUTION_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={DISTRIBUTION_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
 
@@ -579,7 +579,7 @@ export default function ProfitabilityFramework() {
                 </p>
               </aside>
               <div className="pf-split-chart">
-                <AdditionalFrameworkPanel tree={COST_TREE_FW} multiActive hideHeader noScroll />
+                <AdditionalFrameworkPanel tree={COST_TREE_FW} multiActive hideHeader noScroll excludeVisible />
               </div>
             </div>
 
@@ -593,7 +593,7 @@ export default function ProfitabilityFramework() {
                   fixed charges such as interest payments and insurance, marketing and taxes.
                 </p>
                 <div className="pf-split-chart">
-                  <AdditionalFrameworkPanel tree={FIXED_COST_TREE_FW} multiActive hideHeader noScroll forceVertical />
+                  <AdditionalFrameworkPanel tree={FIXED_COST_TREE_FW} multiActive hideHeader noScroll forceVertical excludeVisible />
                 </div>
               </div>
               <div className="pf-costcol">
@@ -604,7 +604,7 @@ export default function ProfitabilityFramework() {
                   expenses.
                 </p>
                 <div className="pf-split-chart">
-                  <AdditionalFrameworkPanel tree={VARIABLE_COST_TREE_FW} multiActive hideHeader noScroll forceVertical />
+                  <AdditionalFrameworkPanel tree={VARIABLE_COST_TREE_FW} multiActive hideHeader noScroll forceVertical excludeVisible />
                 </div>
               </div>
             </div>
