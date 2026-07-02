@@ -234,6 +234,10 @@ async function elevenLabsWords(
     const form = new FormData()
     form.append('model_id', ELEVENLABS_MODEL)
     form.append('timestamps_granularity', 'word')
+    form.append('no_verbatim', 'true')
+    form.append('temperature', '0')
+    // language_code intentionally omitted — auto-detect keeps Hindi in Roman
+    // script (Hinglish) rather than outputting Devanagari.
     form.append(
       'file',
       new Blob([audioBytes], { type: mimeType || 'audio/mp4' }),
