@@ -100,6 +100,8 @@ export function buildPreviewDashboardData(): {
       transcriptReason: null,
       audioUrl: null,
       mergedAudioUrl: null,
+      mergedTranscriptStatus: null,
+      audioMergePending: false,
       workspaceImageUrls,
       hasTranscript: Boolean(transcript),
       hasPDF: mockCase.hasPDF,

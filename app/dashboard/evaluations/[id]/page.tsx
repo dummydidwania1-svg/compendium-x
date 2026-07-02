@@ -50,7 +50,13 @@ type SessionRecordingView = {
   transcriptModel: string | null
   audioUrl: string | null
   mergedAudioUrl: string | null
+  // True for a Remote (dual-mic) session whose merged audio is still being
+  // generated — gates the audio link so no single-mic track is shown meanwhile.
+  audioMergePending: boolean
 }
+
+// Merge-in-progress states: merged audio is expected but not written yet.
+const AUDIO_MERGE_PENDING_STATUSES = new Set(['none', 'pending', 'processing', 'partial'])
 
 function asNullableString(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
@@ -59,6 +65,15 @@ function asNullableString(value: unknown): string | null {
 function mapSessionRecording(value: unknown): SessionRecordingView | null {
   if (!value || typeof value !== 'object') return null
   const source = value as Record<string, unknown>
+  const mergedAudioUrl = asNullableString(source.mergedAudioUrl)
+  // sessionMode + mergedTranscriptStatus are folded in from the session-doc
+  // root by the caller alongside mergedAudioUrl.
+  const rawMode = asNullableString(source.sessionMode) ?? asNullableString(source.mode)
+  const isRemote = rawMode
+    ? rawMode.toLowerCase().replace(/[_\s-]+/g, '') !== 'samedevice' &&
+      rawMode.toLowerCase().replace(/[_\s-]+/g, '') !== 'local'
+    : Boolean(mergedAudioUrl)
+  const mergedTranscriptStatus = asNullableString(source.mergedTranscriptStatus)
   return {
     status: asNullableString(source.status),
     transcriptStatus: asNullableString(source.transcriptStatus),
@@ -69,7 +84,11 @@ function mapSessionRecording(value: unknown): SessionRecordingView | null {
     audioUrl: asNullableString(source.audioUrl),
     // mergedAudioUrl lives on the session-doc root (written by the Cloud
     // Function), not under `recording`, so the caller passes it in explicitly.
-    mergedAudioUrl: asNullableString(source.mergedAudioUrl),
+    mergedAudioUrl,
+    audioMergePending:
+      isRemote &&
+      !mergedAudioUrl &&
+      AUDIO_MERGE_PENDING_STATUSES.has((mergedTranscriptStatus ?? 'none').toLowerCase()),
   }
 }
 
@@ -244,7 +263,12 @@ export default function EvaluationDetailPage() {
         // player can prefer the combined audio over a single mic track.
         const recordingSource =
           rawRecording && typeof rawRecording === 'object'
-            ? { ...(rawRecording as Record<string, unknown>), mergedAudioUrl: sessionData.mergedAudioUrl }
+            ? {
+                ...(rawRecording as Record<string, unknown>),
+                mergedAudioUrl: sessionData.mergedAudioUrl,
+                mergedTranscriptStatus: sessionData.mergedTranscriptStatus,
+                sessionMode: sessionData.sessionMode ?? sessionData.mode,
+              }
             : rawRecording
         const mapped = mapSessionRecording(recordingSource)
         if (!cancelled) {
@@ -390,13 +414,19 @@ export default function EvaluationDetailPage() {
                           Model: {sessionRecording.transcriptModel}
                         </span>
                       )}
-                      {(sessionRecording.mergedAudioUrl || sessionRecording.audioUrl) && (
-                        <a
-                          href={sessionRecording.mergedAudioUrl ?? sessionRecording.audioUrl ?? undefined}
-                          className="rounded-full border border-emerald-400/40 bg-emerald-300/10 px-2.5 py-1 text-emerald-100 transition hover:border-emerald-300/80 hover:bg-emerald-300/20"
-                        >
-                          Open Session Audio
-                        </a>
+                      {sessionRecording.audioMergePending ? (
+                        <span className="rounded-full border border-amber-400/40 bg-amber-300/10 px-2.5 py-1 text-amber-100">
+                          Merged audio is being generated…
+                        </span>
+                      ) : (
+                        (sessionRecording.mergedAudioUrl || sessionRecording.audioUrl) && (
+                          <a
+                            href={sessionRecording.mergedAudioUrl ?? sessionRecording.audioUrl ?? undefined}
+                            className="rounded-full border border-emerald-400/40 bg-emerald-300/10 px-2.5 py-1 text-emerald-100 transition hover:border-emerald-300/80 hover:bg-emerald-300/20"
+                          >
+                            Open Session Audio
+                          </a>
+                        )
                       )}
                     </div>
 

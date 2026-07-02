@@ -41,6 +41,16 @@ export type DashboardCaseEntry = {
   transcriptReason: string | null
   audioUrl: string | null
   mergedAudioUrl: string | null
+  // Merge status of the dual-mic transcript on the session doc. Used to decide
+  // whether merged audio is still being generated for a Remote session.
+  mergedTranscriptStatus: string | null
+  // True only for a Remote (dual-mic) session whose merged audio has not been
+  // written yet AND whose merge is actively pending (none/pending/processing/
+  // partial). When true the UI shows a "generating" state and hides all audio,
+  // rather than falling back to a single mic track. False for Same Device
+  // sessions and for Remote sessions where the merge has failed, so those never
+  // get stuck on "generating".
+  audioMergePending: boolean
   workspaceImageUrls: string[]
   hasTranscript: boolean
   hasPDF: boolean
@@ -69,6 +79,7 @@ export type DashboardSessionMeta = {
   transcriptReason: string | null
   audioUrl: string | null
   mergedAudioUrl: string | null
+  mergedTranscriptStatus: string | null
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
@@ -194,8 +205,14 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     // Server-side time-aligned combined audio (both mics), written to the doc root
     // by the Cloud Function. Preferred over a single mic track when present.
     mergedAudioUrl,
+    // Raw merge status from the session doc root, used to tell "merge pending"
+    // apart from "merge failed / no merge" for the generating-audio UI state.
+    mergedTranscriptStatus: asString(value?.mergedTranscriptStatus),
   }
 }
+
+// Merge-in-progress states: merged audio is expected but not written yet.
+const AUDIO_MERGE_PENDING_STATUSES = new Set(['none', 'pending', 'processing', 'partial'])
 
 export function mapDashboardEntry(
   record: EvaluationRecord,
@@ -237,6 +254,16 @@ export function mapDashboardEntry(
     transcriptReason: sessionMeta?.transcriptReason ?? null,
     audioUrl: sessionMeta?.audioUrl ?? null,
     mergedAudioUrl: sessionMeta?.mergedAudioUrl ?? null,
+    mergedTranscriptStatus: sessionMeta?.mergedTranscriptStatus ?? null,
+    // Remote (dual-mic) session, merged audio not written yet, and the merge is
+    // still actively running -> show "generating" and hide audio. Same Device
+    // sessions and failed merges are excluded so they never stall on this state.
+    audioMergePending:
+      (sessionMeta?.sessionMode ?? 'Remote') === 'Remote' &&
+      !sessionMeta?.mergedAudioUrl &&
+      AUDIO_MERGE_PENDING_STATUSES.has(
+        (sessionMeta?.mergedTranscriptStatus ?? 'none').toLowerCase(),
+      ),
     workspaceImageUrls,
     hasTranscript: Boolean(transcript || transcriptPreview),
     hasPDF: false,

@@ -315,8 +315,13 @@ export default function CaseDetailOverlay({
   };
 
   // Derived
-  const audioUrl         = entry.mergedAudioUrl ?? entry.audioUrl ?? null;
-  const hasAudio         = entry.hasAudio && !!audioUrl;
+  // While a Remote session's merged audio is still being generated, we neither
+  // play nor load any single-mic track — the UI shows a "generating" state
+  // instead. Once merge completes, mergedAudioUrl is used; failed/Same Device
+  // sessions fall back to the single track as before.
+  const audioMergePending = entry.audioMergePending;
+  const audioUrl         = audioMergePending ? null : (entry.mergedAudioUrl ?? entry.audioUrl ?? null);
+  const hasAudio         = !audioMergePending && entry.hasAudio && !!audioUrl;
   const transcriptStatus = entry.transcriptStatus ?? null;
   const transcriptReason = entry.transcriptReason ?? null;
   const scoreVal         = entry.isUnrated ? null : (entry.score ?? null);
@@ -1094,6 +1099,24 @@ export default function CaseDetailOverlay({
             style={{ height: showScrollHint ? '34px' : '16px', background: 'linear-gradient(to bottom, rgba(255,248,240,0), #fff8f0)', zIndex: 2 }}
           />
         </div>
+
+        {/* ── MERGED AUDIO GENERATING (Remote session, merge still running) ── */}
+        {audioMergePending && (
+          <div
+            className="flex-shrink-0 px-[16px] pt-[9px] pb-[10px]"
+            style={{ borderTop: '1px solid rgba(92,64,51,.07)', background: 'linear-gradient(180deg, rgba(92,64,51,.012) 0%, rgba(92,64,51,.028) 100%)' }}
+          >
+            <div className="flex items-center gap-[9px]">
+              <span
+                className="w-[13px] h-[13px] rounded-full shrink-0 animate-spin"
+                style={{ border: '1.5px solid rgba(61,90,53,.22)', borderTopColor: '#3D5A35' }}
+              />
+              <span className="text-[10.5px] font-medium" style={{ color: 'rgba(92,64,51,.62)' }}>
+                Merged audio is being generated…
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* ── AUDIO PLAYER (persistent, flex-shrink-0) ── */}
         {hasAudio && (
