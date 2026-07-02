@@ -1458,8 +1458,9 @@ function InactiveDrilldownOverlay({
   }
   const scheduleClose = () => { if (pinnedRef.current) return; cancelClose(); closeTimer.current = setTimeout(() => setActive(null), 160) }
   const closeNow = () => { pinnedRef.current = false; cancelClose(); setActive(null) }
+  const visibleSet = useMemo(() => new Set(visibleIds ?? []), [visibleIds])
   const isDrillable = (id: string | null | undefined): id is string =>
-    !!id && !!localNodes[id] && !defaultPath.includes(id) && (localNodes[id].children?.length ?? 0) > 0
+    !!id && !!localNodes[id] && !defaultPath.includes(id) && !visibleSet.has(id) && (localNodes[id].children?.length ?? 0) > 0
   const openEl = (el: Element, pin: boolean) => {
   const id = el.getAttribute('data-node-id')
   if (!isDrillable(id)) return
