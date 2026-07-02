@@ -156,7 +156,7 @@ function ParamBar({ label, score, ready }: { label: string; score: number | null
           className="h-full rounded-full transition-all duration-[900ms] ease-out"
           style={{
             width: ready && score != null ? `${(score / 5) * 100}%` : '0%',
-            background: 'rgba(61,90,53,.42)',
+            background: 'rgba(61,90,53,.85)',
           }}
         />
       </div>
@@ -320,7 +320,13 @@ export default function CaseDetailOverlay({
   const transcriptStatus = entry.transcriptStatus ?? null;
   const transcriptReason = entry.transcriptReason ?? null;
   const scoreVal         = entry.isUnrated ? null : (entry.score ?? null);
-  const sessionMode      = entry.mergedAudioUrl ? 'Remote' : 'Same Device';
+  // Authoritative signal is entry.sessionMode ('remote' | 'local'), derived from
+  // the session doc's sessionMode / recording.mode. Fall back to the merged-audio
+  // heuristic only when the mode is genuinely absent from the data.
+  const sessionMode      =
+    entry.sessionMode === 'remote' ? 'Remote'
+    : entry.sessionMode === 'local' ? 'Same Device'
+    : entry.mergedAudioUrl ? 'Remote' : 'Same Device';
   const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
 
   // Overview computed flags
@@ -564,7 +570,10 @@ export default function CaseDetailOverlay({
         </div>
         <div className="flex items-center gap-[8px] py-[7px]">
           <User className="w-[12px] h-[12px] shrink-0" style={{ color: 'rgba(92,64,51,.42)' }} />
-          <span className="text-[12.5px]" style={{ color: 'rgba(92,64,51,.62)' }}>Alex Morgan</span>
+          {entry.interviewerName?.trim()
+            ? <span className="text-[12.5px]" style={{ color: 'rgba(92,64,51,.62)' }}>{entry.interviewerName.trim()}</span>
+            : <span className="text-[12.5px] italic" style={{ color: 'rgba(92,64,51,.42)' }}>Interviewer name not available</span>
+          }
         </div>
       </div>
     </div>
@@ -585,7 +594,7 @@ export default function CaseDetailOverlay({
       <div className="flex flex-col items-center">
         <div
           className="w-[126px] h-[126px] rounded-full inline-flex flex-col items-center justify-center"
-          style={{ border: `2px solid ${color}40`, boxShadow: `0 0 18px ${color}12` }}
+          style={{ border: `2px solid ${color}`, boxShadow: `0 0 18px ${color}22` }}
         >
           <span className="font-serif text-[44px] font-[500] leading-none tabular-nums" style={{ color }}>
             {entry.isUnrated ? '--' : displayScore}
@@ -599,7 +608,7 @@ export default function CaseDetailOverlay({
               <div className="flex-1 h-[4px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
                 {val != null ? (
                   <div className="h-full rounded-full transition-all duration-[900ms] ease-out"
-                    style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.42)' }} />
+                    style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.85)' }} />
                 ) : (
                   <div className="h-full rounded-full" style={{ background: 'repeating-linear-gradient(45deg, rgba(92,64,51,.06) 0 4px, transparent 4px 8px)' }} />
                 )}
@@ -621,7 +630,7 @@ export default function CaseDetailOverlay({
       <div className="flex flex-col items-center">
         <div
           className="w-[112px] h-[112px] rounded-full inline-flex flex-col items-center justify-center"
-          style={{ border: `2px solid ${color}40`, boxShadow: `0 0 18px ${color}12` }}
+          style={{ border: `2px solid ${color}`, boxShadow: `0 0 18px ${color}22` }}
         >
           <span className="font-serif text-[38px] font-[500] leading-none tabular-nums" style={{ color }}>
             {entry.isUnrated ? '--' : displayScore}
@@ -642,7 +651,7 @@ export default function CaseDetailOverlay({
                 <div className="h-[4px] rounded-full" style={{ background: 'rgba(217,208,196,.40)', maxWidth: '130px' }}>
                   {val != null ? (
                     <div className="h-full rounded-full transition-all duration-[900ms] ease-out"
-                      style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.42)' }} />
+                      style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.85)' }} />
                   ) : (
                     <div className="h-full rounded-full"
                       style={{ background: 'repeating-linear-gradient(45deg, rgba(92,64,51,.06) 0 4px, transparent 4px 8px)' }} />
@@ -755,13 +764,13 @@ export default function CaseDetailOverlay({
                 <span className="inline-block shrink-0" style={{ width: 6, height: 6, borderRadius: '50%', background: '#c98a3d' }} />
                 {entry.level}
               </span>
-              {/* Industry (nullable) */}
-              {entry.industry && (
+              {/* Company (nullable) */}
+              {entry.company && (
                 <span
                   className="inline-flex items-center text-[11px] font-medium px-[11px] py-[5px] rounded-full"
                   style={{ background: '#fff8f0', border: '1px solid rgba(92,64,51,.14)', color: '#5C4033' }}
                 >
-                  {entry.industry}
+                  {entry.company}
                 </span>
               )}
             </div>
@@ -810,7 +819,12 @@ export default function CaseDetailOverlay({
             ref={scrollRef}
             onScroll={handleContentScroll}
             className="overflow-y-auto animate-tab-in"
-            style={{ scrollbarWidth: 'none', maxHeight: '100%', minHeight: 0 }}
+            // Bound the scroll area to a fixed-height window so a long transcript
+            // scrolls internally instead of stretching the modal to the full
+            // viewport cap. `maxHeight: 100%` is ineffective here because the flex
+            // ancestors have no definite height (only a max-height), so we use a
+            // viewport-relative bound. Shorter content (e.g. Overview) still hugs.
+            style={{ scrollbarWidth: 'none', maxHeight: 'min(440px, calc(100vh - 260px))', minHeight: 0 }}
           >
             <style>{`
               div::-webkit-scrollbar{display:none}

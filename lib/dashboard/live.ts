@@ -20,6 +20,9 @@ export type DashboardCaseEntry = {
   name: string
   type: string
   industry: string | null
+  company: string | null
+  interviewerName: string | null
+  sessionMode: 'remote' | 'local' | null
   level: string
   date: string
   createdAtMs: number
@@ -52,6 +55,7 @@ export type DashboardCaseMeta = {
   title: string | null
   caseType: string | null
   industry: string | null
+  company: string | null
   difficulty: string | null
 }
 
@@ -64,6 +68,7 @@ export type DashboardSessionMeta = {
   transcriptReason: string | null
   audioUrl: string | null
   mergedAudioUrl: string | null
+  sessionMode: 'remote' | 'local' | null
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
@@ -138,8 +143,16 @@ export function mapCaseMeta(id: string, value: DocumentData): DashboardCaseMeta 
     title: asString(value.title),
     caseType: asString(value.case_type) ?? asString(value.caseType),
     industry: asString(value.industry),
+    company: asString(value.company) ?? asString(value.companyName) ?? asString(value.client),
     difficulty: asString(value.difficulty),
   }
+}
+
+function normalizeSessionMode(value: unknown): 'remote' | 'local' | null {
+  const raw = asString(value)?.toLowerCase()
+  if (raw === 'remote') return 'remote'
+  if (raw === 'local' || raw === 'same_device' || raw === 'same-device') return 'local'
+  return null
 }
 
 export function mapSessionMeta(id: string, value: DocumentData): DashboardSessionMeta {
@@ -171,6 +184,13 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     // Server-side time-aligned combined audio (both mics), written to the doc root
     // by the Cloud Function. Preferred over a single mic track when present.
     mergedAudioUrl: asString(value?.mergedAudioUrl),
+    // Authoritative remote/local signal. Prefer the session-doc `sessionMode`
+    // written by the server; fall back to the legacy root `mode` (demo seed) and
+    // finally the embedded recording map's `mode`.
+    sessionMode:
+      normalizeSessionMode(value?.sessionMode) ??
+      normalizeSessionMode(value?.mode) ??
+      normalizeSessionMode(source.mode),
   }
 }
 
@@ -193,6 +213,9 @@ export function mapDashboardEntry(
     name: record.caseTitle || caseMeta?.title || 'Untitled Case',
     type: normalizeCaseType(record.caseType ?? caseMeta?.caseType ?? 'General'),
     industry: record.industry ?? caseMeta?.industry ?? null,
+    company: caseMeta?.company ?? null,
+    interviewerName: record.interviewerName,
+    sessionMode: sessionMeta?.sessionMode ?? null,
     level: normalizeDifficulty(record.difficulty ?? caseMeta?.difficulty),
     date,
     createdAtMs: timestampToMillis(record.createdAt),

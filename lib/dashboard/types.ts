@@ -13,6 +13,7 @@ export type EvaluationRecord = {
   difficulty: string | null
   industry: string | null
   candidateId: string | null
+  interviewerName: string | null
   notes: string
   workspaceImageUrls: string[]
   createdAt?: Timestamp

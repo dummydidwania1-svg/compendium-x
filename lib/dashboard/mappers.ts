@@ -48,6 +48,7 @@ export function mapEvaluationDoc(id: string, value: DocumentData): EvaluationRec
     difficulty: asString(value.difficulty) ?? asString(value.caseDifficulty),
     industry: asString(value.industry),
     candidateId: asString(value.candidateId),
+    interviewerName: asString(value.interviewerName) ?? asString(value.interviewerFullName),
     notes,
     workspaceImageUrls,
     createdAt: value.createdAt,
