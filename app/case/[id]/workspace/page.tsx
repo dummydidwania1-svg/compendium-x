@@ -340,7 +340,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [])
 
   const flushCandidateAudio = useCallback(async ({ final: isFinal }: { final: boolean }) => {
-    if (preferredRecordingModeRef.current === 'local' || !lobbyId || !currentUser) return
+    if (!lobbyId || !currentUser) return
     if (candidateFlushInFlightRef.current) return
 
     const recorder = recorderRef.current
@@ -372,7 +372,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       const nowMs = Date.now()
       await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
         status: 'uploaded',
-        mode: 'remote' as const,
+        mode: preferredRecordingModeRef.current,
         role: 'candidate' as const,
         startedAtMs: recordingStartMsRef.current ?? nowMs,
         stoppedAtMs: nowMs,
@@ -695,11 +695,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         recorder.start(1000)
         setRecordingState('recording')
 
-        // Periodic cumulative flush for remote mode — mirrors the interviewer's flush.
+        // Periodic cumulative flush — mirrors the interviewer's flush architecture.
         // Every 20s we upload the cumulative blob to a stable storage path so that
         // if the tab is closed before the final upload, the pagehide beacon can
         // register the last-flushed URL and transcription still fires.
-        if (preferredRecordingModeRef.current !== 'local' && lobbyId) {
+        if (lobbyId) {
           candidateFlushTimerRef.current = setInterval(() => {
             void flushCandidateAudio({ final: false })
           }, CANDIDATE_FLUSH_MS)
@@ -1374,7 +1374,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       // final upload was cancelled by the tab close, register the last flush URL
       // as the final recording so transcription still fires.
       if (
-        preferredRecordingModeRef.current !== 'local' &&
         lobbyId &&
         !candidateUploadedRef.current &&
         lastCandidateFlushUrlRef.current &&
@@ -1390,7 +1389,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           },
           body: JSON.stringify({
             status: 'uploaded',
-            mode: 'remote',
+            mode: preferredRecordingModeRef.current,
             role: 'candidate',
             live: false,
             interrupted: true,
