@@ -2324,7 +2324,6 @@ if (previewMode && !forcePreview) {
 								<div style={{ height: '3px', background: 'linear-gradient(90deg, #3D5A35 0%, rgba(61,90,53,0.15) 100%)' }} />
 
 								<style>{`
-									@keyframes ixo-spin{to{transform:rotate(360deg)}}
 									.eo-range{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;cursor:pointer}
 									.eo-range:focus{outline:none}
 									.eo-range::-webkit-slider-runnable-track{height:3px;border-radius:1px;background:rgba(92,64,51,0.15)}
@@ -2355,21 +2354,8 @@ if (previewMode && !forcePreview) {
 
 								{overlaySuccess ? (
 									/* ── Success state ── */
-									interviewerUploadState === 'uploading' ? (
-										/* Uploading — wait */
-										<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-											<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-												<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'ixo-spin 1.2s linear infinite' }}>
-													<path d="M21 12a9 9 0 1 1-6.219-8.56" />
-												</svg>
-											</div>
-											<div>
-												<p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#2e2318' }}>Evaluation saved.</p>
-												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>Uploading your recording. Keep this tab open for a moment.</p>
-											</div>
-										</div>
-									) : isRemoteMode ? (
-										/* Remote: upload done — friendly manual-close prompt */
+									isRemoteMode ? (
+										/* Remote: friendly manual-close prompt */
 										<div style={{ padding: '24px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
 											<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 												<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -2377,7 +2363,6 @@ if (previewMode && !forcePreview) {
 											<div>
 												<p style={{ margin: '0 0 5px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>That's a wrap!</p>
 												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.6 }}>
-													{interviewerUploadState === 'uploaded' ? 'Recording uploaded successfully. ' : ''}
 													Your feedback is in. You can close this tab now.
 												</p>
 											</div>
@@ -2921,36 +2906,21 @@ if (previewMode && !forcePreview) {
 	if (previewMode) return null
 
 	if (currentView === 'success') {
-		const uploading = interviewerUploadState === 'uploading'
 		return (
 			<div
 				style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif", background: 'rgba(36,26,16,0.48)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)' }}
 			>
-				<style>{`@keyframes ixo-spin{to{transform:rotate(360deg)}}`}</style>
 				<div style={{ position: 'relative', zIndex: 1, width: 'min(420px, calc(100vw - 32px))', borderRadius: '22px', border: '1px solid rgba(61,90,53,0.18)', background: 'rgba(255,250,243,0.96)', backdropFilter: 'blur(40px) saturate(1.9)', WebkitBackdropFilter: 'blur(40px) saturate(1.9)', boxShadow: '0 12px 48px rgba(36,26,16,0.18), 0 2px 8px rgba(36,26,16,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', overflow: 'hidden' }}>
 					<div style={{ height: '3px', background: 'linear-gradient(90deg, #3D5A35 0%, rgba(61,90,53,0.15) 100%)' }} />
 					<div style={{ padding: '10px 22px 6px' }}>
 						<p style={{ margin: 0, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.26em', color: '#3D5A35' }}>Final Evaluation</p>
 					</div>
-					{uploading ? (
-						<div style={{ padding: '20px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-							<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'ixo-spin 1.2s linear infinite' }}>
-									<path d="M21 12a9 9 0 1 1-6.219-8.56" />
-								</svg>
-							</div>
-							<div>
-								<p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#2e2318' }}>Evaluation saved.</p>
-								<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>Uploading your recording. Keep this tab open for a moment.</p>
-							</div>
-						</div>
-					) : isRemoteMode ? (
+					{isRemoteMode ? (
 						<div style={{ padding: '20px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
 							<div style={{ fontSize: '28px', lineHeight: 1 }}>👋</div>
 							<div>
 								<p style={{ margin: '0 0 5px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>That's a wrap!</p>
 								<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.6 }}>
-									{interviewerUploadState === 'uploaded' ? 'Recording uploaded successfully. ' : ''}
 									Your feedback is in. You can close this tab now.
 								</p>
 							</div>
