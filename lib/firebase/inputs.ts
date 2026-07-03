@@ -56,6 +56,11 @@ const dualMicFields = {
   /** Device's ms reading of selectedAt used as anchor (for skew debugging). */
   anchorSelectedAtMs: z.number().int().optional(),
   /**
+   * Safari primed-recording only: ms of dead audio at the FRONT to trim
+   * server-side (recording started at the launch click, before case-start).
+   */
+  trimStartMs: z.number().int().nonnegative().optional(),
+  /**
    * Periodic cumulative flush (overwrite stable live path).
    * When true, sets transcriptStatus:'recording' — does NOT trigger transcription.
    * Omit or false for the final upload.

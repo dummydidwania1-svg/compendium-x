@@ -14,7 +14,7 @@ import { useMicPermission } from '@/lib/permissions/microphone'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { releaseDisplayMedia } from '@/lib/permissions/displayMedia'
 import { writeCandidateBeat } from '@/lib/session/candidateTab'
-import { consumePrimedMicStream, clearPrimedMicStream, micDebug } from '@/lib/session/primedMic'
+import { consumePrimedRecording, clearPrimedMic, micDebug } from '@/lib/session/primedMic'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
@@ -387,6 +387,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           ? Math.max(0, recordingStartMsRef.current - selectedAtMsRef.current)
           : undefined,
         anchorSelectedAtMs: selectedAtMsRef.current ?? undefined,
+        // Safari primed-recording: recording started at the launch click, BEFORE
+        // the interviewer picked a case. Trim that dead head server-side. Positive
+        // only when recording began before case-start (the Safari primed path).
+        trimStartMs: recordingStartMsRef.current !== null && selectedAtMsRef.current !== null
+          ? Math.max(0, selectedAtMsRef.current - recordingStartMsRef.current)
+          : undefined,
         live: !isFinal,
       })
 
@@ -649,16 +655,45 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setRecordingNote('Starting microphone recording...')
 
       try {
-        // SAFARI FIX: Safari refuses getUserMedia from a background/unfocused tab,
-        // which the candidate workspace always is in split-screen. The practice
-        // page acquired a mic stream under a real user gesture and stashed it on
-        // window.__compendiumPrimedMicStream — adopt it here and skip getUserMedia
-        // entirely. Falls back to getUserMedia if there's no usable primed stream
-        // (non-Safari, or the primed stream was revoked/expired). Chrome always
-        // takes the getUserMedia path since it never primes a stream.
-        const primedStream = BROWSER === 'safari' && mode === 'local' ? consumePrimedMicStream() : null
-        micDebug('startRecording', { mode, browser: BROWSER, usingPrimed: !!primedStream })
-        const microphoneStream = primedStream ?? await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        // SAFARI FIX: Safari refuses to CAPTURE audio from a background/unfocused
+        // tab, which the candidate workspace always is in split-screen. The
+        // practice page already STARTED a MediaRecorder under the launch-click
+        // gesture (while focused) and stashed the running recorder. Adopt it here
+        // — it's been recording since the launch click and keeps running. The dead
+        // air before the interviewer picked a case is trimmed off server-side.
+        if (BROWSER === 'safari' && mode === 'local') {
+          const primed = consumePrimedRecording()
+          if (primed) {
+            micDebug('adopting primed recorder', { startMs: primed.startMs })
+            micStreamRef.current = primed.stream
+            recorderRef.current = primed.recorder
+            chunksRef.current = primed.chunks
+            recordingStartMsRef.current = primed.startMs
+            lastCandidateFlushMimeTypeRef.current = primed.mimeType
+            completionHandledRef.current = false
+
+            // Keep the mic-revoke handlers wired on the adopted stream's tracks.
+            for (const track of primed.stream.getAudioTracks()) {
+              track.onmute = () => { void retryMicrophonePermission() }
+              track.onended = () => { void retryMicrophonePermission() }
+            }
+
+            setRecordingState('recording')
+            if (lobbyId) {
+              candidateFlushTimerRef.current = setInterval(() => {
+                void flushCandidateAudio({ final: false })
+              }, CANDIDATE_FLUSH_MS)
+              auth.currentUser?.getIdToken(false).then((t) => { cachedCandidateTokenRef.current = t }).catch(() => {})
+            }
+            setRecordingNote('Recording microphone audio. Keep this tab open until feedback submission.')
+            return
+          }
+          // No usable primed recorder — fall through to the normal path (may fail
+          // on a backgrounded Safari tab, but that's the pre-existing behaviour).
+          micDebug('no primed recorder, falling back to getUserMedia')
+        }
+
+        const microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         micStreamRef.current = microphoneStream
         micDebug('got mic stream, starting recorder')
 
@@ -668,11 +703,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         }
 
         // SAFARI FIX (part 2): a background-tab AudioContext starts suspended and
-        // resume() hangs until the tab is focused — the second Safari gate that
-        // stalled recording even after the mic stream was primed. Single-mic local
-        // recording doesn't need the AudioContext graph at all, so on Safari+local
-        // we feed the raw mic stream straight to MediaRecorder. Remote mode and
-        // every other browser keep the existing AudioContext path unchanged.
+        // resume() hangs until the tab is focused. Single-mic local recording
+        // doesn't need the AudioContext graph, so on Safari+local we feed the raw
+        // mic stream straight to MediaRecorder. Remote/other browsers unchanged.
         let recorderStream: MediaStream
         if (BROWSER === 'safari' && mode === 'local') {
           recorderStream = microphoneStream
@@ -1636,7 +1669,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       recordingConsentDeclinedRef.current = true
       setRecordingConsentDeclined(true)
       // Safari: no recording will happen — release any primed mic stream.
-      clearPrimedMicStream()
+      clearPrimedMic()
     }
     // Show the interviewer-declined overlay if the interviewer declined while
     // the candidate was still in the lobby (before reaching the workspace).
@@ -1662,7 +1695,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     teardownMedia()
     // Safari: also drop any primed-but-unused mic stream so opting out never
     // leaves a hot mic held from the practice page.
-    clearPrimedMicStream()
+    clearPrimedMic()
     setCompletionPending(false)
     setRecordingState('idle')
   }, [teardownMedia])

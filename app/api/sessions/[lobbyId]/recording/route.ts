@@ -97,6 +97,7 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         ...(role ? { role } : {}),
         ...(body.startOffsetMs !== undefined ? { startOffsetMs: body.startOffsetMs } : {}),
         ...(body.anchorSelectedAtMs !== undefined ? { anchorSelectedAtMs: body.anchorSelectedAtMs } : {}),
+        ...(body.trimStartMs !== undefined ? { trimStartMs: body.trimStartMs } : {}),
       }
 
       // For periodic flushes (live:true), keep transcriptStatus:'recording'

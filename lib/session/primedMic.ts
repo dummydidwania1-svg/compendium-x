@@ -1,27 +1,40 @@
-// SAFARI-ONLY: primed microphone stream handoff for split-screen (local) mode.
+// SAFARI-ONLY: primed microphone recording handoff for split-screen (local) mode.
 //
-// Safari refuses navigator.mediaDevices.getUserMedia() unless the calling
-// document is the focused, frontmost tab within a fresh user-activation window.
-// In split-screen the candidate tab is backgrounded the moment the interviewer
-// popup takes focus, so the candidate workspace can never acquire the mic on
-// its own — the user has to manually click the candidate tab first.
+// Safari refuses to CAPTURE microphone audio from a backgrounded tab — it blocks
+// getUserMedia, AudioContext.resume(), and effectively the MediaRecorder too. In
+// split-screen the candidate tab is backgrounded the moment the interviewer popup
+// takes focus, so the candidate workspace can never START recording on its own.
 //
-// The fix: acquire the mic stream on the practice page during the "Launch Split
-// Screen" click (a real user gesture, tab focused), keep it alive, and hand it
-// to the workspace. A MediaStream reference on the window object survives the
-// client-side navigations practice -> lobby -> workspace because they all happen
-// in the same tab/window object (same technique as __compendiumInterviewerWindow).
+// The fix: start the MediaRecorder on the practice page during the "Launch Split
+// Screen" click — the one moment the candidate tab is focused with a real user
+// gesture — and never stop it. A MediaRecorder already running when its tab
+// backgrounds KEEPS recording (Safari only blocks *starting* capture on a
+// background tab). The recorder + its live stream + captured chunks are stashed
+// on the window object, which survives the client-side navigations
+// practice -> lobby -> workspace (same tab/window object). The workspace then
+// adopts the already-running recorder instead of starting a new one.
+//
+// The dead air recorded between the launch click and the interviewer picking a
+// case is trimmed off server-side (ffmpeg -ss) using trimStartMs.
 //
 // None of this runs on Chrome — the practice page and workspace both gate every
 // call behind their existing Safari detection.
 
-const HOLDER_KEY = '__compendiumPrimedMicStream'
-// Auto-stop the held stream if it's never consumed within this window, so a user
-// who launches split-screen and abandons it doesn't leave a dangling hot mic.
-const PRIMED_MIC_TIMEOUT_MS = 5 * 60 * 1000
+const HOLDER_KEY = '__compendiumPrimedMic'
+// Auto-stop the held recorder if it's never consumed within this window, so a
+// user who launches split-screen and abandons it doesn't leave a runaway recorder.
+const PRIMED_MIC_TIMEOUT_MS = 10 * 60 * 1000
+
+export type PrimedRecorder = {
+  recorder: MediaRecorder
+  stream: MediaStream
+  chunks: Blob[]
+  startMs: number
+  mimeType: string
+}
 
 type PrimedMicHost = Window & {
-  [HOLDER_KEY]?: MediaStream | null
+  [HOLDER_KEY]?: PrimedRecorder | null
   __compendiumPrimedMicTimer?: ReturnType<typeof setTimeout> | null
   __compendiumPrimedMicPagehide?: (() => void) | null
 }
@@ -41,62 +54,97 @@ export function micDebug(msg: string, data?: unknown): void {
   } catch { /* noop */ }
 }
 
-/** Stop every track on a stream (releases the mic / turns off the indicator). */
-function stopStream(stream: MediaStream | null | undefined): void {
-  try {
-    stream?.getTracks().forEach((t) => t.stop())
-  } catch { /* noop */ }
+const MIME_TYPE_CANDIDATES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
+
+/** Pick the first MediaRecorder-supported mime type (mp4 first for Safari). */
+export function pickSupportedMimeType(): string | null {
+  if (typeof MediaRecorder === 'undefined') return null
+  for (const c of MIME_TYPE_CANDIDATES) {
+    if (MediaRecorder.isTypeSupported(c)) return c
+  }
+  return null
+}
+
+/** Stop a recorder + release its stream (turns off the mic indicator). */
+function teardownPrimed(primed: PrimedRecorder | null | undefined): void {
+  if (!primed) return
+  try { if (primed.recorder.state !== 'inactive') primed.recorder.stop() } catch { /* noop */ }
+  try { primed.stream.getTracks().forEach((t) => t.stop()) } catch { /* noop */ }
 }
 
 /**
- * Practice page: stash a live mic stream for the workspace to adopt. Also arms
- * two safety guards so the mic never stays hot indefinitely:
- *  - a timeout that stops the stream if it's never consumed
- *  - a pagehide listener that stops the stream if the tab is closed/left
+ * Practice page (Safari + local): start a MediaRecorder on the launch-click mic
+ * stream WHILE THE TAB IS STILL FOCUSED, then stash the running recorder for the
+ * workspace to adopt. Must be called before focus shifts to the interviewer popup.
+ *
+ * Arms safety guards so an abandoned launch never leaves a runaway recorder:
+ *  - a timeout that stops the recorder if never consumed
+ *  - a pagehide listener that stops it if the tab is closed/left
+ *
+ * Returns true if recording started, false if MediaRecorder couldn't be created
+ * (caller then falls back to the old prime-stream-only behaviour).
  */
-export function primeMicStreamForWorkspace(stream: MediaStream): void {
-  if (typeof window === 'undefined') return
+export function startPrimedRecording(stream: MediaStream, mimeType: string | null): boolean {
+  if (typeof window === 'undefined') return false
   const host = window as PrimedMicHost
 
-  // Clear any previous primed stream first (defensive — shouldn't normally exist).
-  clearPrimedMicStream()
+  clearPrimedMic() // defensive — clear any prior holder
 
-  host[HOLDER_KEY] = stream
-  micDebug('PRIMED stored', {
-    tracks: stream.getAudioTracks().length,
-    state: stream.getAudioTracks()[0]?.readyState,
-  })
+  let recorder: MediaRecorder
+  try {
+    recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
+  } catch {
+    return false
+  }
+
+  const chunks: Blob[] = []
+  recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
+
+  const primed: PrimedRecorder = {
+    recorder,
+    stream,
+    chunks,
+    startMs: Date.now(),
+    mimeType: recorder.mimeType || mimeType || 'audio/mp4',
+  }
+
+  try {
+    recorder.start(1000) // 1s timeslices, same cadence as the workspace recorder
+  } catch {
+    try { stream.getTracks().forEach((t) => t.stop()) } catch { /* noop */ }
+    return false
+  }
+
+  host[HOLDER_KEY] = primed
+  micDebug('PRIMED recording started', { mimeType: primed.mimeType, startMs: primed.startMs })
 
   host.__compendiumPrimedMicTimer = setTimeout(() => {
-    // Never consumed in time — stop it and clear the holder.
-    const s = host[HOLDER_KEY]
-    if (s) {
-      stopStream(s)
-      host[HOLDER_KEY] = null
-    }
+    const p = host[HOLDER_KEY]
+    if (p) { teardownPrimed(p); host[HOLDER_KEY] = null }
   }, PRIMED_MIC_TIMEOUT_MS)
 
   const onPagehide = () => {
-    const s = host[HOLDER_KEY]
-    if (s) stopStream(s)
-    host[HOLDER_KEY] = null
+    const p = host[HOLDER_KEY]
+    if (p) { teardownPrimed(p); host[HOLDER_KEY] = null }
   }
   host.__compendiumPrimedMicPagehide = onPagehide
   window.addEventListener('pagehide', onPagehide)
+
+  return true
 }
 
 /**
- * Workspace: take ownership of a primed stream if one exists AND still has a
- * live audio track. Disarms the safety guards and clears the holder so the
- * stream isn't torn down twice. Returns null if there's nothing usable — the
- * caller then falls back to the normal getUserMedia path.
+ * Workspace (Safari + local): take ownership of the running primed recorder if
+ * one exists AND its stream still has a live audio track. Disarms the safety
+ * guards and clears the holder so it isn't torn down twice. Returns null if
+ * there's nothing usable — the caller then falls back to the normal path.
  */
-export function consumePrimedMicStream(): MediaStream | null {
+export function consumePrimedRecording(): PrimedRecorder | null {
   if (typeof window === 'undefined') return null
   const host = window as PrimedMicHost
-  const stream = host[HOLDER_KEY]
-  micDebug('CONSUME called', { hasStream: !!stream })
-  if (!stream) return null
+  const primed = host[HOLDER_KEY]
+  micDebug('CONSUME recording', { has: !!primed, state: primed?.recorder.state })
+  if (!primed) return null
 
   // Disarm the safety guards — we're taking ownership now.
   if (host.__compendiumPrimedMicTimer) {
@@ -109,17 +157,17 @@ export function consumePrimedMicStream(): MediaStream | null {
   }
   host[HOLDER_KEY] = null
 
-  // Only usable if it still has a live audio track (mic not revoked/ended).
-  const liveTrack = stream.getAudioTracks().some((t) => t.readyState === 'live')
-  if (!liveTrack) {
-    stopStream(stream)
+  // Only usable if the recorder is still recording and the mic track is live.
+  const liveTrack = primed.stream.getAudioTracks().some((t) => t.readyState === 'live')
+  if (primed.recorder.state !== 'recording' || !liveTrack) {
+    teardownPrimed(primed)
     return null
   }
-  return stream
+  return primed
 }
 
-/** Stop and clear any primed stream + disarm guards. Safe to call anytime. */
-export function clearPrimedMicStream(): void {
+/** Stop and clear any primed recorder + disarm guards. Safe to call anytime. */
+export function clearPrimedMic(): void {
   if (typeof window === 'undefined') return
   const host = window as PrimedMicHost
   if (host.__compendiumPrimedMicTimer) {
@@ -130,7 +178,7 @@ export function clearPrimedMicStream(): void {
     window.removeEventListener('pagehide', host.__compendiumPrimedMicPagehide)
     host.__compendiumPrimedMicPagehide = null
   }
-  const s = host[HOLDER_KEY]
-  if (s) stopStream(s)
+  const p = host[HOLDER_KEY]
+  if (p) teardownPrimed(p)
   host[HOLDER_KEY] = null
 }

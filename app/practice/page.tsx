@@ -8,7 +8,7 @@ import { waitForAuthUser } from '@/lib/firebase/config'
 import PlatformLoader from '@/components/PlatformLoader'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
-import { primeMicStreamForWorkspace, micDebug } from '@/lib/session/primedMic'
+import { startPrimedRecording, pickSupportedMimeType, micDebug } from '@/lib/session/primedMic'
 
 export default function PracticeModeSelection() {
   const [loading, setLoading] = useState(true)
@@ -113,20 +113,25 @@ export default function PracticeModeSelection() {
       }
 
       popupHost.__compendiumInterviewerWindow = interviewerWindow
-      interviewerWindow.focus()
 
       if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
         micDebug('practice: requesting mic (safari)')
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-          // SAFARI FIX: Safari refuses getUserMedia from a background/unfocused
-          // tab. The candidate tab is backgrounded the moment the interviewer
-          // popup takes focus, so the workspace can never acquire the mic on its
-          // own. Instead, keep THIS stream (acquired here under a real user
-          // gesture while focused) alive and hand it to the workspace via
-          // window.__compendiumPrimedMicStream — it survives the client-side
-          // navigations practice -> lobby -> workspace (same tab/window object).
-          primeMicStreamForWorkspace(stream)
+          // SAFARI FIX: Safari refuses to CAPTURE from a background/unfocused tab.
+          // The candidate tab is backgrounded the moment the interviewer popup
+          // takes focus, so the workspace can never START recording on its own.
+          // Instead START the MediaRecorder HERE — while THIS (candidate) tab is
+          // still focused under the launch-click gesture — and never stop it. It
+          // keeps running as the tab backgrounds. The workspace adopts this
+          // already-running recorder. The dead air before the interviewer picks a
+          // case is trimmed off server-side. Start BEFORE focus shifts to the popup.
+          const started = startPrimedRecording(stream, pickSupportedMimeType())
+          if (!started) {
+            // MediaRecorder unavailable — release the stream; workspace will fall
+            // back to its normal (may-fail-on-Safari) path.
+            stream.getTracks().forEach((t) => t.stop())
+          }
         } catch {
           interviewerWindow.close()
           popupHost.__compendiumInterviewerWindow = null
@@ -135,6 +140,10 @@ export default function PracticeModeSelection() {
           return
         }
       }
+
+      // Now shift focus to the interviewer popup — the candidate recorder is
+      // already running so backgrounding this tab won't stop it.
+      interviewerWindow.focus()
 
       setLocalPreparing(true)
       router.push(`/lobby/${lobbyId}?mode=local`)

@@ -1048,6 +1048,7 @@ async function mergeSessionAudio(
 async function transcodeSessionAudio(
   sessionId: string,
   audioUrl: string,
+  trimStartSec = 0,
 ): Promise<string | null> {
   const ffmpegMod = (await import('ffmpeg-static')) as unknown as { default: string | null }
   const ffmpegPath = ffmpegMod.default
@@ -1068,11 +1069,17 @@ async function transcodeSessionAudio(
     }
     await writeFile(inPath, Buffer.from(await res.arrayBuffer()))
 
+    // Safari primed-recording trims the dead head (launch click -> case start).
+    // -ss placed AFTER -i does a sample-accurate trim (decodes then seeks), which
+    // is what we want for a precise cut of a few seconds. Skip when trim <= 0.
+    const trimArgs = trimStartSec > 0.05 ? ['-ss', trimStartSec.toFixed(3)] : []
+
     await execFileAsync(
       ffmpegPath,
       [
         '-y',
         '-fflags', '+genpts', '-i', inPath,
+        ...trimArgs,
         '-ac', '1',
         '-c:a', 'libopus',
         '-b:a', '64k',
@@ -1333,7 +1340,7 @@ export const transcribeRecording = onDocumentWritten(
     if (beforeStatus === 'processing') return
 
     const recording = afterData?.recording as
-      | { audioUrl?: string; mimeType?: string; storagePath?: string }
+      | { audioUrl?: string; mimeType?: string; storagePath?: string; trimStartMs?: number }
       | undefined
     const audioUrl = recording?.audioUrl
     const storagePath = recording?.storagePath
@@ -1366,7 +1373,8 @@ export const transcribeRecording = onDocumentWritten(
       const freshSnap = await sessionRef.get()
       if (!freshSnap.data()?.mergedAudioUrl) {
         try {
-          const mergedAudioUrl = await transcodeSessionAudio(sessionId, audioUrl)
+          const trimStartSec = (recording?.trimStartMs ?? 0) / 1000
+          const mergedAudioUrl = await transcodeSessionAudio(sessionId, audioUrl, trimStartSec)
           if (mergedAudioUrl) {
             await sessionRef.set(
               { mergedAudioUrl, mergedAudioCompletedAt: FieldValue.serverTimestamp() },
