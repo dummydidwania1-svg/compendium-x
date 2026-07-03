@@ -423,7 +423,7 @@ async function runTranscription(args: {
   apiKey: string
   elevenApiKey?: string
 }): Promise<void> {
-  const { target, sessionId, audioUrl, requestedMimeType, storagePath, apiKey, elevenApiKey } = args
+  const { target, sessionId, audioUrl: _audioUrl, requestedMimeType, storagePath, apiKey, elevenApiKey } = args
   // Tracks which provider actually produced the transcript, so writeSuccess can
   // record the right transcriptModel. Defaults to Gemini; set true only when the
   // ElevenLabs path succeeds for a dual-mic track.
@@ -576,14 +576,17 @@ async function runTranscription(args: {
 
   let uploadedFileName = ''
   try {
-    const audioResponse = await fetch(audioUrl)
-    if (!audioResponse.ok) {
-      throw new Error(`Unable to download audio artifact (HTTP ${audioResponse.status}).`)
-    }
-    const sourceMimeType = normalizeMimeType(
-      requestedMimeType || audioResponse.headers.get('content-type'),
-    )
-    const audioBytes = await audioResponse.arrayBuffer()
+    // Use the Admin SDK (service-account credentials) instead of fetch(audioUrl)
+    // so that download-token invalidation — caused by the static interviewer-live.webm
+    // path being overwritten on every periodic flush — never blocks transcription.
+    const adminFile = getStorage().bucket().file(storagePath)
+    const [audioBuffer] = await adminFile.download()
+    const [fileMeta] = await adminFile.getMetadata()
+    const sourceMimeType = normalizeMimeType(requestedMimeType || fileMeta.contentType)
+    const audioBytes: ArrayBuffer = audioBuffer.buffer.slice(
+      audioBuffer.byteOffset,
+      audioBuffer.byteOffset + audioBuffer.byteLength,
+    ) as ArrayBuffer
     const byteSize = audioBytes.byteLength
     if (byteSize === 0) throw new Error('Audio artifact is empty.')
     if (byteSize < MIN_AUDIO_BYTES) {
