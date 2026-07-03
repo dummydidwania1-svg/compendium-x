@@ -73,65 +73,85 @@ export default function PracticeModeSelection() {
     setMicBlocked(false)
     micBlockedForRef.current = 'local'
 
-    const lobbyId = Math.random().toString(36).substring(7)
-    const winName = interviewerWindowName(lobbyId)
-    const popupHost = window as Window & { __compendiumInterviewerWindow?: Window | null }
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+    const isSafari = ua.includes('Safari') && !ua.includes('Chrome')
 
+    const lobbyId = Math.random().toString(36).substring(7)
+    const popupHost = window as Window & { __compendiumInterviewerWindow?: Window | null }
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
       popupHost.__compendiumInterviewerWindow.close()
     }
-
-    // Open the interviewer window synchronously before any await so Safari
-    // treats it as a trusted user gesture. The window loads in the background
-    // while the mic check runs.
     if (skipRecording && typeof sessionStorage !== 'undefined') {
       try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
     }
-    const interviewerWindow = window.open(
-      `/lobby/${lobbyId}?role=interviewer&mode=local&handoff=1`,
-      winName
-    )
+    const interviewerUrl = `/lobby/${lobbyId}?role=interviewer&mode=local&handoff=1`
 
-    if (!interviewerWindow) {
-      // Popup blocked — poll localStorage for the signal written by the
-      // interviewer window on mount (Safari opens it when user unblocks via
-      // the address bar; window.opener is null in that case).
-      setPopupBlocked(true)
-      setLocalPreparing(false)
-      clearInterviewerReady(lobbyId)
-      const pollStart = Date.now()
-      const poll = setInterval(() => {
-        const ts = readInterviewerReady(lobbyId)
-        if (ts) {
-          clearInterval(poll)
-          setPopupBlocked(false)
-          router.push(`/lobby/${lobbyId}?mode=local`)
-        } else if (Date.now() - pollStart > 30000) {
-          clearInterval(poll)
+    if (isSafari) {
+      // Safari blocks window.open called after any await, so open the window
+      // synchronously first (still inside the click call stack), then mic check.
+      const winName = interviewerWindowName(lobbyId)
+      const interviewerWindow = window.open(interviewerUrl, winName)
+
+      if (!interviewerWindow) {
+        // Still blocked (sitewide setting) — poll for the localStorage signal
+        // that the interviewer window writes on mount, then auto-navigate.
+        setPopupBlocked(true)
+        setLocalPreparing(false)
+        clearInterviewerReady(lobbyId)
+        const pollStart = Date.now()
+        const poll = setInterval(() => {
+          if (readInterviewerReady(lobbyId)) {
+            clearInterval(poll)
+            setPopupBlocked(false)
+            router.push(`/lobby/${lobbyId}?mode=local`)
+          } else if (Date.now() - pollStart > 30000) {
+            clearInterval(poll)
+          }
+        }, 500)
+        return
+      }
+
+      popupHost.__compendiumInterviewerWindow = interviewerWindow
+      interviewerWindow.focus()
+
+      if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+          stream.getTracks().forEach((track) => track.stop())
+        } catch {
+          interviewerWindow.close()
+          popupHost.__compendiumInterviewerWindow = null
+          setMicBlocked(true)
+          setLocalPreparing(false)
+          return
         }
-      }, 500)
+      }
+
+      setLocalPreparing(true)
+      router.push(`/lobby/${lobbyId}?mode=local`)
       return
     }
 
-    popupHost.__compendiumInterviewerWindow = interviewerWindow
-    interviewerWindow.focus()
-
-    // Step 2: mic check after window is open (skipped when user opted out).
+    // Chrome and all other browsers — original flow: mic check first, then open.
     if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         stream.getTracks().forEach((track) => track.stop())
       } catch {
-        // Mic denied — close the interviewer window and show the mic overlay.
-        interviewerWindow.close()
-        popupHost.__compendiumInterviewerWindow = null
         setMicBlocked(true)
-        setLocalPreparing(false)
         return
       }
     }
 
     setLocalPreparing(true)
+    const interviewerWindow = window.open(interviewerUrl, '_blank')
+    if (!interviewerWindow) {
+      setPopupBlocked(true)
+      setLocalPreparing(false)
+      return
+    }
+    popupHost.__compendiumInterviewerWindow = interviewerWindow
+    interviewerWindow.focus()
     router.push(`/lobby/${lobbyId}?mode=local`)
   }
 
