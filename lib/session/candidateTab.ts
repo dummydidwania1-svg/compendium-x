@@ -13,8 +13,10 @@
 export const CANDIDATE_TAB_KEY = 'compendium-candidate-tab'
 const SESSION_ENDED_KEY = 'compendium-session-ended'
 
-/** Heartbeat is considered stale (tab gone) once older than this. */
-export const CANDIDATE_TAB_STALE_MS = 2500
+/** Heartbeat is considered stale (tab gone) once older than this.
+ *  30s to survive Safari's background-tab timer throttle (setInterval fires
+ *  as slowly as every 30s in a non-active Safari tab). */
+export const CANDIDATE_TAB_STALE_MS = 30000
 
 export type CandidateTabBeat = {
   lobbyId: string

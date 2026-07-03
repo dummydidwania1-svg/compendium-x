@@ -1805,9 +1805,13 @@ export function InterviewerPageInner({
 	// ── Candidate tab heartbeat poll (split-screen only) ────────────────────────
 	// Heartbeat older than the stale threshold, after we've seen the tab alive,
 	// means it closed unexpectedly.
+	// Also listens for storage events — these fire instantly cross-tab without
+	// throttling, giving immediate liveness even when Safari slows setInterval
+	// in the background candidate tab.
 	useEffect(() => {
 		if (!isLocalMode || !lobbyId || previewMode || currentView === 'success') return
-		const interval = setInterval(() => {
+
+		const checkBeat = () => {
 			if (sessionEndedForLobby(lobbyId) || isCandidateClosedDismissed(lobbyId)) {
 				setCandidateTabClosed(false)
 				return
@@ -1822,8 +1826,18 @@ export function InterviewerPageInner({
 			} else if (candidateWasAliveRef.current) {
 				setCandidateTabClosed(true)
 			}
-		}, 1000)
-		return () => clearInterval(interval)
+		}
+
+		const onStorage = (e: StorageEvent) => {
+			if (e.key === 'compendium-candidate-tab') checkBeat()
+		}
+
+		const interval = setInterval(checkBeat, 1000)
+		window.addEventListener('storage', onStorage)
+		return () => {
+			clearInterval(interval)
+			window.removeEventListener('storage', onStorage)
+		}
 	}, [isLocalMode, lobbyId, previewMode, currentView])
 
 	useEffect(() => {

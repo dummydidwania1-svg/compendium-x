@@ -1458,13 +1458,21 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // Heartbeat so the interviewer pages know this candidate tab is alive.
   // pagehide/beforeunload writes from a closing tab are unreliable (Chrome
   // tears the tab down before flushing), so instead we write a fresh timestamp
-  // every 1s. The interviewer side treats a stale heartbeat (>4s) as "tab gone".
+  // every 1s. The interviewer side treats a stale heartbeat (>30s) as "tab gone".
   // Suppressed once session-ended is written (upload phase started).
+  // Also write on visibilitychange — Safari throttles setInterval in background
+  // tabs so the periodic beat may be delayed; visibilitychange fires instantly
+  // and is never throttled, keeping the timestamp fresh when the tab goes hidden.
   useEffect(() => {
     if (!lobbyId || requestedMode !== 'local') return
     writeCandidateBeat(lobbyId)
     const interval = setInterval(() => writeCandidateBeat(lobbyId), 1000)
-    return () => clearInterval(interval)
+    const onVisibility = () => writeCandidateBeat(lobbyId)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   // lobbyId and requestedMode are stable for the page lifetime
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lobbyId, requestedMode])
