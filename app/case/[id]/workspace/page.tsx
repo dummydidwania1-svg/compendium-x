@@ -1487,6 +1487,51 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lobbyId, requestedMode])
 
+  // Safari BroadcastChannel — two purposes, Safari only:
+  // 1. Ping/pong liveness: respond to interviewer pings instantly so the
+  //    interviewer doesn't rely on throttled localStorage timestamps.
+  // 2. Start-recording signal: interviewer broadcasts 'start-recording' when
+  //    session goes in_progress. If tab is visible, start immediately; if
+  //    hidden (Safari blocked getUserMedia), queue and fire on next visibility.
+  useEffect(() => {
+    if (BROWSER !== 'safari' || !lobbyId || requestedMode !== 'local') return
+    if (typeof BroadcastChannel === 'undefined') return
+    const ch = new BroadcastChannel(`compendium-session-${lobbyId}`)
+    let pendingStart = false
+    ch.onmessage = (e: MessageEvent<{ type: string }>) => {
+      if (e.data?.type === 'ping') {
+        ch.postMessage({ type: 'pong' })
+        // Also refresh localStorage beat so the fallback path stays warm
+        writeCandidateBeat(lobbyId)
+      }
+      if (e.data?.type === 'start-recording') {
+        if (autoStartAttemptedRef.current) return // already started
+        if (recordingStateRef.current !== 'idle') return
+        if (document.visibilityState === 'visible') {
+          autoStartAttemptedRef.current = true
+          void startCaptureFlow(preferredRecordingModeRef.current)
+        } else {
+          // Tab is hidden — queue the start for when it becomes visible
+          pendingStart = true
+        }
+      }
+    }
+    const onVisible = () => {
+      if (!pendingStart) return
+      if (autoStartAttemptedRef.current) { pendingStart = false; return }
+      if (recordingStateRef.current !== 'idle') { pendingStart = false; return }
+      pendingStart = false
+      autoStartAttemptedRef.current = true
+      void startCaptureFlow(preferredRecordingModeRef.current)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      ch.close()
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lobbyId, requestedMode])
+
   // Poll every 2s to detect if the interviewer popup was closed.
   // The lobby stores the popup reference on window.__compendiumInterviewerWindow
   // before router.replace fires. Since Next.js client-side navigation does NOT

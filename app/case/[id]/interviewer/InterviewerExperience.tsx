@@ -14,7 +14,7 @@ import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
 import PlatformLoader from '@/components/PlatformLoader'
 import { slugifyCase } from '@/lib/slug'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
-import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, CANDIDATE_TAB_STALE_MS_SAFARI, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
+import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { useMicPermission } from '@/lib/permissions/microphone'
 
@@ -843,6 +843,9 @@ export function InterviewerPageInner({
 	const [candidateTabClosed, setCandidateTabClosed] = useState(false)
 	const candidateTabUrlRef = useRef<string | null>(null)
 	const candidateWasAliveRef = useRef(false)
+	// Safari BroadcastChannel ref — used by Firestore snapshot handler to send
+	// start-recording signal without prop drilling.
+	const safariChannelRef = useRef<BroadcastChannel | null>(null)
 
 	// ── Mic-blocked guard (split-screen shares the candidate's mic permission) ──
 	// The interviewer doesn't record, but blocking mic here breaks the candidate's
@@ -1104,6 +1107,12 @@ export function InterviewerPageInner({
 						data.interviewerAudioCaptured === false ||
 						declinedAtGate
 					if (!skipRecording) void startInterviewerRecording()
+					// Safari: signal the candidate workspace to start recording via
+					// BroadcastChannel — getUserMedia on background tabs is blocked
+					// in Safari so the auto-start effect silently fails there.
+					if (isSafari && !skipRecording) {
+						safariChannelRef.current?.postMessage({ type: 'start-recording' })
+					}
 				}
 			}
 
@@ -1804,6 +1813,51 @@ export function InterviewerPageInner({
 		history.pushState({ backGuard: true }, '', window.location.href)
 	}, [lobbyId, previewMode])
 
+	// ── Safari BroadcastChannel ping/pong (split-screen, Safari only) ──────────
+	// Replaces localStorage poll for liveness on Safari. Sends a ping every 3s;
+	// workspace responds with pong instantly (no throttle). No pong within 5s
+	// means the candidate tab is gone. Chrome keeps its existing localStorage poll.
+	useEffect(() => {
+		if (!isSafari || !isLocalMode || !lobbyId || previewMode || currentView === 'success') return
+		if (typeof BroadcastChannel === 'undefined') return
+		const ch = new BroadcastChannel(`compendium-session-${lobbyId}`)
+		safariChannelRef.current = ch
+		let pongReceived = false
+		let missedPongs = 0
+		ch.onmessage = (e: MessageEvent<{ type: string }>) => {
+			if (e.data?.type === 'pong') {
+				pongReceived = true
+				missedPongs = 0
+				candidateWasAliveRef.current = true
+				setCandidateTabClosed(false)
+			}
+		}
+		const interval = setInterval(() => {
+			if (sessionEndedForLobby(lobbyId) || isCandidateClosedDismissed(lobbyId)) {
+				setCandidateTabClosed(false)
+				missedPongs = 0
+				return
+			}
+			pongReceived = false
+			ch.postMessage({ type: 'ping' })
+			// Check after 2s whether pong came back
+			setTimeout(() => {
+				if (!pongReceived) {
+					missedPongs++
+					// Two consecutive missed pongs (6s total) = tab gone
+					if (missedPongs >= 2 && candidateWasAliveRef.current) {
+						setCandidateTabClosed(true)
+					}
+				}
+			}, 2000)
+		}, 3000)
+		return () => {
+			clearInterval(interval)
+			ch.close()
+			safariChannelRef.current = null
+		}
+	}, [isLocalMode, lobbyId, previewMode, currentView])
+
 	// ── Candidate tab heartbeat poll (split-screen only) ────────────────────────
 	// Heartbeat older than the stale threshold, after we've seen the tab alive,
 	// means it closed unexpectedly.
@@ -1811,9 +1865,10 @@ export function InterviewerPageInner({
 	// throttling, giving immediate liveness even when Safari slows setInterval
 	// in the background candidate tab.
 	useEffect(() => {
-		if (!isLocalMode || !lobbyId || previewMode || currentView === 'success') return
+		// Safari uses BroadcastChannel ping/pong above — skip localStorage poll there.
+		if (isSafari || !isLocalMode || !lobbyId || previewMode || currentView === 'success') return
 
-		const staleMs = isSafari ? CANDIDATE_TAB_STALE_MS_SAFARI : CANDIDATE_TAB_STALE_MS
+		const staleMs = CANDIDATE_TAB_STALE_MS
 		const checkBeat = () => {
 			if (sessionEndedForLobby(lobbyId) || isCandidateClosedDismissed(lobbyId)) {
 				setCandidateTabClosed(false)
