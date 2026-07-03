@@ -8,6 +8,7 @@ import { waitForAuthUser } from '@/lib/firebase/config'
 import PlatformLoader from '@/components/PlatformLoader'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
+import { primeMicStreamForWorkspace } from '@/lib/session/primedMic'
 
 export default function PracticeModeSelection() {
   const [loading, setLoading] = useState(true)
@@ -117,7 +118,14 @@ export default function PracticeModeSelection() {
       if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-          stream.getTracks().forEach((track) => track.stop())
+          // SAFARI FIX: Safari refuses getUserMedia from a background/unfocused
+          // tab. The candidate tab is backgrounded the moment the interviewer
+          // popup takes focus, so the workspace can never acquire the mic on its
+          // own. Instead, keep THIS stream (acquired here under a real user
+          // gesture while focused) alive and hand it to the workspace via
+          // window.__compendiumPrimedMicStream — it survives the client-side
+          // navigations practice -> lobby -> workspace (same tab/window object).
+          primeMicStreamForWorkspace(stream)
         } catch {
           interviewerWindow.close()
           popupHost.__compendiumInterviewerWindow = null

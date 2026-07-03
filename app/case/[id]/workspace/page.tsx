@@ -14,6 +14,7 @@ import { useMicPermission } from '@/lib/permissions/microphone'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { releaseDisplayMedia } from '@/lib/permissions/displayMedia'
 import { writeCandidateBeat } from '@/lib/session/candidateTab'
+import { consumePrimedMicStream, clearPrimedMicStream } from '@/lib/session/primedMic'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
@@ -648,8 +649,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       setRecordingNote('Starting microphone recording...')
 
       try {
-        const microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        // SAFARI FIX: Safari refuses getUserMedia from a background/unfocused tab,
+        // which the candidate workspace always is in split-screen. The practice
+        // page acquired a mic stream under a real user gesture and stashed it on
+        // window.__compendiumPrimedMicStream — adopt it here and skip getUserMedia
+        // entirely. Falls back to getUserMedia if there's no usable primed stream
+        // (non-Safari, or the primed stream was revoked/expired). Chrome always
+        // takes the getUserMedia path since it never primes a stream.
+        const primedStream = BROWSER === 'safari' && mode === 'local' ? consumePrimedMicStream() : null
+        console.log('[workspace] startRecording', { mode, browser: BROWSER, usingPrimed: !!primedStream })
+        const microphoneStream = primedStream ?? await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         micStreamRef.current = microphoneStream
+        console.log('[workspace] got mic stream, starting recorder')
 
         // Mic-only recording for all modes (dual-mic architecture for remote,
         // mic-only for local). No getDisplayMedia — each participant records
@@ -1255,6 +1266,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [retryMicrophonePermission])
 
   useEffect(() => {
+    console.log('[workspace] auto-start effect', {
+      attempted: autoStartAttemptedRef.current,
+      lobbyId: !!lobbyId, resolvedCaseId: !!resolvedCaseId, currentUser: !!currentUser,
+      canStartRecording, recordingConsentDeclined, micState: microphonePermissionState,
+    })
     if (autoStartAttemptedRef.current) return
     if (!lobbyId || !resolvedCaseId || !currentUser) return
     if (!canStartRecording) return
@@ -1266,6 +1282,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     // flips to granted we reset autoStartAttemptedRef and try again.
     if (microphonePermissionState === 'denied') return
 
+    console.log('[workspace] auto-start FIRING')
     autoStartAttemptedRef.current = true
     // Show the "recording restarted" overlay if either:
     // - onSnapshot already told us the session was in_progress before we started
@@ -1490,14 +1507,14 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // Safari BroadcastChannel — two purposes, Safari only:
   // 1. Ping/pong liveness: respond to interviewer pings instantly so the
   //    interviewer doesn't rely on throttled localStorage timestamps.
-  // 2. Start-recording signal: interviewer broadcasts 'start-recording' when
-  //    session goes in_progress. If tab is visible, start immediately; if
-  //    hidden (Safari blocked getUserMedia), queue and fire on next visibility.
+  // 2. Start-recording signal: redundant trigger for the auto-start effect.
+  //    getUserMedia no longer needs focus here — the primed stream from the
+  //    practice page (consumePrimedMicStream) makes startCaptureFlow succeed
+  //    on a background tab, so we just invoke it directly.
   useEffect(() => {
     if (BROWSER !== 'safari' || !lobbyId || requestedMode !== 'local') return
     if (typeof BroadcastChannel === 'undefined') return
     const ch = new BroadcastChannel(`compendium-session-${lobbyId}`)
-    let pendingStart = false
     ch.onmessage = (e: MessageEvent<{ type: string }>) => {
       if (e.data?.type === 'ping') {
         ch.postMessage({ type: 'pong' })
@@ -1507,30 +1524,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       if (e.data?.type === 'start-recording') {
         const state = recordingStateRef.current
         if (state === 'recording' || state === 'uploading' || state === 'stopping') return
-        autoStartAttemptedRef.current = false
-        // Safari blocks getUserMedia unless the tab has focus (not just visibility).
-        // Force focus this tab, wait one tick for the browser to process it, then start.
-        window.focus()
-        setTimeout(() => {
-          const s = recordingStateRef.current
-          if (s === 'recording' || s === 'uploading' || s === 'stopping') return
-          autoStartAttemptedRef.current = true
-          void startCaptureFlow(preferredRecordingModeRef.current)
-        }, 200)
+        autoStartAttemptedRef.current = true
+        void startCaptureFlow(preferredRecordingModeRef.current)
       }
     }
-    const onVisible = () => {
-      if (!pendingStart) return
-      const state = recordingStateRef.current
-      if (state === 'recording' || state === 'uploading' || state === 'stopping') { pendingStart = false; return }
-      pendingStart = false
-      autoStartAttemptedRef.current = true
-      void startCaptureFlow(preferredRecordingModeRef.current)
-    }
-    document.addEventListener('visibilitychange', onVisible)
     return () => {
       ch.close()
-      document.removeEventListener('visibilitychange', onVisible)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lobbyId, requestedMode])
@@ -1623,6 +1622,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     if (sessionStorage.getItem(`compendium-norecord-${lobbyId}`) === '1') {
       recordingConsentDeclinedRef.current = true
       setRecordingConsentDeclined(true)
+      // Safari: no recording will happen — release any primed mic stream.
+      clearPrimedMicStream()
     }
     // Show the interviewer-declined overlay if the interviewer declined while
     // the candidate was still in the lobby (before reaching the workspace).
@@ -1646,6 +1647,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     chunksRef.current = []
     pendingBlobRef.current = null
     teardownMedia()
+    // Safari: also drop any primed-but-unused mic stream so opting out never
+    // leaves a hot mic held from the practice page.
+    clearPrimedMicStream()
     setCompletionPending(false)
     setRecordingState('idle')
   }, [teardownMedia])
