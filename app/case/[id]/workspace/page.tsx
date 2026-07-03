@@ -1505,19 +1505,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         writeCandidateBeat(lobbyId)
       }
       if (e.data?.type === 'start-recording') {
-        // Skip only if already actively recording/uploading — NOT just because
-        // autoStartAttemptedRef is true (the background auto-start failed silently).
         const state = recordingStateRef.current
         if (state === 'recording' || state === 'uploading' || state === 'stopping') return
-        // Reset so startCaptureFlow isn't blocked by canStartRecording check
         autoStartAttemptedRef.current = false
-        if (document.visibilityState === 'visible') {
+        // Safari blocks getUserMedia unless the tab has focus (not just visibility).
+        // Force focus this tab, wait one tick for the browser to process it, then start.
+        window.focus()
+        setTimeout(() => {
+          const s = recordingStateRef.current
+          if (s === 'recording' || s === 'uploading' || s === 'stopping') return
           autoStartAttemptedRef.current = true
           void startCaptureFlow(preferredRecordingModeRef.current)
-        } else {
-          // Tab is hidden — queue the start for when it becomes visible
-          pendingStart = true
-        }
+        }, 200)
       }
     }
     const onVisible = () => {
