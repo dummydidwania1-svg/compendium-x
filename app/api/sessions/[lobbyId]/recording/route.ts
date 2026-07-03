@@ -137,15 +137,26 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
           .collection('recordings')
           .doc(role)
 
-        // Guard: periodic flushes (live:true) must not downgrade a terminal
-        // transcriptStatus. Read the existing track inside the transaction so
-        // this check is atomic with the write.
+        // Guard: never let a flush or a late final upload clobber a transcriptStatus
+        // that's already in the pipeline or done.
+        //
+        // Live flush  → protect pending/processing/completed/failed (never downgrade)
+        // Final upload → protect processing/completed/failed only; 'pending' is left
+        //   writable so the final upload can refresh audioUrl/storagePath while the
+        //   CF is still queued (improving audio quality before it fires).
+        //
+        // All cases read inside the transaction so the check is atomic with the write.
         let safeTranscriptStatus = transcriptStatusOnUpload
-        if (isLiveFlush) {
+        if (body.status === 'uploaded') {
           const existingTrack = await tx.get(trackRef)
           const existingStatus = existingTrack.data()?.transcriptStatus as string | undefined
-          if (existingStatus === 'pending' || existingStatus === 'completed' || existingStatus === 'failed') {
-            safeTranscriptStatus = existingStatus
+          if (existingStatus) {
+            const liveProtected = new Set(['pending', 'processing', 'completed', 'failed'])
+            const finalProtected = new Set(['processing', 'completed', 'failed'])
+            const shouldPreserve = isLiveFlush
+              ? liveProtected.has(existingStatus)
+              : finalProtected.has(existingStatus)
+            if (shouldPreserve) safeTranscriptStatus = existingStatus
           }
         }
 
