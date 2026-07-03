@@ -19351,7 +19351,7 @@
     "case_type": "Profitability",
     "company": "Kepler Cannon",
     "round": "Manager",
-    "prompt": "Your client is a hospital in Delhi. It runs a single branch and has been facing a decline in profits. You need to identify why.",
+    "prompt": "A Delhi hospital that has treated prime ministers and cricketers alike is now the one in need of treatment. Profits are declining and the board has called you in before things get critical.",
     "frameworkTree": {
       "nodes": {
         "declining-profits": {
@@ -20095,110 +20095,78 @@
           "label": "US Penguin Habitats",
           "tone": "root",
           "children": [
-            "wild",
-            "zoos"
-          ]
-        },
-        "wild": {
-          "id": "wild",
-          "label": "In the Wild (negligible)",
-          "tone": "branch",
-          "children": [
             "islands",
             "sanctuaries",
-            "coastal"
+            "coastal",
+            "zoos"
           ]
         },
         "islands": {
           "id": "islands",
           "label": "Islands",
-          "tone": "leaf",
+          "tone": "support",
           "children": []
         },
         "sanctuaries": {
           "id": "sanctuaries",
           "label": "Sanctuaries",
-          "tone": "leaf",
+          "tone": "support",
           "children": []
         },
         "coastal": {
           "id": "coastal",
           "label": "Coastal Regions",
-          "tone": "leaf",
+          "tone": "support",
           "children": []
         },
         "zoos": {
           "id": "zoos",
-          "label": "US Zoos (~1,350)",
+          "label": "US Zoos",
           "tone": "branch",
           "children": [
             "habitable",
             "inhabitable"
           ]
         },
-        "inhabitable": {
-          "id": "inhabitable",
-          "label": "Inhabitable Zoos (~1,150)",
-          "tone": "leaf",
-          "children": []
-        },
         "habitable": {
           "id": "habitable",
-          "label": "Habitable Zoos (~200)",
+          "label": "Habitable Zoos",
           "tone": "branch",
           "children": [
             "captive-penguins"
           ]
         },
+        "inhabitable": {
+          "id": "inhabitable",
+          "label": "Inhabitable Zoos",
+          "tone": "leaf",
+          "children": []
+        },
         "captive-penguins": {
           "id": "captive-penguins",
-          "label": "Captive Penguins (~2,400)",
+          "label": "Captive Penguins",
           "tone": "branch",
           "children": [
             "male",
             "female",
-            "sibling"
+            "offspring"
           ]
         },
         "male": {
           "id": "male",
-          "label": "Male (~600)",
-          "tone": "branch",
-          "children": [
-            "male-feed"
-          ]
-        },
-        "male-feed": {
-          "id": "male-feed",
-          "label": "500 g/day",
+          "label": "Male",
           "tone": "leaf",
           "children": []
         },
         "female": {
           "id": "female",
-          "label": "Female (~1,200)",
-          "tone": "branch",
-          "children": [
-            "female-feed"
-          ]
-        },
-        "female-feed": {
-          "id": "female-feed",
-          "label": "300 g/day (yearly average)",
+          "label": "Female",
           "tone": "leaf",
           "children": []
         },
-        "sibling": {
-          "id": "sibling",
-          "label": "Sibling (~600)",
-          "tone": "branch",
-          "children": [
-            "sibling-feed"
-          ]
-        },
-        "sibling-feed": {
-          "id": "sibling-feed",
-          "label": "100 g/day",
+        "offspring": {
+          "id": "offspring",
+          "label": "Offspring",
           "tone": "leaf",
           "children": []
         }
@@ -20207,10 +20175,7 @@
         "us-habitats",
         "zoos",
         "habitable",
-        "captive-penguins",
-        "male",
-        "female",
-        "sibling"
+        "captive-penguins"
       ],
       "defaultFocusedId": "captive-penguins",
       "notes": [
@@ -20218,24 +20183,22 @@
           "title": "Questions",
           "items": [
             "Feed made only for penguins?",
-            "Current annual market by value?",
             "Which US settings actually buy feed?"
           ]
         },
         {
           "title": "Keep In Mind",
           "items": [
-            "Only zoos both keep penguins and pay for feed",
-            "Not all penguins eat alike, so split by role",
-            "Females eat far more for 2 to 3 months post-birth while males fast, so 300 g is a yearly blended average"
+            "Zoos are the only setting that both keeps penguins and pays for feed",
+            "Not all penguins eat alike, so split them by role",
+            "The female number is a yearly average, since she eats far more post-birth while males fast"
           ]
         },
         {
           "title": "Brownie Points",
           "items": [
-            "Anchoring feed amounts to a medium dog benchmark",
-            "Skewing the colony female because zoos run breeding programs",
-            "Rounding 365 to 300 days to keep the math clean"
+            "Anchoring feed amounts to a medium-dog benchmark",
+            "Skewing the colony female, since zoos run breeding programs"
           ]
         }
       ]
@@ -20262,19 +20225,19 @@
         "rows": [
           [
             "Male",
-            "~600",
+            "~ 600",
             "500 g/day",
             "Largest and most active swimmers"
           ],
           [
             "Female",
-            "~1,200",
+            "~ 1,200",
             "300 g/day",
-            "Yearly average; eats far more for 2 to 3 months after giving birth"
+            "Yearly average, eats far more for 2 to 3 months post-birth"
           ],
           [
-            "Sibling",
-            "~600",
+            "Offspring",
+            "~ 600",
             "100 g/day",
             "Growing chick, a smaller portion"
           ]
@@ -20288,59 +20251,70 @@
         "header": "Market Size Calculation",
         "noTitle": true,
         "columns": [
+          "Ref",
           "Step",
           "Calculation",
-          "Result"
+          "Value"
         ],
         "columnWidths": [
-          "28%",
-          "44%",
-          "28%"
+          "7%",
+          "26%",
+          "42%",
+          "25%"
         ],
         "rows": [
           [
-            "US zoos",
-            "45 states x 30 zoos",
-            "~1,350 zoos"
+            "A",
+            "US Zoos",
+            "45 states x 30 zoos each",
+            "~ 1,350 zoos"
           ],
           [
-            "Zoos with penguins",
-            "1,350 x 15%",
-            "~200 zoos"
+            "B",
+            "Zoos with Penguins",
+            "15% of A",
+            "~ 200 zoos"
           ],
           [
-            "Captive penguins",
-            "200 zoos x 12 birds",
-            "~2,400 penguins"
+            "C",
+            "Captive Penguins",
+            "B x 12 birds per zoo",
+            "~ 2,400 penguins"
           ],
           [
-            "Role split (1:2:1)",
-            "600 male, 1,200 female, 600 sibling",
-            "2,400 penguins"
+            "D",
+            "Role Split (M : F : O)",
+            "C split 1 : 2 : 1 across male, female, offspring",
+            "600 / 1,200 / 600"
           ],
           [
-            "Daily feed",
-            "600x500 + 1,200x300 + 600x100 g",
-            "~720,000 g/day"
+            "E",
+            "Daily Feed",
+            "(600 x 500) + (1,200 x 300) + (600 x 100) g",
+            "~ 720,000 g/day (720 kg)"
           ],
           [
-            "Annual feed",
-            "720 kg/day x ~300 days",
-            "~216,000 kg/year"
+            "F",
+            "Annual Feed",
+            "E (720 kg/day) x ~ 300 days",
+            "~ 216,000 kg/year"
           ],
           [
+            "G",
             "Cans",
-            "216,000,000 g / 200 g per can",
-            "~1.08M cans/year"
+            "F (216M g) / 200 g per can",
+            "~ 1.08M cans/year"
           ],
           [
+            "H",
             "Market Size",
-            "~1.08M cans x $1 per can",
-            "~$1M/year"
+            "G x $1 per can",
+            "~ $1M/year"
           ]
         ],
         "summaryRows": [
-          8
+          2,
+          7
         ],
         "insight": "Sizing bottom-up from captive penguins to feed to cans lands the US penguin food market at roughly $1M a year."
       }
@@ -20348,306 +20322,773 @@
     "framework": "Candidate: Happy to. Two quick questions before I start. By penguin food, do we mean feed made specifically for penguins, sold to whoever keeps them? And are we after the current market by annual value?\nInterviewer: Yes to both. Feed made for penguins, annual value, in the United States.\nCandidate: Here is the equation I will fill in:\nCandidate: Market size = captive penguins in the US × annual food per penguin × price per unit of food\nCandidate: Before I start plugging in numbers, does that structure look sensible to you?\nInterviewer: It does. Go ahead.\nCandidate: Penguins in the US live in a few settings: zoos, islands, sanctuaries, and natural coastal stretches. Since the client sells packaged feed, the buyers who matter are the ones that both keep penguins and pay for their food, so I will focus on zoos and set the rest aside as negligible.\nCandidate: To get the penguin count, I will start from zoos. Of the 50 states, most have zoos, so call it around 45. Each state has a few big-city zoos and a longer tail of smaller ones, which nets out to something like 30 zoos per state, so roughly 45 times 30, or about 1,350 zoos nationwide.\nInterviewer: And how many of those actually keep penguins?\nCandidate: Not many, since penguins need cold or aquatic enclosures that most zoos simply do not have. I would say around 15 percent, which brings 1,350 down to roughly 200 zoos with penguins.\nCandidate: If each keeps a small colony, say about a dozen birds on average, that is 200 times 12, or around 2,400 captive penguins nationwide. Am I in the right ballpark so far?\nInterviewer: That is reasonable. Now think about how much they eat, but keep in mind that not all penguins eat alike.\nCandidate: Good point, I will not treat them as identical. Since zoos keep these as breeding colonies, the mix skews female, because a few males can cover many females, and each season the pairs raise roughly one surviving chick. On that logic I will assume about one male to two females to one offspring. Of 2,400 that is about 600 males, 1,200 females, and 600 offspring.\nCandidate: For the amounts, I will anchor on a familiar animal rather than guess in a vacuum. A medium dog eats on the order of 300 to 400 grams of prepared food a day, and an adult penguin sits in a similar weight class, so I will scale around that:\n- Male: about 500 grams a day, since the males are the largest and most active swimmers\n- Female: about 300 grams a day, as a yearly average, in line with the dog benchmark\n- Offspring: about 100 grams a day, roughly a growing pup's smaller portion\nInterviewer: Before you total that up, are you comfortable using a single female number for the whole year?\nCandidate: Good catch, not quite. For the two to three months after giving birth, females eat far more than usual while the males barely eat at all, so the 300 grams is me smoothing that swing into a yearly daily average rather than a steady daily figure.\nInterviewer: Fair enough. Carry it through to an annual figure.\nCandidate: Taking it role by role, then scaling to a year:\n- Males: 600 × 500 grams, so 300,000 grams a day\n- Females: 1,200 × 300 grams, so 360,000 grams a day\n- Offspring: 600 × 100 grams, so 60,000 grams a day\n- Total: about 720,000 grams a day, or roughly 720 kilograms a day\n- Across a year: 720 kilograms × about 300 days, rounding 365 down to keep it clean, so about 216,000 kilograms a year\nCandidate: So the whole captive population gets through on the order of 216,000 kilograms of feed a year. Shall I turn that into a market value?\nInterviewer: Yes. The feed sells in 200 gram cans at about a dollar a can. Take it through to a final number.\nCandidate: 216,000 kilograms is 216 million grams. At 200 grams per can, that is about 1.08 million cans a year. At roughly a dollar a can, the penguin food market in the United States comes to about one million dollars a year.\nCandidate: As a quick gut check on the price: a can retails at about a dollar to a dollar and a quarter, and after retailer and pet-store margins of roughly 20 to 25 percent the maker keeps something like 65 cents, with the fish and krill ingredients costing less again. So the client's own revenue from this segment is a slice of that one million dollar retail figure, not the whole of it.\nInterviewer: Good. That is a sensible number to land on. Let's stop there.\n\nWaddle We Eat? Framework & Recommendations\nSIZING THE US PENGUIN FOOD MARKET\nClarifying Questions: Feed made only for penguins? Current annual market by value? Which US settings actually buy feed?\nBrownie Points: Anchoring feed amounts to a medium dog benchmark Skewing the colony female because zoos run breeding programs Rounding 365 to 300 days to keep the math clean\nKeep In Mind: Only zoos both keep penguins and pay for feed Not all penguins eat alike, so split by role Females eat far more for 2 to 3 months post-birth while males fast, so 300 g is a yearly blended average"
   },
   {
-  "id": 82,
-  "docId": "case-82",
-  "title": "Tip Tip Barsa Paani",
-  "industry": "Agriculture",
-  "round": "Partner",
-  "difficulty": "Hard",
-  "case_type": "Unconventional",
-  "company": "Dalberg",
-  "prompt": "Our client is the Asian Development Bank (ADB), which wants to raise the income of rural households in India that depend mainly on agriculture. How would you approach this?",
-  "abbreviations": [
-    "ADB: Asian Development Bank",
-    "CAPEX: Capital Expenditure"
-  ],
-  "frameworkTree": {
-    "nodes": {
-      "raise-income": {
-        "id": "raise-income",
-        "label": "Raise Rural Income",
-        "tone": "root",
-        "children": [
-          "agri-income",
-          "supplementary"
-        ]
-      },
-      "agri-income": {
-        "id": "agri-income",
-        "label": "Agriculture Income",
-        "tone": "branch",
-        "children": [
-          "pre-sowing",
-          "cultivation",
-          "post-harvest"
-        ]
-      },
-      "supplementary": {
-        "id": "supplementary",
-        "label": "Supplementary Streams",
-        "tone": "support",
-        "children": []
-      },
-      "pre-sowing": {
-        "id": "pre-sowing",
-        "label": "Pre-Sowing",
-        "tone": "leaf",
-        "children": []
-      },
-      "cultivation": {
-        "id": "cultivation",
-        "label": "Cultivation",
-        "tone": "branch",
-        "children": [
-          "sowing",
-          "crop-maintenance"
-        ]
-      },
-      "post-harvest": {
-        "id": "post-harvest",
-        "label": "Post-Harvest",
-        "tone": "leaf",
-        "children": []
-      },
-      "sowing": {
-        "id": "sowing",
-        "label": "Sowing",
-        "tone": "leaf",
-        "children": []
-      },
-      "crop-maintenance": {
-        "id": "crop-maintenance",
-        "label": "Crop Maintenance",
-        "tone": "branch",
-        "children": [
-          "irrigation",
-          "nutrition"
-        ]
-      },
-      "nutrition": {
-        "id": "nutrition",
-        "label": "Nutrition",
-        "tone": "leaf",
-        "children": []
-      },
-      "irrigation": {
-        "id": "irrigation",
-        "label": "Irrigation",
-        "tone": "branch",
-        "children": [
-          "traditional",
-          "new-tech"
-        ]
-      },
-      "traditional": {
-        "id": "traditional",
-        "label": "Traditional Sources",
-        "tone": "leaf",
-        "children": []
-      },
-      "new-tech": {
-        "id": "new-tech",
-        "label": "New Technology",
-        "tone": "branch",
-        "children": [
-          "drip"
-        ]
-      },
-      "drip": {
-        "id": "drip",
-        "label": "Drip Irrigation",
-        "tone": "leaf",
-        "children": []
-      }
-    },
-    "defaultExpanded": [
-      "raise-income",
-      "agri-income",
-      "cultivation",
-      "crop-maintenance",
-      "irrigation",
-      "new-tech"
+    "id": 82,
+    "docId": "case-82",
+    "title": "Tip Tip Barsa Paani",
+    "industry": "Agriculture",
+    "round": "Partner",
+    "difficulty": "Hard",
+    "case_type": "Unconventional",
+    "company": "Dalberg",
+    "prompt": "Our client is the Asian Development Bank (ADB), which wants to raise the income of rural households in India that depend mainly on agriculture. How would you approach this?",
+    "abbreviations": [
+      "ADB: Asian Development Bank",
+      "CAPEX: Capital Expenditure"
     ],
-    "defaultFocusedId": "drip",
-    "notes": [
-      {
-        "title": "Questions",
-        "items": [
-          "Fixed income target or a directional lift?",
-          "All of rural India or a specific geography?",
-          "Is ADB open to any intervention or a particular area?"
-        ]
+    "frameworkTree": {
+      "nodes": {
+        "raise-income": {
+          "id": "raise-income",
+          "label": "Raise Rural Income",
+          "tone": "root",
+          "children": [
+            "agri-income",
+            "supplementary"
+          ]
+        },
+        "agri-income": {
+          "id": "agri-income",
+          "label": "Agriculture Income",
+          "tone": "branch",
+          "children": [
+            "pre-sowing",
+            "cultivation",
+            "post-harvest"
+          ]
+        },
+        "supplementary": {
+          "id": "supplementary",
+          "label": "Supplementary Streams",
+          "tone": "support",
+          "children": []
+        },
+        "pre-sowing": {
+          "id": "pre-sowing",
+          "label": "Pre-Sowing",
+          "tone": "leaf",
+          "children": []
+        },
+        "cultivation": {
+          "id": "cultivation",
+          "label": "Cultivation",
+          "tone": "branch",
+          "children": [
+            "sowing",
+            "crop-maintenance"
+          ]
+        },
+        "post-harvest": {
+          "id": "post-harvest",
+          "label": "Post-Harvest",
+          "tone": "leaf",
+          "children": []
+        },
+        "sowing": {
+          "id": "sowing",
+          "label": "Sowing",
+          "tone": "leaf",
+          "children": []
+        },
+        "crop-maintenance": {
+          "id": "crop-maintenance",
+          "label": "Crop Maintenance",
+          "tone": "branch",
+          "children": [
+            "irrigation",
+            "nutrition"
+          ]
+        },
+        "nutrition": {
+          "id": "nutrition",
+          "label": "Nutrition",
+          "tone": "leaf",
+          "children": []
+        },
+        "irrigation": {
+          "id": "irrigation",
+          "label": "Irrigation",
+          "tone": "branch",
+          "children": [
+            "traditional",
+            "new-tech"
+          ]
+        },
+        "traditional": {
+          "id": "traditional",
+          "label": "Traditional Sources",
+          "tone": "leaf",
+          "children": []
+        },
+        "new-tech": {
+          "id": "new-tech",
+          "label": "New Technology",
+          "tone": "branch",
+          "children": [
+            "drip"
+          ]
+        },
+        "drip": {
+          "id": "drip",
+          "label": "Drip Irrigation",
+          "tone": "leaf",
+          "children": []
+        }
       },
-      {
-        "title": "Keep In Mind",
-        "items": [
-          "Water is the biggest swing factor in farm yield",
-          "Only medium and large farms can realistically afford drip"
-        ]
-      },
-      {
-        "title": "Brownie Points",
-        "items": [
-          "Splitting income into agri versus supplementary streams before diving in",
-          "Recommending ADB subsidize early-year costs to drive adoption"
-        ]
-      }
-    ]
-  },
-  "visualisations": [
-    {
-      "id": "market-size-calc",
-      "type": "table",
-      "title": "Market Size Calculation",
-      "header": "Market Size Calculation",
-      "noTitle": true,
-      "columns": [
-        "Ref",
-        "Step",
-        "Calculation",
-        "Result"
+      "defaultExpanded": [
+        "raise-income",
+        "agri-income",
+        "cultivation",
+        "crop-maintenance",
+        "irrigation",
+        "new-tech"
       ],
-      "columnWidths": [
-        "8%",
-        "30%",
-        "40%",
-        "22%"
-      ],
-      "rows": [
-        [
-          "A",
-          "Households in India",
-          "1.4 billion people / 5 per household",
-          "~280 million"
-        ],
-        [
-          "B",
-          "Agricultural households",
-          "60% of A",
-          "~168 million"
-        ],
-        [
-          "C",
-          "Medium + large farms",
-          "40% of B (10% large + 30% medium)",
-          "~67 million"
-        ],
-        [
-          "D",
-          "Water-scarce (arid)",
-          "75% of C",
-          "~50 million"
-        ],
-        [
-          "E",
-          "Water-rich (arable)",
-          "25% of C",
-          "~17 million"
-        ],
-        [
-          "F",
-          "Willing in arid",
-          "50% of D",
-          "~25 million"
-        ],
-        [
-          "G",
-          "Willing in arable",
-          "10% of E",
-          "~1.7 million"
-        ],
-        [
-          "H",
-          "Interested farms",
-          "F + G",
-          "~27 million"
-        ],
-        [
-          "I",
-          "Market size",
-          "H x Rs 1 lakh per system",
-          "~Rs 2.7 lakh crore"
-        ]
-      ],
-      "summaryRows": [
-        7,
-        8
+      "defaultFocusedId": "drip",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Fixed income target or a directional lift?",
+            "All of rural India or a specific geography?",
+            "Is ADB open to any intervention or a particular area?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Water is the biggest swing factor in farm yield",
+            "Only medium and large farms can realistically afford drip"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Splitting income into agri versus supplementary streams before diving in",
+            "Recommending ADB subsidize early-year costs to drive adoption"
+          ]
+        }
       ]
     },
-    {
-      "title": "Annual Gains",
-      "type": "formula",
-      "lhs": "Annual Gains",
-      "rhs": "Increase in Revenue (higher yield) + Decrease in Cost (less borewell and water spend)"
-    },
-    {
-      "title": "Annualized Cost",
-      "type": "formula",
-      "lhs": "Annualized Cost",
-      "rhs": "(CAPEX ÷ System Life) + Working Capital Costs"
-    },
-    {
-      "title": "Adoption Decision",
-      "type": "formula",
-      "lhs": "Adopt Drip",
-      "rhs": "Annual Gains > Annualized Cost"
-    }
-  ],
-  "framework": "Candidate: A few clarifying questions first. When we say raise income, are we aiming at a specific target, such as lifting incomes by a set percentage or by a fixed amount per household, or are we simply trying to move incomes meaningfully upward without a hard number in mind? Are we looking at all of rural India or a particular geography? And is ADB open to any kind of intervention, or is there a particular area it wants to back?\nInterviewer: Good questions. There is no fixed number to hit; the aim is simply to move incomes meaningfully upward across rural India, and ADB is open on the type of intervention for now.\nCandidate: Then at the top level I see two ways to raise these households' income: lift what they earn from agriculture itself, or add supplementary income streams outside farming, such as allied activities like dairy or off-season work. Which would you like me to go down?\nInterviewer: Let's just focus on agriculture.\nCandidate: Within agriculture I will walk the crop value chain and look for where income can improve. I would split it into three stages:\n- Pre-sowing: procuring seeds and preparing the land.\n- Cultivation: sowing, then crop maintenance, which itself breaks into irrigation and nutrition such as fertilizers and manure.\n- Post-harvest: the harvest itself, then storage, processing, and getting produce to market.\nInterviewer: Let's zero in on the agriculture-related lever. How would you increase that?\nCandidate: Higher farm income really comes from higher and more reliable yield, and water is the biggest swing factor there. On irrigation I see two paths: optimize the traditional sources farmers already use, such as canals and borewells, or bring in newer, more efficient technology such as drip irrigation, which delivers water straight to the roots and cuts waste.\nInterviewer: Let's focus on drip irrigation. What do you think the market size for that is in India?\nCandidate: Let me build it up. May I lay out my assumptions as I go?\nInterviewer: Please do.\nCandidate: Starting from the population:\n- India has roughly 1.4 billion people. At about 5 people a household, that is around 280 million households.\n- Around 60 percent of households depend on agriculture, so about 168 million agricultural households.\nCandidate: Not every farm is a realistic buyer, so I will segment by farm size:\n- About 10 percent own large farms, so roughly 17 million.\n- About 30 percent own medium farms, so roughly 50 million.\n- The remaining 60 percent are small or marginal farmers.\nCandidate: Drip irrigation needs upfront money and enough land to be worthwhile, so I will assume only medium and large farms are realistic buyers. That is the top 40 percent, or about 67 million farms, as my target market.\nInterviewer: Fair. But would all of them actually want it?\nCandidate: No, and that is my next cut, by water availability. As a sanity check on the split, close to half of India's farmland is rainfed rather than served by assured irrigation, and even many irrigated belts are turning water-stressed, so leaning the mix toward water-scarce land is fair. I will use roughly one quarter water-rich to three quarters water-scarce:\n- About 25 percent sit in arable, water-rich areas, so roughly 17 million.\n- About 75 percent sit in arid, water-scarce areas, so roughly 50 million.\nCandidate: The logic is that where water is already plentiful the pull toward a new system is weak, but where water is scarce the pull is strong. So I will apply different willingness rates:\n- Arable, water-rich: only about 10 percent willing, so roughly 1.7 million farms.\n- Arid, water-scarce: about 50 percent willing, so roughly 25 million farms.\nCandidate: Adding those gives about 27 million farms, or 2.7 crore, that would realistically adopt drip irrigation. To turn that count into a market value I would need a rough price per system. Do we have a figure to work with?\nInterviewer: Assume an average drip system costs about one lakh rupees per farm.\nCandidate: Then the market is about 27 million times one lakh rupees, or roughly 2.7 lakh crore rupees. I would treat the count of about 27 million farms as the core number and the rupee figure as an order-of-magnitude read.\nInterviewer: Good. Now a different angle. For a farmer, drip irrigation is an investment. If you had to weigh the gains from a drip system against the cost of installing it, so that it makes economic sense to adopt, how would you approach it? I am after the approach, not numbers.\nCandidate: I would set it up as annual gains versus annualized cost.\nCandidate: On the gains side, gains equal the increase in revenue plus the reduction in cost:\n- Higher revenue comes from higher crop yield, since steady water at the roots lifts output and can open up a second cropping cycle.\n- Lower cost comes from spending less on water and power, since the farm leans less on borewells and pumping and uses less water and fertilizer overall.\nCandidate: On the cost side, rather than charging the whole one-time installation to a single year, I would spread that upfront cost evenly across all the years the system will be in use, so it compares fairly against the yearly gains:\n- The capital expenditure, or Capex, spread over the useful life of the equipment, so Capex divided by the life of the system.\n- Plus any yearly running and working capital costs, such as maintenance and financing.\nCandidate: Adoption makes economic sense once the annual gains clear that annualized cost.\nInterviewer: And what would you recommend to ADB?\nCandidate: In the early years the gains may not cover the cost. The upfront outlay of about one lakh rupees is large next to what a medium farm clears in a year, while the yield gains and water savings build up only gradually over the first few seasons as farmers learn to run the new system. So a farmer weighing just the first year or two would see the cost loom larger than the benefit and would hesitate. Over the full life of the system, though, the economics turn positive. So my recommendation is that ADB steps in with financial support, subsidizing part of the installation cost or offering low-cost financing, so that farmers are willing to adopt now. Over time the higher yields and lower costs lift farm incomes, which is exactly the rural income increase ADB set out to achieve.\nInterviewer: Good. That is a solid place to close.\n\nTip Tip Barsa Paani Framework & Recommendations\nRAISING RURAL INCOMES THROUGH DRIP IRRIGATION\nClarifying Questions: Fixed income target or a directional lift? All of rural India or a specific geography? Is ADB open to any intervention or a particular area?\nBrownie Points: Splitting income into agri versus supplementary streams before diving in Walking the crop value chain to locate the lever Recommending ADB subsidize early-year costs to drive adoption\nKeep In Mind: Water is the biggest swing factor in farm yield Only medium and large farms can realistically afford drip Willingness is far higher in water-scarce regions"
-},
-{
-  "id": 85,
-  "docId": "case-85",
-  "title": "Testing the Waters",
-  "industry": "Hospitality",
-  "difficulty": "Medium",
-  "case_type": "Market Entry",
-  "company": "Kearney",
-  "prompt": "Your client is a 5-star hotel considering opening a waterpark within one specific hotel property. Waterpark charges will be automatically included in the room booking, with usage optional. Should they enter this waterpark business?",
-  "abbreviations": ["CAPEX: Capital Expenditure"],
-  "frameworkTree": {
-    "nodes": {
-      "enter-waterpark": { "id": "enter-waterpark", "label": "Enter the Waterpark?", "tone": "root", "children": ["market-attractiveness", "financial-viability", "capabilities-ops", "risks-mitigation"] },
-      "market-attractiveness": { "id": "market-attractiveness", "label": "Market Attractiveness", "tone": "branch", "children": ["families-leisure", "business-skew", "willingness-to-pay"] },
-      "families-leisure": { "id": "families-leisure", "label": "Appeals to Families & Leisure", "tone": "leaf", "children": [] },
-      "business-skew": { "id": "business-skew", "label": "5-Star Guests Skew Business", "tone": "leaf", "children": [] },
-      "willingness-to-pay": { "id": "willingness-to-pay", "label": "Willingness to Pay", "tone": "branch", "children": ["room-economics", "premium-level", "niche-demand"] },
-      "room-economics": { "id": "room-economics", "label": "Room Rate ₹8-10k, ~2 Nights", "tone": "leaf", "children": [] },
-      "premium-level": { "id": "premium-level", "label": "Premium ~₹5,000 (~50% of Room)", "tone": "leaf", "children": [] },
-      "niche-demand": { "id": "niche-demand", "label": "Value Only to Family Niche", "tone": "leaf", "children": [] },
-      "financial-viability": { "id": "financial-viability", "label": "Financial Viability (Payback)", "tone": "branch", "children": ["fixed-cost", "variable-cost", "contribution", "payback"] },
-      "fixed-cost": { "id": "fixed-cost", "label": "Fixed Cost ~₹5 Cr", "tone": "leaf", "children": [] },
-      "variable-cost": { "id": "variable-cost", "label": "Variable Cost ~₹2,500 / Booking", "tone": "leaf", "children": [] },
-      "contribution": { "id": "contribution", "label": "Contribution ~₹2,500 / Booking", "tone": "leaf", "children": [] },
-      "payback": { "id": "payback", "label": "Payback ~2,00,000 Room-Nights", "tone": "leaf", "children": [] },
-      "capabilities-ops": { "id": "capabilities-ops", "label": "Capabilities & Operations", "tone": "branch", "children": ["hospitality-cap", "safety-cap", "water-cap", "usage-cap", "synergy"] },
-      "hospitality-cap": { "id": "hospitality-cap", "label": "Hospitality: Strong (Useful)", "tone": "leaf", "children": [] },
-      "safety-cap": { "id": "safety-cap", "label": "Safety & Lifeguards: Gap (Mandatory)", "tone": "leaf", "children": [] },
-      "water-cap": { "id": "water-cap", "label": "Water Mgmt & Maintenance: Gap (Critical)", "tone": "leaf", "children": [] },
-      "usage-cap": { "id": "usage-cap", "label": "Usage Mgmt: New (Queue, Safety, Cleaning)", "tone": "leaf", "children": [] },
-      "synergy": { "id": "synergy", "label": "Low Operational Synergy", "tone": "leaf", "children": [] },
-      "risks-mitigation": { "id": "risks-mitigation", "label": "Risks & Mitigation", "tone": "branch", "children": ["low-util", "brand-dilution", "focus-diversion", "capital-risk", "mitigations"] },
-      "low-util": { "id": "low-util", "label": "Low Utilisation Risk", "tone": "leaf", "children": [] },
-      "brand-dilution": { "id": "brand-dilution", "label": "Brand Dilution Risk", "tone": "leaf", "children": [] },
-      "focus-diversion": { "id": "focus-diversion", "label": "Focus Diversion Risk", "tone": "leaf", "children": [] },
-      "capital-risk": { "id": "capital-risk", "label": "High Capital Risk", "tone": "leaf", "children": [] },
-      "mitigations": { "id": "mitigations", "label": "If They Still Explore", "tone": "branch", "children": ["pilot", "target-market", "ticketing"] },
-      "pilot": { "id": "pilot", "label": "Pilot Seasonal Mini Features", "tone": "leaf", "children": [] },
-      "target-market": { "id": "target-market", "label": "Target Family-Tourism Destinations", "tone": "leaf", "children": [] },
-      "ticketing": { "id": "ticketing", "label": "Optional Ticketing, Not Bundling", "tone": "leaf", "children": [] }
-    },
-    "defaultExpanded": ["enter-waterpark", "market-attractiveness", "willingness-to-pay", "financial-viability", "capabilities-ops", "risks-mitigation", "mitigations"],
-    "defaultFocusedId": "financial-viability",
-    "notes": [
-      { "title": "Questions", "items": ["Is this for one hotel or the whole chain?", "Can I assume a specific location?", "Any direct competitors offering in-hotel waterparks nearby?"] },
-      { "title": "Keep In Mind", "items": ["Bundling the charge into the room makes value perception the deciding factor", "A single hotel has too few room-nights to recover a ₹5 crore fixed cost quickly", "Low operational synergy means a steep learning curve, not just extra cost"] },
-      { "title": "Brownie Points", "items": ["Justifying the ₹5,000 premium as roughly 50% of the room rate before using it", "Contextualizing 2 lakh room-nights against a 200 to 300 room hotel's capacity", "Offering optional ticketing and a pilot instead of a flat no"] }
-    ]
+    "visualisations": [
+      {
+        "id": "market-size-calc",
+        "type": "table",
+        "title": "Market Size Calculation",
+        "header": "Market Size Calculation",
+        "noTitle": true,
+        "columns": [
+          "Ref",
+          "Step",
+          "Calculation",
+          "Result"
+        ],
+        "columnWidths": [
+          "8%",
+          "30%",
+          "40%",
+          "22%"
+        ],
+        "rows": [
+          [
+            "A",
+            "Households in India",
+            "1.4 billion people / 5 per household",
+            "~280 million"
+          ],
+          [
+            "B",
+            "Agricultural households",
+            "60% of A",
+            "~168 million"
+          ],
+          [
+            "C",
+            "Medium + large farms",
+            "40% of B (10% large + 30% medium)",
+            "~67 million"
+          ],
+          [
+            "D",
+            "Water-scarce (arid)",
+            "75% of C",
+            "~50 million"
+          ],
+          [
+            "E",
+            "Water-rich (arable)",
+            "25% of C",
+            "~17 million"
+          ],
+          [
+            "F",
+            "Willing in arid",
+            "50% of D",
+            "~25 million"
+          ],
+          [
+            "G",
+            "Willing in arable",
+            "10% of E",
+            "~1.7 million"
+          ],
+          [
+            "H",
+            "Interested farms",
+            "F + G",
+            "~27 million"
+          ],
+          [
+            "I",
+            "Market size",
+            "H x Rs 1 lakh per system",
+            "~Rs 2.7 lakh crore"
+          ]
+        ],
+        "summaryRows": [
+          7,
+          8
+        ]
+      },
+      {
+        "title": "Annual Gains",
+        "type": "formula",
+        "lhs": "Annual Gains",
+        "rhs": "Increase in Revenue (higher yield) + Decrease in Cost (less borewell and water spend)"
+      },
+      {
+        "title": "Annualized Cost",
+        "type": "formula",
+        "lhs": "Annualized Cost",
+        "rhs": "(CAPEX ÷ System Life) + Working Capital Costs"
+      },
+      {
+        "title": "Adoption Decision",
+        "type": "formula",
+        "lhs": "Adopt Drip",
+        "rhs": "Annual Gains > Annualized Cost"
+      }
+    ],
+    "framework": "Candidate: A few clarifying questions first. When we say raise income, are we aiming at a specific target, such as lifting incomes by a set percentage or by a fixed amount per household, or are we simply trying to move incomes meaningfully upward without a hard number in mind? Are we looking at all of rural India or a particular geography? And is ADB open to any kind of intervention, or is there a particular area it wants to back?\nInterviewer: Good questions. There is no fixed number to hit; the aim is simply to move incomes meaningfully upward across rural India, and ADB is open on the type of intervention for now.\nCandidate: Then at the top level I see two ways to raise these households' income: lift what they earn from agriculture itself, or add supplementary income streams outside farming, such as allied activities like dairy or off-season work. Which would you like me to go down?\nInterviewer: Let's just focus on agriculture.\nCandidate: Within agriculture I will walk the crop value chain and look for where income can improve. I would split it into three stages:\n- Pre-sowing: procuring seeds and preparing the land.\n- Cultivation: sowing, then crop maintenance, which itself breaks into irrigation and nutrition such as fertilizers and manure.\n- Post-harvest: the harvest itself, then storage, processing, and getting produce to market.\nInterviewer: Let's zero in on the agriculture-related lever. How would you increase that?\nCandidate: Higher farm income really comes from higher and more reliable yield, and water is the biggest swing factor there. On irrigation I see two paths: optimize the traditional sources farmers already use, such as canals and borewells, or bring in newer, more efficient technology such as drip irrigation, which delivers water straight to the roots and cuts waste.\nInterviewer: Let's focus on drip irrigation. What do you think the market size for that is in India?\nCandidate: Let me build it up. May I lay out my assumptions as I go?\nInterviewer: Please do.\nCandidate: Starting from the population:\n- India has roughly 1.4 billion people. At about 5 people a household, that is around 280 million households.\n- Around 60 percent of households depend on agriculture, so about 168 million agricultural households.\nCandidate: Not every farm is a realistic buyer, so I will segment by farm size:\n- About 10 percent own large farms, so roughly 17 million.\n- About 30 percent own medium farms, so roughly 50 million.\n- The remaining 60 percent are small or marginal farmers.\nCandidate: Drip irrigation needs upfront money and enough land to be worthwhile, so I will assume only medium and large farms are realistic buyers. That is the top 40 percent, or about 67 million farms, as my target market.\nInterviewer: Fair. But would all of them actually want it?\nCandidate: No, and that is my next cut, by water availability. As a sanity check on the split, close to half of India's farmland is rainfed rather than served by assured irrigation, and even many irrigated belts are turning water-stressed, so leaning the mix toward water-scarce land is fair. I will use roughly one quarter water-rich to three quarters water-scarce:\n- About 25 percent sit in arable, water-rich areas, so roughly 17 million.\n- About 75 percent sit in arid, water-scarce areas, so roughly 50 million.\nCandidate: The logic is that where water is already plentiful the pull toward a new system is weak, but where water is scarce the pull is strong. So I will apply different willingness rates:\n- Arable, water-rich: only about 10 percent willing, so roughly 1.7 million farms.\n- Arid, water-scarce: about 50 percent willing, so roughly 25 million farms.\nCandidate: Adding those gives about 27 million farms, or 2.7 crore, that would realistically adopt drip irrigation. To turn that count into a market value I would need a rough price per system. Do we have a figure to work with?\nInterviewer: Assume an average drip system costs about one lakh rupees per farm.\nCandidate: Then the market is about 27 million times one lakh rupees, or roughly 2.7 lakh crore rupees. I would treat the count of about 27 million farms as the core number and the rupee figure as an order-of-magnitude read.\nInterviewer: Good. Now a different angle. For a farmer, drip irrigation is an investment. If you had to weigh the gains from a drip system against the cost of installing it, so that it makes economic sense to adopt, how would you approach it? I am after the approach, not numbers.\nCandidate: I would set it up as annual gains versus annualized cost.\nCandidate: On the gains side, gains equal the increase in revenue plus the reduction in cost:\n- Higher revenue comes from higher crop yield, since steady water at the roots lifts output and can open up a second cropping cycle.\n- Lower cost comes from spending less on water and power, since the farm leans less on borewells and pumping and uses less water and fertilizer overall.\nCandidate: On the cost side, rather than charging the whole one-time installation to a single year, I would spread that upfront cost evenly across all the years the system will be in use, so it compares fairly against the yearly gains:\n- The capital expenditure, or Capex, spread over the useful life of the equipment, so Capex divided by the life of the system.\n- Plus any yearly running and working capital costs, such as maintenance and financing.\nCandidate: Adoption makes economic sense once the annual gains clear that annualized cost.\nInterviewer: And what would you recommend to ADB?\nCandidate: In the early years the gains may not cover the cost. The upfront outlay of about one lakh rupees is large next to what a medium farm clears in a year, while the yield gains and water savings build up only gradually over the first few seasons as farmers learn to run the new system. So a farmer weighing just the first year or two would see the cost loom larger than the benefit and would hesitate. Over the full life of the system, though, the economics turn positive. So my recommendation is that ADB steps in with financial support, subsidizing part of the installation cost or offering low-cost financing, so that farmers are willing to adopt now. Over time the higher yields and lower costs lift farm incomes, which is exactly the rural income increase ADB set out to achieve.\nInterviewer: Good. That is a solid place to close.\n\nTip Tip Barsa Paani Framework & Recommendations\nRAISING RURAL INCOMES THROUGH DRIP IRRIGATION\nClarifying Questions: Fixed income target or a directional lift? All of rural India or a specific geography? Is ADB open to any intervention or a particular area?\nBrownie Points: Splitting income into agri versus supplementary streams before diving in Walking the crop value chain to locate the lever Recommending ADB subsidize early-year costs to drive adoption\nKeep In Mind: Water is the biggest swing factor in farm yield Only medium and large farms can realistically afford drip Willingness is far higher in water-scarce regions"
   },
-  "visualisations": [
-    { "title": "Contribution per Booking", "type": "formula", "lhs": "Contribution per Booking", "rhs": "₹5,000 Premium - ₹2,500 Variable Cost = ₹2,500" },
-    { "title": "Payback in Room-Nights", "type": "formula", "lhs": "Payback (Room-Nights)", "rhs": "₹5,00,00,000 Fixed Cost ÷ ₹2,500 Contribution = 2,00,000" }
-  ],
-  "framework": "Candidate: That's an interesting problem. Before I structure my approach, may I ask a few clarifying questions?\nInterviewer: Please go ahead.\nCandidate: First, is this being considered for just one hotel, or across the chain?\nInterviewer: Just one, for now.\nCandidate: Understood. Can I assume a specific location to ground my thinking?\nInterviewer: Yes.\nCandidate: Then I'll assume a property in Gurgaon, since I'm familiar with that market.\nCandidate: And are there any direct competitors already offering a similar in-hotel waterpark nearby?\nInterviewer: Assume none for now.\nCandidate: Great. Then I'll evaluate this as a market entry decision across four lenses. First, market attractiveness, to see whether there is real demand. Second, financial viability, to check whether the economics work. Third, capabilities and operations, to see whether the hotel can actually run a waterpark. And fourth, the key risks and how we might mitigate them. Does that structure sound reasonable?\nInterviewer: Yes, that works. Let's start with market attractiveness.\nCandidate: Sure. I'll begin with where the demand comes from. A waterpark appeals mainly to families and leisure travellers. But a 5-star hotel in a market like Gurgaon skews heavily towards business guests and wedding or event groups, who typically won't use a waterpark. So intuitively, the addressable segment is only a slice of the hotel's guests.\nInterviewer: That's a fair hypothesis. How would you pressure-test it?\nCandidate: I'd anchor on the room economics first. For a property like this, I'd estimate an average room rate of around ₹8,000 to ₹10,000 a night. Is that fair?\nInterviewer: That's a fair assumption.\nCandidate: And a typical stay of about 2 nights?\nInterviewer: Yes.\nCandidate: Now I need a sensible waterpark premium to test, since the charge is bundled into the room. If the room itself is ₹8,000 to ₹10,000, an add-on much larger than half the room rate would feel steep to most guests. So I'll assume a premium of about ₹5,000 per room-night, roughly 50% on top of the room.\nInterviewer: Yes, ₹5,000 works.\nCandidate: At ₹5,000, value perception becomes the deciding factor. A family may see ₹5,000 as fair for a full day of entertainment, but a business traveller is very unlikely to pay it for something they won't use. So demand is confined to a narrow niche rather than the majority of hotel traffic.\nInterviewer: Agreed, the demand side looks thin. Let's see whether the financials could still justify it.\nCandidate: I'll use a payback lens, comparing the upfront investment against the contribution each booking generates. On the cost side, fixed costs are land, construction, the slides and rides, and safety infrastructure; variable costs are staff, electricity, water, and maintenance.\nInterviewer: Let's put numbers to it. What would you assume for the fixed investment?\nCandidate: Since the land already exists within the property, I'd estimate the build-out, rides, and safety setup at roughly ₹5 crore. May I proceed with that?\nInterviewer: Yes, assume ₹5 crore.\nCandidate: For the contribution per booking, a meaningful share of the ₹5,000 premium is consumed by the cost of actually servicing a guest. Waterparks are utility-heavy: water treatment and heating, electricity for pumps and rides, extra staffing, and constant cleaning. So I'd assume variable costs run at about half the premium, roughly ₹2,500 per booking. That leaves a contribution margin of around ₹2,500 per premium room-night.\nInterviewer: Reasonable. So what does that imply for payback?\nCandidate: To recover the ₹5 crore fixed cost at ₹2,500 contribution per booking, I'd need ₹5,00,00,000 divided by ₹2,500, which is about 2,00,000 premium-paying room-nights.\nInterviewer: And how should I read that 2 lakh figure?\nCandidate: Let me put it in context. A single hotel might have around 200 to 300 rooms. Even at full occupancy every night, that is under 1,00,000 room-nights a year in total, and only the small leisure niche would actually pay the premium. The payback is simply too long and too uncertain to be attractive.\nInterviewer: That's a clear conclusion. Let's move on.\nCandidate: The third lens is whether the hotel is operationally equipped to run this, and here I see a real capability gap. The hotel is genuinely strong on hospitality and guest service, which helps, but the overlap largely ends there. Water safety and lifeguarding is a mandatory function the hotel has no existing muscle in. Specialised water treatment and maintenance is critical and again outside its expertise. And managing high-volume recreational usage, queueing, crowd safety, and continuous cleaning, is an entirely new discipline for a hotel. So there is very low operational synergy, which means a steep learning curve and meaningful additional management bandwidth.\nInterviewer: Understood. And the risks?\nCandidate: I'd flag four. First, low utilisation, since the business-traveller base won't value the park. Second, brand dilution, as a luxury business hotel repositioning around a recreational attraction could confuse its core clientele. Third, focus diversion, pulling management attention away from the core hospitality business. And fourth, the high capital risk we just saw, a large fixed outlay against slow, uncertain payback.\nInterviewer: So what's your final recommendation?\nCandidate: Pulling it together, demand is niche, payback is long, and operational synergy is low. So I would recommend against entering the waterpark segment in this property, at least in the bundled form proposed. However, if the client still wants to explore the space, I'd suggest a few lower-risk steps. First, test the concept with seasonal or temporary mini water features before committing full capital expenditure. Second, target family-tourism-heavy destinations rather than a business hub like Gurgaon. And third, offer the waterpark on separate, optional ticketing instead of mandatory bundling, to reduce guest resistance and get a cleaner read on true demand.\nInterviewer: Thank you, that's a well-structured answer.\n\nTesting the Waters Framework & Recommendations\nSHOULD A 5-STAR HOTEL ENTER THE WATERPARK BUSINESS?\nClarifying Questions: Is this for one hotel or the whole chain? Can I assume a specific location? Any direct competitors offering in-hotel waterparks nearby?\nBrownie Points: Justifying the ₹5,000 premium as roughly 50% of the room rate before using it Contextualizing 2 lakh room-nights against a 200 to 300 room hotel's capacity Offering optional ticketing and a pilot instead of a flat no\nKeep In Mind: Bundling the charge into the room makes value perception the deciding factor A single hotel has too few room-nights to recover a ₹5 crore fixed cost quickly Low operational synergy means a steep learning curve, not just extra cost"
-}
+  {
+    "id": 84,
+    "docId": "case-84",
+    "title": "Panel Discussion",
+    "industry": "Energy",
+    "difficulty": "Medium",
+    "round": "Partner",
+    "case_type": "Unconventional",
+    "company": "McKinsey & Co.",
+    "prompt": "Your client is a solar and wind developer. The CEO wants to reduce capital expenditure (CAPEX) by 3 to 4 percent. Advise them on how to approach this.",
+    "abbreviations": [
+      "CAPEX: Capital Expenditure",
+      "IRR: Internal Rate of Return",
+      "PLI: Production Linked Incentive",
+      "PPP: Public-Private Partnership",
+      "BOO: Build, Own, Operate",
+      "BOT: Build, Own, Transfer"
+    ],
+    "frameworkTree": {
+      "nodes": {
+        "reduce-capex": {
+          "id": "reduce-capex",
+          "label": "Reduce CAPEX",
+          "tone": "root",
+          "children": [
+            "pre-dev",
+            "design-eng",
+            "procurement",
+            "construction",
+            "financing"
+          ]
+        },
+        "pre-dev": {
+          "id": "pre-dev",
+          "label": "Pre-Development",
+          "tone": "branch",
+          "children": [
+            "site-selection",
+            "permits"
+          ]
+        },
+        "site-selection": {
+          "id": "site-selection",
+          "label": "Site Selection",
+          "tone": "branch",
+          "children": [
+            "land-cost",
+            "terrain",
+            "delays"
+          ]
+        },
+        "land-cost": {
+          "id": "land-cost",
+          "label": "Land Acquisition Costs",
+          "tone": "leaf",
+          "children": []
+        },
+        "terrain": {
+          "id": "terrain",
+          "label": "Terrain Factors",
+          "tone": "leaf",
+          "children": []
+        },
+        "delays": {
+          "id": "delays",
+          "label": "Construction Delays",
+          "tone": "leaf",
+          "children": []
+        },
+        "permits": {
+          "id": "permits",
+          "label": "Permits & Regulatory Approvals",
+          "tone": "leaf",
+          "children": []
+        },
+        "design-eng": {
+          "id": "design-eng",
+          "label": "Design & Engineering",
+          "tone": "branch",
+          "children": [
+            "tech-choices",
+            "system-design"
+          ]
+        },
+        "tech-choices": {
+          "id": "tech-choices",
+          "label": "Technology Choices",
+          "tone": "branch",
+          "children": [
+            "modules",
+            "integration",
+            "standardization"
+          ]
+        },
+        "modules": {
+          "id": "modules",
+          "label": "Module Type",
+          "tone": "leaf",
+          "children": []
+        },
+        "integration": {
+          "id": "integration",
+          "label": "Integration Costs",
+          "tone": "leaf",
+          "children": []
+        },
+        "standardization": {
+          "id": "standardization",
+          "label": "Standardization",
+          "tone": "leaf",
+          "children": []
+        },
+        "system-design": {
+          "id": "system-design",
+          "label": "System Design",
+          "tone": "branch",
+          "children": [
+            "layout",
+            "eng-efficiency"
+          ]
+        },
+        "layout": {
+          "id": "layout",
+          "label": "Layout Optimization",
+          "tone": "leaf",
+          "children": []
+        },
+        "eng-efficiency": {
+          "id": "eng-efficiency",
+          "label": "Engineering Efficiency",
+          "tone": "leaf",
+          "children": []
+        },
+        "procurement": {
+          "id": "procurement",
+          "label": "Procurement",
+          "tone": "branch",
+          "children": [
+            "supplier",
+            "component-cost",
+            "incentives"
+          ]
+        },
+        "supplier": {
+          "id": "supplier",
+          "label": "Supplier Relationships",
+          "tone": "leaf",
+          "children": []
+        },
+        "component-cost": {
+          "id": "component-cost",
+          "label": "Cost of Components",
+          "tone": "branch",
+          "children": [
+            "ltsa",
+            "bulk",
+            "tech-transfer",
+            "backward-integration"
+          ]
+        },
+        "ltsa": {
+          "id": "ltsa",
+          "label": "Long-Term Supplier Agreements",
+          "tone": "leaf",
+          "children": []
+        },
+        "bulk": {
+          "id": "bulk",
+          "label": "Bulk Sourcing & Discounts",
+          "tone": "leaf",
+          "children": []
+        },
+        "tech-transfer": {
+          "id": "tech-transfer",
+          "label": "Technology Transfer",
+          "tone": "leaf",
+          "children": []
+        },
+        "backward-integration": {
+          "id": "backward-integration",
+          "label": "Backward Integration",
+          "tone": "leaf",
+          "children": []
+        },
+        "incentives": {
+          "id": "incentives",
+          "label": "Government Incentives (PLI)",
+          "tone": "leaf",
+          "children": []
+        },
+        "construction": {
+          "id": "construction",
+          "label": "Construction",
+          "tone": "branch",
+          "children": [
+            "lean",
+            "waste",
+            "machinery",
+            "prefab"
+          ]
+        },
+        "lean": {
+          "id": "lean",
+          "label": "Lean Project Management",
+          "tone": "leaf",
+          "children": []
+        },
+        "waste": {
+          "id": "waste",
+          "label": "Minimize Material Waste",
+          "tone": "leaf",
+          "children": []
+        },
+        "machinery": {
+          "id": "machinery",
+          "label": "Machinery Utilization",
+          "tone": "leaf",
+          "children": []
+        },
+        "prefab": {
+          "id": "prefab",
+          "label": "Pre-Fabricated Structures",
+          "tone": "leaf",
+          "children": []
+        },
+        "financing": {
+          "id": "financing",
+          "label": "Financing",
+          "tone": "branch",
+          "children": [
+            "ppp"
+          ]
+        },
+        "ppp": {
+          "id": "ppp",
+          "label": "PPP Models",
+          "tone": "branch",
+          "children": [
+            "boo",
+            "bot"
+          ]
+        },
+        "boo": {
+          "id": "boo",
+          "label": "BOO (Build, Own, Operate)",
+          "tone": "leaf",
+          "children": []
+        },
+        "bot": {
+          "id": "bot",
+          "label": "BOT (Build, Own, Transfer)",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "reduce-capex",
+        "pre-dev",
+        "site-selection",
+        "design-eng",
+        "tech-choices",
+        "system-design",
+        "procurement",
+        "component-cost",
+        "construction",
+        "financing",
+        "ppp"
+      ],
+      "defaultFocusedId": "component-cost",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "What are the client's core business activities?",
+            "What is the current installed capacity?",
+            "What is the objective and timeline?",
+            "Any data on geography or competitor practices?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Every lever here is judged by its impact on IRR, not just cost",
+            "Financing structures like PPP can offload CAPEX, not just reduce it"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Structuring the full solar value chain before diving in",
+            "Flagging CAPEX as a capital structure driver, not a financing cost"
+          ]
+        }
+      ]
+    },
+    "framework": "Candidate: I'd like to understand the client a bit better before structuring my approach. Firstly, what are their core business activities?\nInterviewer: They install solar panels by leasing large plots of land. They supply electricity through power grids and earn revenue on a tariff basis.\nCandidate: Understood. Secondly, what is the client's current installed capacity?\nInterviewer: 5 gigawatts.\nCandidate: Is there any specific objective or timeline behind this CAPEX reduction?\nInterviewer: Yes. The client wants to improve its internal rate of return (IRR) by reducing CAPEX. They would like to see results within the next 4 to 5 projects.\nCandidate: Do we have information about the geographical spread of projects or competitor practices?\nInterviewer: That won't be necessary for this case. Let's move ahead.\nCandidate: May I take a moment to structure my thoughts?\nInterviewer: Sure.\nCandidate: I'll break the problem down by looking at the key stages in the value chain of a solar and wind developer. Broadly, I would divide this into five stages:\n- Pre-development\n- Design and engineering\n- Procurement\n- Construction\n- Financing\nDoes this sound comprehensive?\nInterviewer: Yes, that works. Let's go through each stage. What factors would you consider under pre-development?\nCandidate: Under pre-development, I would focus on two broad areas: site selection, and permits and regulatory approvals. Within site selection specifically, I would examine:\n- Land acquisition costs.\n- Terrain-related factors, as they influence exploration and construction costs.\n- Potential construction delays arising from site constraints.\nInterviewer: That makes sense. Let's move to design and engineering.\nCandidate: I would divide this into two buckets:\n- Technology choices, including the type of modules used, integration costs, and the extent of standardization of components.\n- System design, particularly layout optimization and engineering efficiency.\nInterviewer: Sounds good. What about procurement?\nCandidate: Under procurement, I would focus on how we source raw material components. Specifically:\n- Supplier relationships.\n- Cost of individual components.\n- Availability of government incentives such as production linked incentive (PLI) schemes.\nInterviewer: Good. Let's move to construction.\nCandidate: Since the objective is CAPEX reduction, I would explore:\n- Lean project management techniques to ensure on-time performance.\n- Minimizing material waste during construction.\n- Optimizing machinery utilization for efficiency.\n- Using pre-fabricated mounting structures to reduce construction time and costs.\nInterviewer: Good suggestions. Let's now discuss financing. What would you consider there?\nCandidate: Given that solar and wind projects are capital intensive, financing structures are critical. I would consider public-private partnership (PPP) models, which are increasingly used. They can help offload the CAPEX burden and improve the cost of capital.\nInterviewer: Makes sense. Let's go back to procurement. You mentioned the cost of components. How exactly would you reduce CAPEX there?\nCandidate: We could:\n- Enter into long-term supplier agreements to lock in prices.\n- Leverage bulk sourcing and volume discounts.\n- Explore transfer of technology through strategic partnerships.\n- Consider backward integration, where we manufacture key components in-house.\nInterviewer: That's good. Coming back to financing, you mentioned PPP models. What types of partnership structures would you consider?\nCandidate: Two approaches come to mind:\n- Build, Own, Operate (BOO).\n- Build, Own, Transfer (BOT).\nIn such models, ownership may initially be retained while planning and investment responsibilities are outsourced. After a defined leasing or concession period, ownership may be transferred depending on the structure.\nInterviewer: Fair enough. One final question: is CAPEX part of the financing cost?\nCandidate: No, CAPEX itself is not a financing cost. However, it directly influences the capital structure of the firm. A larger CAPEX reduces the free cash flows to the firm and can increase the financial burden, thereby impacting overall financing requirements and IRR.\nInterviewer: That makes sense. We can wrap up the case here.\nCandidate: Thank you.\n\nPanel Discussion Framework & Recommendations\nREDUCING CAPEX ACROSS THE SOLAR VALUE CHAIN\nClarifying Questions: What are the client's core business activities? What is the current installed capacity? What is the objective and timeline behind the CAPEX cut? Any data on geography or competitor practices?\nBrownie Points: Structuring the full solar value chain before diving in Deepening component-cost cuts via bulk sourcing, technology transfer, and backward integration Separating CAPEX from financing cost while linking it to IRR\nKeep In Mind: The goal is improving IRR, so judge every lever by its cost impact CAPEX is not a financing cost, but it shapes capital structure and IRR Backward integration and PLI schemes can structurally lower component costs"
+  },
+  {
+    "id": 85,
+    "docId": "case-85",
+    "title": "Testing the Waters",
+    "industry": "Hospitality",
+    "difficulty": "Medium",
+    "round": "Principal",
+    "case_type": "Market Entry",
+    "company": "Kearney",
+    "prompt": "Your client is a 5-star hotel considering opening a waterpark within one specific hotel property. Waterpark charges will be automatically included in the room booking, with usage optional. Should they enter this waterpark business?",
+    "frameworkTree": {
+      "nodes": {
+        "enter-waterpark": {
+          "id": "enter-waterpark",
+          "label": "Enter the Waterpark?",
+          "tone": "root",
+          "children": [
+            "market-attractiveness",
+            "financial-viability",
+            "capabilities-ops",
+            "risks-mitigation"
+          ]
+        },
+        "market-attractiveness": {
+          "id": "market-attractiveness",
+          "label": "Market Attractiveness",
+          "tone": "support",
+          "children": []
+        },
+        "financial-viability": {
+          "id": "financial-viability",
+          "label": "Financial Viability",
+          "tone": "support",
+          "children": []
+        },
+        "capabilities-ops": {
+          "id": "capabilities-ops",
+          "label": "Capabilities & Operations",
+          "tone": "branch",
+          "children": [
+            "hospitality-cap",
+            "safety-cap",
+            "water-cap",
+            "usage-cap"
+          ]
+        },
+        "hospitality-cap": {
+          "id": "hospitality-cap",
+          "label": "Hospitality: Strong",
+          "tone": "leaf",
+          "children": []
+        },
+        "safety-cap": {
+          "id": "safety-cap",
+          "label": "Water Safety: Gap",
+          "tone": "leaf",
+          "children": []
+        },
+        "water-cap": {
+          "id": "water-cap",
+          "label": "Water Treatment: Gap",
+          "tone": "leaf",
+          "children": []
+        },
+        "usage-cap": {
+          "id": "usage-cap",
+          "label": "Usage Management: Gap",
+          "tone": "leaf",
+          "children": []
+        },
+        "risks-mitigation": {
+          "id": "risks-mitigation",
+          "label": "Risks & Mitigation",
+          "tone": "branch",
+          "children": [
+            "low-util",
+            "brand-dilution",
+            "focus-diversion",
+            "capital-risk"
+          ]
+        },
+        "low-util": {
+          "id": "low-util",
+          "label": "Low Utilisation Risk",
+          "tone": "leaf",
+          "children": []
+        },
+        "brand-dilution": {
+          "id": "brand-dilution",
+          "label": "Brand Dilution Risk",
+          "tone": "leaf",
+          "children": []
+        },
+        "focus-diversion": {
+          "id": "focus-diversion",
+          "label": "Focus Diversion Risk",
+          "tone": "leaf",
+          "children": []
+        },
+        "capital-risk": {
+          "id": "capital-risk",
+          "label": "High Capital Risk",
+          "tone": "leaf",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "enter-waterpark",
+        "capabilities-ops"
+      ],
+      "defaultFocusedId": "capabilities-ops",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Is this for one hotel or the whole chain?",
+            "Any direct competitors offering in-hotel waterparks nearby?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Ground your numbers in a familiar property, like a Gurgaon hotel",
+            "Bundling the fee makes perceived value the deciding factor"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Pegging the premium at roughly half the room rate before using it",
+            "Offering optional tickets and a pilot instead of an outright no"
+          ]
+        }
+      ]
+    },
+    "visualisations": [
+      {
+        "id": "payback-calc",
+        "type": "table",
+        "title": "Payback Calculation",
+        "header": "Payback Calculation",
+        "noTitle": true,
+        "columns": [
+          "Ref",
+          "Step",
+          "Calculation",
+          "Value"
+        ],
+        "columnWidths": [
+          "7%",
+          "30%",
+          "38%",
+          "25%"
+        ],
+        "rows": [
+          [
+            "A",
+            "Average Room Rate",
+            "Given assumption",
+            "₹8,000 to ₹10,000 / night"
+          ],
+          [
+            "B",
+            "Waterpark Premium",
+            "~ 50% of room rate (A)",
+            "~ ₹5,000 / room-night"
+          ],
+          [
+            "C",
+            "Variable Cost per Booking",
+            "~ 50% of premium (B)",
+            "~ ₹2,500 / booking"
+          ],
+          [
+            "D",
+            "Contribution per Booking",
+            "B - C",
+            "₹2,500 / booking"
+          ],
+          [
+            "E",
+            "Fixed Cost",
+            "Build-out, rides, safety setup",
+            "~ ₹5 crore (₹5,00,00,000)"
+          ],
+          [
+            "F",
+            "Payback Volume",
+            "E / D",
+            "~ 2,00,000 room-nights"
+          ],
+          [
+            "G",
+            "Hotel Capacity",
+            "200 to 300 rooms x 365 nights",
+            "< 1,00,000 room-nights / year"
+          ],
+          [
+            "H",
+            "Payback vs Capacity",
+            "F is roughly 2x total annual capacity, and only a niche pays",
+            "Payback too long"
+          ]
+        ],
+        "summaryRows": [
+          3,
+          5,
+          7
+        ]
+      },
+      {
+        "title": "Contribution per Booking",
+        "type": "formula",
+        "lhs": "Contribution per Booking",
+        "rhs": "Premium per Booking - Variable Cost per Booking"
+      },
+      {
+        "title": "Payback in Room-Nights",
+        "type": "formula",
+        "lhs": "Payback (Room-Nights)",
+        "rhs": "Fixed Cost ÷ Contribution per Booking"
+      }
+    ],
+    "framework": "Candidate: That's an interesting problem. Before I structure my approach, may I ask a few clarifying questions?\nInterviewer: Please go ahead.\nCandidate: First, is this being considered for just one hotel, or across the chain?\nInterviewer: Just one, for now.\nCandidate: Understood. Can I assume a specific location to ground my thinking?\nInterviewer: Yes.\nCandidate: Then I'll assume a property in Gurgaon, since I'm familiar with that market. And are there any direct competitors already offering a similar in-hotel waterpark nearby?\nInterviewer: Assume none for now.\nCandidate: Great. Then I'll evaluate this as a market entry decision across four lenses. First, market attractiveness, to see whether there is real demand. Second, financial viability, to check whether the economics work. Third, capabilities and operations, to see whether the hotel can actually run a waterpark. And fourth, the key risks and how we might mitigate them. Does that structure sound reasonable?\nInterviewer: Yes, that works. Let's start with market attractiveness.\nCandidate: Sure. I'll begin with where the demand comes from. A waterpark appeals mainly to families and leisure travellers. But a 5-star hotel in a market like Gurgaon skews heavily towards business guests and wedding or event groups, who typically won't use a waterpark. So intuitively, the addressable segment is only a slice of the hotel's guests.\nInterviewer: That's a fair hypothesis. How would you pressure-test it?\nCandidate: I'd anchor on the room economics first. For a property like this, I'd estimate an average room rate of around ₹8,000 to ₹10,000 a night. Is that fair?\nInterviewer: That's a fair assumption.\nCandidate: And a typical stay of about 2 nights?\nInterviewer: Yes.\nCandidate: Now I need a sensible waterpark premium to test, since the charge is bundled into the room. If the room itself is ₹8,000 to ₹10,000, an add-on much larger than half the room rate would feel steep to most guests. So I'll assume a premium of about ₹5,000 per room-night, roughly 50% on top of the room.\nInterviewer: Yes, ₹5,000 works.\nCandidate: At ₹5,000, value perception becomes the deciding factor. A family may see ₹5,000 as fair for a full day of entertainment, but a business traveller is very unlikely to pay it for something they won't use. So demand is confined to a narrow niche rather than the majority of hotel traffic.\nInterviewer: Agreed, the demand side looks thin. Let's see whether the financials could still justify it.\nCandidate: I'll use a payback lens, comparing the upfront investment against the contribution each booking generates. On the cost side, fixed costs are land, construction, the slides and rides, and safety infrastructure; variable costs are staff, electricity, water, and maintenance.\nInterviewer: Let's put numbers to it. What would you assume for the fixed investment?\nCandidate: Since the land already exists within the property, I'd estimate the build-out, rides, and safety setup at roughly ₹5 crore. May I proceed with that?\nInterviewer: Yes, assume ₹5 crore.\nCandidate: For the contribution per booking, a meaningful share of the ₹5,000 premium is consumed by the cost of actually servicing a guest. Waterparks are utility-heavy: water treatment and heating, electricity for pumps and rides, extra staffing, and constant cleaning. So I'd assume variable costs run at about half the premium, roughly ₹2,500 per booking. That leaves a contribution margin of around ₹2,500 per premium room-night.\nInterviewer: Reasonable. So what does that imply for payback?\nCandidate: To recover the ₹5 crore fixed cost at ₹2,500 contribution per booking, I'd need ₹5,00,00,000 divided by ₹2,500, which is about 2,00,000 premium-paying room-nights.\nInterviewer: And how should I read that 2 lakh figure?\nCandidate: Let me put it in context. A single hotel might have around 200 to 300 rooms. Even at full occupancy every night, that is under 1,00,000 room-nights a year in total, and only the small leisure niche would actually pay the premium. The payback is simply too long and too uncertain to be attractive.\nInterviewer: That's a clear conclusion. Let's move on.\nCandidate: The third lens is whether the hotel is operationally equipped to run this, and here I see a real capability gap. The hotel is genuinely strong on hospitality and guest service, which helps, but the overlap largely ends there. Water safety and lifeguarding is a mandatory function the hotel has no existing muscle in. Specialised water treatment and maintenance is critical and again outside its expertise. And managing high-volume recreational usage, queueing, crowd safety, and continuous cleaning, is an entirely new discipline for a hotel. So there is very low operational synergy, which means a steep learning curve and meaningful additional management bandwidth.\nInterviewer: Understood. And the risks?\nCandidate: I'd flag four. First, low utilisation, since the business-traveller base won't value the park. Second, brand dilution, as a luxury business hotel repositioning around a recreational attraction could confuse its core clientele. Third, focus diversion, pulling management attention away from the core hospitality business. And fourth, the high capital risk we just saw, a large fixed outlay against slow, uncertain payback.\nInterviewer: So what's your final recommendation?\n_[Recommendations below]_\nInterviewer: Thank you, that's a well-structured answer.\n\nTesting the Waters Framework & Recommendations\nSHOULD A 5-STAR HOTEL ENTER THE WATERPARK BUSINESS?\nClarifying Questions: Is this for one hotel or the whole chain? Can I assume a specific location? Any direct competitors offering in-hotel waterparks nearby?\nBrownie Points: Justifying the ₹5,000 premium as roughly 50% of the room rate before using it Contextualizing 2 lakh room-nights against a 200 to 300 room hotel's capacity Offering optional ticketing and a pilot instead of a flat no\nKeep In Mind: Bundling the charge into the room makes value perception the deciding factor A single hotel has too few room-nights to recover a ₹5 crore fixed cost quickly Low operational synergy means a steep learning curve, not just extra cost\nRECOMMENDATIONS: Recommend against entering the waterpark segment in this property, at least in the bundled form proposed. If they still want to explore, test the concept with seasonal or temporary mini water features before committing full capital expenditure. Target family-tourism-heavy destinations rather than a business hub like Gurgaon. Offer the waterpark on separate, optional ticketing instead of mandatory bundling."
+  }
 ]
