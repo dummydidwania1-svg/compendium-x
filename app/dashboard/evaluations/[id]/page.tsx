@@ -50,13 +50,17 @@ type SessionRecordingView = {
   transcriptModel: string | null
   audioUrl: string | null
   mergedAudioUrl: string | null
+  isRemote: boolean
   // True for a Remote (dual-mic) session whose merged audio is still being
   // generated — gates the audio link so no single-mic track is shown meanwhile.
   audioMergePending: boolean
 }
 
 // Merge-in-progress states: merged audio is expected but not written yet.
-const AUDIO_MERGE_PENDING_STATUSES = new Set(['none', 'pending', 'processing', 'partial'])
+// 'completed' is included because the audio merge CF runs after the transcript
+// merge, so there is a brief window (~5-10s) where mergedTranscriptStatus is
+// 'completed' but mergedAudioUrl is not yet written.
+const AUDIO_MERGE_PENDING_STATUSES = new Set(['none', 'pending', 'processing', 'partial', 'completed'])
 
 function asNullableString(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
@@ -85,6 +89,7 @@ function mapSessionRecording(value: unknown): SessionRecordingView | null {
     // mergedAudioUrl lives on the session-doc root (written by the Cloud
     // Function), not under `recording`, so the caller passes it in explicitly.
     mergedAudioUrl,
+    isRemote,
     audioMergePending:
       isRemote &&
       !mergedAudioUrl &&
@@ -414,20 +419,25 @@ export default function EvaluationDetailPage() {
                           Model: {sessionRecording.transcriptModel}
                         </span>
                       )}
-                      {sessionRecording.audioMergePending ? (
+                      {sessionRecording.mergedAudioUrl ? (
+                        <a
+                          href={sessionRecording.mergedAudioUrl}
+                          className="rounded-full border border-emerald-400/40 bg-emerald-300/10 px-2.5 py-1 text-emerald-100 transition hover:border-emerald-300/80 hover:bg-emerald-300/20"
+                        >
+                          Open Session Audio
+                        </a>
+                      ) : sessionRecording.audioMergePending ? (
                         <span className="rounded-full border border-amber-400/40 bg-amber-300/10 px-2.5 py-1 text-amber-100">
                           Merged audio is being generated…
                         </span>
-                      ) : (
-                        (sessionRecording.mergedAudioUrl || sessionRecording.audioUrl) && (
-                          <a
-                            href={sessionRecording.mergedAudioUrl ?? sessionRecording.audioUrl ?? undefined}
-                            className="rounded-full border border-emerald-400/40 bg-emerald-300/10 px-2.5 py-1 text-emerald-100 transition hover:border-emerald-300/80 hover:bg-emerald-300/20"
-                          >
-                            Open Session Audio
-                          </a>
-                        )
-                      )}
+                      ) : sessionRecording.audioUrl ? (
+                        <a
+                          href={sessionRecording.audioUrl}
+                          className="rounded-full border border-emerald-400/40 bg-emerald-300/10 px-2.5 py-1 text-emerald-100 transition hover:border-emerald-300/80 hover:bg-emerald-300/20"
+                        >
+                          Open Session Audio{sessionRecording.isRemote ? ' (candidate only)' : ''}
+                        </a>
+                      ) : null}
                     </div>
 
                     {sessionRecording.transcriptError && (
