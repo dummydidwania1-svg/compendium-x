@@ -268,10 +268,10 @@ const Navbar = ({ currentPage }: NavbarProps) => {
                 key={href}
                 href={href}
                 style={{ fontFamily: "'Work Sans', sans-serif" }}
-                className={`block px-3 py-3 text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 ${
+                className={`block px-3 py-3 text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 rounded-lg ${
                   currentPage === page
-                    ? 'text-[#3D5A35] font-medium border-l-2 border-[#3D5A35] pl-3'
-                    : 'text-[#57534e] hover:text-[#3D5A35] border-l-2 border-transparent pl-3'
+                    ? 'text-[#3D5A35] font-medium bg-[#3D5A35]/8'
+                    : 'text-[#57534e] hover:text-[#3D5A35] hover:bg-[#3D5A35]/5'
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -284,14 +284,14 @@ const Navbar = ({ currentPage }: NavbarProps) => {
                 <button
                   onClick={() => { setMobileMenuOpen(false); setShowProfileModal(true) }}
                   style={{ fontFamily: "'Work Sans', sans-serif" }}
-                  className="block w-full text-left px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#3D5A35] font-medium border-l-2 border-transparent pl-3 hover:border-[#3D5A35] transition-colors duration-200"
+                  className="block w-full text-left px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#3D5A35] font-medium rounded-lg hover:bg-[#3D5A35]/8 transition-colors duration-200"
                 >
                   My Account
                 </button>
                 <button
                   onClick={() => { setMobileMenuOpen(false); handleLogout() }}
                   style={{ fontFamily: "'Work Sans', sans-serif" }}
-                  className="block w-full text-left px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#92400e] border-l-2 border-transparent pl-3 hover:border-[#92400e] transition-colors duration-200"
+                  className="block w-full text-left px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#92400e] rounded-lg hover:bg-[#92400e]/8 transition-colors duration-200"
                 >
                   Sign Out
                 </button>

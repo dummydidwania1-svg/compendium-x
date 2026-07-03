@@ -1326,7 +1326,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // if the user clicks Stay, our overlay renders on the next tick.
   // pagehide is registered separately as a reliable final signal for the interviewer.
   useEffect(() => {
-    if (recordingState !== 'recording' && recordingState !== 'uploading') return
+    if (recordingState !== 'recording' && recordingState !== 'uploading' && recordingState !== 'stopping') return
 
     const writeAbandonedSignal = () => {
       if (!lobbyId) return
@@ -1360,15 +1360,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       // fetch survives page unload even if the page context is torn down first.
       // Skip if we already ended the session cleanly (endSessionInitiatedRef).
       if (preferredRecordingModeRef.current !== 'local' && lobbyId && !endSessionInitiatedRef.current) {
-        void auth.currentUser?.getIdToken().then((token) => {
-          if (!token) return
+        // Use the cached token (primed at recording start, refreshed on each flush)
+        // rather than getIdToken() — an async Promise chain won't resolve during
+        // page teardown, so the fetch would never fire.
+        const abandonToken = cachedCandidateTokenRef.current
+        if (abandonToken) {
           void fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${abandonToken}` },
             body: '{}',
             keepalive: true,
           })
-        })
+        }
       }
       // Candidate audio beacon: if at least one periodic flush succeeded but the
       // final upload was cancelled by the tab close, register the last flush URL

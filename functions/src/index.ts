@@ -91,7 +91,7 @@ const MIN_TRANSCRIPT_CHARS = 40
 // Grace window before declaring a partial transcript when the interviewer
 // track is absent. If the candidate track completes and we haven't heard from
 // the interviewer track within this window, we treat it as candidate-only.
-const MERGE_GRACE_MS = 1 * 60 * 1000 // 1 minute
+const MERGE_GRACE_MS = 5 * 60 * 1000 // 5 minutes
 
 type GeminiFile = {
   name?: string
@@ -1150,10 +1150,12 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
       hasInterviewerTrack ? (interviewerData as TrackData) : null,
     )
 
-    // If interrupted, mark partial regardless of track completion and prepend a note.
-    const isPartial = !candidateCompleted || !hasInterviewerTrack || interviewerInterrupted
+    // When the interviewer track completed successfully, the interviewerInterrupted
+    // flag is stale (set by the grace-window sweep before the late upload arrived).
+    // Only treat as partial when a track is actually missing.
+    const isPartial = !candidateCompleted || !hasInterviewerTrack
     const finalMerged =
-      interviewerInterrupted && hasInterviewerTrack && merged
+      interviewerInterrupted && !hasInterviewerTrack && merged
         ? '[Note: the interviewer left mid-session; their audio is partial up to the point they disconnected.]\n\n' + merged
         : merged
 
@@ -1163,7 +1165,9 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
         mergedTranscriptStatus: isPartial ? 'partial' : 'completed',
         mergedTranscriptCompletedAt: FieldValue.serverTimestamp(),
         mergedTranscriptError: null,
-        mergedTranscriptReason: interviewerInterrupted ? 'interviewer_interrupted' : null,
+        mergedTranscriptReason: interviewerInterrupted && !hasInterviewerTrack ? 'interviewer_interrupted' : null,
+        // Clear stale interviewerInterrupted flag when the track arrived successfully.
+        ...(hasInterviewerTrack ? { interviewerInterrupted: FieldValue.delete() } : {}),
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },

@@ -70,7 +70,14 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
 
       // Accept both 'in_progress' and 'completed' (interviewer can submit
       // feedback before the recording finishes uploading).
-      if (data.status !== 'in_progress' && data.status !== 'completed') {
+      // Also accept 'abandoned' for final (non-live) uploads — audio may still
+      // be in-flight when the /abandon beacon lands and marks the session abandoned.
+      const isLiveFlush = body.status === 'uploaded' && body.live === true
+      const isAcceptedStatus =
+        data.status === 'in_progress' ||
+        data.status === 'completed' ||
+        (data.status === 'abandoned' && !isLiveFlush)
+      if (!isAcceptedStatus) {
         throw new TransitionError(
           409,
           'invalid_transition',
@@ -130,13 +137,27 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
           .collection('recordings')
           .doc(role)
 
+        // Guard: periodic flushes (live:true) must not downgrade a terminal
+        // transcriptStatus. Read the existing track inside the transaction so
+        // this check is atomic with the write.
+        let safeTranscriptStatus = transcriptStatusOnUpload
+        if (isLiveFlush) {
+          const existingTrack = await tx.get(trackRef)
+          const existingStatus = existingTrack.data()?.transcriptStatus as string | undefined
+          if (existingStatus === 'pending' || existingStatus === 'completed' || existingStatus === 'failed') {
+            safeTranscriptStatus = existingStatus
+          }
+        }
+
+        const finalTrackData = { ...trackData, transcriptStatus: safeTranscriptStatus }
+
         // For interrupted beacons, mark the track so the merge can label it.
         const interviewerExtras: Record<string, unknown> = {}
         if (role === 'interviewer' && body.status === 'uploaded' && body.interrupted === true) {
           interviewerExtras.interviewerInterrupted = true
         }
 
-        tx.set(trackRef, { ...trackData, ...interviewerExtras, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+        tx.set(trackRef, { ...finalTrackData, ...interviewerExtras, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
 
         // Denormalize fields onto the session doc so the dashboard can read them
         // without querying the subcollection, and merge triggers can fire.

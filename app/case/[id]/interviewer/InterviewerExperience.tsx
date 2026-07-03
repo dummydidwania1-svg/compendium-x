@@ -1441,6 +1441,15 @@ export function InterviewerPageInner({
 		if (recordingFinalizedRef.current) return  // pagehide beacon already fired
 		recordingFinalizedRef.current = true
 
+		// Eagerly mark as uploading before the first await so React batches this
+		// with any concurrent setCurrentView('success') / setOverlaySuccess(true).
+		// Without this, the auto-close effects can fire while interviewerUploadState
+		// is still 'idle', bypassing the uploading guard and redirecting away
+		// before the final audio blob is uploaded.
+		if (isRemoteMode && interviewerRecordingStartedRef.current && !candidateOptedOutRef.current) {
+			setInterviewerUploadState('uploading')
+		}
+
 		// Stop the periodic flush timer before touching the recorder
 		if (interviewerFlushTimerRef.current) {
 			clearInterval(interviewerFlushTimerRef.current)

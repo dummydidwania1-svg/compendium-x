@@ -293,6 +293,7 @@ display: inline-block;
   min-width: 240px;
   background: #fff8f0;
   border: 1px solid rgba(61, 90, 53, 0.10);
+  border-radius: 10px;
   box-shadow: 0 12px 32px rgba(59, 47, 47, 0.08), 0 4px 12px rgba(59, 47, 47, 0.04);
   padding: 6px;
   opacity: 0;
@@ -312,11 +313,10 @@ display: inline-block;
   padding: 12px 16px;
   text-decoration: none;
   transition: background 0.2s ease;
-  border-left: 2px solid transparent;
+  border-radius: 6px;
 }
 .nav-dropdown-item:hover {
-  background: rgba(61, 90, 53, 0.06);
-  border-left-color: #3D5A35;
+  background: rgba(61, 90, 53, 0.07);
 }
 .nav-dropdown-item-label {
   color: #57534e;
@@ -410,7 +410,7 @@ display: inline-block;
 .cst-head { max-width: 760px; margin: 0 auto; padding: 64px 24px 0; text-align: center; }
 .cst-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: #3D5A35; margin-bottom: 14px; }
 .cst-title { font-family: var(--font-newsreader, 'Newsreader'), Georgia, serif; font-weight: 400; color: #2c2218; font-size: clamp(2.2rem, 5.2vw, 3.6rem); line-height: 1.06; letter-spacing: -0.01em; }
-.cst-title-accent { font-style: italic; background: linear-gradient(100deg, #695c4d, #3D5A35 82%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.cst-title-accent { font-style: italic; color: #3D5A35; }
 .cst-sub { margin: 16px auto 0; max-width: 520px; font-size: 14px; line-height: 1.7; color: rgba(69,58,42,0.66); }
 
 /* ---- Scene: full-bleed, no container box ---- */

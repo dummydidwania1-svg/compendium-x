@@ -73,7 +73,10 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
     const batch = adminDb.batch()
 
     if (existing.empty) {
-      const evaluationRef = adminDb.collection('evaluations').doc()
+      // Use a stable, lobbyId-derived document ID so concurrent calls are
+      // idempotent — both would set the same doc with the same data rather
+      // than creating two separate unrated stubs.
+      const evaluationRef = adminDb.collection('evaluations').doc(`unrated_${lobbyId}`)
       batch.set(evaluationRef, {
         caseId,
         caseTitle,

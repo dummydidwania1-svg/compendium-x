@@ -102,6 +102,28 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
       if (input.scores.creativity !== undefined) updateData.creativityScore = input.scores.creativity
       updateData.isUnrated = scoredCount < 4 ? true : FieldValue.delete()
       await existing.docs[0].ref.set(updateData, { merge: true })
+
+      // Same stuck-track recovery as the fresh-create path: if the interviewer's
+      // recording track is still in 'recording' (periodic flush ran but the final
+      // beacon never arrived), promote it to 'pending' so transcription fires.
+      try {
+        const trackRef = adminDb
+          .collection('sessions')
+          .doc(input.lobbyId)
+          .collection('recordings')
+          .doc('interviewer')
+        const trackSnap = await trackRef.get()
+        const trackData = trackSnap.data()
+        if (trackSnap.exists && trackData?.transcriptStatus === 'recording' && trackData?.audioUrl) {
+          await trackRef.set(
+            { transcriptStatus: 'pending', updatedAt: FieldValue.serverTimestamp() },
+            { merge: true },
+          )
+        }
+      } catch {
+        // best-effort — don't fail the evaluation submission if this errors
+      }
+
       return jsonOk({ ok: true, evaluationId: existing.docs[0].id })
     }
   }
