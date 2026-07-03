@@ -67,6 +67,12 @@ export function candidateWindowName(lobbyId: string): string {
   return `compendium-candidate-${lobbyId}`
 }
 
+/** Stable window name for the interviewer popup so Safari can reuse it after
+ *  unblocking via the address bar notification. */
+export function interviewerWindowName(lobbyId: string): string {
+  return `compendium-interviewer-${lobbyId}`
+}
+
 /**
  * Interviewer-side: open (or focus) the candidate tab. Using a named window
  * means a second call re-targets the existing tab rather than stacking up new

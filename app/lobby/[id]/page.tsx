@@ -14,7 +14,7 @@ import PlatformLoader from '@/components/PlatformLoader'
 import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
-import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
+import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession, interviewerWindowName } from '@/lib/session/candidateTab'
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 type SessionState = {
@@ -1489,6 +1489,7 @@ export default function LobbyPage() {
 
   const focusOrOpenLocalInterviewerWindow = () => {
     const popupHost = window as PopupWindowHost
+    const winName = interviewerWindowName(lobbyId)
 
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
       popupHost.__compendiumInterviewerWindow.focus()
@@ -1498,11 +1499,29 @@ export default function LobbyPage() {
 
     const interviewerWindow = window.open(
       `/lobby/${lobbyId}?role=interviewer&mode=local`,
-      '_blank'
+      winName
     )
 
     if (!interviewerWindow) {
       flashCandidateActionStatus('Allow popups to continue')
+      // Safari: when the user unblocks via the address bar notification, the
+      // browser opens the window itself under the same named target. Poll for
+      // it so we can adopt the reference without requiring "Try again".
+      const pollStart = Date.now()
+      const poll = setInterval(() => {
+        // Try to get a reference to the already-open named window without
+        // navigating it (empty string url = no navigation).
+        const existing = window.open('', winName)
+        if (existing && !existing.closed && existing.location.href !== 'about:blank') {
+          clearInterval(poll)
+          popupHost.__compendiumInterviewerWindow = existing
+          existing.focus()
+          flashCandidateActionStatus('Interviewer window ready')
+        } else if (Date.now() - pollStart > 30000) {
+          // Give up after 30 s — user didn't unblock.
+          clearInterval(poll)
+        }
+      }, 500)
       return
     }
 
