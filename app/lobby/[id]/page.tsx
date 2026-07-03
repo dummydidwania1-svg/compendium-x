@@ -14,7 +14,7 @@ import PlatformLoader from '@/components/PlatformLoader'
 import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
-import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession, interviewerWindowName } from '@/lib/session/candidateTab'
+import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession, interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 type SessionState = {
@@ -106,6 +106,7 @@ function CandidateLobby({
     const interval = setInterval(() => writeCandidateBeat(lobbyId), 1000)
     return () => clearInterval(interval)
   }, [isLocalSession, lobbyId])
+
 
   // ── Session phase ──────────────────────────────────────────────────────────
   // Derives a single phase string from the combination of prop flags so the
@@ -1420,6 +1421,18 @@ export default function LobbyPage() {
 
   const isInterviewer = searchParams.get('role') === 'interviewer'
   const requestedSessionMode = searchParams.get('mode') === 'local' ? 'local' : 'remote'
+
+  // When the interviewer window loads in local mode, write a localStorage
+  // signal so the candidate tab can detect it even when window.opener is null
+  // (Safari unblocks the popup via the address bar — opener is null then).
+  // Chrome: this also runs but the candidate never needs to poll for it since
+  // window.open succeeds and the poll never starts.
+  useEffect(() => {
+    if (!isInterviewer || requestedSessionMode !== 'local') return
+    writeInterviewerReady(lobbyId)
+    return () => clearInterviewerReady(lobbyId)
+  }, [isInterviewer, requestedSessionMode, lobbyId])
+
   const [checkingCandidate, setCheckingCandidate] = useState(!isInterviewer)
   const [sessionIssue, setSessionIssue] = useState('')
   const [candidateActionStatus, setCandidateActionStatus] = useState('')
@@ -1505,20 +1518,17 @@ export default function LobbyPage() {
     if (!interviewerWindow) {
       flashCandidateActionStatus('Allow popups to continue')
       // Safari: when the user unblocks via the address bar notification, the
-      // browser opens the window itself under the same named target. Poll for
-      // it so we can adopt the reference without requiring "Try again".
+      // browser opens the window itself. window.opener is null in that case so
+      // we can't get a JS reference. Instead poll localStorage for the signal
+      // that the interviewer window writes on mount (writeInterviewerReady).
+      clearInterviewerReady(lobbyId)
       const pollStart = Date.now()
       const poll = setInterval(() => {
-        // Try to get a reference to the already-open named window without
-        // navigating it (empty string url = no navigation).
-        const existing = window.open('', winName)
-        if (existing && !existing.closed && existing.location.href !== 'about:blank') {
+        const ts = readInterviewerReady(lobbyId)
+        if (ts) {
           clearInterval(poll)
-          popupHost.__compendiumInterviewerWindow = existing
-          existing.focus()
           flashCandidateActionStatus('Interviewer window ready')
         } else if (Date.now() - pollStart > 30000) {
-          // Give up after 30 s — user didn't unblock.
           clearInterval(poll)
         }
       }, 500)

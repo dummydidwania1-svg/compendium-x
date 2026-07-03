@@ -86,6 +86,28 @@ export function openCandidateTab(lobbyId: string, url: string): void {
   } catch { /* popup blocked */ }
 }
 
+const INTERVIEWER_READY_PREFIX = 'compendium-interviewer-ready-'
+
+/** Interviewer window writes this on mount so the candidate tab can detect it
+ *  even when window.opener is unavailable (e.g. Safari popup unblocked via
+ *  address bar — opener is null in that case). */
+export function writeInterviewerReady(lobbyId: string): void {
+  try {
+    localStorage.setItem(INTERVIEWER_READY_PREFIX + lobbyId, String(Date.now()))
+  } catch { /* quota */ }
+}
+
+export function readInterviewerReady(lobbyId: string): number | null {
+  try {
+    const val = localStorage.getItem(INTERVIEWER_READY_PREFIX + lobbyId)
+    return val ? Number(val) : null
+  } catch { return null }
+}
+
+export function clearInterviewerReady(lobbyId: string): void {
+  try { localStorage.removeItem(INTERVIEWER_READY_PREFIX + lobbyId) } catch { /* quota */ }
+}
+
 const DISMISSED_KEY_PREFIX = 'compendium-candidate-closed-dismissed-'
 
 /** "Continue without recording" was chosen for this lobby — don't nag again. */
