@@ -13,10 +13,14 @@
 export const CANDIDATE_TAB_KEY = 'compendium-candidate-tab'
 const SESSION_ENDED_KEY = 'compendium-session-ended'
 
-/** Heartbeat is considered stale (tab gone) once older than this.
- *  30s to survive Safari's background-tab timer throttle (setInterval fires
- *  as slowly as every 30s in a non-active Safari tab). */
-export const CANDIDATE_TAB_STALE_MS = 30000
+/** Heartbeat is considered stale (tab gone) once older than this. */
+export const CANDIDATE_TAB_STALE_MS = 2500
+
+/** Extended stale threshold for Safari — background-tab timer throttling
+ *  slows setInterval to as little as 30s, so the normal 2.5s window fires
+ *  false positives. Safari also fires storage events instantly (no throttle)
+ *  so the overlay clears as soon as the tab writes its next beat. */
+export const CANDIDATE_TAB_STALE_MS_SAFARI = 30000
 
 export type CandidateTabBeat = {
   lobbyId: string

@@ -14,7 +14,7 @@ import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
 import PlatformLoader from '@/components/PlatformLoader'
 import { slugifyCase } from '@/lib/slug'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
-import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
+import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, CANDIDATE_TAB_STALE_MS_SAFARI, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { useMicPermission } from '@/lib/permissions/microphone'
 
@@ -770,6 +770,8 @@ function NotesEditor({
 		/>
 	)
 }
+
+const isSafari = typeof navigator !== 'undefined' && navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')
 
 const INTERVIEWER_MIME_CANDIDATES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
 function pickInterviewerMimeType(): string | null {
@@ -1811,6 +1813,7 @@ export function InterviewerPageInner({
 	useEffect(() => {
 		if (!isLocalMode || !lobbyId || previewMode || currentView === 'success') return
 
+		const staleMs = isSafari ? CANDIDATE_TAB_STALE_MS_SAFARI : CANDIDATE_TAB_STALE_MS
 		const checkBeat = () => {
 			if (sessionEndedForLobby(lobbyId) || isCandidateClosedDismissed(lobbyId)) {
 				setCandidateTabClosed(false)
@@ -1820,7 +1823,7 @@ export function InterviewerPageInner({
 			if (!beat) return
 			if (beat.url) candidateTabUrlRef.current = beat.url
 			const age = Date.now() - beat.ts
-			if (age < CANDIDATE_TAB_STALE_MS) {
+			if (age < staleMs) {
 				candidateWasAliveRef.current = true
 				setCandidateTabClosed(false)
 			} else if (candidateWasAliveRef.current) {
