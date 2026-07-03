@@ -396,7 +396,9 @@ export default function CaseDetailOverlay({
     const tryResolveDuration = () => {
       const d = audio.duration;
       if (isFinite(d) && d > 0) { setDuration(d); return; }
-      if (!seekingForDuration) { seekingForDuration = true; audio.currentTime = 1e101; }
+      // Seek-to-end trick to force duration on streaming audio — Chrome only.
+      // Safari aborts the load if currentTime is set before audio is ready.
+      if (!isSafari && !seekingForDuration) { seekingForDuration = true; audio.currentTime = 1e101; }
     };
     const onDurationChange = () => {
       const d = audio.duration;
@@ -1197,7 +1199,7 @@ export default function CaseDetailOverlay({
           </div>
         )}
 
-        {audioUrl && <audio ref={audioRef} src={audioUrl} preload={isSafari ? 'metadata' : 'auto'} className="hidden" />}
+        {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" className="hidden" />}
       </div>
 
       {/* ── FEEDBACK OVERLAY (portal, centered above modal) ── */}
