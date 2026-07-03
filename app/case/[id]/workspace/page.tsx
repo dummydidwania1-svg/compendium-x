@@ -14,7 +14,7 @@ import { useMicPermission } from '@/lib/permissions/microphone'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { releaseDisplayMedia } from '@/lib/permissions/displayMedia'
 import { writeCandidateBeat } from '@/lib/session/candidateTab'
-import { consumePrimedMicStream, clearPrimedMicStream } from '@/lib/session/primedMic'
+import { consumePrimedMicStream, clearPrimedMicStream, micDebug } from '@/lib/session/primedMic'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
@@ -657,10 +657,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         // (non-Safari, or the primed stream was revoked/expired). Chrome always
         // takes the getUserMedia path since it never primes a stream.
         const primedStream = BROWSER === 'safari' && mode === 'local' ? consumePrimedMicStream() : null
-        console.log('[workspace] startRecording', { mode, browser: BROWSER, usingPrimed: !!primedStream })
+        micDebug('startRecording', { mode, browser: BROWSER, usingPrimed: !!primedStream })
         const microphoneStream = primedStream ?? await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         micStreamRef.current = microphoneStream
-        console.log('[workspace] got mic stream, starting recorder')
+        micDebug('got mic stream, starting recorder')
 
         // Mic-only recording for all modes (dual-mic architecture for remote,
         // mic-only for local). No getDisplayMedia — each participant records
@@ -1266,10 +1266,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [retryMicrophonePermission])
 
   useEffect(() => {
-    console.log('[workspace] auto-start effect', {
+    micDebug('auto-start effect', {
       attempted: autoStartAttemptedRef.current,
-      lobbyId: !!lobbyId, resolvedCaseId: !!resolvedCaseId, currentUser: !!currentUser,
-      canStartRecording, recordingConsentDeclined, micState: microphonePermissionState,
+      lobbyId: !!lobbyId, caseId: !!resolvedCaseId, user: !!currentUser,
+      canStart: canStartRecording, declined: recordingConsentDeclined, mic: microphonePermissionState,
     })
     if (autoStartAttemptedRef.current) return
     if (!lobbyId || !resolvedCaseId || !currentUser) return
@@ -1282,7 +1282,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     // flips to granted we reset autoStartAttemptedRef and try again.
     if (microphonePermissionState === 'denied') return
 
-    console.log('[workspace] auto-start FIRING')
+    micDebug('auto-start FIRING')
     autoStartAttemptedRef.current = true
     // Show the "recording restarted" overlay if either:
     // - onSnapshot already told us the session was in_progress before we started

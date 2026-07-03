@@ -26,6 +26,21 @@ type PrimedMicHost = Window & {
   __compendiumPrimedMicPagehide?: (() => void) | null
 }
 
+/** Debug: append a message to a localStorage log readable from any tab.
+ *  Read it from the interviewer tab console with:
+ *    JSON.parse(localStorage.getItem('compendium-mic-debug') || '[]')
+ *  Temporary — remove once the Safari mic bug is confirmed fixed. */
+export function micDebug(msg: string, data?: unknown): void {
+  try {
+    const line = `${new Date().toISOString().slice(11, 23)} ${msg} ${data ? JSON.stringify(data) : ''}`
+    const raw = localStorage.getItem('compendium-mic-debug')
+    const arr: string[] = raw ? JSON.parse(raw) : []
+    arr.push(line)
+    localStorage.setItem('compendium-mic-debug', JSON.stringify(arr.slice(-50)))
+    console.log('[mic]', msg, data ?? '')
+  } catch { /* noop */ }
+}
+
 /** Stop every track on a stream (releases the mic / turns off the indicator). */
 function stopStream(stream: MediaStream | null | undefined): void {
   try {
@@ -47,7 +62,7 @@ export function primeMicStreamForWorkspace(stream: MediaStream): void {
   clearPrimedMicStream()
 
   host[HOLDER_KEY] = stream
-  console.log('[primedMic] PRIMED stream stored', {
+  micDebug('PRIMED stored', {
     tracks: stream.getAudioTracks().length,
     state: stream.getAudioTracks()[0]?.readyState,
   })
@@ -80,7 +95,7 @@ export function consumePrimedMicStream(): MediaStream | null {
   if (typeof window === 'undefined') return null
   const host = window as PrimedMicHost
   const stream = host[HOLDER_KEY]
-  console.log('[primedMic] CONSUME called', { hasStream: !!stream })
+  micDebug('CONSUME called', { hasStream: !!stream })
   if (!stream) return null
 
   // Disarm the safety guards — we're taking ownership now.

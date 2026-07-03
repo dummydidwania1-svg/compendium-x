@@ -8,7 +8,7 @@ import { waitForAuthUser } from '@/lib/firebase/config'
 import PlatformLoader from '@/components/PlatformLoader'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
-import { primeMicStreamForWorkspace } from '@/lib/session/primedMic'
+import { primeMicStreamForWorkspace, micDebug } from '@/lib/session/primedMic'
 
 export default function PracticeModeSelection() {
   const [loading, setLoading] = useState(true)
@@ -116,6 +116,7 @@ export default function PracticeModeSelection() {
       interviewerWindow.focus()
 
       if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+        micDebug('practice: requesting mic (safari)')
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
           // SAFARI FIX: Safari refuses getUserMedia from a background/unfocused
