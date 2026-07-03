@@ -145,6 +145,44 @@ function useCountUp(target: number | null): number {
   return val;
 }
 
+// ── Measurement Ring ─────────────────────────────────────────────────────────
+function ScoreRing({ value, ready }: { value: number | null; ready: boolean }) {
+  const animated = useCountUp(value);
+  const SIZE = 116;
+  const STROKE = 11;
+  const R = (SIZE - STROKE) / 2;
+  const CIRC = 2 * Math.PI * R;
+  const frac = value != null ? Math.min(value / 5, 1) : 0;
+  const offset = CIRC * (1 - (ready ? frac : 0));
+  const ringColor = value != null ? '#3D5A35' : 'rgba(61,90,53,.28)';
+  const textColor = value != null ? scoreColor(value) : 'rgba(61,90,53,.28)';
+  const display = value != null
+    ? (Math.abs(animated - Math.round(animated)) < 0.05 ? String(Math.round(animated)) : animated.toFixed(1))
+    : '--';
+
+  return (
+    <div className="flex flex-col items-center mx-auto">
+      <div style={{ position: 'relative', width: SIZE, height: SIZE }}>
+        <svg width={SIZE} height={SIZE} style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgba(217,208,196,.5)" strokeWidth={STROKE} strokeLinecap="round" />
+          <circle
+            cx={SIZE / 2} cy={SIZE / 2} r={R}
+            fill="none" stroke={ringColor} strokeWidth={STROKE} strokeLinecap="round"
+            strokeDasharray={CIRC} strokeDashoffset={offset}
+            className="cdo-ring-fill"
+          />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span className="font-serif" style={{ fontSize: 29, fontWeight: 500, lineHeight: 1, color: textColor, letterSpacing: '-0.01em' }}>
+            {display}
+          </span>
+          <span style={{ fontSize: 9, marginTop: 3, color: 'rgba(92,64,51,.42)', lineHeight: 1 }}>/ 5</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ParamBar({ label, score, ready }: { label: string; score: number | null; ready: boolean }) {
   return (
     <div className="flex items-center gap-[7px] mb-[6px]">
@@ -207,8 +245,6 @@ export default function CaseDetailOverlay({
   );
   const [tabKey, setTabKey]           = useState(0);
   const [paramsReady, setParamsReady] = useState(false);
-  const displayScore = useCountUp(entry.isUnrated ? null : (entry.score ?? null));
-
   // Feedback overlay
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
@@ -587,80 +623,15 @@ export default function CaseDetailOverlay({
     { label: 'Creativity', val: entry.creativity },
   ];
 
-  const color = scoreVal ? scoreColor(scoreVal) : '#3D5A35';
-
-  const scoreBlockFull = (
+  const scoreBlock = (
     <div>
       <SectionLabel>Score</SectionLabel>
-      <div className="flex flex-col items-center">
-        <div
-          className="w-[126px] h-[126px] rounded-full inline-flex flex-col items-center justify-center"
-          style={{ border: `2px solid ${color}`, boxShadow: `0 0 18px ${color}12` }}
-        >
-          <span className="font-serif text-[44px] font-[500] leading-none tabular-nums" style={{ color }}>
-            {entry.isUnrated ? '--' : displayScore}
-          </span>
-          <span className="text-[10px] mt-[3px]" style={{ color: 'rgba(92,64,51,.42)' }}>out of 5</span>
-        </div>
-        <div style={{ borderTop: '1px solid rgba(92,64,51,.09)', marginTop: 16, paddingTop: 14, width: '100%' }}>
+      <div className="flex flex-col items-center gap-[14px]">
+        <ScoreRing value={scoreVal} ready={paramsReady} />
+        <div style={{ width: '100%', borderTop: '1px solid rgba(92,64,51,.09)', paddingTop: 14 }}>
           {paramRows.map(({ label, val }) => (
-            <div key={label} className="flex items-center gap-[8px] mb-[8px] last:mb-0">
-              <span className="text-[10px] font-medium w-[58px] shrink-0 text-right" style={{ color: 'rgba(92,64,51,.46)' }}>{label}</span>
-              <div className="flex-1 h-[4px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
-                {val != null ? (
-                  <div className="h-full rounded-full transition-all duration-[900ms] ease-out"
-                    style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.85)' }} />
-                ) : (
-                  <div className="h-full rounded-full" style={{ background: 'repeating-linear-gradient(45deg, rgba(92,64,51,.06) 0 4px, transparent 4px 8px)' }} />
-                )}
-              </div>
-              {val != null
-                ? <span className="text-[10px] font-semibold w-[14px] text-right shrink-0 tabular-nums" style={{ color: 'rgba(59,47,47,.78)' }}>{val}</span>
-                : <span className="text-[10px] italic shrink-0" style={{ color: 'rgba(92,64,51,.42)', fontSize: '10px' }}>--</span>
-              }
-            </div>
+            <ParamBar key={label} label={label} score={val} ready={paramsReady} />
           ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const scoreBlockCompact = (
-    <div>
-      <SectionLabel>Score</SectionLabel>
-      <div className="flex flex-col items-center">
-        <div
-          className="w-[112px] h-[112px] rounded-full inline-flex flex-col items-center justify-center"
-          style={{ border: `2px solid ${color}`, boxShadow: `0 0 18px ${color}12` }}
-        >
-          <span className="font-serif text-[38px] font-[500] leading-none tabular-nums" style={{ color }}>
-            {entry.isUnrated ? '--' : displayScore}
-          </span>
-          <span className="text-[10px] mt-[3px]" style={{ color: 'rgba(92,64,51,.42)' }}>out of 5</span>
-        </div>
-        <div style={{ borderTop: '1px solid rgba(92,64,51,.09)', marginTop: 16, paddingTop: 14, width: '100%' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 18px' }}>
-            {paramRows.map(({ label, val }) => (
-              <div key={label}>
-                <div className="flex items-center justify-between mb-[4px]">
-                  <span className="text-[10px] font-medium" style={{ color: 'rgba(92,64,51,.46)' }}>{label}</span>
-                  {val != null
-                    ? <span className="text-[10px] font-semibold tabular-nums" style={{ color: 'rgba(59,47,47,.78)' }}>{val}</span>
-                    : <span className="text-[10px] italic" style={{ color: 'rgba(92,64,51,.42)' }}>--</span>
-                  }
-                </div>
-                <div className="h-[4px] rounded-full" style={{ background: 'rgba(217,208,196,.40)', maxWidth: '130px' }}>
-                  {val != null ? (
-                    <div className="h-full rounded-full transition-all duration-[900ms] ease-out"
-                      style={{ width: paramsReady ? `${(val / 5) * 100}%` : '0%', background: 'rgba(61,90,53,.85)' }} />
-                  ) : (
-                    <div className="h-full rounded-full"
-                      style={{ background: 'repeating-linear-gradient(45deg, rgba(92,64,51,.06) 0 4px, transparent 4px 8px)' }} />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
@@ -674,11 +645,10 @@ export default function CaseDetailOverlay({
           link below. Fade + link only render when the text actually overflows. */}
       <div
         ref={feedbackBoxRef}
-        className="text-[12.5px] leading-[1.7] rounded-r-[7px] px-[14px] py-[12px]"
+        className="text-[12.5px] leading-[1.7] rounded-[8px] px-[14px] py-[12px]"
         style={{
           color: 'rgba(92,64,51,.82)',
-          background: 'rgba(61,90,53,.05)',
-          borderLeft: '3px solid rgba(61,90,53,.30)',
+          background: 'rgba(61,90,53,.06)',
           maxHeight: '172px',
           overflow: 'hidden',
           position: 'relative',
@@ -690,8 +660,7 @@ export default function CaseDetailOverlay({
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
             height: 40, pointerEvents: 'none',
-            borderRadius: '0 0 7px 0',
-            background: 'linear-gradient(to bottom, rgba(240,244,236,0), rgba(240,244,236,.96))',
+            background: 'linear-gradient(to bottom, rgba(242,247,238,0), rgba(242,247,238,.97))',
           }} />
         )}
       </div>
@@ -713,7 +682,7 @@ export default function CaseDetailOverlay({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ padding: '72px 10px 10px' }}
+      style={{ padding: '64px 16px 24px' }}
       onClick={handleClose}
     >
       {/* Backdrop */}
@@ -726,8 +695,8 @@ export default function CaseDetailOverlay({
       <div
         className={`relative flex flex-col overflow-hidden rounded-2xl border bg-[#fff8f0] ${isExiting ? 'animate-scale-out' : 'animate-scale-in'}`}
         style={{
-          width: 'min(96vw, 1000px)',
-          maxHeight: 'calc(100vh - 84px)',
+          width: 'min(92vw, 800px)',
+          maxHeight: 'min(80vh, 680px)',
           borderColor: 'rgba(61,90,53,.1)',
           boxShadow: '0 20px 56px rgba(59,47,47,.14)',
         }}
@@ -737,43 +706,41 @@ export default function CaseDetailOverlay({
         <div
           className="flex items-start justify-between flex-shrink-0"
           style={{
-            padding: '16px 20px',
+            padding: '12px 18px 12px',
             background: 'linear-gradient(180deg, #f4ead9, #efe1cd)',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,.75), 0 4px 10px rgba(92,64,51,.10)',
           }}
         >
-          <div className="min-w-0">
-            <span className="eyebrow !mb-0 !text-[9.5px]">Case Review</span>
-            <h2 className="font-serif text-[28px] font-[500] text-[#3B2F2F] leading-[1.1] tracking-[-0.01em] mt-[2px]">
-              {entry.name}
-            </h2>
-            {/* Chips */}
-            <div className="flex flex-wrap gap-[7px] mt-[12px]">
-              {/* Type */}
-              <span
-                className="inline-flex items-center gap-[6px] text-[11px] font-medium px-[11px] py-[5px] rounded-full"
-                style={{ background: '#fff8f0', border: '1px solid rgba(92,64,51,.14)', color: '#5C4033' }}
-              >
-                <span className="inline-block shrink-0" style={{ width: 6, height: 6, borderRadius: '50%', background: '#3D5A35' }} />
-                {entry.type}
-              </span>
-              {/* Difficulty */}
-              <span
-                className="inline-flex items-center gap-[6px] text-[11px] font-medium px-[11px] py-[5px] rounded-full"
-                style={{ background: '#fff8f0', border: '1px solid rgba(92,64,51,.14)', color: '#5C4033' }}
-              >
-                <span className="inline-block shrink-0" style={{ width: 6, height: 6, borderRadius: '50%', background: '#c98a3d' }} />
-                {entry.level}
-              </span>
-              {/* Company (nullable) */}
-              {entry.company && (
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline gap-x-[10px] gap-y-[4px]">
+              <h2 className="font-serif text-[22px] font-[500] text-[#3B2F2F] leading-[1.15] tracking-[-0.01em]">
+                {entry.name}
+              </h2>
+              {/* Inline chips */}
+              <div className="flex flex-wrap gap-[5px]">
                 <span
-                  className="inline-flex items-center text-[11px] font-medium px-[11px] py-[5px] rounded-full"
-                  style={{ background: '#fff8f0', border: '1px solid rgba(92,64,51,.14)', color: '#5C4033' }}
+                  className="inline-flex items-center gap-[5px] text-[10.5px] font-medium px-[9px] py-[3px] rounded-full"
+                  style={{ background: 'rgba(255,248,240,.85)', border: '1px solid rgba(92,64,51,.14)', color: '#5C4033' }}
                 >
-                  {entry.company}
+                  <span className="inline-block shrink-0" style={{ width: 5, height: 5, borderRadius: '50%', background: '#3D5A35' }} />
+                  {entry.type}
                 </span>
-              )}
+                <span
+                  className="inline-flex items-center gap-[5px] text-[10.5px] font-medium px-[9px] py-[3px] rounded-full"
+                  style={{ background: 'rgba(255,248,240,.85)', border: '1px solid rgba(92,64,51,.14)', color: '#5C4033' }}
+                >
+                  <span className="inline-block shrink-0" style={{ width: 5, height: 5, borderRadius: '50%', background: '#c98a3d' }} />
+                  {entry.level}
+                </span>
+                {entry.company && (
+                  <span
+                    className="inline-flex items-center text-[10.5px] font-medium px-[9px] py-[3px] rounded-full"
+                    style={{ background: 'rgba(255,248,240,.85)', border: '1px solid rgba(92,64,51,.14)', color: '#5C4033' }}
+                  >
+                    {entry.company}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           {/* Close button */}
@@ -831,6 +798,8 @@ export default function CaseDetailOverlay({
               .cdo-notes{scrollbar-width:thin;scrollbar-color:rgba(92,64,51,0.15) transparent}
               @keyframes cdo-hint-fade-in{from{opacity:0}to{opacity:1}}
               @keyframes cdo-hint-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+              .cdo-ring-fill{transition:stroke-dashoffset 900ms cubic-bezier(0.16,1,0.3,1)}
+              @media(prefers-reduced-motion:reduce){.cdo-ring-fill{transition:none}}
             `}</style>
 
             {/* ── OVERVIEW TAB ── */}
@@ -846,7 +815,7 @@ export default function CaseDetailOverlay({
                         {feedbackBlock}
                       </div>
                     </div>
-                    <div>{scoreBlockFull}</div>
+                    <div>{scoreBlock}</div>
                   </div>
                 )}
 
@@ -854,7 +823,7 @@ export default function CaseDetailOverlay({
                 {!hasFeedback && hasScore && (
                   <div style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: '32px', alignItems: 'start' }}>
                     <div>{sessionDetailsBlock}</div>
-                    <div>{scoreBlockCompact}</div>
+                    <div>{scoreBlock}</div>
                   </div>
                 )}
 
@@ -900,7 +869,7 @@ export default function CaseDetailOverlay({
                 <SectionLabel>Transcript</SectionLabel>
 
                 {entry.hasTranscript && turns.length > 0 && (
-                  <div className="flex flex-col gap-[10px]" style={{ maxHeight: 'min(440px, calc(100vh - 260px))', overflowY: 'auto', scrollbarWidth: 'none' }}>
+                  <div className="flex flex-col gap-[10px]">
                     {(transcriptStatus === 'partial') && (
                       <div
                         className="text-[12px] leading-[1.65] px-[12px] py-[9px] rounded-[7px] mb-[3px]"

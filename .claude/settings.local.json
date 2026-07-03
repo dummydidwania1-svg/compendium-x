@@ -52,10 +52,32 @@
       "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===20\\); console.log\\(JSON.stringify\\(c.visualisations[0].title\\)\\)\")",
       "Bash(node -e \"const d=require\\('./data/cases.json'\\); const c=d.find\\(x=>x.id===21\\); console.log\\(JSON.stringify\\(c.visualisations.map\\(v=>\\({type:v.type,title:v.title}\\)\\)\\)\\)\")",
       "Bash(git show *)",
-      "Bash(ls \"C:/Users/Pratik/Downloads/compendium-x-0ac93d8c3fce.json\" 2>/dev/null && echo \"FILE_EXISTS\" || echo \"FILE_MISSING\")"
+      "Bash(ls \"C:/Users/Pratik/Downloads/compendium-x-0ac93d8c3fce.json\" 2>/dev/null && echo \"FILE_EXISTS\" || echo \"FILE_MISSING\")",
+      "Bash(node /Users/nityamall/compendium-x/.claude/skills/impeccable/scripts/context.mjs)",
+      "Bash(node /Users/nityamall/compendium-x/.claude/skills/impeccable/scripts/detect-csp.mjs)",
+      "Bash(kill 55774)",
+      "Bash(git -C /Users/nityamall/compendium-x status)",
+      "Bash(git -C /Users/nityamall/compendium-x diff --stat)",
+      "Bash(git -C /Users/nityamall/compendium-x log --oneline -5)"
     ],
     "additionalDirectories": [
       "/tmp"
     ]
-  }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\"",
+            "timeout": 5,
+            "statusMessage": "Checking UI changes"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Impeccable design detector: runs after Edit/Write/MultiEdit on UI files and surfaces findings as system reminders."
 }

@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-04T00:00:00.000Z",
+  "title": "Design System: Case CompendiumX",
+  "extensions": {
+    "colorMeta": {
+      "espresso":        { "role": "neutral",  "displayName": "Espresso",        "canonical": "oklch(28% 0.028 35)",  "tonalRamp": ["#160e0e", "#2a1d1d", "#3B2F2F", "#5c4b4b", "#7d6a6a", "#9e8d8d", "#bfb0b0", "#dfd4d4"] },
+      "sienna":          { "role": "neutral",  "displayName": "Sienna",          "canonical": "oklch(34% 0.038 40)",  "tonalRamp": ["#1f100b", "#3a2118", "#5C4033", "#7d5c4f", "#9e7f72", "#bea295", "#ddc5b9", "#f0dfd8"] },
+      "ivory-press":     { "role": "neutral",  "displayName": "Ivory Press",     "canonical": "oklch(97% 0.016 75)",  "tonalRamp": ["#2c2218", "#453832", "#5e5046", "#7d6e64", "#9e9088", "#bfb3ac", "#dfd8d2", "#fff8f0"] },
+      "warm-ash":        { "role": "neutral",  "displayName": "Warm Ash",        "canonical": "oklch(92% 0.022 70)",  "tonalRamp": ["#2c2218", "#453832", "#6a5e54", "#8e8278", "#b0a8a2", "#cdc8c2", "#dfd8d0", "#f4ede3"] },
+      "scholar-green":   { "role": "primary",  "displayName": "Scholar Green",   "canonical": "oklch(38% 0.072 145)", "tonalRamp": ["#0e1a0c", "#1a2e17", "#2f4829", "#3D5A35", "#567a4e", "#759b6d", "#9cbd8e", "#c4ddb7"] },
+      "deep-manuscript": { "role": "neutral",  "displayName": "Deep Manuscript", "canonical": "oklch(18% 0.022 40)",  "tonalRamp": ["#0a0805", "#18120c", "#2c2218", "#3d3025", "#574539", "#75615a", "#947e78", "#b5a49e"] },
+      "antique-gold":    { "role": "tertiary", "displayName": "Antique Gold",    "canonical": "oklch(78% 0.075 80)",  "tonalRamp": ["#1f1600", "#3d2d00", "#6b4f00", "#987000", "#b88e2e", "#D8B978", "#e8d09a", "#f5e9c6"] },
+      "error-sienna":    { "role": "error",    "displayName": "Error Sienna",    "canonical": "oklch(50% 0.10 40)",   "tonalRamp": ["#2c0d06", "#521610", "#7a2318", "#a33424", "#b4543e", "#ca7860", "#de9e88", "#f2c8b8"] }
+    },
+    "typographyMeta": {
+      "display":  { "displayName": "Display",  "purpose": "Hero headlines on editorial surfaces and session-start moments. Deep Manuscript (#2c2218). Never on dashboard data." },
+      "headline": { "displayName": "Headline", "purpose": "Section titles on editorial surfaces (/our-story, case detail). Deep Manuscript or Espresso." },
+      "title":    { "displayName": "Title",    "purpose": "Card headings in glass surfaces, dossier names. Espresso (#3B2F2F)." },
+      "body":     { "displayName": "Body",     "purpose": "All running text, dashboard prose, coach insights. Espresso. Max 65–75ch for prose blocks." },
+      "label":    { "displayName": "Label",    "purpose": "Table headers, tag annotations. ONE eyebrow per screen maximum. Scholar Green for active; Sienna at 50% for passive." }
+    },
+    "shadows": [
+      { "name": "ambient-low",   "value": "0 4px 12px rgba(59, 47, 47, 0.04)",                                          "purpose": "Glass-card resting shadow. Nearly invisible separator between card and page ground." },
+      { "name": "panel-raised",  "value": "0 12px 32px rgba(59, 47, 47, 0.08), 0 4px 12px rgba(59, 47, 47, 0.04)",     "purpose": "Dropdown menus and floating panels." },
+      { "name": "hover-lift",    "value": "0 8px 22px rgba(60, 45, 30, 0.12)",                                           "purpose": "Interactive cards and portrait nodes on hover." },
+      { "name": "modal-deep",    "value": "0 40px 100px rgba(0, 0, 0, 0.22)",                                            "purpose": "Dossier dialogs and full-screen overlays only." },
+      { "name": "focus-glow",    "value": "0 0 0 4px rgba(61, 90, 53, 0.12)",                                            "purpose": "Focus-visible ring on interactive nodes. Scholar Green at 12% opacity." }
+    ],
+    "motion": [
+      { "name": "spring",         "value": "cubic-bezier(0.22, 1, 0.36, 1)",  "purpose": "Standard spring ease-out. Entrances, card reveals, dropdown open." },
+      { "name": "spring-snappy",  "value": "cubic-bezier(0.16, 1, 0.3, 1)",   "purpose": "Slightly faster spring. Tab transitions, scale-in for modals." },
+      { "name": "ease-exit",      "value": "cubic-bezier(0.4, 0, 1, 1)",      "purpose": "Exit transitions — elements leaving the screen." },
+      { "name": "ease-standard",  "value": "cubic-bezier(0.4, 0, 0.2, 1)",    "purpose": "State changes: color, opacity, border. Not for transform animations." },
+      { "name": "duration-fast",  "value": "0.2s",   "purpose": "Hover state color/opacity transitions." },
+      { "name": "duration-base",  "value": "0.28s",  "purpose": "Dropdown open, nav transitions." },
+      { "name": "duration-enter", "value": "0.34–0.42s", "purpose": "Element entrances (scale-in, rise). Never exceed 0.5s for UI transitions." }
+    ],
+    "breakpoints": [
+      { "name": "mobile",  "value": "860px", "purpose": "Primary mobile breakpoint. Constellation layout collapses; nav adapts." },
+      { "name": "md",      "value": "768px", "purpose": "Dashboard grid switches to 1-column from md:grid-cols-3." },
+      { "name": "lg",      "value": "1024px","purpose": "Full 12-column dashboard grid." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The canonical action trigger. Sharp rectangle, Scholar Green fill, uppercase tracking. Hover lifts and darkens.",
+      "html": "<button class=\"ds-btn-primary\"><span>Start Practice</span><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; background: #3D5A35; color: #fff8f0; font-family: 'Work Sans', system-ui, sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; border: none; border-radius: 0; cursor: pointer; text-decoration: none; transition: background 0.25s ease, gap 0.25s ease, transform 0.25s ease; } .ds-btn-primary:hover { background: #2f4829; gap: 12px; transform: translateY(-2px); } .ds-btn-primary:focus-visible { outline: 2px solid #3D5A35; outline-offset: 3px; } .ds-btn-primary:active { transform: translateY(0); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Secondary action. Scholar Green text on transparent background, same typography as primary.",
+      "html": "<button class=\"ds-btn-ghost\">View Details</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 13px 26px; background: transparent; color: #3D5A35; font-family: 'Work Sans', system-ui, sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid rgba(61,90,53,0.3); border-radius: 0; cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease; } .ds-btn-ghost:hover { background: rgba(61,90,53,0.07); border-color: rgba(61,90,53,0.6); } .ds-btn-ghost:focus-visible { outline: 2px solid #3D5A35; outline-offset: 3px; }"
+    },
+    {
+      "name": "Glass Card",
+      "kind": "card",
+      "refersTo": "card-glass",
+      "description": "The canonical content container. Frosted Ivory Press with backdrop blur and Scholar Green border tint.",
+      "html": "<div class=\"ds-glass-card\"><h3 class=\"ds-glass-card-title\">Session Score</h3><p class=\"ds-glass-card-body\">Your average across the last 5 sessions has improved by 4 points.</p></div>",
+      "css": ".ds-glass-card { background: rgba(255, 248, 240, 0.8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(61, 90, 53, 0.10); border-radius: 16px; box-shadow: 0 4px 12px rgba(59, 47, 47, 0.04); padding: 24px; } .ds-glass-card-title { font-family: 'Newsreader', Georgia, serif; font-size: 1.15rem; font-weight: 500; color: #3B2F2F; letter-spacing: -0.005em; margin: 0 0 10px; } .ds-glass-card-body { font-family: 'Work Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.6; color: #3B2F2F; margin: 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-base",
+      "description": "Base text field. Ivory Press ground, Scholar Green-tinted border that deepens on focus.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-input\">Case Name</label><input class=\"ds-input\" id=\"ds-input\" type=\"text\" placeholder=\"e.g. Market Entry — Retail\"></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; } .ds-label { font-family: 'Work Sans', system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(92, 64, 51, 0.55); } .ds-input { background: #fff8f0; color: #3B2F2F; font-family: 'Work Sans', system-ui, sans-serif; font-size: 14px; padding: 8px 12px; border: 1px solid rgba(61,90,53,0.15); border-radius: 6px; outline: none; transition: border-color 0.2s ease; } .ds-input::placeholder { color: rgba(92, 64, 51, 0.45); } .ds-input:focus { border-color: rgba(61,90,53,0.45); } .ds-input:focus-visible { border-color: rgba(61,90,53,0.6); }"
+    },
+    {
+      "name": "Nav Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Top-level navigation link. Stone-warm at rest; Scholar Green with underbar when active.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link\" href=\"#\">Repository</a><a class=\"ds-nav-link ds-nav-link--active\" href=\"#\">Dashboard</a><a class=\"ds-nav-link\" href=\"#\">Practice</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 24px; } .ds-nav-link { position: relative; font-family: 'Work Sans', system-ui, sans-serif; font-size: 14px; font-weight: 400; color: #57534e; text-decoration: none; padding: 4px 0; transition: color 0.2s ease; } .ds-nav-link:hover { color: #3D5A35; } .ds-nav-link--active { color: #3D5A35; font-weight: 500; } .ds-nav-link--active::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 2px; background: #3D5A35; border-radius: 1px; }"
+    },
+    {
+      "name": "Label / Eyebrow",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Uppercase tracking label. Scholar Green for active/primary; muted Sienna for passive. Maximum one eyebrow per screen.",
+      "html": "<span class=\"ds-eyebrow\">Performance</span>",
+      "css": ".ds-eyebrow { font-family: 'Work Sans', system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #3D5A35; display: flex; align-items: center; margin-bottom: 4px; } .ds-eyebrow--muted { color: rgba(92, 64, 51, 0.5); }"
+    },
+    {
+      "name": "Score Numeral",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "The most editorial moment in the product UI. Newsreader serif renders performance data. Never Work Sans for a score.",
+      "html": "<div class=\"ds-score\"><span class=\"ds-score-value\">82</span><span class=\"ds-score-label\">Overall Score</span></div>",
+      "css": ".ds-score { display: flex; flex-direction: column; align-items: flex-start; } .ds-score-value { font-family: 'Newsreader', Georgia, serif; font-size: 2.5rem; font-weight: 600; color: #3D5A35; line-height: 1; } .ds-score-label { margin-top: 4px; font-family: 'Work Sans', system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(92, 64, 51, 0.5); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Casebook That Thinks",
+    "overview": "Case CompendiumX carries the visual authority of a well-produced print casebook — the serif editorial weight, the warm-cream ground, the measured hierarchy — and then the interface opens its eyes. AI transcription runs in the background; feedback surfaces at session end; score trends accumulate over weeks. The design must be serious enough that a candidate trusts it mid-case, and transparent enough that the AI layer feels inevitable rather than intrusive.\n\nThe palette is not a stylistic choice — it is institutional inheritance. Ivory Press (#fff8f0) and Warm Ash (#f4ede3) are the page; Espresso (#3B2F2F) is the ink; Scholar Green (#3D5A35) is the margin note that earns your attention. Newsreader carries the editorial voice; Work Sans does the operational work.\n\nThis system explicitly rejects the brash SaaS dashboard aesthetic — no data-heavy corporate grids, no achievement-badge gamification, no sterile minimalism stripped of warmth.",
+    "keyCharacteristics": [
+      "Editorial type hierarchy: Newsreader for voice, Work Sans for function — never mixed within the same role",
+      "Warm cream ground with forest green as the single committed accent (Restrained strategy)",
+      "Sharp rectangular CTAs (radius: 0) — confidence through refusal to decorate",
+      "Glass-surface cards: backdrop-filter blur on Ivory Press, not opaque panels",
+      "Motion is purposeful: spring entrances and state-change transitions only — no orchestrated page choreography",
+      "Deep Manuscript (#2c2218) for major display headings; Espresso (#3B2F2F) for body text — two distinct near-blacks, each with a specific role"
+    ],
+    "rules": [
+      { "name": "The One Voice Rule",      "body": "Scholar Green appears on ≤10% of any given screen. Its presence means 'action' or 'selected.' A screen saturated with Scholar Green is a screen that has lost its editorial authority.", "section": "colors" },
+      { "name": "The Two Ink Rule",        "body": "Deep Manuscript is for display type. Espresso is for body text. They are not interchangeable — swapping them on a screen breaks the hierarchy that orients the reader at a glance.", "section": "colors" },
+      { "name": "The Gold Reserve Rule",   "body": "Antique Gold is never introduced in new surfaces. It belongs to the /our-story constellation and nowhere else.", "section": "colors" },
+      { "name": "The Role Purity Rule",    "body": "Newsreader appears in display/headline/title roles and score numbers. Work Sans appears in body/label/data roles and all interactive controls. Mixing fonts within the same functional role is prohibited.", "section": "typography" },
+      { "name": "The Fixed Scale Rule",    "body": "Product UI surfaces use fixed rem sizes, not clamp(). Fluid display type is reserved for editorial surfaces where the heading is the visual anchor.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule","body": "Surfaces are flat at rest. Shadows appear only in response to state (hover lift, dropdown opening, modal entrance) or layer context.", "section": "elevation" },
+      { "name": "The Glass-Not-Card Rule", "body": "When a surface needs to float above the page ground, prefer backdrop-filter blur over opaque background. Glass reads as air; opaque panels read as walls.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use sharp rectangular buttons (border-radius: 0) for all primary CTAs",
+      "Do keep Scholar Green to primary actions, active nav, and focus states only",
+      "Do use Newsreader for display, headline, title, and score-numeral roles exclusively",
+      "Do use rgba(61, 90, 53, 0.10) for card borders — Scholar Green tint at 10%",
+      "Do include @media (prefers-reduced-motion: reduce) on every keyframe animation",
+      "Do use Material Symbols Outlined at wght 300, FILL 0 for all icons",
+      "Do document intentional palette variations per surface — warm brown shades on /case are deliberate"
+    ],
+    "donts": [
+      "Don't use brash SaaS dashboard aesthetics — heavy data grids, neon accents, achievement badges, confetti",
+      "Don't use generic mock-interview or quiz-tool UI patterns — progress bars as primary feedback, badge counts, streak indicators",
+      "Don't use overly gamified touches — streaks, confetti on completion, star ratings in gaming style",
+      "Don't let Scholar Green appear as a background on large surfaces or as a decorative fill",
+      "Don't use Antique Gold (#D8B978) outside the /our-story constellation",
+      "Don't round primary buttons — border-radius: 0 is intentional",
+      "Don't nest glass cards — a .glass-card inside a .glass-card eliminates visual hierarchy",
+      "Don't use modal dialogs as a first response to user actions — exhaust inline and progressive alternatives",
+      "Don't use Newsreader in buttons, labels, table cells, or form controls",
+      "Don't use border-left or border-right greater than 1px as a colored accent stripe on cards or callouts",
+      "Don't add gradient text (background-clip: text with a gradient)",
+      "Don't produce minimalist-to-the-point-of-sterile design — warmth is required"
+    ]
+  }
+}
