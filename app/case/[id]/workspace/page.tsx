@@ -662,20 +662,34 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         micStreamRef.current = microphoneStream
         micDebug('got mic stream, starting recorder')
 
-        // Mic-only recording for all modes (dual-mic architecture for remote,
-        // mic-only for local). No getDisplayMedia — each participant records
-        // their own mic; the Cloud Function merges tracks into one transcript.
-        const audioContext = new AudioContext()
-        audioContextRef.current = audioContext
-        await audioContext.resume()
-        const destination = audioContext.createMediaStreamDestination()
-
         const micTracks = microphoneStream.getAudioTracks()
         if (micTracks.length === 0) {
           throw new Error('No audio source available for recording.')
         }
-        const micSource = audioContext.createMediaStreamSource(new MediaStream(micTracks))
-        micSource.connect(destination)
+
+        // SAFARI FIX (part 2): a background-tab AudioContext starts suspended and
+        // resume() hangs until the tab is focused — the second Safari gate that
+        // stalled recording even after the mic stream was primed. Single-mic local
+        // recording doesn't need the AudioContext graph at all, so on Safari+local
+        // we feed the raw mic stream straight to MediaRecorder. Remote mode and
+        // every other browser keep the existing AudioContext path unchanged.
+        let recorderStream: MediaStream
+        if (BROWSER === 'safari' && mode === 'local') {
+          recorderStream = microphoneStream
+          micDebug('safari local: recording raw mic (no AudioContext)')
+        } else {
+          // Mic-only recording (dual-mic architecture for remote). No getDisplayMedia
+          // — each participant records their own mic; the Cloud Function merges tracks.
+          const audioContext = new AudioContext()
+          audioContextRef.current = audioContext
+          await audioContext.resume()
+          const destination = audioContext.createMediaStreamDestination()
+          const micSource = audioContext.createMediaStreamSource(new MediaStream(micTracks))
+          micSource.connect(destination)
+          mixedStreamRef.current = destination.stream
+          recorderStream = destination.stream
+        }
+
         // If the mic gets blocked mid-recording (address-bar lock, OS-level
         // revoke, device unplug), the track fires 'mute'/'ended' but the
         // Permissions API onchange can lag. Re-query immediately so the
@@ -686,11 +700,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           track.onended = () => { void retryMicrophonePermission() }
         }
 
-        mixedStreamRef.current = destination.stream
         const selectedMimeType = pickSupportedMimeType()
         const recorder = selectedMimeType
-          ? new MediaRecorder(destination.stream, { mimeType: selectedMimeType })
-          : new MediaRecorder(destination.stream)
+          ? new MediaRecorder(recorderStream, { mimeType: selectedMimeType })
+          : new MediaRecorder(recorderStream)
 
         recorderRef.current = recorder
         chunksRef.current = []
