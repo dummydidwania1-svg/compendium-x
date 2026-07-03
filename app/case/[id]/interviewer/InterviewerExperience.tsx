@@ -1110,8 +1110,12 @@ export function InterviewerPageInner({
 					// Safari: signal the candidate workspace to start recording via
 					// BroadcastChannel — getUserMedia on background tabs is blocked
 					// in Safari so the auto-start effect silently fails there.
+					// Send immediately + retry after 1s and 3s in case the workspace
+					// channel wasn't open yet on the first send.
 					if (isSafari && !skipRecording) {
 						safariChannelRef.current?.postMessage({ type: 'start-recording' })
+						setTimeout(() => safariChannelRef.current?.postMessage({ type: 'start-recording' }), 1000)
+						setTimeout(() => safariChannelRef.current?.postMessage({ type: 'start-recording' }), 3000)
 					}
 				}
 			}

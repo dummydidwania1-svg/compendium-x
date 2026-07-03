@@ -1505,8 +1505,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         writeCandidateBeat(lobbyId)
       }
       if (e.data?.type === 'start-recording') {
-        if (autoStartAttemptedRef.current) return // already started
-        if (recordingStateRef.current !== 'idle') return
+        // Skip only if already actively recording/uploading — NOT just because
+        // autoStartAttemptedRef is true (the background auto-start failed silently).
+        const state = recordingStateRef.current
+        if (state === 'recording' || state === 'uploading' || state === 'stopping') return
+        // Reset so startCaptureFlow isn't blocked by canStartRecording check
+        autoStartAttemptedRef.current = false
         if (document.visibilityState === 'visible') {
           autoStartAttemptedRef.current = true
           void startCaptureFlow(preferredRecordingModeRef.current)
@@ -1518,8 +1522,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
     const onVisible = () => {
       if (!pendingStart) return
-      if (autoStartAttemptedRef.current) { pendingStart = false; return }
-      if (recordingStateRef.current !== 'idle') { pendingStart = false; return }
+      const state = recordingStateRef.current
+      if (state === 'recording' || state === 'uploading' || state === 'stopping') { pendingStart = false; return }
       pendingStart = false
       autoStartAttemptedRef.current = true
       void startCaptureFlow(preferredRecordingModeRef.current)
