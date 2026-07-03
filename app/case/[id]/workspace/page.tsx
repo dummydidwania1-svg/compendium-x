@@ -722,12 +722,16 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         const message = startError instanceof Error ? startError.message : 'Unable to start recording.'
         if (mode === 'local') {
           const normalized = message.toLowerCase()
-          if (
-            normalized.includes('notallowed') ||
-            normalized.includes('permission') ||
-            normalized.includes('denied')
-          ) {
+          const isNotAllowed = normalized.includes('notallowed') || normalized.includes('permission') || normalized.includes('denied')
+          if (isNotAllowed) {
             setCaptureWarning(getFriendlyRecoverableCaptureMessage(mode, message))
+          }
+          // Safari blocks getUserMedia on background tabs — if the tab is hidden
+          // when the NotAllowedError fires, reset the auto-start guard so it
+          // retries automatically when the user brings the tab to the foreground.
+          if (BROWSER === 'safari' && isNotAllowed && document.visibilityState === 'hidden') {
+            autoStartAttemptedRef.current = false
+            setRecordingState('idle')
           }
           // Re-query permission state from the browser truthfully — the
           // hook is reactive, but a manual nudge after a failure helps if
@@ -1233,6 +1237,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     const handleVisibilityChange = () => {
       if (document.visibilityState !== 'visible') return
       void retryMicrophonePermission()
+      // Safari resets autoStartAttemptedRef when getUserMedia fails on a hidden
+      // tab. Re-trigger auto-start now that the tab is visible and foreground.
+      if (BROWSER === 'safari' && !autoStartAttemptedRef.current) {
+        autoStartAttemptedRef.current = true
+        void startCaptureFlow(preferredRecordingModeRef.current)
+      }
     }
 
     window.addEventListener('focus', handleWindowFocus)
