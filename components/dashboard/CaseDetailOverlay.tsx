@@ -439,18 +439,6 @@ export default function CaseDetailOverlay({
     const a = audioRef.current;
     if (!a) return;
     if (isPlaying) { a.pause(); setIsPlaying(false); return; }
-    if (isSafari && !hasPlayedOnce) {
-      // Safari blocks play() on unloaded cross-origin audio — load first,
-      // then play once the browser signals it has enough data.
-      setHasPlayedOnce(true);
-      a.load();
-      const onReady = () => {
-        a.removeEventListener('canplay', onReady);
-        void a.play().then(() => setIsPlaying(true)).catch(() => {});
-      };
-      a.addEventListener('canplay', onReady);
-      return;
-    }
     if (!hasPlayedOnce) setHasPlayedOnce(true);
     void a.play().then(() => setIsPlaying(true)).catch(() => {});
   };
@@ -1209,7 +1197,7 @@ export default function CaseDetailOverlay({
           </div>
         )}
 
-        {audioUrl && <audio ref={audioRef} src={audioUrl} preload={isSafari ? 'none' : 'auto'} className="hidden" />}
+        {audioUrl && <audio ref={audioRef} src={audioUrl} preload={isSafari ? 'metadata' : 'auto'} className="hidden" />}
       </div>
 
       {/* ── FEEDBACK OVERLAY (portal, centered above modal) ── */}
