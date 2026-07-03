@@ -431,13 +431,33 @@ export default function CaseDetailOverlay({
     const audio = audioRef.current;
     if (!audio) return;
     let seekingForDuration = false;
+
+    // MediaRecorder WebM files don't write the duration into the file header
+    // (it's unknown during recording). The browser reports NaN/Infinity after
+    // loadedmetadata. Seeking to a very large position forces the browser to
+    // fetch the file's tail, after which it can report a finite duration.
+    // Chrome tolerates this early; Safari aborts the load if we seek before
+    // canplay, so we defer to the canplay handler there.
+    const seekForDuration = () => {
+      if (seekingForDuration) return;
+      seekingForDuration = true;
+      try { audio.currentTime = 1e101; } catch { seekingForDuration = false; }
+    };
+
     const tryResolveDuration = () => {
       const d = audio.duration;
       if (isFinite(d) && d > 0) { setDuration(d); return; }
-      // Seek-to-end trick to force duration on streaming audio — Chrome only.
-      // Safari aborts the load if currentTime is set before audio is ready.
-      if (!isSafari && !seekingForDuration) { seekingForDuration = true; audio.currentTime = 1e101; }
+      if (!isSafari) seekForDuration();
     };
+
+    // Safari: defer the seek until the element reports it can play.
+    // At this point the browser has buffered enough that seeking won't abort.
+    const onCanPlay = () => {
+      const d = audio.duration;
+      if (isFinite(d) && d > 0) { setDuration(d); return; }
+      if (isSafari) seekForDuration();
+    };
+
     const onDurationChange = () => {
       const d = audio.duration;
       if (!isFinite(d) || d <= 0) return;
@@ -455,17 +475,20 @@ export default function CaseDetailOverlay({
       if (audio.currentTime > 0) setDuration(prev => prev || audio.currentTime);
     };
     audio.addEventListener('loadedmetadata', tryResolveDuration);
+    audio.addEventListener('canplay', onCanPlay);
     audio.addEventListener('durationchange', onDurationChange);
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('ended', onEnd);
     if (audio.readyState >= 1) tryResolveDuration();
+    if (audio.readyState >= 3) onCanPlay(); // HAVE_FUTURE_DATA — already ready
     return () => {
       audio.removeEventListener('loadedmetadata', tryResolveDuration);
+      audio.removeEventListener('canplay', onCanPlay);
       audio.removeEventListener('durationchange', onDurationChange);
       audio.removeEventListener('timeupdate', onTime);
       audio.removeEventListener('ended', onEnd);
     };
-  }, []);
+  }, [isSafari]);
 
   // Tab switch — updated to new tab type
   const switchTab = (tab: 'overview' | 'transcript' | 'notes') => {
