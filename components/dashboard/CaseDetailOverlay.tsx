@@ -185,11 +185,11 @@ function ScoreRing({ value, ready }: { value: number | null; ready: boolean }) {
 
 function ParamBar({ label, score, ready }: { label: string; score: number | null; ready: boolean }) {
   return (
-    <div className="flex items-center gap-[7px] mb-[6px]">
-      <span className="text-[10px] font-medium w-[58px] text-right shrink-0" style={{ color: 'rgba(92,64,51,.46)' }}>
+    <div className="flex items-center gap-[9px] mb-[10px]">
+      <span className="text-[11px] font-medium w-[64px] text-right shrink-0" style={{ color: 'rgba(92,64,51,.46)' }}>
         {label}
       </span>
-      <div className="flex-1 h-[3px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
+      <div className="flex-1 h-[5px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
         <div
           className="h-full rounded-full transition-all duration-[900ms] ease-out"
           style={{
@@ -198,7 +198,7 @@ function ParamBar({ label, score, ready }: { label: string; score: number | null
           }}
         />
       </div>
-      <span className="text-[10px] font-semibold w-[14px] text-right shrink-0 tabular-nums" style={{ color: 'rgba(59,47,47,.78)' }}>
+      <span className="text-[11px] font-semibold w-[18px] text-right shrink-0 tabular-nums" style={{ color: 'rgba(59,47,47,.78)' }}>
         {score != null ? score : '--'}
       </span>
     </div>
@@ -333,14 +333,16 @@ export default function CaseDetailOverlay({
     return () => window.removeEventListener('keydown', onKey);
   }, [feedbackOpen]);
 
-  // Re-measure feedback overflow when the notes text or the active tab changes.
+  // Re-measure feedback overflow whenever the box resizes (flex height is dynamic)
+  // or when the content / tab changes.
   useEffect(() => {
     const el = feedbackBoxRef.current;
     if (!el) { setFeedbackOverflows(false); return; }
-    const t = setTimeout(() => {
-      setFeedbackOverflows(el.scrollHeight - el.clientHeight > 6);
-    }, 120);
-    return () => clearTimeout(t);
+    const check = () => setFeedbackOverflows(el.scrollHeight - el.clientHeight > 6);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [entry.notes, activeTab]);
 
   const handleZoomMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -626,9 +628,9 @@ export default function CaseDetailOverlay({
   const scoreBlock = (
     <div>
       <SectionLabel>Score</SectionLabel>
-      <div className="flex flex-col items-center gap-[14px]">
+      <div className="flex flex-col items-center gap-[18px]">
         <ScoreRing value={scoreVal} ready={paramsReady} />
-        <div style={{ width: '100%', borderTop: '1px solid rgba(92,64,51,.09)', paddingTop: 14 }}>
+        <div style={{ width: '100%', borderTop: '1px solid rgba(92,64,51,.09)', paddingTop: 18 }}>
           {paramRows.map(({ label, val }) => (
             <ParamBar key={label} label={label} score={val} ready={paramsReady} />
           ))}
@@ -806,13 +808,47 @@ export default function CaseDetailOverlay({
             {activeTab === 'overview' && (
               <div className="p-[20px_24px] pb-[28px]">
 
-                {/* State A: hasFeedback && hasScore — 2-col, left=details+feedback, right=score */}
+                {/* State A: hasFeedback && hasScore — 2-col, left=details+feedback, right=score.
+                    Grid stretches both columns to the same height (right col = score ring + bars).
+                    Left col is a flex column so feedback fills the remaining space and clips
+                    with a fade when the text is longer than what fits. */}
                 {hasFeedback && hasScore && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px' }}>
-                    <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px', alignItems: 'stretch' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {sessionDetailsBlock}
-                      <div style={{ marginTop: 22 }}>
-                        {feedbackBlock}
+                      {/* Feedback grows to fill whatever height the right column sets */}
+                      <div style={{ marginTop: 22, flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <SectionLabel>Interviewer Feedback</SectionLabel>
+                        <div
+                          ref={feedbackBoxRef}
+                          className="text-[12.5px] leading-[1.7] rounded-[8px] px-[14px] py-[12px]"
+                          style={{
+                            color: 'rgba(92,64,51,.82)',
+                            background: 'rgba(61,90,53,.06)',
+                            flex: '1 1 0',
+                            minHeight: 0,
+                            overflow: 'hidden',
+                            position: 'relative',
+                          }}
+                        >
+                          {renderNotesLines(entry.notes?.trim() ?? '')}
+                          {feedbackOverflows && (
+                            <div style={{
+                              position: 'absolute', bottom: 0, left: 0, right: 0,
+                              height: 40, pointerEvents: 'none',
+                              background: 'linear-gradient(to bottom, rgba(242,247,238,0), rgba(242,247,238,.97))',
+                            }} />
+                          )}
+                        </div>
+                        {feedbackOverflows && (
+                          <button
+                            className="mt-[8px] text-[11px] font-semibold"
+                            style={{ color: '#3D5A35' }}
+                            onClick={() => setFeedbackOpen(true)}
+                          >
+                            Read full feedback →
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div>{scoreBlock}</div>
