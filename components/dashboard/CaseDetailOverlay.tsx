@@ -693,12 +693,13 @@ export default function CaseDetailOverlay({
         style={{ background: 'rgba(59,47,47,.28)', backdropFilter: 'blur(4px)' }}
       />
 
-      {/* Modal shell — auto height, content-hugging */}
+      {/* Modal shell — fixed height so flex children resolve to definite sizes,
+          which lets the inner scroll container use overflow-y:auto correctly. */}
       <div
         className={`relative flex flex-col overflow-hidden rounded-2xl border bg-[#fff8f0] ${isExiting ? 'animate-scale-out' : 'animate-scale-in'}`}
         style={{
           width: 'min(92vw, 800px)',
-          maxHeight: 'min(80vh, 680px)',
+          height: 'min(80vh, 680px)',
           borderColor: 'rgba(61,90,53,.1)',
           boxShadow: '0 20px 56px rgba(59,47,47,.14)',
         }}
