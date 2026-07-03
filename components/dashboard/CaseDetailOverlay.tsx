@@ -439,11 +439,20 @@ export default function CaseDetailOverlay({
     const a = audioRef.current;
     if (!a) return;
     if (isPlaying) { a.pause(); setIsPlaying(false); return; }
-    // Safari with preload="none" needs an explicit load() call before play()
-    // on the first interaction to trigger loading from a user gesture.
-    if (isSafari && !hasPlayedOnce) { a.load(); }
+    if (isSafari && !hasPlayedOnce) {
+      // Safari blocks play() on unloaded cross-origin audio — load first,
+      // then play once the browser signals it has enough data.
+      setHasPlayedOnce(true);
+      a.load();
+      const onReady = () => {
+        a.removeEventListener('canplay', onReady);
+        void a.play().then(() => setIsPlaying(true)).catch(() => {});
+      };
+      a.addEventListener('canplay', onReady);
+      return;
+    }
     if (!hasPlayedOnce) setHasPlayedOnce(true);
-    void a.play(); setIsPlaying(true);
+    void a.play().then(() => setIsPlaying(true)).catch(() => {});
   };
 
   const seekTo = (ratio: number) => {
