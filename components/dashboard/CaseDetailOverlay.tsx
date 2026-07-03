@@ -779,17 +779,18 @@ export default function CaseDetailOverlay({
         </div>
 
         {/* ── TAB CONTENT ──
-            Flow-based (not flex-1 + absolute) so the modal hugs its content.
-            The modal shell is capped at calc(100vh - 84px); this region takes
-            whatever height is left after the header/tabs/audio bar and scrolls
-            internally only when the content is taller than that. */}
-        <div className="relative overflow-hidden min-h-0" style={{ flex: '1 1 auto' }}>
+            flex-basis: 0 gives the outer div a definite pixel height from the
+            flex algorithm (= modal height minus header + tabs + audio bar).
+            The inner div fills it with absolute inset-0 so overflow-y:auto has
+            a concrete height to scroll against. maxHeight:'100%' does NOT work
+            reliably when the parent only has a flex-computed height. */}
+        <div className="relative overflow-hidden min-h-0" style={{ flex: '1 1 0' }}>
           <div
             key={tabKey}
             ref={scrollRef}
             onScroll={handleContentScroll}
             className="overflow-y-auto animate-tab-in"
-            style={{ scrollbarWidth: 'none', maxHeight: '100%', minHeight: 0 }}
+            style={{ scrollbarWidth: 'none', position: 'absolute', inset: 0 }}
           >
             <style>{`
               div::-webkit-scrollbar{display:none}
