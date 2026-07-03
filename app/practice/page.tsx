@@ -7,6 +7,7 @@ import Navbar from '@/components/dashboard/Navbar'
 import { waitForAuthUser } from '@/lib/firebase/config'
 import PlatformLoader from '@/components/PlatformLoader'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
+import { interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
 
 export default function PracticeModeSelection() {
   const [loading, setLoading] = useState(true)
@@ -72,45 +73,65 @@ export default function PracticeModeSelection() {
     setMicBlocked(false)
     micBlockedForRef.current = 'local'
 
-    // Step 1: mic check (skipped when the user opted out of recording)
-    if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        stream.getTracks().forEach((track) => track.stop())
-      } catch {
-        setMicBlocked(true)
-        return
-      }
-    }
-
-    // Step 2: mic granted (or skipped) — open interviewer popup immediately.
-    // ?handoff=1 tells the lobby page to show the 5s handoff overlay on load.
-    setLocalPreparing(true)
     const lobbyId = Math.random().toString(36).substring(7)
-    // Persist the no-record choice keyed by lobby so the candidate workspace
-    // (a separate route reached after the lobby) reads it on mount.
-    if (skipRecording && typeof sessionStorage !== 'undefined') {
-      try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
-    }
+    const winName = interviewerWindowName(lobbyId)
     const popupHost = window as Window & { __compendiumInterviewerWindow?: Window | null }
 
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
       popupHost.__compendiumInterviewerWindow.close()
     }
 
+    // Open the interviewer window synchronously before any await so Safari
+    // treats it as a trusted user gesture. The window loads in the background
+    // while the mic check runs.
+    if (skipRecording && typeof sessionStorage !== 'undefined') {
+      try { sessionStorage.setItem(`compendium-norecord-${lobbyId}`, '1') } catch { /* quota */ }
+    }
     const interviewerWindow = window.open(
       `/lobby/${lobbyId}?role=interviewer&mode=local&handoff=1`,
-      '_blank'
+      winName
     )
 
     if (!interviewerWindow) {
+      // Popup blocked — poll localStorage for the signal written by the
+      // interviewer window on mount (Safari opens it when user unblocks via
+      // the address bar; window.opener is null in that case).
       setPopupBlocked(true)
       setLocalPreparing(false)
+      clearInterviewerReady(lobbyId)
+      const pollStart = Date.now()
+      const poll = setInterval(() => {
+        const ts = readInterviewerReady(lobbyId)
+        if (ts) {
+          clearInterval(poll)
+          setPopupBlocked(false)
+          router.push(`/lobby/${lobbyId}?mode=local`)
+        } else if (Date.now() - pollStart > 30000) {
+          clearInterval(poll)
+        }
+      }, 500)
       return
     }
 
     popupHost.__compendiumInterviewerWindow = interviewerWindow
     interviewerWindow.focus()
+
+    // Step 2: mic check after window is open (skipped when user opted out).
+    if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        stream.getTracks().forEach((track) => track.stop())
+      } catch {
+        // Mic denied — close the interviewer window and show the mic overlay.
+        interviewerWindow.close()
+        popupHost.__compendiumInterviewerWindow = null
+        setMicBlocked(true)
+        setLocalPreparing(false)
+        return
+      }
+    }
+
+    setLocalPreparing(true)
     router.push(`/lobby/${lobbyId}?mode=local`)
   }
 
