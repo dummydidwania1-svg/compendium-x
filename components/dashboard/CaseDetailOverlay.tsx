@@ -232,6 +232,7 @@ export default function CaseDetailOverlay({
   const [currentTime, setCurrentTime]   = useState(0);
   const [duration, setDuration]         = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
+  const isSafari = typeof navigator !== 'undefined' && navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome');
 
   // Transcript
   const rawTranscript = useMemo(
@@ -437,9 +438,12 @@ export default function CaseDetailOverlay({
   const togglePlay = () => {
     const a = audioRef.current;
     if (!a) return;
+    if (isPlaying) { a.pause(); setIsPlaying(false); return; }
+    // Safari with preload="none" needs an explicit load() call before play()
+    // on the first interaction to trigger loading from a user gesture.
+    if (isSafari && !hasPlayedOnce) { a.load(); }
     if (!hasPlayedOnce) setHasPlayedOnce(true);
-    if (isPlaying) { a.pause(); setIsPlaying(false); }
-    else           { void a.play(); setIsPlaying(true); }
+    void a.play(); setIsPlaying(true);
   };
 
   const seekTo = (ratio: number) => {
@@ -1196,7 +1200,7 @@ export default function CaseDetailOverlay({
           </div>
         )}
 
-        {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" className="hidden" />}
+        {audioUrl && <audio ref={audioRef} src={audioUrl} preload={isSafari ? 'none' : 'auto'} className="hidden" />}
       </div>
 
       {/* ── FEEDBACK OVERLAY (portal, centered above modal) ── */}
