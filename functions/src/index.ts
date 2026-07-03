@@ -1034,6 +1034,73 @@ async function mergeSessionAudio(
   }
 }
 
+/* transcodeSessionAudio — single-track re-encode for same-device sessions   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Re-encodes a single candidate track through ffmpeg (Opus/WebM) so it plays
+ * on Safari. Same pipeline as mergeSessionAudio but with one input and no mix
+ * step. Best-effort: callers must wrap it so a failure never blocks anything.
+ */
+async function transcodeSessionAudio(
+  sessionId: string,
+  audioUrl: string,
+): Promise<string | null> {
+  const ffmpegMod = (await import('ffmpeg-static')) as unknown as { default: string | null }
+  const ffmpegPath = ffmpegMod.default
+  if (!ffmpegPath) {
+    logger.warn('audio_transcode_skipped_no_ffmpeg', { sessionId })
+    return null
+  }
+
+  const workDir = await mkdtemp(join(tmpdir(), `transcode-${sessionId}-`))
+  const inPath = join(workDir, 'candidate.webm')
+  const outPath = join(workDir, 'merged.webm')
+
+  try {
+    const res = await fetch(audioUrl)
+    if (!res.ok) {
+      logger.warn('audio_transcode_download_failed', { sessionId, status: res.status })
+      return null
+    }
+    await writeFile(inPath, Buffer.from(await res.arrayBuffer()))
+
+    await execFileAsync(
+      ffmpegPath,
+      [
+        '-y',
+        '-fflags', '+genpts', '-i', inPath,
+        '-ac', '1',
+        '-c:a', 'libopus',
+        '-b:a', '64k',
+        outPath,
+      ],
+      { maxBuffer: 1024 * 1024 * 64 },
+    )
+
+    const transcoded = await readFile(outPath)
+
+    const bucket = getStorage().bucket()
+    const objectPath = `merged-audio/${sessionId}/merged.webm`
+    const token = randomUUID()
+    const file = bucket.file(objectPath)
+    await file.save(transcoded, {
+      resumable: false,
+      contentType: 'audio/webm',
+      metadata: { metadata: { firebaseStorageDownloadTokens: token } },
+    })
+
+    const mergedAudioUrl =
+      `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
+      `${encodeURIComponent(objectPath)}?alt=media&token=${token}`
+
+    logger.info('audio_transcode_completed', { sessionId, bytes: transcoded.length })
+    return mergedAudioUrl
+  } finally {
+    await rm(workDir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* evaluateAndMerge — shared merge decision (FIX 1a)                         */
 /* -------------------------------------------------------------------------- */
@@ -1276,10 +1343,11 @@ export const transcribeRecording = onDocumentWritten(
       return
     }
 
-    const sessionRef = db.collection('sessions').doc(event.params.sessionId)
+    const sessionId = event.params.sessionId
+    const sessionRef = db.collection('sessions').doc(sessionId)
     await runTranscription({
       target: { kind: 'embedded', sessionRef },
-      sessionId: event.params.sessionId,
+      sessionId,
       audioUrl,
       requestedMimeType: recording.mimeType ?? '',
       storagePath,
@@ -1287,6 +1355,27 @@ export const transcribeRecording = onDocumentWritten(
       // ElevenLabs split-screen key — used when SPLITSCREEN_TRANSCRIBE_PROVIDER === 'elevenlabs'.
       elevenApiKey: ELEVENLABS_SPLITSCREEN_API_KEY.value(),
     })
+
+    // Re-encode the candidate track through ffmpeg so it plays on Safari.
+    // Same pipeline as remote mergeSessionAudio but single-input (no mix step).
+    // Best-effort: never blocks the transcript result.
+    if (MERGE_AUDIO_ENABLED) {
+      const freshSnap = await sessionRef.get()
+      if (!freshSnap.data()?.mergedAudioUrl) {
+        try {
+          const mergedAudioUrl = await transcodeSessionAudio(sessionId, audioUrl)
+          if (mergedAudioUrl) {
+            await sessionRef.set(
+              { mergedAudioUrl, mergedAudioCompletedAt: FieldValue.serverTimestamp() },
+              { merge: true },
+            )
+          }
+        } catch (audioErr) {
+          const m = audioErr instanceof Error ? audioErr.message : 'Unknown transcode error.'
+          logger.warn('audio_transcode_failed', { sessionId, message: m })
+        }
+      }
+    }
   },
 )
 
