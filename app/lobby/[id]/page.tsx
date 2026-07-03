@@ -1833,7 +1833,13 @@ export default function LobbyPage() {
       isLaunching={isLaunching}
       launchCaseName={launchCaseName}
       onCancelSession={() => void handleCancelSession()}
-      onPrimaryAction={() => { void handleCandidatePrimaryAction() }}
+      onPrimaryAction={() => {
+        // Safari blocks window.open inside async functions even when triggered
+        // by a click. For local sessions window.open is the only work, so call
+        // it synchronously here to stay in the trusted gesture call stack.
+        if (isLocalSession) { focusOrOpenLocalInterviewerWindow(); return }
+        void handleCandidatePrimaryAction()
+      }}
       onReopenRepo={openRepoInPopup}
     />
   )
