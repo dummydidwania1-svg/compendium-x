@@ -1422,13 +1422,14 @@ export default function LobbyPage() {
   const isInterviewer = searchParams.get('role') === 'interviewer'
   const requestedSessionMode = searchParams.get('mode') === 'local' ? 'local' : 'remote'
 
-  // When the interviewer window loads in local mode, write a localStorage
-  // signal so the candidate tab can detect it even when window.opener is null
-  // (Safari unblocks the popup via the address bar — opener is null then).
-  // Chrome: this also runs but the candidate never needs to poll for it since
-  // window.open succeeds and the poll never starts.
+  // Safari only: write a localStorage signal on mount so the candidate tab
+  // can detect this window even when window.opener is null (happens when
+  // Safari opens the popup after the user unblocks via the address bar).
   useEffect(() => {
     if (!isInterviewer || requestedSessionMode !== 'local') return
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+    const isSafari = ua.includes('Safari') && !ua.includes('Chrome')
+    if (!isSafari) return
     writeInterviewerReady(lobbyId)
     return () => clearInterviewerReady(lobbyId)
   }, [isInterviewer, requestedSessionMode, lobbyId])
@@ -1502,7 +1503,8 @@ export default function LobbyPage() {
 
   const focusOrOpenLocalInterviewerWindow = () => {
     const popupHost = window as PopupWindowHost
-    const winName = interviewerWindowName(lobbyId)
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+    const isSafari = ua.includes('Safari') && !ua.includes('Chrome')
 
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
       popupHost.__compendiumInterviewerWindow.focus()
@@ -1510,28 +1512,30 @@ export default function LobbyPage() {
       return
     }
 
+    // Safari: use a named window so it can be re-targeted after an unblock.
+    // Chrome: use '_blank' (original behaviour).
+    const target = isSafari ? interviewerWindowName(lobbyId) : '_blank'
     const interviewerWindow = window.open(
       `/lobby/${lobbyId}?role=interviewer&mode=local`,
-      winName
+      target
     )
 
     if (!interviewerWindow) {
       flashCandidateActionStatus('Allow popups to continue')
-      // Safari: when the user unblocks via the address bar notification, the
-      // browser opens the window itself. window.opener is null in that case so
-      // we can't get a JS reference. Instead poll localStorage for the signal
-      // that the interviewer window writes on mount (writeInterviewerReady).
-      clearInterviewerReady(lobbyId)
-      const pollStart = Date.now()
-      const poll = setInterval(() => {
-        const ts = readInterviewerReady(lobbyId)
-        if (ts) {
-          clearInterval(poll)
-          flashCandidateActionStatus('Interviewer window ready')
-        } else if (Date.now() - pollStart > 30000) {
-          clearInterval(poll)
-        }
-      }, 500)
+      if (isSafari) {
+        // Poll localStorage for the signal the interviewer window writes on
+        // mount — auto-clears the blocked state when Safari opens it.
+        clearInterviewerReady(lobbyId)
+        const pollStart = Date.now()
+        const poll = setInterval(() => {
+          if (readInterviewerReady(lobbyId)) {
+            clearInterval(poll)
+            flashCandidateActionStatus('Interviewer window ready')
+          } else if (Date.now() - pollStart > 30000) {
+            clearInterval(poll)
+          }
+        }, 500)
+      }
       return
     }
 
@@ -1863,10 +1867,12 @@ export default function LobbyPage() {
       launchCaseName={launchCaseName}
       onCancelSession={() => void handleCancelSession()}
       onPrimaryAction={() => {
-        // Safari blocks window.open inside async functions even when triggered
-        // by a click. For local sessions window.open is the only work, so call
-        // it synchronously here to stay in the trusted gesture call stack.
-        if (isLocalSession) { focusOrOpenLocalInterviewerWindow(); return }
+        const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+        const isSafari = ua.includes('Safari') && !ua.includes('Chrome')
+        // Safari blocks window.open inside async functions. Call it synchronously
+        // for local sessions so it stays in the trusted gesture call stack.
+        // Chrome uses the normal async path unchanged.
+        if (isSafari && isLocalSession) { focusOrOpenLocalInterviewerWindow(); return }
         void handleCandidatePrimaryAction()
       }}
       onReopenRepo={openRepoInPopup}
