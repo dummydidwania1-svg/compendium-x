@@ -645,9 +645,6 @@ subtype:
         })
 
         data.sort((a, b) => {
-          const da = DIFFICULTY_RANK[(a.difficulty ?? '').toLowerCase()] ?? 99
-          const db = DIFFICULTY_RANK[(b.difficulty ?? '').toLowerCase()] ?? 99
-          if (da !== db) return da - db
           if (typeof a.numericId === 'number' && typeof b.numericId === 'number') {
             return a.numericId - b.numericId
           }

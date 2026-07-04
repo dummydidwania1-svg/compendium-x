@@ -3,29 +3,44 @@
 import { slugifyCase } from '@/lib/slug'
 
 // A case is "new" (third edition onward) iff its numeric id is >= this.
-// Bump only if the edition boundary changes. Any future case with id >= 69
-// gets the badge automatically; no list to maintain.
-export const NEW_CASE_MIN_ID = 69
+// Ids 1-87 were reshuffled by a manual reorder and no longer reflect when a
+// case was added, so this threshold only governs FUTURE cases (88+). Bump
+// only if the edition boundary changes.
+export const NEW_CASE_MIN_ID = 88
 
-// Fallback slug set, used ONLY when a numeric id is unavailable (older docs
-// or data paths that do not carry the numeric id). Safe to leave as-is.
+// Explicit set of third-edition cases from the 1-87 range, since their ids
+// were reassigned by the manual reorder and no longer indicate recency.
+// Add future editions' ids to NEW_CASE_MIN_ID instead of growing this list.
 export const NEW_CASE_SLUGS = new Set<string>([
-  'schindlers-fit',
-  'power-to-the-people',
-  'parts-and-recreation',
+  'critical-condition',
+  'death-by-chocolate',
+  'dont-sweat-it',
   'dry-hard',
+  'fields-of-gold',
+  'house-of-cards',
+  'jab-we-met',
   'net-worth',
+  'padhega-india-badhega-india',
+  'panel-discussion',
+  'parts-and-recreation',
   'pound-for-pound',
+  'sicko-mode',
+  'testing-the-waters',
+  'tip-tip-barsa-paani',
   'up-in-the-air',
+  'variety-is-the-spice-of-life',
+  'waddle-we-eat',
+  'wired-differently',
 ])
 
-// Primary check: numeric id. Fallback: slug membership.
+// Primary check: explicit slug membership (for the reshuffled 1-87 range).
+// Fallback: numeric id, for future cases (88+) added after this edition.
 export function isNewCase(caseId?: number | null, fallbackKey?: string | null): boolean {
+  if (fallbackKey && NEW_CASE_SLUGS.has(slugifyCase(fallbackKey))) {
+    return true
+  }
   if (typeof caseId === 'number' && Number.isFinite(caseId)) {
     return caseId >= NEW_CASE_MIN_ID
-  }
-  if (fallbackKey) {
-    return NEW_CASE_SLUGS.has(slugifyCase(fallbackKey))
   }
   return false
 }
