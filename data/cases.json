@@ -9852,7 +9852,370 @@
     "framework": "Candidate: Interesting. I'd like to understand the problem a little better. Where is our client located? How many different types of biscuits do they produce? How much is their current market share and by how much do they want to increase their market share?\nInterviewer: The client is located Pan-India. For the purpose of this case, assume they sell one kind of biscuit – the Salted Biscuit. Their market share has been steadily dropping. It is currently at 30%. They want to bring it to 40%.\nCandidate: Has the decline in market share been Pan-India?\nInterviewer: No, in fact, the decline has been only in Gujarat.\nCandidate: Interesting. I'd like to divide my approach into 2. First, I'd like to understand the cause for decline in sales and then come up with strategies to increase market share.\nInterviewer: You can proceed with your approach.\nCandidate: Analysing the declining sales, I would like to break it into the 3 steps of the value chain - Production, Distribution and Demand. Under production, I'd like to understand if there have been any changes causing us to not meet the demand. Either reduction in capacity or reduced efficiency. Under Distribution, I'd like to understand if there has been any change in the number of distributors we have and the amount sold by each distributor. Lastly, I'd like to understand if there has been a decline in the demand for our biscuits.\nMy hypothesis is that the decline has to be due to a decline in demand since a drop of this magnitude lasting for over 3 years comes mostly from a customer pull issue.\nInterviewer: You're right. Analyse demand.\nCandidate: Under Demand, there are 4 main segments I'd like to understand. Company, Competitors, Customers and Product.\nUnder company, factors like firm's goals, its competencies and strategies employed to achieve them. Under competitors, factors like nature of the market, market share and competitor competencies over us become important. Under customers, factors like consumer behaviour, values, demographics shall be analysed. Lastly, under Product, the nature of the product is analysed to see if it meets customer needs and expectations. Is there any one segment you'd like me to analyse?\nInterviewer: Why don't you look at competitors?\nCandidate: Sure. I'd like to understand how many competitors exist and how they have been performing in the last 3 years. More importantly, have any of their market shares increased in the last 3 years? Has there been a new entrant in the market?\nInterviewer: Great. There is one other competitor, Canoli Inc, that exists in the market. As you have identified correctly, their market share has been consistently growing.\nCandidate: Ahaa! I'd now like to pin point exactly why Canoli are able to attract customers better than us. Here, I'd like to look at Product, Price, Promotion and Place.\na) Product - Are they offering a superior product?\nb) Price - Is their price better?\nc) Promotion - Are they marketing their product better? Is their publicity better?\nd) Place - Are they available in more accessible and prominent channels/within the outlets?\nInterviewer: Yes! Canolli inc offers a superior product because of the superior raw materials they use. Can you think of why the client hasn't done the same?\nCandidate: Sure! It might be because:\n1) We don't have access to superior raw materials due to certain constraints\n2) We have access, but can't maintain price competitiveness if we purchase them\n3) We don't have the same supplier relations as our competitors do.\nInterviewer: Perfect. Canolli Inc sources its flour from the US and therefore has superior quality. We can't do the same. Why don't we now analyse methods to increase sales?\nCandidate: Sure. Since sales is equal to Number of customers x Revenue per customer, we shall try to increase both of them.\nUnder Revenue per customer, we can try to increase the volume per customer and/or the price charged per serving. Increasing the volume would involve loyalty programmes and incentives for larger purchases. Both volume and price increase are unlikely to happen since we have identified the problem as quality as compared to competitors.\nUnder Number of customers, we can try and increase customers through 4 methods. Target new customers in the same geographies, target new customers in different geographies, mimicking competitor quality to gain customers, merge or acquire competitors. Targeting customers in different geographies is irrelevant since we are aiming at increasing sales in Gujarat. Replicating competitor quality too is irrelevant since we have understood that they source potatoes from the US.\nCandidate: Is there any possibility of merging/acquiring Canolli Inc to increase sales?\nInterviewer: There might be. What would you need to know to analyse if that would be the right decision?\nCandidate: The following considerations would be important:\n1) Willingness of both companies to merge\n2) Our ability to acquire\n3) Synergies\n4) Public perception\n5) Government permissions (Competitive laws, licensing requirements, etc.)\n6) Compatibility of management styles and cultural fit.\nInterviewer: We have learnt that our client is unwilling to merge. All other factors seem to be in our favour. How would you determine if we can and should acquire Canolli Inc?\nCandidate: Our ability to acquire would primarily depend on the value of the Gujarat division of Canolli Inc. This value should be compared with the potential increase in sales due to the acquisition since we would then have a stronghold over the market. Thus, if the sales after acquisition justifies the price of acquisition and helps to achieve the 10% increase in market share, we should go ahead with acquisition, provided we can arrange the funds for the same.\nInterviewer: Perfect. Thank you for your time. We can close the case here.\n\nRisk It for the Biscuit Framework & Recommendations\nTURNAROUND STRATEGIES FOR ABC FOOD INC.\nClarifying Questions: Location of client? Target growth percentage? Segmenting decline geographically?\nBrownie Points: Cultural fit as important consideration before merging or acquiring\nKeep In Mind: Attempts to increase sales must focus on existing weaknesses in the company to gain maximum growth"
   },
 
-
+{
+  "id": 34,
+  "docId": "case-34",
+  "title": "Paint the Town Red",
+  "industry": "Chemicals",
+  "difficulty": "Medium",
+  "case_type": "Pricing",
+  "company": "Kearney",
+  "round": "Partner",
+  "prompt": "Hey, let's begin with a quick case. Your client is a chemical and paints company. It has launched a new paint with a special feature: the paint lasts 3 times as long as normal paints. Though they are pioneers in paint development, they are unsure of how to price this product. You are required to help them.",
+  "frameworkTree": {
+    "nodes": {
+      "root": { "id": "root", "label": "Price the Paint", "tone": "root", "children": ["cost-based", "competitor-based", "value-based", "demand-supply-based"] },
+      "cost-based": { "id": "cost-based", "label": "Cost Based", "tone": "support", "children": [] },
+      "competitor-based": { "id": "competitor-based", "label": "Competitor Based ✘", "tone": "support", "children": [] },
+      "value-based": { "id": "value-based", "label": "Value Based", "tone": "support", "children": [] },
+      "demand-supply-based": { "id": "demand-supply-based", "label": "Demand-Supply Based ✘", "tone": "support", "children": [] }
+    },
+    "defaultExpanded": ["root"],
+    "defaultFocusedIds": ["cost-based", "value-based"],
+    "notes": [
+      { "title": "Questions", "items": ["Product specifications?", "Whether patented?", "Other special features?"] },
+      { "title": "Keep In Mind", "items": ["A patent voids competitor pricing, so value sets the price ceiling"] },
+      { "title": "Brownie Points", "items": ["Accounting for labour cost of the extra applications", "Noting a 3x-longevity paint is a big commitment"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "type": "calcpair",
+      "left": {
+        "title": "A.  Cost-Based Price (Minimum)",
+        "steps": [
+          { "eq": true, "label": "Base Cost per Litre", "value": "₹300" },
+          { "eq": true, "label": "Additional Variable Cost", "value": "₹10,000 ÷ 100 = ₹100" },
+          { "eq": true, "label": "Fixed Cost Recovery", "value": "₹1,00,00,000 ÷ 50,000 = ₹200" },
+          { "text": "" },
+          { "text": "Total Cost per Litre", "bold": true },
+          { "text": "" },
+          { "text": "Base Cost + Variable Cost + Fixed Recovery", "indent": true },
+          { "text": "" },
+          { "text": "₹300 + ₹100 + ₹200", "indent": true },
+          { "text": "" },
+          { "text": "= ₹600 / litre (Minimum Price)", "bold": true, "indent": true }
+        ]
+      },
+      "right": {
+        "title": "B.  Value-Based Price (Maximum)",
+        "steps": [
+          { "eq": true, "label": "Normal Paint Price", "value": "₹350" },
+          { "eq": true, "label": "Longevity", "value": "3x normal paint" },
+          { "eq": true, "label": "Value Multiple", "value": "2x" },
+          { "text": "" },
+          { "text": "Maximum Price", "bold": true },
+          { "text": "" },
+          { "text": "Normal Price × Value Multiple", "indent": true },
+          { "text": "" },
+          { "text": "₹350 × 2", "indent": true },
+          { "text": "" },
+          { "text": "= ₹700 / litre (Maximum Price)", "bold": true, "indent": true },
+          { "text": "" },
+          { "text": "Recommended Price", "bold": true },
+          { "text": "" },
+          { "text": "₹600 ≤ Price ≤ ₹700", "indent": true },
+          { "text": "" },
+          { "text": "= ₹675 / litre (Profit of ₹75)", "bold": true, "indent": true }
+        ]
+      }
+    }
+  ],
+  "framework": "Candidate: Oh wow, that's interesting! I'd like to get a better understanding of the problem. Where is the company located? What is their primary objective with this product? Other than the fact that it lasts 3 times as long, is it the same as normal paints?\n\nInterviewer: The company is located in India. They want to maximise profits. Yes, it is the same as normal paints in all other characteristics.\n\nCandidate: Okay. How long have we been in this industry and how have we done so far? I'm also assuming that no other competitor has a similar product?\n\nInterviewer: Sure. We have been in the industry for 5 years and have a 25% market share. Yes, we are the only ones to have such a product.\n\nCandidate: Interesting. In that case, is the product patented?\n\nInterviewer: Good question. Yes, it is.\n\nCandidate: I can think of four approaches to price the paint, a cost-based approach that would allow us to cover the basic costs, a competitor-based approach which would give us a benchmark, a value-based approach which would give us an indication on how much people will be willing to spend on our product and finally a demand-supply-based approach, if data is available.\n\nInterviewer: Sure. You may proceed.\n\nCandidate: Let us begin with the cost-based approach. To develop this new type of paint, we must have incurred significant R&D expenditure. Do we have any information on the cost incurred?\n\nInterviewer: Good question. You can say that we incurred an R&D expenditure of Rs 1 crore to develop this paint.\n\nCandidate: Do we know if there are variable cost additions, such as a special liquid that has to be added to every litre of paint? Also, do we have a time period or quantity by which we want to recover the R&D expenditure?\n\nInterviewer: Sure. We incur an additional Rs. 10,000 for every 100 litres of paint manufactured. We would want to recover the fixed investment within the first 50,000 litres of paint sold. All other costs are similar to normal paints.\n\nCandidate: This gives us an additional variable cost of Rs. 100 (Rs. 10,000 ÷ 100) per litre manufactured. According to me, an average litre of paint costs Rs. 350. I am not too familiar with the industry. Is it okay to assume that the margin is 15% in the industry?\n\nInterviewer: Fair assumption.\n\nCandidate: That gives that the cost to make 1 litre of paint as approximately Rs. 300. Adding the additional variable cost of Rs. 100, we arrive at a total variable cost of Rs. 400. We also need to recover the R&D expenditure within 50,000 litres. Rs. 1,00,00,000 divided by 50,000 gives us an additional Rs. 200 to be recovered. That brings our total cost to Rs. 600/litre. This sets the lower limit that we can charge for the product.\n\nInterviewer: Great. What next?\n\nCandidate: ~ We cannot do competitor-based pricing since we are the only manufacturers of this type of product. However, since very similar products exist, we can do a simple conversion to see the approximate price if a competitor existed. Since a one-time use of the paint costs Rs. 350/litre, we would need to use the normal paint 3 times over a given time frame to achieve the same results. This gives us a cost of Rs. 350 × 3 = Rs. 1,050. We also need to consider the labour costs of applying the paint two more times. Assuming an average of around Rs. 25/litre (The average painter makes Rs. 750 per day of work and applies about 30 litres of paint in this duration). We get Rs. 25 × 2 = Rs. 50 as the additional labour cost. This gives us an approximate cost of Rs. 1,100. This amount is an approximate benchmark for the price we can charge. We, however, need to keep in mind the time value of money.\n\nInterviewer: Good. You can proceed.\n\nCandidate: Next, in the value-based approach, I would try to understand the monetary value attached to a product like this by consumers. Let us compare this to a similar product, pens. When companies came out with pens that lasted twice as long, customers were willing to spend around 1.5 times the amount they would spend on an ordinary pen. Keeping the same logic in mind, a paint that lasts 3 times as long, would be valued twice as much by customers. This is done keeping in mind the following points: The time value of money and a larger investment right now would seem undesirable and the fact that preferences change with time. Also, choosing a paint colour for three times the duration might be too long-term of a decision to make. Thus, a 2x multiple of the normal cost of Rs. 350 gives us Rs. 700/litre. Do we have any information on demand/supply variables?\n\nInterviewer: No, we do not. You can sum up the case here. Good job!\n\n_(Conclusion below)_\n\nPAINT THE TOWN RED FRAMEWORK & RECOMMENDATIONS\nPRICING THE PAINT\n\nClarifying Questions: Product specifications?; Whether patented?; Other special features?; Primary objective?; Any similar competitor?\n\nBrownie Points: Accounting for labour cost of the extra applications; Noting a 3x-longevity paint is a big commitment\n\nKeep In Mind: A patent voids competitor pricing, so value sets the price ceiling\n\nRECOMMENDATIONS: Based on the methods used so far, we have got a lower limit of Rs. 600/litre and an upper limit that consumers would be willing to pay of Rs 700; my recommendation would be to charge Rs. 675/litre ensuring we make a profit of Rs. 75/litre (Rs. 25 more than industry average) and since it is lower than the maximum value attached by customers, we should be able to generate sufficient demand too."
+},
+{
+  "id": 35,
+  "docId": "case-35",
+  "title": "Raise the Bar",
+  "industry": "Fitness",
+  "difficulty": "Medium",
+  "case_type": "Pricing",
+  "company": "Kearney",
+  "round": "Principal",
+  "prompt": "Your client is a fitness company. They are planning to set up a gym in the North Campus area of New Delhi. They would like your help in deciding the monthly subscription rate.",
+  "frameworkTree": {
+    "nodes": {
+      "root": { "id": "root", "label": "Monthly Subscription", "tone": "root", "children": ["cost-based", "value-based", "competitor-based", "demand-supply-based"] },
+      "cost-based": { "id": "cost-based", "label": "Cost Based", "tone": "support", "children": [] },
+      "value-based": { "id": "value-based", "label": "Value Based", "tone": "support", "children": [] },
+      "competitor-based": { "id": "competitor-based", "label": "Competitor Based", "tone": "support", "children": [] },
+      "demand-supply-based": { "id": "demand-supply-based", "label": "Demand-Supply Based ✘", "tone": "support", "children": [] }
+    },
+    "defaultExpanded": ["root"],
+    "defaultFocusedId": "root",
+    "notes": [
+      { "title": "Questions", "items": ["First gym or others?", "Why North Campus?", "Services offered?"] },
+      { "title": "Keep In Mind", "items": ["Charge above the competitor's rate for facilities they lack"] },
+      { "title": "Brownie Points", "items": ["Benchmarking gym value against clothing spend on the same goal", "Netting out diet cost from willingness to pay"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "equipment-inputs",
+      "type": "table",
+      "title": "Equipment Cost Inputs",
+      "header": "Equipment Cost Inputs",
+      "noTitle": true,
+      "inlineOnly": true,
+      "columns": ["Equipment", "Life (years)", "Cost/piece (Rs)", "Number of pieces"],
+      "rows": [
+        ["Treadmills and cycle machines", "10", "18,000", "8"],
+        ["Weight-training machines", "16", "40,000", "24"],
+        ["Dumbbells, plates, etc", "8", "1,000", "48"]
+      ]
+    },
+    {
+      "id": "monthly-expenditure",
+      "type": "table",
+      "title": "Total Monthly Expenditure",
+      "header": "Total Monthly Expenditure",
+      "noTitle": true,
+      "columns": ["Equipment", "Life (years)", "Cost/piece (Rs)", "Number of pieces", "Total cost (Rs)", "Number of months", "Cost/month (Rs)"],
+      "columnWidths": ["24%", "11%", "13%", "13%", "13%", "13%", "13%"],
+      "summaryRows": [3, 4],
+      "rows": [
+        ["Treadmills and cycle machines", "10", "18,000", "8", "1,44,000", "120", "1,200"],
+        ["Weight training machines", "16", "40,000", "24", "9,60,000", "192", "5,000"],
+        ["Dumbbells, plates, etc", "8", "1,000", "48", "48,000", "96", "500"],
+        ["Other costs", "", "", "", "", "", "1,13,300"],
+        ["Total", "", "", "", "", "", "1,20,000"]
+      ],
+      "insight": "Equipment adds about Rs 6,700 a month; the rest is fixed other costs, taking the total to Rs 1,20,000."
+    },
+    {
+      "id": "pricing-anchors",
+      "type": "table",
+      "title": "Pricing Anchors",
+      "header": "Pricing Anchors",
+      "noTitle": true,
+      "columns": ["Ref", "Approach", "Basis", "Monthly Price (Rs)"],
+      "columnWidths": ["8%", "28%", "44%", "20%"],
+      "summaryRows": [3],
+      "rows": [
+        ["A", "Cost-Based Floor", "Total monthly cost / subscriptions (1,20,000 / 80)", "1,500"],
+        ["B", "Value-Based Ceiling", "Clothing spend 12,000 / 3 months = 4,000, less 1,000 diet", "3,000"],
+        ["C", "Competitor Rate", "Rival gym's monthly charge", "1,800"],
+        ["D", "Recommended Price", "Competitor rate plus 200 to 300 premium for location and facilities", "~ 2,000"]
+      ],
+      "insight": "The final price sits between the cost floor and value ceiling, just above the rival's rate."
+    }
+  ],
+  "framework": "Candidate: Does the fitness company own other gyms as well or is this going to be their first one? Why have they selected the North Campus area?\n\nInterviewer: This is their first gym. They are looking to target the student crowd in the campus area. There is only one other gym in the area so they believe they can make good money in this location.\n\nCandidate: Sounds good. I would like to know a little more about the gym now. How big is it going to be? What are the other services it will offer (personal trainer, protein supplements, etc.)? How long will it be open for every week?\n\nInterviewer: The gym is going to be a one-stop solution for all fitness freaks. There will be a cardio area, a weight-training section and a yoga room. The gym can accommodate up to 40 people at once. Personal training will be available to those that require it. The company is also planning to set up a health café which will serve shakes, eggs, etc. at cost. This facility is not there in the competitor's gym. The gym will be open from 5 AM to 10 PM on all days of the week.\n\nCandidate: Okay. Lastly, what is our objective when it comes to deciding our monthly subscription? Is it to make profits? Capture market share?\n\nInterviewer: The company is looking to make maximum profits.\n\nCandidate: Got it. I would like to divide my approach into:\n1) Cost-based approach: Here, we will estimate the cost of running the gym and calculate how much the subscription should be in order to break even. This will give us the minimum level at which we can set the monthly subscription.\n2) Value-based approach: Under this, we will look at the value we are adding to our customer's life. We will estimate how much customers would be willing to shell out for the service. This will give us the maximum level at which we can set the monthly subscription.\n3) Competition-based approach: The monthly subscription has to be competitive with that of the other gym.\n4) Demand-supply approach: If we have data available as to the demand and supply at different price points, this approach will be useful.\n\nInterviewer: We don't have information on the demand and supply at different price points. You can proceed with the other 3. Why don't you start with the cost-based approach? What information will you need?\n\nCandidate: Sure. We need to know the cost we will be incurring in setting up the gym and running it. The various costs will include equipment cost, financing costs, monthly rent, trainer and other staffing costs, electricity and lighting, etc. We will also need the life of the equipment so that we can allocate the cost across this period.\n\nInterviewer: Okay. You can note down the following information:\n\n[VIS:0]\n\nInterviewer: All other costs come up to Rs. 1,13,300 every month.\n\nCandidate: After some calculations, I have arrived at the following table _(given below)_ which gives us the monthly cost we will be incurring:\nThe total monthly expenditure is Rs. 1,20,000. Next, we must estimate the number of subscriptions we can get.\n\nInterviewer: We recently conducted a survey. The results indicate that we can get around 80 students to join our gym.\n\nCandidate: Excellent.\n^ Cost-based monthly subscription = Total monthly cost ÷ Number of subscriptions\nUsing this formula, we arrive at a monthly subscription of Rs. 1,500.\n\nInterviewer: Great.\n\nCandidate: Next, we can look at value-based pricing. The primary motivation to join a gym is to get in shape and look better. Students alternatively spend on good clothing and footwear to look better. They would probably go shopping once in 3 months and spend about Rs 12,000 when they do. This means they would be willing to spend up to Rs. 4,000 per month for a similar objective. However, working out is not sufficient. They must also maintain a healthy diet while hitting the gym which costs about Rs. 1,000. We can deduct this cost from Rs. 4,000 which customers are otherwise willing to spend on a gym. This means our customers will be willing to spend about Rs 3,000 per month. Lastly, we can look at how much the other gym in the area charges. Also, what are the differences in the offerings of both gyms?\n\nInterviewer: Sounds good. The other gym charges Rs. 1,800. However, our gym will have a more accessible location. In addition, our gym has a yoga room and health café which the other gym lacks.\n\nCandidate: Interesting. Our customers should be willing to pay Rs. 200 to 300 more to enjoy the better location and facilities. Therefore, it seems reasonable to price our service at about Rs. 2,000 per month.\n\nInterviewer: Makes sense. We seem to have covered everything. Thank you!\n\nRAISE THE BAR FRAMEWORK & RECOMMENDATIONS\nMONTHLY SUBSCRIPTION RATE OF A GYM\n\nClarifying Questions: First gym or others?; Why North Campus?; Services offered?; Primary objective?\n\nBrownie Points: Benchmarking gym value against clothing spend on the same goal; Netting out diet cost from willingness to pay\n\nKeep In Mind: Charge above the competitor's rate for facilities they lack"
+},
+{
+  "id": 36,
+  "docId": "case-36",
+  "title": "Chasing Cars",
+  "industry": "Automotive",
+  "difficulty": "Medium",
+  "case_type": "Pricing",
+  "company": "Kearney",
+  "round": "Partner",
+  "prompt": "Your client is a car rental agency located in Mumbai. They have recently purchased a Mercedes E-Class available in the market for Rs. 50 Lakh. The CEO would like your help in determining the monthly rental it should charge its customers.",
+  "frameworkTree": {
+    "nodes": {
+      "root": { "id": "root", "label": "Monthly Car Rental", "tone": "root", "children": ["cost-based", "substitute-based", "value-based", "demand-supply-based"] },
+      "cost-based": { "id": "cost-based", "label": "Cost Based", "tone": "support", "children": [] },
+      "substitute-based": { "id": "substitute-based", "label": "Substitute Based", "tone": "support", "children": [] },
+      "value-based": { "id": "value-based", "label": "Value Based ✘", "tone": "support", "children": [] },
+      "demand-supply-based": { "id": "demand-supply-based", "label": "Demand-Supply Based ✘", "tone": "support", "children": [] }
+    },
+    "defaultExpanded": ["root", "value-based", "demand-supply-based"],
+    "defaultFocusedIds": ["cost-based", "substitute-based"],
+    "notes": [
+      { "title": "Questions", "items": ["Distribution model?", "Who bears fuel and wash?", "Agency age?"] },
+      { "title": "Keep In Mind", "items": ["Spreading the annual cost over just 6 leased months inflates the rental"] },
+      { "title": "Brownie Points", "items": ["Benchmarking the rental against a premium cab alternative"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "type": "calcpair",
+      "left": {
+        "title": "A.  Cost-Based Monthly Rental (Floor)",
+        "steps": [
+          { "eq": true, "label": "Purchase Price (10% discount)", "value": "₹45L" },
+          { "eq": true, "label": "Scrap Value", "value": "₹10L" },
+          { "eq": true, "label": "Vehicle Life", "value": "10 years" },
+          { "eq": true, "label": "Insurance & Certifications", "value": "3% × ₹50L = ₹1.5L / year" },
+          { "eq": true, "label": "Service Cost", "value": "2 × ₹15,000 = ₹0.3L / year" },
+          { "eq": true, "label": "Interest (Financing)", "value": "₹5L / year" },
+          { "text": "" },
+          { "text": "Depreciation", "bold": true },
+          { "text": "Purchase Price − Scrap Value", "indent": true, "underline": true },
+          { "text": "Vehicle Life", "indent": true },
+          { "text": "" },
+          { "text": "₹45L − ₹10L", "indent": true, "underline": true },
+          { "text": "10", "indent": true },
+          { "text": "" },
+          { "text": "= ₹3.5L / year", "bold": true, "indent": true },
+          { "text": "" },
+          { "text": "Total Direct Costs", "bold": true },
+          { "text": "₹3.5L + ₹1.5L + ₹0.3L + ₹5L = ₹10.3L / year", "indent": true },
+          { "text": "" },
+          { "text": "Indirect Costs (15% of Direct)", "bold": true },
+          { "text": "15% × ₹10.3L ≈ ₹1.5L / year", "indent": true },
+          { "text": "" },
+          { "text": "Total Annual Cost", "bold": true },
+          { "text": "₹10.3L + ₹1.5L ≈ ₹12L / year", "indent": true },
+          { "text": "" },
+          { "text": "Monthly Rental", "bold": true },
+          { "text": "Total Annual Cost", "indent": true, "underline": true },
+          { "text": "Months Leased", "indent": true },
+          { "text": "" },
+          { "text": "₹12L", "indent": true, "underline": true },
+          { "text": "6", "indent": true },
+          { "text": "" },
+          { "text": "= ₹2L / month (Floor)", "bold": true, "indent": true }
+        ]
+      },
+      "right": {
+        "title": "B.  Substitute-Based Value (Ceiling)",
+        "steps": [
+          { "eq": true, "label": "Travel Days per Month", "value": "25 days" },
+          { "eq": true, "label": "Trips per Day", "value": "2" },
+          { "eq": true, "label": "Cost per Trip (15 km)", "value": "₹2,000" },
+          { "eq": true, "label": "Convenience Premium", "value": "30%" },
+          { "text": "" },
+          { "text": "Monthly Taxi Cost", "bold": true },
+          { "text": "25 × 2 × ₹2,000", "indent": true },
+          { "text": "= ₹1L / month", "bold": true, "indent": true },
+          { "text": "" },
+          { "text": "Convenience Premium", "bold": true },
+          { "text": "30% × ₹1L = ₹30,000", "indent": true },
+          { "text": "" },
+          { "text": "Total Value", "bold": true },
+          { "text": "₹1L + ₹30,000", "indent": true },
+          { "text": "= ₹1.3L / month (Ceiling)", "bold": true, "indent": true },
+          { "text": "" },
+          { "text": "Verdict", "bold": true },
+          { "text": "Floor ₹2L > Ceiling ₹1.3L → Not Viable", "bold": true, "indent": true }
+        ]
+      }
+    }
+  ],
+  "framework": "Candidate: Interesting. Can I assume the business model to be similar to Orix's, wherein the customer bears the cost of fuel and car wash while the client is responsible for the remaining costs?\n\nInterviewer: Yes.\n\nCandidate: Great. I would like to know how old the agency is and what the distribution model they follow is?\n\nInterviewer: The agency is 10 years old. They have one showroom where the customer can pick up the car of his/her choice and return it after use. The customers are charged on a monthly basis.\n\nCandidate: It seems to me that the agency primarily deals with luxury cars. Is it the only such agency in the city?\n\nInterviewer: Yes, that's a fair assumption.\n\nCandidate: Okay. In that case, I would like to look at two things. First, I will estimate the costs that the agency will have to recover by leasing out the Mercedes. Subsequently, drawing from my own experiences, I will see if customers would be willing to pay this amount. This will help us determine the viability of the market as well, given that we are the only existing player.\n\nInterviewer: Makes sense. Let's go ahead with this approach.\n\nCandidate: Great. Under the cost-based approach, I am looking at direct costs such as the cost of the vehicle, amount paid for insurance and certifications and lastly, the costs incurred in lieu of servicing and maintenance. Indirect costs would involve the cost of running the agency such as office and employee costs. Since we are a rental agency with multiple cars, I believe we can purchase the car at about Rs. 45 Lakhs, i.e., at a 10% discount. Assuming a scrap value of about Rs. 10 lakhs, it gives us a sum of Rs. 35 lakhs to be recovered over about 10 years. Taking annual insurance premium and certifications to be about 3% of the on-road price, this gives us an additional Rs. 1.5 lakhs we must recover. The agency will also have to get the car serviced at least twice a year and it'll cost them about Rs. 15,000 each time. This gives us a total of Rs. 5.3 lakhs in direct costs. Now, let's move on to the indirect costs.\n\nInterviewer: Before we do that, let's think of any costs that we may be missing.\n\nCandidate: I seem to have missed the cost of financing the car. Can I assume that the car has been purchased on an EMI basis at an interest of about 10% per annum?\n\nInterviewer: Perfect. Let's assume the annual interest to be about Rs. 5 lakhs and indirect costs to be about 15% of the direct costs.\n\nCandidate: Alright. So we have Rs. 10.3 lakhs in direct costs and about Rs. 1.5 lakhs in indirect costs that we will have to recover. This gives us about Rs. 12 lakhs annually. Since it is a luxury car with limited demand in India, how many months in a year do we expect to lease the car out?\n\nInterviewer: Good point. Let's say the car is leased out for 6 months.\n\nCandidate: Okay. So the company will have to charge customers more than Rs. 2 lakhs per month. I would now like to see if customers would be willing to pay this amount. The alternative to renting a luxury car would be to hire a premium taxi. A working individual will travel about 25 days a month and take 2 trips on each of these days. Each trip of about 15 kilometres will cost the individual about Rs. 2,000. This gives us a sum of Rs. 1 lakh per month. Adding a convenience premium of about 30% for the convenience and status offered by rentals, we arrive at a value of Rs. 1.3 lakhs. This is significantly lower than the amount we would like to charge our customers. Additionally, customers will also be required to bear the expenses of fuel, a driver, car wash and parking, which is a hassle. This does not seem to be a viable market for the agency. We can perhaps explore alternate opportunities such as launching premium cab services or leasing it out on a per-day basis.\n\nInterviewer: That won't be necessary. We can stop the case here. I liked your approach.\n\n\nCHASING CARS FRAMEWORK & RECOMMENDATIONS\nMONTHLY CAR RENTAL\n\nClarifying Questions: Distribution model?; Who bears fuel and wash?; Agency age?\n\nBrownie Points: Benchmarking the rental against a premium cab alternative\n\nKeep In Mind: Spreading the annual cost over just 6 leased months inflates the rental\n\nRECOMMENDATIONS: Alternate Opportunity: Introduce premium cab services. Alternate Opportunity: Lease the car out on a per-day basis"
+},
+{
+  "id": 37,
+  "docId": "case-37",
+  "title": "Fly Me to the Moon",
+  "industry": "Tourism",
+  "difficulty": "Hard",
+  "case_type": "Pricing",
+  "company": "Strategy&",
+  "round": "Partner",
+  "prompt": "Your client has come up with a one-of-a-kind space jetpack. Its utility? It takes you straight to the moon in 30 minutes! He wants to know how much he should charge for this service.",
+  "frameworkTree": {
+    "nodes": {
+      "root": { "id": "root", "label": "Space Jetpack", "tone": "root", "children": ["cost-based", "competitor-based", "value-based", "demand-supply-based"] },
+      "cost-based": { "id": "cost-based", "label": "Cost Based", "tone": "support", "children": [] },
+      "competitor-based": { "id": "competitor-based", "label": "Competitor Based ✘", "tone": "support", "children": [] },
+      "value-based": { "id": "value-based", "label": "Value Based ✘", "tone": "support", "children": [] },
+      "demand-supply-based": { "id": "demand-supply-based", "label": "Demand-Supply Based", "tone": "support", "children": [] }
+    },
+    "defaultExpanded": ["root"],
+    "defaultFocusedIds": ["cost-based", "demand-supply-based"],
+    "notes": [
+      { "title": "Questions", "items": ["How many jetpacks?", "Service details?", "Patent and competition?", "Time per trip?"] },
+      { "title": "Keep In Mind", "items": ["The highest price wins here: fatter per-ride margins outweigh lost volume"] },
+      { "title": "Brownie Points", "items": ["Spotting that one non-replicable jetpack makes this pure yield pricing"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "cost-based-floor",
+      "type": "table",
+      "title": "Cost-Based Floor",
+      "header": "Cost-Based Floor",
+      "noTitle": true,
+      "columns": ["Ref", "Component", "Calculation", "Value"],
+      "columnWidths": ["8%", "34%", "36%", "22%"],
+      "summaryRows": [5],
+      "rows": [
+        ["A", "Trips per Year", "0.5 x 10 x 350", "1,750"],
+        ["B", "Trips in 5 Years", "1,750 x 5", "8,750"],
+        ["C", "Trips at 50% Capacity", "8,750 / 2", "4,375"],
+        ["D", "Fixed Cost per Trip", "$1,000,000,000 / 4,375", "~ $230,000"],
+        ["E", "Variable Cost per Trip", "Given", "$770,000"],
+        ["F", "Total Cost per Trip", "D + E", "~ $1,000,000"]
+      ],
+      "insight": "The ~$1,000,000 total cost per trip sets the cost-based price floor."
+    },
+    {
+  "id": "price-elasticity",
+  "type": "table",
+  "title": "Price Elasticity (Profit Maximization)",
+  "header": "Price Elasticity (Profit Maximization)",
+  "noTitle": true,
+  "columns": ["Case", "Price (P)", "Capacity (C)", "Rides (8,750 x C)", "Profit per Ride (P − $770,000)", "Total Profit (Rides x Profit/Ride − $1B)"],
+  "columnWidths": ["7%", "13%", "9%", "18%", "26%", "27%"],
+  "summaryRows": [2],
+  "rows": [
+    ["Case 1", "$1,200,000", "80%", "8,750 x 80% = 7,000", "$1,200,000 − $770,000 = $430,000", "7,000 x $430,000 − $1B = $2.01B"],
+    ["Case 2", "$1,600,000", "60%", "8,750 x 60% = 5,250", "$1,600,000 − $770,000 = $830,000", "5,250 x $830,000 − $1B = $3.35B"],
+    ["Case 3", "$2,000,000", "50%", "8,750 x 50% = 4,375", "$2,000,000 − $770,000 = $1,230,000", "4,375 x $1,230,000 − $1B = $4.38B"]
+  ],
+  "insight": "Profit is maximized at the $2M price (Case 3), yielding $4.38B despite the lowest capacity."
+},
+    { "title": "Trips per Year", "type": "formula", "lhs": "Trips per Year", "rhs": "Trips per Hour × Hours per Day × Days per Year" },
+    { "title": "Profit", "type": "formula", "lhs": "Profit", "rhs": "Number of Rides × Profit per Ride − Fixed Costs" }
+  ],
+  "framework": "Candidate: Oh wow, that's interesting! How many such jetpacks does the client have? Where is the client located and what is his background?\n\nInterviewer: He has 1 jetpack that he has invented. Due to scarcity of Zinotium (a newly discovered element only available on Jupiter), he will not be able to make any more. He is located in Las Vegas, Nevada. He is an engineer by profession.\n\nCandidate: Okay. What exactly is his primary objective with this service? I would also like to understand the service a little better.\n\nInterviewer: Sure, he wants to maximise his profits. It is a one-person activity. The individual would strap in, be taken to the moon in 30 minutes, get to spend 30 minutes on the moon and be brought back in another 30 minutes.\n\nCandidate: Great. I also want to understand certain constraints better: Do we have the required permissions? Is it possible only during certain times of the day, depending on the position of the moon? Are there any other requirements such as oxygen masks?\n\nInterviewer: Assume we have all the permissions. Assume all other logistical problems are solved. He just needs to know how to price it.\n\nCandidate: Sure. Is the product patented? Are there any organisations providing similar services?\n\nInterviewer: Yes, it is patented. No competition exists.\n\nCandidate: There are four approaches to price the service: A cost-based approach that would allow us to cover the basic costs, a competitor-based approach which would give us a benchmark, a value-based approach which would be based on what our service is worth to our customers and finally, a demand-supply-based approach, if data is available.\n\nInterviewer: Sure. You may proceed.\n\nCandidate: Starting with the Cost-based approach, I would like to know the cost incurred by the engineer in developing the product. I would also require the per-trip variable cost associated with the service. Lastly, I also want to know the timeframe within which he would like to recover the cost.\n\nInterviewer: Sure. He has incurred $1 Billion to develop the product. He pays an additional cost of $770,000 for every trip on fuel and other variable costs. This product uses a special metal which will lose its quality in 5 years, post which he will not be able to provide the service anymore. He wants to recover the fixed cost, assuming he works at 50% capacity in the next 5 years.\n\nCandidate: To calculate the number of trips he can undertake in the next 5 years, I would also require information regarding the turnover time between two trips, the number of hours he works in a day and the number of days he will work in a year.\n\nInterviewer: Good question. There is a turnover time of 30 minutes to set up the jetpack after one use. He plans to work 10 hours a day for 350 days in a year.\n\nCandidate: _(Calculation below)_ That gives us a total of 1750 trips/jetpack he can conduct in a year. In 5 years, he will be able to conduct 8750 trips/jetpack. In 4375 trips (8750 trips/2), he will be required to recover his fixed investment of $1 Billion. This gives us an approximate amount of $230,000 per trip. Adding the variable cost of $770,000, we get a total cost of $1,000,000 per trip/jetpack. This sets the lower limit of the price we can charge from a customer.\n\nInterviewer: Sure. You may continue.\n\nCandidate: In the absence of competitors, we will not be able to carry out competitor-based pricing. To continue with value-based pricing, we need to be able to think of a service or an experience that is similar to travelling to the moon. Unfortunately, no once in a lifetime experience or travel would be equal to visiting the moon. Hence, value-based pricing would be difficult. Finally, do we have any data on Demand-Supply points for this service?\n\nInterviewer: Yes, we do. You may note down the following data:\nInterviewer: At a price of $1.2 Million, he will operate at 80% capacity\nInterviewer: At a price of $1.6 Million, he will operate at 60% capacity\nInterviewer: At a price of $2 Million, he will operate at 50% capacity\n\nCandidate: That's interesting! We get the following profits in the three cases _(Calculation below)_\nCase 1: Price of $1.2 Million and capacity of 80%; Profits = $2.01 billion\nCase 2: Price of $1.6 Million and capacity of 60%; Profits = $3.35 billion\nCase 3: Price of $2 Million and capacity of 50%; Profits = $4.38 billion\nGiven the 3 data points, we should go ahead with the price of $2 Million per ride as it gives us a profit of $4.38 billion. This is also above the lower limit of $1 million per ride that we arrived at through the cost-based method.\n\nInterviewer: Brilliant. We can close the case here.\n\n\nFLY ME TO THE MOON FRAMEWORK & RECOMMENDATIONS\nSPACE JETPACK PRICING\n\nClarifying Questions: How many jetpacks?; Service details?; Patent and competition?; Time per trip?\n\nBrownie Points: Reading the cost-based $1M as only a floor, not the final price; Spotting that one non-replicable jetpack makes this pure yield pricing\n\nKeep In Mind: The highest price wins here: fatter per-ride margins outweigh lost volume"
+},
+{
+  "id": 56,
+  "docId": "case-56",
+  "title": "Deloitted to Meet You",
+  "industry": "Services",
+  "difficulty": "Medium",
+  "case_type": "Pricing",
+  "company": "Accenture Strategy",
+  "round": "Manager",
+  "prompt": "Let’s say you get an offer from Deloitte. Great Foods India is one of your clients. Determine the quantum of fees that should be charged for doing a new product-launch project with them.",
+  "frameworkTree": {
+    "nodes": {
+      "root": { "id": "root", "label": "Quantum of Fees", "tone": "root", "children": ["revenue-approach", "cost-approach"] },
+      "revenue-approach": { "id": "revenue-approach", "label": "Revenue Approach", "tone": "branch", "children": ["total-revenue", "profit-margin", "percentage-share"] },
+      "total-revenue": { "id": "total-revenue", "label": "Total Revenue", "tone": "branch", "children": ["market-size", "market-share"] },
+      "market-size": { "id": "market-size", "label": "Market Size", "tone": "leaf", "children": [] },
+      "market-share": { "id": "market-share", "label": "Market Share", "tone": "leaf", "children": [] },
+      "profit-margin": { "id": "profit-margin", "label": "Profit Margin", "tone": "leaf", "children": [] },
+      "percentage-share": { "id": "percentage-share", "label": "Percentage Share", "tone": "leaf", "children": [] },
+      "cost-approach": { "id": "cost-approach", "label": "Cost Approach", "tone": "support", "children": [] }
+    },
+    "defaultExpanded": ["root", "revenue-approach", "total-revenue"],
+    "defaultFocusedId": "total-revenue",
+    "notes": [
+      { "title": "Questions", "items": ["Nature of the project?", "Portfolio size and revenue split?", "Long-term client or pilot?"] },
+      { "title": "Keep In Mind", "items": ["Price off the client's future profit pool, not your costs"] },
+      { "title": "Brownie Points", "items": ["Tying the percentage share to the long-term relationship with Great Foods India"] }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "quantum-of-fees",
+      "type": "table",
+      "title": "Quantum of Fees Build-Up",
+      "header": "Quantum of Fees Build-Up",
+      "noTitle": true,
+      "columns": ["Ref", "Component", "Calculation", "Value"],
+      "columnWidths": ["8%", "34%", "36%", "22%"],
+      "summaryRows": [6],
+      "rows": [
+        ["A", "Market Size (5 years)", "Given", "5,000 cr"],
+        ["B", "Market Share", "Given", "30%"],
+        ["C", "Revenue", "5,000 x 30%", "1,500 cr"],
+        ["D", "Profit Margin", "Given", "10%"],
+        ["E", "Profit Pool", "1,500 x 10%", "150 cr"],
+        ["F", "Percentage Share", "Given", "5%"],
+        ["G", "Quantum of Fees", "150 x 5%", "7.5 cr"]
+      ],
+      "insight": "The revenue approach sets the quantum of fees at 7.5 crores."
+    }
+  ],
+  "framework": "Candidate: Interesting. Can you please expand on the nature of the project that we are working on with Great Foods?\n\nInterviewer: Sure. Great Foods has hired us for a new product-launch and we are responsible for everything from ideation to execution.\n\nCandidate: How many products does Great Foods India currently have in its portfolio? Can you also tell me about their percentage contribution to the total revenue of Great Foods? This will help me understand the scale of operations better.\n\nInterviewer: Let's assume that there are around 10 products in Great Foods India's portfolio currently. They all contribute equally to the total revenue.\n\nCandidate: Is Great Foods India our long-term client or is this a pilot engagement? I am asking because our objective for determining the quantum of fees will change accordingly.\n\nInterviewer: Good question. You can assume that the company has been associated with us for a very long time and we want to pocket the maximum fees that we can.\n\nCandidate: Since we are operating out of India and dealing with an Indian entity, will it be fair to assume that this quantum of fees will be calculated in INR?\n\nInterviewer: That is correct.\n\nCandidate: Got it. I can think of two approaches for solving this problem. We can either look at the costs (monetary as well as non-monetary) involved in rendering our consultancy services and charge a premium over and above that or we can try and look at booking a percentage share from the profits that Great Foods India will generate from this product launch in the long term.\n\nInterviewer: Let's work with the second approach first. Can you please quickly run me through it?\n\nCandidate: Sure. In order to determine our percentage share, I would first like to anticipate the total profits Great Foods India will be able to generate from this launch. Subsequently, we can determine our percentage share from this pool of profits.\n\nInterviewer: That sounds fine. Please proceed further.\n\nCandidate: I would like to break this down into a mathematical function:\n\n^ Quantum of Fees = Revenue × Profit Margin × Percentage Share\n\nDo we have any data on the total revenue Great Foods India will generate in the medium term (say, next five years) from this product launch?\n\nInterviewer: We don't. What else can be done?\n\nCandidate: We can look at the total market size for the product in question and assume a reasonable market share subsequently that Great Foods India can capture. Will fetching this information be possible?\n\nInterviewer: As a matter of fact, we do have this information. The total market size for the product across five years is around 5,000 crores. You can assume an average market share of approximately 30% during this period.\n\nCandidate: Using this information, we can ascertain that our new product would bring in 1500 crores (5,000 × 30% market share) over the next 5 years.\n\nInterviewer: How will you analyse the profit margins?\n\nCandidate: Since we are just introducing this product, costs would be relatively high and reduce significantly only after a period of time. Therefore, we can assume a conservative profit margin averaging 15% for the 5 years.\n\nInterviewer: Let's bring that down to 10%.\n\nCandidate: Sure. Deciding our percentage share will greatly be a function of our objective. Since we are not looking to develop a new relationship with Great Foods India and client retention is not an issue given how we have been engaging with them for a long time, we can look at charging them anything between 5% and 10% of the total revenue.\n\nInterviewer: I think a 5% share will be optimal.\n\nCandidate: Plugging in the numbers, we get 7.5 crores as the figure that we should be asking as the quantum of fees from Great Foods India. We can also verify this number by looking at the costs involved in terms of personnel, time and resources to check if it is feasible.\n\nInterviewer: That won't be necessary. We can close the case here. Thank you for your time!\n\n\nDELOITTED TO MEET YOU FRAMEWORK & RECOMMENDATIONS\nDETERMINING THE QUANTUM OF FEES TO BE CHARGED\n\nClarifying Questions: Nature of the project?; Portfolio size and revenue split?; Long-term client or pilot?\n\nBrownie Points: Tying the percentage share to the long-term relationship with Great Foods India\n\nKeep In Mind: Price off the client's future profit pool, not your costs"
+},
 
 
 
@@ -16863,7 +17226,7 @@
 
 
 
-  
+
   {
     "id": 69,
     "docId": "case-69",
@@ -21394,7 +21757,7 @@
       "revenue": { "id": "revenue", "label": "Revenue", "tone": "support", "children": [] },
       "costs": { "id": "costs", "label": "Costs", "tone": "branch", "children": ["fixed-costs", "variable-costs"] },
       "fixed-costs": { "id": "fixed-costs", "label": "Fixed Costs", "tone": "support", "children": [] },
-      "variable-costs": { "id": "variable-costs", "label": "Variable Costs", "tone": "branch", "children": ["rnd", "raw-materials", "inbound-logistics", "processing", "storage", "outbound-logistics", "distribution", "marketing"] },
+      "variable-costs": { "id": "variable-costs", "label": "Variable Costs", "tone": "branch", "children": ["rnd", "raw-materials", "inbound-logistics", "processing", "storage", "outbound-logistics", "marketing"] },
       "rnd": { "id": "rnd", "label": "R&D", "tone": "support", "children": [] },
       "raw-materials": { "id": "raw-materials", "label": "Raw Materials", "tone": "branch", "children": ["cocoa-beans", "sugar", "milk-solids"] },
       "sugar": { "id": "sugar", "label": "Sugar", "tone": "support", "children": [] },
@@ -21418,8 +21781,7 @@
       "inbound-logistics": { "id": "inbound-logistics", "label": "Inbound Logistics", "tone": "support", "children": [] },
       "processing": { "id": "processing", "label": "Processing & Packaging", "tone": "support", "children": [] },
       "storage": { "id": "storage", "label": "Storage & Warehousing", "tone": "support", "children": [] },
-      "outbound-logistics": { "id": "outbound-logistics", "label": "Outbound Logistics", "tone": "support", "children": [] },
-      "distribution": { "id": "distribution", "label": "Distribution", "tone": "support", "children": [] },
+      "outbound-logistics": { "id": "outbound-logistics", "label": "Outbound Logistics & Distribution", "tone": "support", "children": [] },
       "marketing": { "id": "marketing", "label": "Marketing & After-Sales", "tone": "support", "children": [] }
     },
     "defaultExpanded": ["profit", "costs", "variable-costs", "raw-materials", "cocoa-beans", "sourcing", "external-factors", "economic"],
@@ -21448,7 +21810,7 @@
   "docId": "case-90",
   "title": "SICKO MODE",
   "industry": "Healthcare",
-  "difficulty": "Hard",
+  "difficulty": "Medium",
   "case_type": "Market Entry",
   "company": "McKinsey & Co.",
   "round": "Partner",
@@ -21461,9 +21823,6 @@
         "title": "Questions",
         "items": [
           "What is an e-pharmacy?",
-          "Why enter, and what timeline?",
-          "How have the businesses performed?",
-          "Which geography are we sizing?",
           "Value chain and operating model?",
           "Any established e-pharmacy competitors?"
         ]
@@ -21498,8 +21857,7 @@
         ["D", "High + middle income", "60% x C (low income 40% dropped)", "21 million"],
         ["E", "Digitally-ready (serviceable)", "70% x D", "15 million"]
       ],
-      "summaryRows": [4],
-      "insight": "Only about 15 million of the 50 million households, roughly 30%, survive every filter. That urban, higher-income, digitally-ready core is the realistic launch market."
+      "summaryRows": [4]
     },
     {
       "id": "frequency-to-market-size",
@@ -21517,10 +21875,9 @@
         ["G", "Total annual orders", "D + E + F", "342 million"],
         ["H", "Market size", "G x $10 order value", "$3.42 billion"]
       ],
-      "summaryRows": [6, 7],
-      "insight": "Medium-frequency households drive about 74% of all orders (252M of 342M), so the market hinges on the everyday moderate buyer rather than the heavy-user niche."
+      "summaryRows": [6, 7]
     }
   ],
-  "framework": "Candidate: Thank you. Before I get into numbers, I would like to ask a few clarifying questions across three areas: the problem, the company, and the competition. Starting with the problem, what exactly do we mean by an e-pharmacy?\nInterviewer: Think of it as an e-commerce platform that sells medicines online, over-the-counter drugs, prescription medicines, and health supplements, delivered to the customer.\nCandidate: Understood. And what is pushing the client towards this specific move, and over what timeline are we assessing it?\nInterviewer: They already manufacture medicines and already run consumer retail through their franchises, so an e-pharmacy sits naturally between those two strengths. They want to know whether the prize is large enough to justify building it. Size the current addressable market, and assume they can serve the whole country.\nCandidate: That helps. Turning to the company, how have their two existing businesses performed?\nInterviewer: Both are stable and profitable. Treat the group as well capitalised, with strong manufacturing and distribution capability.\nCandidate: And which geography are we sizing this for?\nInterviewer: The home nation only, for now.\nCandidate: Understood. And how does the value chain and operating model look for the e-pharmacy?\nInterviewer: They already manufacture generics, so they control sourcing, and on top of that they would run warehousing, an app-based ordering platform, and last-mile delivery. One design choice worth noting: because these are regulated medicines that cannot be put back on the shelf once they leave the warehouse, a refused or returned cash-on-delivery order would be a near-total write-off. So the client runs the platform as fully prepaid and digital, every order is validated and paid through the app before dispatch, with no cash on delivery.\nCandidate: That reinforces why this is a natural extension for them. Lastly, on competition, are there established e-pharmacy players already?\nInterviewer: Not really. One or two small startups have attempted it but none has scaled, the client would effectively be one of the first at scale.\nCandidate: That is useful, because it means I should size the underlying demand itself rather than a share of an existing market. To frame the opportunity fully, I would normally look at three things: the financial feasibility, essentially how large the market is; the operational barriers to running an e-pharmacy here; and the risks of adding this as a third business under the group. Where would you like me to focus?\nInterviewer: Good structure, but for this discussion focus only on the market sizing.\nCandidate: Understood. Let me lay out my approach before putting any numbers to it, and once you are comfortable I will bring in the figures. My plan is to start from the country's population and apply a series of filters to reach the pool that would realistically buy from an e-pharmacy, then convert that pool into a dollar market size. I would use four filters in order:\n1. Geography: split into urban and rural, since rural customers are far less likely to adopt an online pharmacy early on, given lower digital comfort and thinner delivery infrastructure.\n2. Income: keep only the segments who can realistically afford it, since online orders carry a small convenience and delivery premium over the neighbourhood chemist.\n3. Internet access: of those, only the ones actually online can shop digitally.\n4. Digital payments: and since the platform is prepaid, only the ones who can pay online can complete an order.\nInterviewer: Do you think that individual-level approach is the right lens here?\nCandidate: Let me reconsider that for a moment.\nInterviewer: Put it this way. When you buy medicines, do you buy them for yourself, or did your parents buy them for the household?\nCandidate: That is a fair point. Medicines are usually bought once for the whole household rather than per person, and a per-individual view would ignore age and double-count dependents. It is cleaner to switch to a household approach and treat each household as the buying unit.\nInterviewer: Agreed. Go with households. Now, to crunch the numbers, ask me for any information you need.\nCandidate: Then let me gather a few figures first. What is the population of the country, and can I assume it is broadly similar to India?\nInterviewer: It is not like India. Take the population as 200 million.\nCandidate: Do we also have figures for the filters, or should I assume them?\nInterviewer: I can give you two. Urban is larger than rural here, so take 70% urban and 30% rural. For income, treat high and middle income together as 60% of the population and low income as 40%.\nCandidate: Thank you. I will talk through the math as I go so we stay on the same page. First, households. With a population of 200 million and an average household size of 4:\n~ Households = 200 million ÷ 4 = 50 million\nNext, the geography filter, splitting those 50 million households 70:30:\n~ Urban = 50 million × 70% = 35 million\n~ Rural = 50 million × 30% = 15 million\nSince this is a launch phase with no players ahead of us, and rural adoption of an online pharmacy will be negligible this early, I will set the rural market to zero for now and focus on the 35 million urban households. Is that a reasonable simplification?\nInterviewer: Yes, that is fine.\nCandidate: Now the income filter on those 35 million urban households, high and middle income at 60% and low income at 40%:\n~ High and middle income = 35 million × 60% = 21 million\n~ Low income = 35 million × 40% = 14 million\nI will drop the low-income households entirely.\nInterviewer: You do not want to keep even a small share of them?\nCandidate: Not at launch. Low-income households already rely on cheaper physical chemists, and without a subsidised or highly streamlined system they have little reason to pay an online premium. I would rather size the realistic early market and treat them as later upside. That leaves 21 million high and middle income urban households.\nInterviewer: Fair enough.\nCandidate: The last two filters are being online and being able to pay online. Since these two overlap heavily, I will club them into a single digital-readiness filter. For this urban, higher-income segment I would assume internet access is high, around 85%, with strong digital-payment adoption, so after netting the overlap I will take a combined 70% who can both browse and pay online. Does that sit well?\nInterviewer: Yes, that is reasonable.\nCandidate: Applying it:\n~ Digitally-ready households = 21 million × 70% ≈ 15 million\nSo about 15 million households form the serviceable market that would actually shop from an e-pharmacy. Now I will convert these households into a dollar market size in two steps. First, I will split the 15 million households by how frequently they buy, into high, medium, and low frequency. Second, I will attach an annual number of orders to each, total them, and multiply by an average order value.\nFor the frequency split I will assume:\n- High frequency, 10%: households with chronic patients, elderly members, or young children who order regularly.\n- Medium frequency, 70%: the typical household ordering for occasional illness plus the odd supplement or refill.\n- Low frequency, 20%: households that buy only occasionally and still lean on the local chemist.\nThat gives:\n~ High = 15 million × 10% = 1.5 million households\n~ Medium = 15 million × 70% = 10.5 million households\n~ Low = 15 million × 20% = 3 million households\nNext, orders per household per year. Let me anchor the low-frequency group and scale up. A low-frequency household orders roughly once a month, so 12 times a year. A medium household orders about twice as often and a high household about three times as often:\n- Low: 12 orders a year\n- Medium: 2 × 12 = 24 orders a year\n- High: 3 × 12 = 36 orders a year\nSo annual orders by segment:\n~ High = 1.5 million × 36 = 54 million\n~ Medium = 10.5 million × 24 = 252 million\n~ Low = 3 million × 12 = 36 million\n~ Total annual orders = 54 + 252 + 36 = 342 million\nNow I need an average order value. Do you have a figure in mind, or should I reason one out?\nInterviewer: We have worked with assumptions throughout, so go ahead and reason one out.\nCandidate: A typical family's in-store pharmacy bill is around 500 rupees. An online order usually carries a convenience and delivery premium, so I would add roughly 20%, taking it to about 600 rupees an order.\nInterviewer: You are almost there. Let us simplify and take the average order value as $10.\nCandidate: Perfect. Then the market size is total annual orders times the average order value:\n^ Market size = Annual orders × Average order value\n^ = 342 million × $10\n^ = $3.42 billion\nSo the serviceable e-pharmacy market for the client, at launch and focused on urban, higher-income, digitally-ready households, is roughly $3.4 billion a year.\nInterviewer: Good. That is the number I was looking for. Let us stop there.\n\nSICKO MODE Framework & Recommendations\nSIZING THE E-PHARMACY MARKET FOR A SOUTHEAST ASIAN CONGLOMERATE\nClarifying Questions: What is an e-pharmacy? Why enter, and what timeline? How have the businesses performed? Which geography are we sizing? Value chain and operating model? Any established e-pharmacy competitors?\nBrownie Points: Clubbing internet and digital-payment access into a single digital-readiness filter Deriving the average order value from a typical in-store bill plus an online convenience premium Splitting the serviceable market by purchase frequency and scaling orders off a monthly low-frequency anchor\nKeep In Mind: Medicines are bought at the household level not per individual, so size by households once age matters With the platform prepaid and no cash on delivery, digital-payment access gates who can actually buy The case is framed as a full market entry but narrowed to pure market sizing"
+  "framework": "Candidate: Thank you. Before I get into numbers, I would like to ask a few clarifying questions across three areas: the problem, the company, and the competition. Starting with the problem, what exactly do we mean by an e-pharmacy?\nInterviewer: Think of it as an e-commerce platform that sells medicines online, over-the-counter drugs, prescription medicines, and health supplements, delivered to the customer.\nCandidate: Understood. And what is pushing the client towards this specific move, and over what timeline are we assessing it?\nInterviewer: They already manufacture medicines and already run consumer retail through their franchises, so an e-pharmacy sits naturally between those two strengths. They want to know whether the prize is large enough to justify building it. Size the current addressable market, and assume they can serve the whole country.\nCandidate: That helps. Turning to the company, how have their two existing businesses performed?\nInterviewer: Both are stable and profitable. Treat the group as well capitalised, with strong manufacturing and distribution capability.\nCandidate: And which geography are we sizing this for?\nInterviewer: The home nation only, for now.\nCandidate: Understood. And how does the value chain and operating model look for the e-pharmacy?\nInterviewer: They already manufacture generics, so they control sourcing, and on top of that they would run warehousing, an app-based ordering platform, and last-mile delivery. One design choice worth noting: because these are regulated medicines that cannot be put back on the shelf once they leave the warehouse, a refused or returned cash-on-delivery order would be a near-total write-off. So the client runs the platform as fully prepaid and digital, every order is validated and paid through the app before dispatch, with no cash on delivery.\nCandidate: That reinforces why this is a natural extension for them. Lastly, on competition, are there established e-pharmacy players already?\nInterviewer: Not really. One or two small startups have attempted it but none has scaled, the client would effectively be one of the first at scale.\nCandidate: That is useful, because it means I should size the underlying demand itself rather than a share of an existing market. To frame the opportunity fully, I would normally look at three things: the financial feasibility, essentially how large the market is; the operational barriers to running an e-pharmacy here; and the risks of adding this as a third business under the group. Where would you like me to focus?\nInterviewer: Good structure, but for this discussion focus only on the market sizing.\nCandidate: Understood. Let me lay out my approach before putting any numbers to it, and once you are comfortable I will bring in the figures. My plan is to start from the country's population and apply a series of filters to reach the pool that would realistically buy from an e-pharmacy, then convert that pool into a dollar market size. I would use four filters in order:\n1. Geography: split into urban and rural, since rural customers are far less likely to adopt an online pharmacy early on, given lower digital comfort and thinner delivery infrastructure.\n2. Income: keep only the segments who can realistically afford it, since online orders carry a small convenience and delivery premium over the neighbourhood chemist.\n3. Internet access: of those, only the ones actually online can shop digitally.\n4. Digital payments: and since the platform is prepaid, only the ones who can pay online can complete an order.\nInterviewer: Do you think that individual-level approach is the right lens here?\nCandidate: Let me reconsider that for a moment.\nInterviewer: Put it this way. When you buy medicines, do you buy them for yourself, or did your parents buy them for the household?\nCandidate: That is a fair point. Medicines are usually bought once for the whole household rather than per person, and a per-individual view would ignore age and double-count dependents. It is cleaner to switch to a household approach and treat each household as the buying unit.\nInterviewer: Agreed. Go with households. Now, to crunch the numbers, ask me for any information you need.\nCandidate: Then let me gather a few figures first. What is the population of the country, and can I assume it is broadly similar to India?\nInterviewer: It is not like India. Take the population as 200 million.\nCandidate: Do we also have figures for the filters, or should I assume them?\nInterviewer: I can give you two. Urban is larger than rural here, so take 70% urban and 30% rural. For income, treat high and middle income together as 60% of the population and low income as 40%.\nCandidate: Thank you. I will talk through the math as I go so we stay on the same page. First, households. With a population of 200 million and an average household size of 4:\n^ Households = 200 million ÷ 4 = 50 million\nNext, the geography filter, splitting those 50 million households 70:30:\n^ Urban = 50 million × 70% = 35 million\n^ Rural = 50 million × 30% = 15 million\nSince this is a launch phase with no players ahead of us, and rural adoption of an online pharmacy will be negligible this early, I will set the rural market to zero for now and focus on the 35 million urban households. Is that a reasonable simplification?\nInterviewer: Yes, that is fine.\nCandidate: Now the income filter on those 35 million urban households, high and middle income at 60% and low income at 40%:\n^ High and middle income = 35 million × 60% = 21 million\n^ Low income = 35 million × 40% = 14 million\nI will drop the low-income households entirely.\nInterviewer: You do not want to keep even a small share of them?\nCandidate: Not at launch. Low-income households already rely on cheaper physical chemists, and without a subsidised or highly streamlined system they have little reason to pay an online premium. I would rather size the realistic early market and treat them as later upside. That leaves 21 million high and middle income urban households.\nInterviewer: Fair enough.\nCandidate: The last two filters are being online and being able to pay online. Since these two overlap heavily, I will club them into a single digital-readiness filter. For this urban, higher-income segment I would assume internet access is high, around 85%, with strong digital-payment adoption, so after netting the overlap I will take a combined 70% who can both browse and pay online. Does that sit well?\nInterviewer: Yes, that is reasonable.\nCandidate: Applying it:\n^ Digitally-ready households = 21 million × 70% ≈ 15 million\nSo about 15 million households form the serviceable market that would actually shop from an e-pharmacy. Now I will convert these households into a dollar market size in two steps. First, I will split the 15 million households by how frequently they buy, into high, medium, and low frequency. Second, I will attach an annual number of orders to each, total them, and multiply by an average order value.\nFor the frequency split I will assume:\n- High frequency, 10%: households with chronic patients, elderly members, or young children who order regularly.\n- Medium frequency, 70%: the typical household ordering for occasional illness plus the odd supplement or refill.\n- Low frequency, 20%: households that buy only occasionally and still lean on the local chemist.\nThat gives:\n^ High = 15 million × 10% = 1.5 million households\n^ Medium = 15 million × 70% = 10.5 million households\n^ Low = 15 million × 20% = 3 million households\nNext, orders per household per year. Let me anchor the low-frequency group and scale up. A low-frequency household orders roughly once a month, so 12 times a year. A medium household orders about twice as often and a high household about three times as often:\nLow: 1 × 12 = 12 orders a year\nMedium: 2 × 12 = 24 orders a year\nHigh: 3 × 12 = 36 orders a year\nSo annual orders by segment:\n^ High = 1.5 million × 36 = 54 million\n^ Medium = 10.5 million × 24 = 252 million\n^ Low = 3 million × 12 = 36 million\n^ Total annual orders = 54 + 252 + 36 = 342 million\nNow I need an average order value. Do you have a figure in mind, or should I reason one out?\nInterviewer: We have worked with assumptions throughout, so go ahead and reason one out.\nCandidate: A typical family's in-store pharmacy bill is around 500 rupees. An online order usually carries a convenience and delivery premium, so I would add roughly 20%, taking it to about 600 rupees an order.\nInterviewer: You are almost there. Let us simplify and take the average order value as $10.\nCandidate: Perfect. Then the market size is total annual orders times the average order value:\n^ Market size = Annual orders × Average order value\n^ = 342 million × $10\n^ = $3.42 billion\nSo the serviceable e-pharmacy market for the client, at launch and focused on urban, higher-income, digitally-ready households, is roughly $3.4 billion a year.\nInterviewer: Good. That is the number I was looking for. Let us stop there.\n\nSICKO MODE Framework & Recommendations\nSIZING THE E-PHARMACY MARKET FOR A SOUTHEAST ASIAN CONGLOMERATE\nClarifying Questions: What is an e-pharmacy? Why enter, and what timeline? How have the businesses performed? Which geography are we sizing? Value chain and operating model? Any established e-pharmacy competitors?\nBrownie Points: Clubbing internet and digital-payment access into a single digital-readiness filter Deriving the average order value from a typical in-store bill plus an online convenience premium Splitting the serviceable market by purchase frequency and scaling orders off a monthly low-frequency anchor\nKeep In Mind: Medicines are bought at the household level not per individual, so size by households once age matters With the platform prepaid and no cash on delivery, digital-payment access gates who can actually buy The case is framed as a full market entry but narrowed to pure market sizing"
 }
 ]
