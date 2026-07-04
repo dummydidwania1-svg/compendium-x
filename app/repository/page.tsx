@@ -160,6 +160,10 @@ const ROW_GRID =
 const OPEN_ENDED = (t: string | null) =>
   ['guesstimate', 'unconventional'].includes((t ?? '').toLowerCase())
 
+const SECTION_HEADING_LABEL: Record<string, string> = {
+  Guesstimate: 'Guesstimates',
+}
+
 const SectionBand = ({ letter, type, isFirst }: { letter: string; type: string; isFirst: boolean }) => (
   <div className={`repo-section ${ROW_GRID} px-2 sm:px-4 ${isFirst ? 'pt-3' : 'pt-8'} pb-3`}>
 <div className="flex items-center px-2">   {/* ← same px-/justify as the CaseRow number cell */}
@@ -168,7 +172,7 @@ const SectionBand = ({ letter, type, isFirst }: { letter: string; type: string; 
   </span>
 </div>
     <div className="col-span-5 flex items-baseline gap-3 px-2 pr-4">
-      <span className="font-serif text-[15px] italic tracking-wide text-[#453a2a]/80">{type}</span>
+      <span className="font-serif text-[15px] italic tracking-wide text-[#453a2a]/80">{SECTION_HEADING_LABEL[type] ?? type}</span>
       <span className="repo-section-rule" />
     </div>
   </div>
