@@ -20085,7 +20085,7 @@
     "industry": "Pet Food",
     "difficulty": "Hard",
     "case_type": "Guesstimate",
-    "company": "BCG",
+    "company": "Bain & Company",
     "round": "Buddy",
     "prompt": "Our client is a large pet food company, and one of its brands leads a small, specialized segment with a product called Penguin Power. Size the market for penguin food in the United States.",
     "frameworkTree": {
@@ -21286,20 +21286,19 @@
   "docId": "case-88",
   "title": "Padhega India, Badhega India",
   "industry": "Industry Agnostic",
-  "difficulty": "Hard",
+  "difficulty": "Medium",
   "case_type": "Guesstimate",
   "company": "BCG",
   "round": "Buddy",
   "prompt": "You are advising the Ministry of Education in the state of Jharkhand. They want to estimate the annual budget needed to supply science textbooks to every government-school student from grade 1 to grade 10, with the books printed in colour. How would you size it?",
-  "abbreviations": ["HI: High Income", "MI: Middle Income", "LI: Low Income"],
   "frameworkTree": {
     "nodes": {},
     "defaultExpanded": [],
     "defaultFocusedId": "",
     "notes": [
-      { "title": "Questions", "items": ["Are we covering grades 1 to 10 only?", "One science book per student per year?", "Government schools only, not private?", "Are we costing colour printing specifically?"] },
-      { "title": "Keep In Mind", "items": ["Move top-down through the funnel before calculating", "Low-income families rely on government schools the most, so their penetration is the highest", "Round numbers at each step to keep the arithmetic clean"] },
-      { "title": "Brownie Points", "items": ["Deriving per-book cost from a per-page colour printing rate", "Splitting students into grade bands by book length", "Benchmarking the estimate against the existing 4.2 crore allocation"] }
+      { "title": "Questions", "items": ["Fresh book every year, or reprints and reuse?", "Printing only, or distribution included?", "A current allocation to benchmark against?"] },
+      { "title": "Keep In Mind", "items": ["Low-income families rely on government schools the most, so their penetration is the highest"] },
+      { "title": "Brownie Points", "items": ["Deriving per-book cost from a per-page colour printing rate", "Benchmarking the estimate against the existing 4.2 crore allocation"] }
     ]
   },
   "visualisations": [
@@ -21310,14 +21309,15 @@
       "header": "Population Funnel",
       "noTitle": true,
       "columns": ["Ref", "Step", "Calculation", "Value"],
-      "columnWidths": ["8%", "40%", "32%", "20%"],
-      "summaryRows": [1],
+      "columnWidths": ["8%", "46%", "30%", "16%"],
+      "summaryRows": [],
       "rows": [
-        ["A", "Jharkhand population", "Starting point", "3.5 crore"],
-        ["B", "School-going children, grades 1 to 10", "About 20% of A", "0.7 crore"],
+        ["A", "Jharkhand population", "Assumption", "3.5 crore"],
+        ["B", "School-going students, grades 1 to 10", "20% of A", "0.7 crore"],
         ["C", "Urban students", "30% of B", "0.21 crore"],
         ["D", "Rural students", "70% of B", "0.49 crore"]
-      ]
+      ],
+      "insight": "Grades 1 to 10 are about a fifth of the state, split roughly one-third urban to two-thirds rural."
     },
     {
       "id": "govt-students-by-segment",
@@ -21325,19 +21325,19 @@
       "title": "Government-School Students by Segment",
       "header": "Government-School Students by Segment",
       "noTitle": true,
-      "columns": ["Geography", "Income segment", "Share of area", "Govt-school penetration", "Govt-school students (crore)"],
-      "columnWidths": ["18%", "22%", "16%", "24%", "20%"],
+      "columns": ["Ref", "Segment", "Calculation", "Value"],
+      "columnWidths": ["8%", "30%", "42%", "20%"],
       "summaryRows": [3, 7, 8],
       "rows": [
-        ["Urban (0.21 cr)", "High income", "10%", "70%", "0.015"],
-        ["Urban (0.21 cr)", "Middle income", "60%", "90%", "0.113"],
-        ["Urban (0.21 cr)", "Low income", "30%", "100%", "0.063"],
-        ["Urban subtotal", "", "", "", "0.19"],
-        ["Rural (0.49 cr)", "High income", "10%", "40%", "0.020"],
-        ["Rural (0.49 cr)", "Middle income", "40%", "70%", "0.137"],
-        ["Rural (0.49 cr)", "Low income", "50%", "90%", "0.221"],
-        ["Rural subtotal", "", "", "", "0.38"],
-        ["Total", "", "", "", "0.57"]
+        ["A", "Urban, high income", "0.21 crore x 10% x 70%", "0.015 crore"],
+        ["B", "Urban, middle income", "0.21 crore x 60% x 90%", "0.113 crore"],
+        ["C", "Urban, low income", "0.21 crore x 30% x 100%", "0.063 crore"],
+        ["D", "Urban subtotal", "A + B + C", "0.19 crore"],
+        ["E", "Rural, high income", "0.49 crore x 10% x 40%", "0.020 crore"],
+        ["F", "Rural, middle income", "0.49 crore x 40% x 70%", "0.137 crore"],
+        ["G", "Rural, low income", "0.49 crore x 50% x 90%", "0.221 crore"],
+        ["H", "Rural subtotal", "E + F + G", "0.38 crore"],
+        ["I", "Total govt-school students", "D + H", "0.57 crore"]
       ],
       "insight": "Penetration is highest for low-income families, who rely on government schools the most."
     },
@@ -21347,18 +21347,20 @@
       "title": "Annual Budget by Grade Band",
       "header": "Annual Budget by Grade Band",
       "noTitle": true,
-      "columns": ["Grade band", "Students", "Pages per book", "Cost per book", "Annual budget"],
-      "columnWidths": ["22%", "20%", "18%", "18%", "22%"],
-      "summaryRows": [2],
+      "columns": ["Ref", "Item", "Calculation", "Value"],
+      "columnWidths": ["8%", "32%", "40%", "20%"],
+      "summaryRows": [4],
       "rows": [
-        ["Grades 1 to 5", "0.285 crore", "100", "Rs 50", "Rs 14 crore"],
-        ["Grades 6 to 10", "0.285 crore", "200", "Rs 100", "Rs 28 crore"],
-        ["Total", "0.57 crore", "", "", "Rs 43 crore"]
+        ["A", "Grades 1 to 5, cost per book", "100 pages x Rs 0.5", "Rs 50"],
+        ["B", "Grades 6 to 10, cost per book", "200 pages x Rs 0.5", "Rs 100"],
+        ["C", "Grades 1 to 5 budget", "0.285 crore x A", "Rs 14 crore"],
+        ["D", "Grades 6 to 10 budget", "0.285 crore x B", "Rs 28 crore"],
+        ["E", "Total annual budget", "C + D", "Rs 42 crore"]
       ],
-      "insight": "Full coverage costs about 43 crore a year, roughly ten times the ministry's current 4.2 crore allocation."
+      "insight": "Full coverage costs about 42 crore a year, roughly ten times the ministry's current 4.2 crore allocation."
     }
   ],
-  "framework": "Candidate: Thank you. Before I start, let me confirm the scope with a few questions. First, are we covering grades 1 to 10 specifically?\nInterviewer: Yes, grades 1 through 10.\nCandidate: Second, only the science textbook, one per student per year?\nInterviewer: Correct, one science book per student per year.\nCandidate: Third, only government schools, not private ones?\nInterviewer: Government schools only.\nCandidate: And we are costing the printing of those books, in colour, which is more expensive than black and white?\nInterviewer: Yes. For context, the ministry currently sets aside about 4.2 crore for this, a 7 crore line item of which roughly 60 percent is meant for these books. They want to know whether that is in the right ballpark.\nCandidate: Understood. My plan is to estimate the number of government-school students in grades 1 to 10, group them by the cost of their books, and multiply. I will move step by step: total population, then the school-going share, then urban versus rural, then income segment, then how many of each actually attend government schools, and finally the cost of the book by grade band.\nInterviewer: Go ahead.\nCandidate: Starting with population, I will assume Jharkhand has about 3.5 crore people. Of these, I need the school-going population, the children roughly aged 6 to 16 who map to grades 1 to 10. That is about eleven single-year age cohorts, and since India skews young, I will take it as roughly 20 percent of the population. That gives about 0.7 crore students in the grade 1 to 10 range.\nInterviewer: Fine. Continue.\nCandidate: I will now work down from those 0.7 crore students, splitting by geography, then by income, then by how many actually attend government schools. The urban side is about 30 percent of students, so roughly 0.21 crore. Within it I assume high income at 10 percent with about 70 percent in government schools, middle income at 60 percent with about 90 percent in government schools, and low income at 30 percent with nearly all, close to 100 percent, in government schools. Low-income families depend on government schools the most, so their attendance is the highest. Blending these, 0.10 times 0.70 plus 0.60 times 0.90 plus 0.30 times 1.00 is about 0.91, giving roughly 0.19 crore urban government-school students.\nInterviewer: And the rural side?\nCandidate: The rural side is the other 70 percent of students, about 0.49 crore, and here government schools dominate even more. High income is 10 percent with about 40 percent in government schools, middle income is 40 percent with about 70 percent in government schools, and low income is 50 percent with about 90 percent in government schools. Blending these, 0.10 times 0.40 plus 0.40 times 0.70 plus 0.50 times 0.90 is about 0.77, giving roughly 0.38 crore rural government-school students. Adding urban and rural, I get about 0.57 crore government-school students in grades 1 to 10.\nInterviewer: Good. Now bring in the cost.\nCandidate: The cost of a book depends on its length, so I will split students into two grade bands and price each book from its page count. Colour printing at government bulk scale, counting paper, ink, and binding, runs roughly 50 paise a page. Grades 1 to 5 use a shorter book of about 100 pages, so about 100 times 0.5, which is 50 rupees a book. Grades 6 to 10 use a longer book of about 200 pages, so about 200 times 0.5, which is 100 rupees a book. Splitting the 0.57 crore students evenly between the two bands gives about 0.285 crore in each band. So the budget is 0.285 crore times 50 rupees for the primary band plus 0.285 crore times 100 rupees for the secondary band, which is about 14 crore plus 28 crore, or roughly 43 crore a year.\nInterviewer: How does that compare with the 4.2 crore the ministry has set aside?\nCandidate: It is about ten times larger. That gap tells me one of two things. Either the ministry is significantly underfunding colour textbooks and the true requirement is an order of magnitude higher, or the 4.2 crore figure covers only a slice of the need, for example reprints and top-ups rather than a fresh book for every student. My recommendation would be to clarify which of those it is, and if the goal really is a colour science book for every government-school child, to revisit the allocation, since the full-coverage cost is closer to 43 crore than to 4 crore.\nInterviewer: That is a sensible place to land. Let us stop there.\n\nPadhega India, Badhega India Framework & Recommendations\nANNUAL COLOUR TEXTBOOK BUDGET FOR JHARKHAND GOVERNMENT SCHOOLS\nClarifying Questions: Grades 1 to 10 only. One science book per student per year. Government schools only. Colour printing costs.\nKeep In Mind: Move top-down through the funnel before calculating. Low-income families rely on government schools the most, so their penetration is the highest. Round numbers at each step to keep the arithmetic clean.\nBrownie Points: Deriving per-book cost from a per-page colour printing rate. Splitting students into grade bands with different book lengths. Benchmarking the estimate against the existing 4.2 crore allocation.\nRecommendation: A full-coverage colour science textbook programme for grades 1 to 10 costs roughly 43 crore a year, about ten times the current 4.2 crore allocation. Either the line item funds only reprints and top-ups, or the programme is significantly underfunded and the allocation should be revisited."
+  "framework": "Candidate: Thank you. The scope is clear from the brief, so let me confirm my reading and then check what it leaves open. I am taking this as grades 1 to 10, government schools only, and a colour science book. First, does each student get a fresh book every year, or do reprints and reuse cover part of the demand?\nInterviewer: Assume a fresh book for every student, every year.\nCandidate: Second, should the budget cover only the printing of the books, or also their distribution and logistics to schools?\nInterviewer: Printing only.\nCandidate: Third, since the book length changes with grade, may I price each book from its page count and a per-page colour rate?\nInterviewer: Yes, that works.\nCandidate: And lastly, is there a current allocation I should sanity-check my estimate against?\nInterviewer: Yes. The ministry currently sets aside about 4.2 crore for this, a 7 crore line item of which roughly 60% is meant for these books. They want to know whether that is in the right ballpark.\nCandidate: Understood. My plan is to estimate the number of government-school students in grades 1 to 10, group them by the cost of their books, and multiply. I will move step by step: total population, then the school-going share, then urban versus rural, then income segment, then how many of each actually attend government schools, and finally the cost of the book by grade band.\nInterviewer: Go ahead.\nCandidate: Starting with population, I will assume Jharkhand has about 3.5 crore people. Of these, I need the school-going population, the children roughly aged 6 to 16 who map to grades 1 to 10. That is about eleven single-year age cohorts, and since India skews young, I will take it as roughly 20% of the population. That gives about 0.7 crore students in the grade 1 to 10 range.\nInterviewer: Fine. Continue.\nCandidate: I will now work down from those 0.7 crore students, splitting by geography, then by income, then by how many actually attend government schools. The urban side is about 30% of students, so roughly 0.21 crore. Within it I assume high income at 10% with about 70% in government schools, middle income at 60% with about 90% in government schools, and low income at 30% with nearly all, close to 100%, in government schools. Low-income families depend on government schools the most, so their attendance is the highest. Blending these, 0.10 × 0.70 + 0.60 × 0.90 + 0.30 × 1.00 is about 0.91, giving roughly 0.19 crore urban government-school students.\nInterviewer: And the rural side?\nCandidate: The rural side is the other 70% of students, about 0.49 crore, and here government schools dominate even more. High income is 10% with about 40% in government schools, middle income is 40% with about 70% in government schools, and low income is 50% with about 90% in government schools. Blending these, 0.10 × 0.40 + 0.40 × 0.70 + 0.50 × 0.90 is about 0.77, giving roughly 0.38 crore rural government-school students. Adding urban and rural, I get about 0.57 crore government-school students in grades 1 to 10.\nInterviewer: Good. Now bring in the cost.\nCandidate: The cost of a book depends on its length, so I will split students into two grade bands and price each book from its page count. Colour printing at government bulk scale, counting paper, ink, and binding, runs roughly 50 paise a page. Grades 1 to 5 use a shorter book of about 100 pages, so about 100 × 0.5, which is 50 rupees a book. Grades 6 to 10 use a longer book of about 200 pages, so about 200 × 0.5, which is 100 rupees a book. Splitting the 0.57 crore students evenly between the two bands gives about 0.285 crore in each band. So the budget is 0.285 crore × 50 rupees for the primary band + 0.285 crore × 100 rupees for the secondary band, which is about 14 crore + 28 crore, or roughly 42 crore a year.\nInterviewer: How does that compare with the 4.2 crore the ministry has set aside?\nCandidate: It is about ten times larger. That gap tells me one of two things. Either the ministry is significantly underfunding colour textbooks and the true requirement is an order of magnitude higher, or the 4.2 crore figure covers only a slice of the need, for example reprints and top-ups rather than a fresh book for every student. My recommendation would be to clarify which of those it is, and if the goal really is a colour science book for every government-school child, to revisit the allocation, since the full-coverage cost is closer to 42 crore than to 4 crore.\nInterviewer: That is a sensible place to land. Let us stop there.\n\nPadhega India, Badhega India Framework & Recommendations\nANNUAL COLOUR TEXTBOOK BUDGET FOR JHARKHAND GOVERNMENT SCHOOLS\nClarifying Questions: Fresh book for every student each year. Printing only, not distribution. Book priced from page count and colour rate. Current allocation to benchmark against.\nKeep In Mind: Move top-down through the funnel before calculating. Low-income families rely on government schools the most, so their penetration is the highest. Round numbers at each step to keep the arithmetic clean.\nBrownie Points: Deriving per-book cost from a per-page colour printing rate. Splitting students into grade bands with different book lengths. Benchmarking the estimate against the existing 4.2 crore allocation."
 },
 {
   "id": 89,
@@ -21424,5 +21426,85 @@
     ]
   },
   "framework": "Candidate: Thank you for the case. Before I analyse the problem, may I ask a few questions to understand the client better?\nInterviewer: Sure, go ahead.\nCandidate: Firstly, where is the client located, and where do they lie in the value chain?\nInterviewer: They are present pan-India as a manufacturer and distributor. Assume they are like Cadbury.\nCandidate: Do they have multiple chocolate bars, and do they serve all income segments?\nInterviewer: For this case, take them to have one chocolate bar, mainly for medium to premium customers.\nCandidate: Is the problem limited to a particular geography or demographic?\nInterviewer: No, it is uniform across the country.\nCandidate: Do we know the magnitude and time horizon of the problem?\nInterviewer: The decline is significant and has persisted over the past six months.\nCandidate: Are competitors facing the same problem?\nInterviewer: We are not certain.\nCandidate: To begin, I would break profit into revenue minus costs, so the decline could come from falling revenue, rising costs, or both. Where should I focus?\nInterviewer: Look at costs. They are rising.\nCandidate: I would split costs into fixed and variable. Fixed costs are capital expenditure like land, building, plant, and machinery, while variable costs are day-to-day expenses. Where does the problem lie?\nInterviewer: Look at variable costs.\nCandidate: I would break variable costs along the value chain: variable research and development, procurement of raw materials, inbound logistics, processing, packaging, storage and warehousing, outbound logistics, distribution, marketing, and after-sales. Is the problem in one of these?\nInterviewer: Yes, it is in raw materials.\nCandidate: Are we outsourcing raw materials or producing them in house, and are the main inputs cocoa beans, sugar, and milk solids? Which one is the problem?\nInterviewer: They are outsourced, and the problem is in cocoa beans.\nCandidate: The cost of cocoa beans is the quantity procured multiplied by the price per kg, adjusted for the quality mix. Have any of these changed?\nInterviewer: No, the quoted price and other factors have remained unchanged.\nCandidate: Where are we procuring the beans from, and do we use multiple contractors?\nInterviewer: We source them from Ghana through a single contractor.\nCandidate: Then the rise could be internal or external. Internally I would look at the contractor's cost and the transport from Ghana to the Indian port and from the port to our factory. Externally I would look at economic, governmental, legal, and social factors.\nInterviewer: Look at external factors, especially economic.\nCandidate: Under economic factors I would consider inflation in Ghana, changes in import duties on cocoa entering India, and foreign exchange movements. Could the exchange rate be at play?\nInterviewer: Yes. We buy the beans for USD 6 per kg, and our variable cost of production is around Rs 500 per kg of chocolate.\nCandidate: So we pay for the beans in dollars while our costs and revenue are in rupees. The dollar price of the beans has not changed, but the rupee has depreciated against the dollar over the past six months, so each dollar of beans now converts into more rupees, which is raising our costs.\nInterviewer: Correct. Can you think of possible solutions?\nCandidate: _(Recommendations below)_\nInterviewer: Sounds good. We can close the case here. Thank you.\n\nDeath by Chocolate Framework & Recommendations\nRISING COCOA COSTS AT A CHOCOLATE MANUFACTURER\nClarifying Questions: Where the client lies in the value chain Whether they sell one product or many and to which segments Whether the problem is limited to a geography or demographic The magnitude and time horizon of the decline Whether competitors face the same problem\nKeep In Mind: Break profit into revenue and costs before going deeper Establish whether the issue is company-specific or industry-wide A stable dollar price can still mean a rising rupee cost when the currency moves\nBrownie Points: Splitting solutions into short term and long term Spotting the currency mismatch between dollar inputs and rupee operations Flagging single-supplier and single-currency dependence as a risk"
+},
+{
+  "id": 90,
+  "docId": "case-90",
+  "title": "SICKO MODE",
+  "industry": "Healthcare",
+  "difficulty": "Hard",
+  "case_type": "Market Entry",
+  "company": "McKinsey & Co.",
+  "round": "Partner",
+  "prompt": "My client is a conglomerate from a Southeast Asian nation, a contract manufacturer with two lines of business: making generics for multinational pharma companies, and running franchises for companies like Coca-Cola, Pizza Hut, and other quick-service restaurants. They now want to venture into a third business altogether, an e-pharmacy. How large would that e-pharmacy market be for the client? Give the market value in billion dollars.",
+  "frameworkTree": {
+    "nodes": {},
+    "defaultExpanded": [],
+    "notes": [
+      {
+        "title": "Questions",
+        "items": [
+          "What is an e-pharmacy?",
+          "Why enter, and what timeline?",
+          "How have the businesses performed?",
+          "Which geography are we sizing?",
+          "Value chain and operating model?",
+          "Any established e-pharmacy competitors?"
+        ]
+      },
+      {
+        "title": "Keep In Mind",
+        "items": [
+          "Size at the household level, not per individual",
+          "Digital payment access, not just internet, is the real gate to buy"
+        ]
+      },
+      {
+        "title": "Brownie Points",
+        "items": [
+          "Deriving average order value from an in-store bill plus a convenience premium",
+          "Splitting by purchase frequency and anchoring to the low-frequency buyer"
+        ]
+      }
+    ]
+  },
+  "visualisations": [
+    {
+      "id": "household-funnel",
+      "type": "table",
+      "title": "From Population to Serviceable Households",
+      "columns": ["Ref", "Step", "Calculation", "Value"],
+      "columnWidths": ["10%", "32%", "36%", "22%"],
+      "rows": [
+        ["A", "Total population", "Given", "200 million people"],
+        ["B", "Households", "A / 4 (avg household size)", "50 million"],
+        ["C", "Urban households", "70% x B (rural 30% dropped)", "35 million"],
+        ["D", "High + middle income", "60% x C (low income 40% dropped)", "21 million"],
+        ["E", "Digitally-ready (serviceable)", "70% x D", "15 million"]
+      ],
+      "summaryRows": [4],
+      "insight": "Only about 15 million of the 50 million households, roughly 30%, survive every filter. That urban, higher-income, digitally-ready core is the realistic launch market."
+    },
+    {
+      "id": "frequency-to-market-size",
+      "type": "table",
+      "title": "From Households to Market Size",
+      "columns": ["Ref", "Segment", "Calculation", "Value"],
+      "columnWidths": ["10%", "34%", "34%", "22%"],
+      "rows": [
+        ["A", "High-frequency households", "10% x 15M", "1.5 million"],
+        ["B", "Medium-frequency households", "70% x 15M", "10.5 million"],
+        ["C", "Low-frequency households", "20% x 15M", "3 million"],
+        ["D", "High-freq orders / year", "A x 36", "54 million"],
+        ["E", "Medium-freq orders / year", "B x 24", "252 million"],
+        ["F", "Low-freq orders / year", "C x 12", "36 million"],
+        ["G", "Total annual orders", "D + E + F", "342 million"],
+        ["H", "Market size", "G x $10 order value", "$3.42 billion"]
+      ],
+      "summaryRows": [6, 7],
+      "insight": "Medium-frequency households drive about 74% of all orders (252M of 342M), so the market hinges on the everyday moderate buyer rather than the heavy-user niche."
+    }
+  ],
+  "framework": "Candidate: Thank you. Before I get into numbers, I would like to ask a few clarifying questions across three areas: the problem, the company, and the competition. Starting with the problem, what exactly do we mean by an e-pharmacy?\nInterviewer: Think of it as an e-commerce platform that sells medicines online, over-the-counter drugs, prescription medicines, and health supplements, delivered to the customer.\nCandidate: Understood. And what is pushing the client towards this specific move, and over what timeline are we assessing it?\nInterviewer: They already manufacture medicines and already run consumer retail through their franchises, so an e-pharmacy sits naturally between those two strengths. They want to know whether the prize is large enough to justify building it. Size the current addressable market, and assume they can serve the whole country.\nCandidate: That helps. Turning to the company, how have their two existing businesses performed?\nInterviewer: Both are stable and profitable. Treat the group as well capitalised, with strong manufacturing and distribution capability.\nCandidate: And which geography are we sizing this for?\nInterviewer: The home nation only, for now.\nCandidate: Understood. And how does the value chain and operating model look for the e-pharmacy?\nInterviewer: They already manufacture generics, so they control sourcing, and on top of that they would run warehousing, an app-based ordering platform, and last-mile delivery. One design choice worth noting: because these are regulated medicines that cannot be put back on the shelf once they leave the warehouse, a refused or returned cash-on-delivery order would be a near-total write-off. So the client runs the platform as fully prepaid and digital, every order is validated and paid through the app before dispatch, with no cash on delivery.\nCandidate: That reinforces why this is a natural extension for them. Lastly, on competition, are there established e-pharmacy players already?\nInterviewer: Not really. One or two small startups have attempted it but none has scaled, the client would effectively be one of the first at scale.\nCandidate: That is useful, because it means I should size the underlying demand itself rather than a share of an existing market. To frame the opportunity fully, I would normally look at three things: the financial feasibility, essentially how large the market is; the operational barriers to running an e-pharmacy here; and the risks of adding this as a third business under the group. Where would you like me to focus?\nInterviewer: Good structure, but for this discussion focus only on the market sizing.\nCandidate: Understood. Let me lay out my approach before putting any numbers to it, and once you are comfortable I will bring in the figures. My plan is to start from the country's population and apply a series of filters to reach the pool that would realistically buy from an e-pharmacy, then convert that pool into a dollar market size. I would use four filters in order:\n1. Geography: split into urban and rural, since rural customers are far less likely to adopt an online pharmacy early on, given lower digital comfort and thinner delivery infrastructure.\n2. Income: keep only the segments who can realistically afford it, since online orders carry a small convenience and delivery premium over the neighbourhood chemist.\n3. Internet access: of those, only the ones actually online can shop digitally.\n4. Digital payments: and since the platform is prepaid, only the ones who can pay online can complete an order.\nInterviewer: Do you think that individual-level approach is the right lens here?\nCandidate: Let me reconsider that for a moment.\nInterviewer: Put it this way. When you buy medicines, do you buy them for yourself, or did your parents buy them for the household?\nCandidate: That is a fair point. Medicines are usually bought once for the whole household rather than per person, and a per-individual view would ignore age and double-count dependents. It is cleaner to switch to a household approach and treat each household as the buying unit.\nInterviewer: Agreed. Go with households. Now, to crunch the numbers, ask me for any information you need.\nCandidate: Then let me gather a few figures first. What is the population of the country, and can I assume it is broadly similar to India?\nInterviewer: It is not like India. Take the population as 200 million.\nCandidate: Do we also have figures for the filters, or should I assume them?\nInterviewer: I can give you two. Urban is larger than rural here, so take 70% urban and 30% rural. For income, treat high and middle income together as 60% of the population and low income as 40%.\nCandidate: Thank you. I will talk through the math as I go so we stay on the same page. First, households. With a population of 200 million and an average household size of 4:\n~ Households = 200 million ÷ 4 = 50 million\nNext, the geography filter, splitting those 50 million households 70:30:\n~ Urban = 50 million × 70% = 35 million\n~ Rural = 50 million × 30% = 15 million\nSince this is a launch phase with no players ahead of us, and rural adoption of an online pharmacy will be negligible this early, I will set the rural market to zero for now and focus on the 35 million urban households. Is that a reasonable simplification?\nInterviewer: Yes, that is fine.\nCandidate: Now the income filter on those 35 million urban households, high and middle income at 60% and low income at 40%:\n~ High and middle income = 35 million × 60% = 21 million\n~ Low income = 35 million × 40% = 14 million\nI will drop the low-income households entirely.\nInterviewer: You do not want to keep even a small share of them?\nCandidate: Not at launch. Low-income households already rely on cheaper physical chemists, and without a subsidised or highly streamlined system they have little reason to pay an online premium. I would rather size the realistic early market and treat them as later upside. That leaves 21 million high and middle income urban households.\nInterviewer: Fair enough.\nCandidate: The last two filters are being online and being able to pay online. Since these two overlap heavily, I will club them into a single digital-readiness filter. For this urban, higher-income segment I would assume internet access is high, around 85%, with strong digital-payment adoption, so after netting the overlap I will take a combined 70% who can both browse and pay online. Does that sit well?\nInterviewer: Yes, that is reasonable.\nCandidate: Applying it:\n~ Digitally-ready households = 21 million × 70% ≈ 15 million\nSo about 15 million households form the serviceable market that would actually shop from an e-pharmacy. Now I will convert these households into a dollar market size in two steps. First, I will split the 15 million households by how frequently they buy, into high, medium, and low frequency. Second, I will attach an annual number of orders to each, total them, and multiply by an average order value.\nFor the frequency split I will assume:\n- High frequency, 10%: households with chronic patients, elderly members, or young children who order regularly.\n- Medium frequency, 70%: the typical household ordering for occasional illness plus the odd supplement or refill.\n- Low frequency, 20%: households that buy only occasionally and still lean on the local chemist.\nThat gives:\n~ High = 15 million × 10% = 1.5 million households\n~ Medium = 15 million × 70% = 10.5 million households\n~ Low = 15 million × 20% = 3 million households\nNext, orders per household per year. Let me anchor the low-frequency group and scale up. A low-frequency household orders roughly once a month, so 12 times a year. A medium household orders about twice as often and a high household about three times as often:\n- Low: 12 orders a year\n- Medium: 2 × 12 = 24 orders a year\n- High: 3 × 12 = 36 orders a year\nSo annual orders by segment:\n~ High = 1.5 million × 36 = 54 million\n~ Medium = 10.5 million × 24 = 252 million\n~ Low = 3 million × 12 = 36 million\n~ Total annual orders = 54 + 252 + 36 = 342 million\nNow I need an average order value. Do you have a figure in mind, or should I reason one out?\nInterviewer: We have worked with assumptions throughout, so go ahead and reason one out.\nCandidate: A typical family's in-store pharmacy bill is around 500 rupees. An online order usually carries a convenience and delivery premium, so I would add roughly 20%, taking it to about 600 rupees an order.\nInterviewer: You are almost there. Let us simplify and take the average order value as $10.\nCandidate: Perfect. Then the market size is total annual orders times the average order value:\n^ Market size = Annual orders × Average order value\n^ = 342 million × $10\n^ = $3.42 billion\nSo the serviceable e-pharmacy market for the client, at launch and focused on urban, higher-income, digitally-ready households, is roughly $3.4 billion a year.\nInterviewer: Good. That is the number I was looking for. Let us stop there.\n\nSICKO MODE Framework & Recommendations\nSIZING THE E-PHARMACY MARKET FOR A SOUTHEAST ASIAN CONGLOMERATE\nClarifying Questions: What is an e-pharmacy? Why enter, and what timeline? How have the businesses performed? Which geography are we sizing? Value chain and operating model? Any established e-pharmacy competitors?\nBrownie Points: Clubbing internet and digital-payment access into a single digital-readiness filter Deriving the average order value from a typical in-store bill plus an online convenience premium Splitting the serviceable market by purchase frequency and scaling orders off a monthly low-frequency anchor\nKeep In Mind: Medicines are bought at the household level not per individual, so size by households once age matters With the platform prepaid and no cash on delivery, digital-payment access gates who can actually buy The case is framed as a full market entry but narrowed to pure market sizing"
 }
 ]
