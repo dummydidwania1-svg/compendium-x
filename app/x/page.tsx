@@ -64,6 +64,7 @@ header.ccx-hero .ctas {
 header.ccx-hero .ctas a {
   display: inline-block;
   padding: 16px 32px;
+  white-space: nowrap;
   font-family: 'Work Sans', sans-serif;
   font-size: 11px;
   font-weight: 500;

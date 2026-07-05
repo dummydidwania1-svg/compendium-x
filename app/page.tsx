@@ -60,9 +60,12 @@ header.ccx-hero .ctas {
   display: flex; gap: 16px; flex-wrap: wrap;
 }
 header.ccx-hero .ctas a {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 16px 32px;
-  width: 210px;
+  min-width: 210px;
+  white-space: nowrap;
   text-align: center;
   font-family: 'Work Sans', sans-serif;
   font-size: 11px;

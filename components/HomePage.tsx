@@ -1769,7 +1769,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
             <Link
               href="/repository"
-              className="inline-flex min-w-[220px] items-center justify-center bg-[#3D5A35] px-8 py-4 text-xs uppercase tracking-[0.2em] text-white transition-all hover:bg-[#3D5A35]/90"
+              className="inline-flex min-w-[220px] items-center justify-center whitespace-nowrap bg-[#3D5A35] px-8 py-4 text-xs uppercase tracking-[0.2em] text-white transition-all hover:bg-[#3D5A35]/90"
             >
               Browse Repository
             </Link>
