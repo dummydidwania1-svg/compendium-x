@@ -568,7 +568,7 @@ export default function PracticeModeSelection() {
                 }}
                 className="text-xs"
               >
-                AI-powered case practice and performance analytics for consulting interviews.
+                The case book a million readers grew up on. Now built to coach you.
               </p>
             </div>
             <div className="flex flex-wrap gap-x-10 gap-y-3 md:gap-x-12">

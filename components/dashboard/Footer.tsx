@@ -14,7 +14,7 @@ const Footer = (_props: FooterProps) => (
             <span style={{ color: '#aed0a1' }}>X</span>
           </Link>
           <p style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.5)', maxWidth: '280px', lineHeight: 1.6 }} className="text-xs">
-            AI-powered case practice and performance analytics for consulting interviews.
+            The case book a million readers grew up on. Now built to coach you.
           </p>
         </div>
         {/* Whitespace text nodes ({' '}) between links keep a scraped Google

@@ -591,7 +591,7 @@ function Footer() {
                 color: 'rgba(213, 196, 177, 0.5)',
               }}
             >
-              AI-powered case practice and performance analytics for consulting interviews.
+              The case book a million readers grew up on. Now built to coach you.
             </p>
           </div>
 
