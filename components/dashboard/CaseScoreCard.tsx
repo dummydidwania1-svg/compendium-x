@@ -29,107 +29,141 @@ const scoreColor = (score: number): string => {
   return COLORS.dark;
 };
 
-// ── Dashboard-native parameter colors — warm palette only ──
-// Drawn from the existing warm/accent/subtle/dark tokens so nothing looks foreign.
-const PARAM_META: { key: string; label: string; fill: string; muted: string }[] = [
-  { key: 'structure',  label: PARAM_LABELS.structure,  fill: '#5C4033', muted: 'rgba(92,64,51,0.18)'  },
-  { key: 'analysis',   label: PARAM_LABELS.analysis,   fill: '#3D5A35', muted: 'rgba(61,90,53,0.18)'  },
-  { key: 'delivery',   label: PARAM_LABELS.delivery,   fill: '#7A5C2E', muted: 'rgba(122,92,46,0.18)' },
-  { key: 'creativity', label: PARAM_LABELS.creativity,  fill: '#3B5068', muted: 'rgba(59,80,104,0.18)' },
+// ── Pastel tints from the dashboard's timeline chart line palette ──
+// `short` matches the Skill Profile panel's vocabulary so the legend stays one line.
+const PARAM_META: { key: string; label: string; short: string; fill: string }[] = [
+  { key: 'structure',  label: PARAM_LABELS.structure,  short: 'Structure',     fill: '#A08878' },
+  { key: 'analysis',   label: PARAM_LABELS.analysis,   short: 'Understanding', fill: '#6B9E7E' },
+  { key: 'delivery',   label: PARAM_LABELS.delivery,   short: 'Delivery',      fill: '#C8A280' },
+  { key: 'creativity', label: PARAM_LABELS.creativity,  short: 'Creativity',    fill: '#7E9EAA' },
 ];
 
 const MATRIX_TYPES = [
   'Profitability', 'Market Entry', 'Growth', 'Pricing', 'Guesstimate', 'Unconventional',
 ] as const;
 
-// ── Single stacked bar row — hover managed at row level to kill flicker ──
-const WeightRow = ({ type, animate, rowIndex }: { type: string; animate: boolean; rowIndex: number }) => {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+// ── Heatmap grid row — pct as quiet text on a weight-scaled tint ──
+// Hovering a cell drives the shared highlight, so the legend lights up too.
+const WeightRow = ({
+  type, animate, rowIndex, highlightIdx, onCellEnter, onCellLeave,
+}: {
+  type: string;
+  animate: boolean;
+  rowIndex: number;
+  highlightIdx: number | null;
+  onCellEnter: (i: number) => void;
+  onCellLeave: () => void;
+}) => {
   const w = getCaseTypeWeights(type);
-  const segs = [
+  const cells = [
     { ...PARAM_META[0], pct: w.structure  * 100 },
     { ...PARAM_META[1], pct: w.analysis   * 100 },
     { ...PARAM_META[2], pct: w.delivery   * 100 },
     { ...PARAM_META[3], pct: w.creativity * 100 },
   ];
+  const maxPct = Math.max(...cells.map((c) => c.pct));
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="shrink-0 text-right text-[9px] font-medium text-[#5C4033]/55 transition-colors duration-150"
-        style={{ width: 80 }}>
+    <div className="flex items-center gap-2">
+      <span className="shrink-0 text-right text-[10px] text-[#5C4033]/55 leading-none" style={{ width: 84 }}>
         {type}
       </span>
 
-      {/* Bar — single onMouseLeave on the track eliminates border-flicker */}
-      <div
-        className="flex-1 flex rounded-full overflow-hidden"
-        style={{ height: 11, gap: 1.5, background: 'rgba(92,64,51,0.06)' }}
-        onMouseLeave={() => setHoveredIdx(null)}
-      >
-        {segs.map((seg, i) => {
-          const isHov = hoveredIdx === i;
-          const dimmed = hoveredIdx !== null && !isHov;
-          return (
-            <div
-              key={seg.key}
-              onMouseEnter={() => setHoveredIdx(i)}
-              className="relative flex items-center justify-center overflow-hidden cursor-default"
+      {cells.map((cell, i) => {
+        const dimmed = highlightIdx !== null && highlightIdx !== i;
+        const lit = highlightIdx === i;
+        const isMax = cell.pct === maxPct && maxPct > 25;
+        return (
+          <div
+            key={cell.key}
+            className="flex-1 flex items-center justify-center rounded-md cursor-default"
+            onMouseEnter={() => onCellEnter(i)}
+            onMouseLeave={onCellLeave}
+            style={{
+              height: 24,
+              // tint intensity tracks the weight: 15% → faint, 40% → present
+              background: `color-mix(in srgb, ${cell.fill} ${Math.round(cell.pct * (lit ? 1.25 : 0.95))}%, transparent)`,
+              opacity: animate ? (dimmed ? 0.25 : 1) : 0,
+              transform: lit ? 'scale(1.05)' : 'scale(1)',
+              transition: [
+                `opacity 0.25s ease ${animate && highlightIdx === null ? rowIndex * 40 + i * 20 : 0}ms`,
+                'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+                'background 0.25s ease',
+              ].join(', '),
+            }}
+          >
+            <span
+              className={`text-[10px] tabular-nums leading-none select-none ${isMax || lit ? 'font-semibold' : 'font-normal'}`}
               style={{
-                width: animate ? `${seg.pct}%` : '0%',
-                backgroundColor: seg.fill,
-                opacity: dimmed ? 0.28 : 1,
-                filter: isHov ? 'brightness(1.12)' : 'none',
-                transition: `width 0.6s cubic-bezier(0.16,1,0.3,1) ${rowIndex * 50 + i * 22}ms, opacity 0.18s ease, filter 0.18s ease`,
-                borderRadius: i === 0 ? '9999px 1px 1px 9999px' : i === 3 ? '1px 9999px 9999px 1px' : '1px',
+                color: lit ? 'rgba(59,47,47,0.9)' : 'rgba(59,47,47,0.72)',
+                transition: 'color 0.2s ease',
               }}
             >
-              {/* Pct label — always rendered, opacity-driven so layout never shifts */}
-              <span
-                className="text-[7.5px] font-semibold tabular-nums leading-none select-none pointer-events-none"
-                style={{
-                  color: 'rgba(255,255,255,0.85)',
-                  opacity: seg.pct >= 24 ? 1 : isHov ? 1 : 0,
-                  transition: 'opacity 0.15s ease',
-                }}
-              >
-                {seg.pct.toFixed(0)}%
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Inline hover label — fixed width so row never reflows */}
-      <span
-        className="shrink-0 text-[8.5px] font-medium leading-none transition-all duration-150"
-        style={{
-          width: 88,
-          color: hoveredIdx !== null ? segs[hoveredIdx].fill : 'transparent',
-          opacity: hoveredIdx !== null ? 1 : 0,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {hoveredIdx !== null ? segs[hoveredIdx].label : ' '}
-      </span>
+              {cell.pct.toFixed(0)}%
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 };
 
-// ── Compact inline legend ──
-const WeightLegend = () => (
-  <div className="flex items-center gap-x-4 gap-y-1 flex-wrap">
-    {PARAM_META.map(({ key, fill, label }) => (
-      <div key={key} className="flex items-center gap-1.5">
-        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: fill }} />
-        <span className="text-[8px] font-medium text-[#5C4033]/40 leading-none whitespace-nowrap">{label}</span>
-      </div>
-    ))}
+// ── Legend — hover highlights, click pins; lights up when a grid cell is hovered ──
+const WeightLegend = ({
+  highlightIdx,
+  pinnedIdx,
+  onEnter,
+  onLeave,
+  onPin,
+}: {
+  highlightIdx: number | null;
+  pinnedIdx: number | null;
+  onEnter: (i: number) => void;
+  onLeave: () => void;
+  onPin: (i: number) => void;
+}) => (
+  <div className="flex items-center justify-center gap-x-5 flex-nowrap">
+    {PARAM_META.map(({ key, fill, short }, i) => {
+      const lit = highlightIdx === i;
+      const active = highlightIdx === null || lit;
+      const pinned = pinnedIdx === i;
+      return (
+        <button
+          key={key}
+          type="button"
+          className="flex items-center gap-1.5 cursor-pointer bg-transparent border-0 p-0"
+          onMouseEnter={() => onEnter(i)}
+          onMouseLeave={onLeave}
+          onClick={() => onPin(i)}
+          style={{ opacity: active ? 1 : 0.3, transition: 'opacity 0.18s ease' }}
+        >
+          <div
+            className="w-[6px] h-[6px] rounded-full shrink-0"
+            style={{
+              backgroundColor: fill,
+              opacity: lit ? 1 : 0.8,
+              transform: lit ? 'scale(1.5)' : 'scale(1)',
+              boxShadow: pinned ? `0 0 0 2.5px color-mix(in srgb, ${fill} 25%, transparent)` : 'none',
+              transition: 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.18s ease, box-shadow 0.2s ease',
+            }}
+          />
+          <span
+            className="text-[9px] leading-none whitespace-nowrap"
+            style={{
+              color: lit ? fill : 'rgba(92,64,51,0.55)',
+              fontWeight: lit || pinned ? 600 : 400,
+              transition: 'color 0.18s ease',
+            }}
+          >
+            {short}
+          </span>
+        </button>
+      );
+    })}
   </div>
 );
 
-// ── Floating Weight Matrix Tooltip — always appears ABOVE the anchor ──
+// ── Floating Weight Matrix Tooltip — always above the anchor ──
 const WeightTooltip = ({
   anchorRef,
   visible,
@@ -143,29 +177,31 @@ const WeightTooltip = ({
 }) => {
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const [animate, setAnimate] = useState(false);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [pinnedIdx, setPinnedIdx] = useState<number | null>(null);
+  // Hover wins while active; a pinned selection persists after mouse-out.
+  const highlightIdx = hoverIdx ?? pinnedIdx;
   const cardRef = useRef<HTMLDivElement>(null);
   const canUseDOM = typeof document !== 'undefined';
 
   useEffect(() => {
     if (visible && anchorRef.current) {
       const anchor = anchorRef.current.getBoundingClientRect();
-      const cardW = 460;
-      // Position above the anchor; after paint, adjust for card height
+      const cardW = 440;
       let left = anchor.left + anchor.width / 2 - cardW / 2;
       left = Math.max(12, Math.min(left, window.innerWidth - cardW - 12));
-      // Temporary top — will be corrected after card mounts
-      setPos({ top: anchor.top - 8, left });
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (cardRef.current) {
-            const cardH = cardRef.current.offsetHeight;
-            setPos({ top: anchor.top - cardH - 8, left });
-          }
-          setAnimate(true);
-        });
-      });
+      setPos({ top: -9999, left });
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (cardRef.current) {
+          const cardH = cardRef.current.offsetHeight;
+          setPos({ top: anchor.top - cardH - 10, left });
+        }
+        setAnimate(true);
+      }));
     } else {
       setAnimate(false);
+      setHoverIdx(null);
+      setPinnedIdx(null);
     }
   }, [visible, anchorRef]);
 
@@ -180,30 +216,44 @@ const WeightTooltip = ({
     >
       <div
         ref={cardRef}
-        className="rounded-xl border border-[#5C4033]/10 bg-[#fff8f0] backdrop-blur-xl"
+        className="rounded-xl border border-[#5C4033]/10 bg-[#fff8f0]/95 backdrop-blur-xl"
         style={{
-          width: 460,
-          boxShadow: '0 4px 24px rgba(92,64,51,0.10), 0 1px 4px rgba(92,64,51,0.06)',
+          width: 440,
+          boxShadow: '0 6px 28px rgba(92,64,51,0.09), 0 1px 4px rgba(92,64,51,0.04)',
           animation: 'weight-card-in 0.2s cubic-bezier(0.16,1,0.3,1) both',
         }}
       >
-        {/* Header — eyebrow only, no subline */}
-        <div className="px-4 pt-3.5 pb-2.5">
-          <p className="text-[8px] uppercase tracking-[0.14em] text-[#5C4033]/40 font-semibold">
-            How Case Score is Calculated
+        {/* Header */}
+        <div className="pt-4 pb-3 text-center">
+          <p className="text-[9px] uppercase tracking-[0.15em] text-[#5C4033]/45 font-semibold leading-none">
+            How is Case Score calculated?
           </p>
         </div>
 
-        {/* Matrix rows */}
-        <div className="px-4 pb-3 flex flex-col gap-2">
+        {/* Weight grid */}
+        <div className="px-5 flex flex-col gap-[5px]">
           {MATRIX_TYPES.map((type, i) => (
-            <WeightRow key={type} type={type} animate={animate} rowIndex={i} />
+            <WeightRow
+              key={type}
+              type={type}
+              animate={animate}
+              rowIndex={i}
+              highlightIdx={highlightIdx}
+              onCellEnter={setHoverIdx}
+              onCellLeave={() => setHoverIdx(null)}
+            />
           ))}
         </div>
 
-        {/* Legend — flush, no divider */}
-        <div className="px-4 pb-3.5">
-          <WeightLegend />
+        {/* Legend — one line, two-way interactive: hover highlights, click pins */}
+        <div className="px-5 pt-3 pb-4">
+          <WeightLegend
+            highlightIdx={highlightIdx}
+            pinnedIdx={pinnedIdx}
+            onEnter={setHoverIdx}
+            onLeave={() => setHoverIdx(null)}
+            onPin={(i) => setPinnedIdx((prev) => (prev === i ? null : i))}
+          />
         </div>
       </div>
 
@@ -245,7 +295,7 @@ const ScoreGauge = ({ score, max = 5 }: { score: number; max?: number }) => {
           <span
             key={n}
             className="text-[8px] font-medium"
-            style= {{color: n <= Math.round((score / max) * 5) ? COLORS.warm : '#D9D0C4' }}
+            style={{ color: n <= Math.round((score / max) * 5) ? COLORS.warm : '#D9D0C4' }}
           >
             {n}
           </span>
@@ -360,29 +410,30 @@ const CaseScoreCard = ({ filters }: CaseScoreCardProps) => {
 
   const noData = filteredCases.length === 0;
 
-// ── Animated score count-up ──
-const [displayScore, setDisplayScore] = useState(0);
-useEffect(() => {
-  const duration = 600;
-  const start = performance.now();
-  const target = overallScore;
-  const animate = (now: number) => {
-    const progress = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-    setDisplayScore(+(eased * target).toFixed(1));
-    if (progress < 1) requestAnimationFrame(animate);
-  };
-  requestAnimationFrame(animate);
-}, [overallScore])
+  // ── Animated score count-up ──
+  const [displayScore, setDisplayScore] = useState(0);
+  useEffect(() => {
+    const duration = 600;
+    const start = performance.now();
+    const target = overallScore;
+    const animate = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayScore(+(eased * target).toFixed(1));
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [overallScore]);
 
-return (
+  return (
     <>
       <div
-  onClick={() => !noData && setShowDrilldown(true)}
-  className="glass-card p-6 flex flex-col justify-between transition-all duration-300 ease-out relative overflow-visible cursor-pointer hover:bg-[#D9D0C4]/20 hover:-translate-y-0.5 hover:shadow-lg group"
->
+        onClick={() => !noData && setShowDrilldown(true)}
+        className="glass-card p-6 flex flex-col justify-between transition-all duration-300 ease-out relative overflow-visible cursor-pointer hover:bg-[#D9D0C4]/20 hover:-translate-y-0.5 hover:shadow-lg group"
+      >
         {/* ── Header ── */}
-        <div className="flex items-start justify-between mb-3">          <div>
+        <div className="flex items-start justify-between mb-3">
+          <div>
             <div className="eyebrow !mb-1 flex items-center">OVERALL ASSESSMENT</div>
             <h3 className="text-sm font-medium text-[#3B2F2F] tracking-tight flex items-center gap-1">
               Case Score
@@ -417,14 +468,14 @@ return (
             {/* ── Score display + gauge ── */}
             <div className="flex items-center gap-4 mb-1">
               <div className="flex items-baseline shrink-0 relative">
-  <div
-    className="absolute -inset-3 rounded-full opacity-15 blur-xl pointer-events-none"
-    style= {{backgroundColor: scoreColor(overallScore) }}
-  />
-  <span className="relative font-serif text-2xl font-bold text-[#3B2F2F] tracking-tight tabular-nums">
-  {displayScore}
-</span>
-</div>
+                <div
+                  className="absolute -inset-3 rounded-full opacity-15 blur-xl pointer-events-none"
+                  style={{ backgroundColor: scoreColor(overallScore) }}
+                />
+                <span className="relative font-serif text-2xl font-bold text-[#3B2F2F] tracking-tight tabular-nums">
+                  {displayScore}
+                </span>
+              </div>
               <div className="flex-1 min-w-0">
                 <ScoreGauge score={overallScore} />
               </div>
@@ -432,45 +483,44 @@ return (
 
             {/* ── Drilldown hint ── */}
             <span className="text-[9px] text-[#5C4033]/40 mt-2 group-hover:text-[#5C4033]/60 transition-all tracking-wide flex items-center gap-0.5">
-  View Breakdown
-  <ChevronRight className="w-2.5 h-2.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-</span>
-
+              View Breakdown
+              <ChevronRight className="w-2.5 h-2.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+            </span>
           </>
         )}
       </div>
 
       {/* ── Drilldown overlay (ScoreOverlay-consistent layout) ── */}
       {showDrilldown && (
-  <div className="absolute inset-0 z-40 flex items-center justify-center p-6" onClick={() => setShowDrilldown(false)} style={{ borderRadius: 'inherit' }}>
-    <div className="absolute inset-0 bg-[#fff8f0]/40 backdrop-blur-md" style={{ borderRadius: 'inherit' }} />
-    <div
-      className="relative bg-[#fff8f0]/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#5C4033]/12 w-full max-w-md animate-scale-in overflow-hidden"
-      onClick={(e) => e.stopPropagation()}
-    >
+        <div className="absolute inset-0 z-40 flex items-center justify-center p-6" onClick={() => setShowDrilldown(false)} style={{ borderRadius: 'inherit' }}>
+          <div className="absolute inset-0 bg-[#fff8f0]/40 backdrop-blur-md" style={{ borderRadius: 'inherit' }} />
+          <div
+            className="relative bg-[#fff8f0]/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#5C4033]/12 w-full max-w-md animate-scale-in overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header — matches ScoreOverlay */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-[#5C4033]/10">
-  <div className="flex items-center gap-2">
-    <span className="text-[10px] uppercase tracking-[0.12em] font-semibold text-[#5C4033]/55">
-      SCORE BREAKDOWN
-    </span>
-    <span className="text-[10px] text-[#5C4033]/30">·</span>
-    <span className="text-xs font-semibold text-[#3B2F2F] tabular-nums">
-      {overallScore} / 5
-    </span>
-  </div>
-  <div className="flex items-center gap-2.5">
-    <span className="text-[9px] font-medium text-[#5C4033]/30 tabular-nums tracking-wide">
-      {filteredCases.length} {filteredCases.length === 1 ? 'case' : 'cases'}
-    </span>
-    <button
-      onClick={() => setShowDrilldown(false)}
-      className="w-5 h-5 flex items-center justify-center rounded-full bg-[#D9D0C4]/50 text-[#5C4033] hover:bg-[#3B2F2F] hover:text-[#F0EBE3] transition-colors"
-    >
-      <X className="w-2.5 h-2.5" />
-    </button>
-  </div>
-</div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-[0.12em] font-semibold text-[#5C4033]/55">
+                  SCORE BREAKDOWN
+                </span>
+                <span className="text-[10px] text-[#5C4033]/30">·</span>
+                <span className="text-xs font-semibold text-[#3B2F2F] tabular-nums">
+                  {overallScore} / 5
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="text-[9px] font-medium text-[#5C4033]/30 tabular-nums tracking-wide">
+                  {filteredCases.length} {filteredCases.length === 1 ? 'case' : 'cases'}
+                </span>
+                <button
+                  onClick={() => setShowDrilldown(false)}
+                  className="w-5 h-5 flex items-center justify-center rounded-full bg-[#D9D0C4]/50 text-[#5C4033] hover:bg-[#3B2F2F] hover:text-[#F0EBE3] transition-colors"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            </div>
 
             {/* Body — two columns: Case Type | Difficulty */}
             <div className="p-4 flex gap-6">

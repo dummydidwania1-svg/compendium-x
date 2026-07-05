@@ -2166,8 +2166,8 @@ const handleMuteToggle = (e: React.MouseEvent) => {
                   <div className="skel-title">Skill Profile</div>
                   {[
                     ['Structure', 44],
+                    ['Understanding', 40],
                     ['Delivery', 54],
-                    ['Analysis', 40],
                     ['Creativity', 76],
                   ].map(([label, width]) => (
                     <div key={label} className="skel-bar-row">

@@ -186,7 +186,7 @@ function ScoreRing({ value, ready }: { value: number | null; ready: boolean }) {
 function ParamBar({ label, score, ready }: { label: string; score: number | null; ready: boolean }) {
   return (
     <div className="flex items-center gap-[9px] mb-[10px]">
-      <span className="text-[11px] font-medium w-[64px] text-right shrink-0" style={{ color: 'rgba(92,64,51,.46)' }}>
+      <span className="text-[11px] font-medium w-[88px] text-right shrink-0" style={{ color: 'rgba(92,64,51,.46)' }}>
         {label}
       </span>
       <div className="flex-1 h-[5px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
@@ -642,10 +642,10 @@ export default function CaseDetailOverlay({
   );
 
   const paramRows = [
-    { label: 'Structure',  val: entry.structure },
-    { label: 'Delivery',   val: entry.delivery },
-    { label: 'Analysis',   val: entry.analysis },
-    { label: 'Creativity', val: entry.creativity },
+    { label: 'Structure',     val: entry.structure },
+    { label: 'Understanding', val: entry.analysis },
+    { label: 'Delivery',      val: entry.delivery },
+    { label: 'Creativity',    val: entry.creativity },
   ];
 
   const scoreBlock = (

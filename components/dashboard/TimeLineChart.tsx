@@ -89,8 +89,8 @@ interface Filters {
 const METRIC_OPTIONS: { id: MetricId; label: string }[] = [
   { id: 'overall',    label: 'Overall Score' },
   { id: 'structure',  label: 'Structure'     },
+  { id: 'analysis',   label: 'Understanding' },
   { id: 'delivery',   label: 'Delivery'      },
-  { id: 'analysis',   label: 'Analysis'      },
   { id: 'creativity', label: 'Creativity'    },
 ];
 

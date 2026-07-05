@@ -167,11 +167,12 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
   }, [entries, filters]);
 
   // ── Compute parameter scores from filtered cases ──
+  // Standard dashboard order + short names: Structure, Understanding, Delivery, Creativity
   const parameterScores = useMemo(() => {
     const params: { name: string; key: string }[] = [
       { name: 'Structure', key: 'structure' },
+      { name: 'Understanding', key: 'analysis' },
       { name: 'Delivery', key: 'delivery' },
-      { name: 'Analysis', key: 'analysis' },
       { name: 'Creativity', key: 'creativity' },
     ];
     return params.map((p) => ({
@@ -180,9 +181,17 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
     }));
   }, [filteredCases]);
 
+  // ── Display-name → data-key map (display names no longer match keys) ──
+  const NAME_TO_KEY: Record<string, 'structure' | 'analysis' | 'delivery' | 'creativity'> = {
+    Structure: 'structure',
+    Understanding: 'analysis',
+    Delivery: 'delivery',
+    Creativity: 'creativity',
+  };
+
   // ── Compute drilldown: score by Case Type for selected parameter ──
   const scoreByType = useMemo(() => {
-    const paramKey = (drillDown || '').toLowerCase() as 'structure' | 'delivery' | 'analysis' | 'creativity';
+    const paramKey = drillDown ? NAME_TO_KEY[drillDown] : undefined;
     if (!paramKey) return [];
 
     const activeTypes = filters.types.length > 0 ? filters.types : FILTER_TYPES;
@@ -198,7 +207,7 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
 
   // ── Compute drilldown: score by Difficulty for selected parameter ──
   const scoreByLevel = useMemo(() => {
-    const paramKey = (drillDown || '').toLowerCase() as 'structure' | 'delivery' | 'analysis' | 'creativity';
+    const paramKey = drillDown ? NAME_TO_KEY[drillDown] : undefined;
     if (!paramKey) return [];
 
     const activeLevels = filters.levels.length > 0 ? filters.levels : FILTER_LEVELS;
@@ -213,8 +222,8 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
 
   // ── Overall score for selected parameter (for drilldown header) ──
   const drillDownOverallScore = useMemo(() => {
-    if (!drillDown) return 0;
-    const paramKey = drillDown.toLowerCase() as 'structure' | 'delivery' | 'analysis' | 'creativity';
+    const paramKey = drillDown ? NAME_TO_KEY[drillDown] : undefined;
+    if (!paramKey) return 0;
     return avg(filteredCases.map((c) => (c as any)[paramKey]));
   }, [drillDown, filteredCases]);
 
@@ -250,7 +259,7 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
                   onMouseLeave={handleBarMouseLeave}
                   className="flex items-center gap-3 group/bar cursor-pointer hover:bg-[#D9D0C4]/15 -mx-2 px-2 py-1.5 rounded-lg transition-all duration-200"
                 >
-                  <span className="text-[11px] font-medium text-[#5C4033]/70 w-[72px] text-right shrink-0 group-hover/bar:text-[#3B2F2F] transition-colors">
+                  <span className="text-[11px] font-medium text-[#5C4033]/70 w-[88px] text-right shrink-0 group-hover/bar:text-[#3B2F2F] transition-colors">
                     {entry.name}
                   </span>
                   <div className="flex-1 min-w-0 group-hover/bar:scale-[1.02] transition-transform">
