@@ -194,7 +194,25 @@ const WeightTooltip = ({
       requestAnimationFrame(() => requestAnimationFrame(() => {
         if (cardRef.current) {
           const cardH = cardRef.current.offsetHeight;
-          setPos({ top: anchor.top - cardH - 10, left });
+          // Keep clear of the sticky navbar: if opening above would collide
+          // with it, open to the right of the anchor instead.
+          const nav = document.querySelector('nav, header');
+          const safeTop = (nav ? nav.getBoundingClientRect().bottom : 0) + 8;
+          let top = anchor.top - cardH - 10;
+          let l = left;
+          if (top < safeTop) {
+            l = anchor.right + 14;
+            top = Math.max(
+              safeTop,
+              Math.min(anchor.top + anchor.height / 2 - cardH / 2, window.innerHeight - cardH - 12),
+            );
+            if (l + cardW > window.innerWidth - 12) {
+              // No room on the right either — fall back to below the anchor.
+              l = left;
+              top = anchor.bottom + 10;
+            }
+          }
+          setPos({ top, left: l });
         }
         setAnimate(true);
       }));
