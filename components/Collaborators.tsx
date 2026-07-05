@@ -483,7 +483,7 @@ export default function Collaborators() {
           </h1>
 
           <p className="cl-subtext reveal" style={{ transitionDelay: '140ms' }}>
-            This book was possible because they chose to share. Every case in the library,
+            This book was possible because they chose to share. Every case in the repository,
             every framework on the platform, carries the fingerprints of people who gave their
             time and knowledge for those they had never met.
           </p>

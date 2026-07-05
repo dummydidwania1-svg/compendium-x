@@ -518,7 +518,7 @@ export default function PracticeModeSelection() {
                 href="/repository"
                 className="practice-subtle-link"
               >
-                <span>Browse case library</span>
+                <span>Browse case repository</span>
                 <svg
                   width="10"
                   height="10"

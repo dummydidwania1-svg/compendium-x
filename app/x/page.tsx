@@ -909,7 +909,7 @@ export default function LandingX() {
             </h1>
             <div className="ctas">
               <a className="primary" href="#library">
-                BROWSE LIBRARY
+                BROWSE REPOSITORY
               </a>
               <a className="secondary" href="#practice">
                 DO A CASE

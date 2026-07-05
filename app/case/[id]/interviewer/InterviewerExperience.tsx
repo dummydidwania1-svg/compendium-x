@@ -2125,7 +2125,7 @@ useEffect(() => {
 							onClick={() => router.push('/repository')}
 							className="rounded-full border border-[#3D5A35]/20 px-5 py-2 text-[12px] font-semibold text-[#5C4033]/70 hover:border-[#3D5A35]/40 transition"
 						>
-							Back to library
+							Back to repository
 						</button>
 					</div>
 				</div>
@@ -2134,7 +2134,7 @@ useEffect(() => {
 	}
 
 	if (!caseData) {
-		return <PlatformLoader message="Heading back to the library" />
+		return <PlatformLoader message="Heading back to the repository" />
 	}
 
 	if (currentView === 'case') {
@@ -2341,7 +2341,7 @@ if (previewMode && !forcePreview) {
 									</div>
 									<div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
 										<p style={{ fontSize: '12px', fontWeight: 600, color: '#3B2F2F', lineHeight: 1.3, letterSpacing: '-0.01em' }}>Replace this case?</p>
-										<p style={{ fontSize: '11px', color: 'rgba(92,64,51,0.62)', lineHeight: 1.45 }}>This wraps the current session and takes you back to the library. The candidate will wait while you pick a new one.</p>
+										<p style={{ fontSize: '11px', color: 'rgba(92,64,51,0.62)', lineHeight: 1.45 }}>This wraps the current session and takes you back to the repository. The candidate will wait while you pick a new one.</p>
 									</div>
 									<button type="button" onClick={() => setShowReplaceCaseConfirm(false)} style={{ flexShrink: 0, marginTop: '1px', padding: '4px', borderRadius: '999px', border: 'none', background: 'transparent', color: 'rgba(92,64,51,0.35)', cursor: 'pointer' }}>
 										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>

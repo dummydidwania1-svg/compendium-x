@@ -8,7 +8,7 @@ type DashboardSidebarProps = {
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', active: true },
-  { label: 'Case Library', href: '/repository', active: false },
+  { label: 'Case Repository', href: '/repository', active: false },
   { label: 'Practice', href: '/practice', active: false },
 ]
 

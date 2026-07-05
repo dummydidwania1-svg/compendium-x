@@ -103,7 +103,7 @@ export function CaseListStructuredData({
   const data = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'Case CompendiumX Case Library',
+    name: 'Case CompendiumX Case Repository',
     numberOfItems: cases.length,
     itemListElement: cases.map((c, i) => ({
       '@type': 'ListItem',

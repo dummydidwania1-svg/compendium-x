@@ -756,7 +756,7 @@ const tRemove = setTimeout(() => {
             </h1>
             <div className="ctas">
               <a className="primary" href="/repository">
-                BROWSE LIBRARY
+                BROWSE REPOSITORY
               </a>
               <a className="secondary" href="/practice">
                 DO A CASE

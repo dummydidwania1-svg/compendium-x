@@ -662,8 +662,8 @@ subtype:
         } else if (navigator.onLine) {
           setActionError(
             error instanceof Error
-              ? `Unable to load case library: ${error.message}`
-              : 'Unable to load case library. Check your connection and refresh.',
+              ? `Unable to load case repository: ${error.message}`
+              : 'Unable to load case repository. Check your connection and refresh.',
           )
         }
       }
@@ -1521,7 +1521,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
                 style={{ fontFamily: "'Newsreader', serif" }}
                 className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
               >
-                Case Library
+                Case Repository
               </h1>
               <p className="mt-4 max-w-[620px] pl-[2px] text-[13px] leading-relaxed text-[#5c4033]/62">
                 {selectionMode
@@ -1544,7 +1544,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
           {offlineBanner && (
             <div className="mb-5 flex items-center gap-3 rounded-xl border border-[#3D5A35]/12 bg-[rgba(255,248,240,0.9)] px-5 py-3 text-[12px] text-[#5C4033]/60">
               <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-[#3D5A35]/40" />
-              Showing cached library. Connect to refresh.
+              Showing cached repository. Connect to refresh.
             </div>
           )}
 
@@ -1634,7 +1634,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
                   </svg>
                   <p className="text-[13px] font-medium text-[#5c4033]/60">You&rsquo;re offline</p>
                   <p className="max-w-[240px] text-[12px] leading-relaxed text-[#5c4033]/38">
-                    Visit once with a connection and the whole library stays with you.
+                    Visit once with a connection and the whole repository stays with you.
                   </p>
                 </div>
               ) : filteredCases.length === 0 ? (

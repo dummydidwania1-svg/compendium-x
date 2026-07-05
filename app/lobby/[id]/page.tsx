@@ -170,9 +170,9 @@ function CandidateLobby({
         ),
         title: 'Interviewer window closed',
         body: wasOnRepo
-          ? 'The case library was open. Reopen it to continue picking a case.'
+          ? 'The case repository was open. Reopen it to continue picking a case.'
           : 'Reopen it so the interviewer can pick a case.',
-        actionLabel: wasOnRepo ? 'Reopen library' : 'Reopen window',
+        actionLabel: wasOnRepo ? 'Reopen repository' : 'Reopen window',
         onAction: wasOnRepo ? onReopenRepo : onPrimaryAction,
         secondaryActionLabel: 'Cancel session',
         onSecondaryAction: () => { cancelInitiatedRef.current = true; onCancelSession() },
@@ -198,7 +198,7 @@ function CandidateLobby({
     // — popup is still open, repo just unmounted. Don't show the overlay.
     const popupHost = window as PopupWindowHost
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) return
-    startTitlePulse('📋 Reopen Library')
+    startTitlePulse('📋 Reopen Repository')
     dismissedRef.current.delete('repo-closed')
     showOverlay({
       id: 'repo-closed',
@@ -210,9 +210,9 @@ function CandidateLobby({
           <line x1="2" y1="2" x2="22" y2="22" />
         </svg>
       ),
-      title: 'Case library was closed',
-      body: 'The interviewer closed the case library. Reopen it to pick a case.',
-      actionLabel: 'Reopen library',
+      title: 'Case repository was closed',
+      body: 'The interviewer closed the case repository. Reopen it to pick a case.',
+      actionLabel: 'Reopen repository',
       onAction: onReopenRepo,
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -397,7 +397,7 @@ function CandidateLobby({
   useEffect(() => {
     if (interviewerBrowsing || sessionPhase === 'launching') {
       setActiveOverlay(prev => prev?.id === 'repo-closed' ? null : prev)
-      if (activePulseMessageRef.current === '📋 Reopen Library') stopTitlePulse()
+      if (activePulseMessageRef.current === '📋 Reopen Repository') stopTitlePulse()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewerBrowsing, sessionPhase])
@@ -1351,7 +1351,7 @@ function InterviewerLobby({
                 }
                 className="lobby-btn w-full rounded-full px-3 py-2.5 text-[9px] font-medium uppercase tracking-[0.16em]"
               >
-                Open Case Library
+                Open Case Repository
               </button>
             </div>
           </div>

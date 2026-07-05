@@ -83,10 +83,10 @@ const REPO_THRESHOLDS = [0, 0.12, 0.3];
 
 const REPOSITORY_LAYERS = {
   0: {
-    title: 'The Library',
+    title: 'The Repository',
     icon: 'library_books',
     calloutNumber: '01 / The Foundation',
-    calloutTitle: 'Case Library',
+    calloutTitle: 'Case Repository',
     calloutDescription: '70+ curated cases spanning 5 years of real interviews from top consulting firms.',
     calloutSide: 'right',
   },
@@ -1771,7 +1771,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
               href="/repository"
               className="inline-flex min-w-[220px] items-center justify-center bg-[#3D5A35] px-8 py-4 text-xs uppercase tracking-[0.2em] text-white transition-all hover:bg-[#3D5A35]/90"
             >
-              Browse Library
+              Browse Repository
             </Link>
             <Link
               href="/practice"

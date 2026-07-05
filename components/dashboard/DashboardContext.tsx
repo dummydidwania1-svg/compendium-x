@@ -123,7 +123,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           setCasesReady(true)
         },
         (issue) => {
-          setError(issue instanceof Error ? issue.message : 'Unable to load case library data for dashboard.')
+          setError(issue instanceof Error ? issue.message : 'Unable to load case repository data for dashboard.')
           setCasesReady(true)
         }
       ),
