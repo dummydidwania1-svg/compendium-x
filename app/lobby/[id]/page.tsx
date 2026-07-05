@@ -1428,8 +1428,20 @@ export default function LobbyPage() {
   // mode is blocked outright there — for either role, however this URL was
   // reached (fresh start, shared invite link, reopened tab) — before any
   // mic prompt or session-join logic runs.
+  //
+  // isSafariBrowser() reads navigator.userAgent, which doesn't exist during
+  // SSR — so the server-rendered HTML (and the first client render, which
+  // must match it to avoid a hydration error) would briefly paint the real
+  // unblocked lobby before this flips true. safariCheckReady stays false
+  // until after mount, and we render a blank shell the whole time it's
+  // false, so the unblocked UI never actually paints on Safari.
   const [safariRemoteBlockDismissed, setSafariRemoteBlockDismissed] = useState(false)
-  const safariRemoteBlocked = requestedSessionMode === 'remote' && isSafariBrowser()
+  const [safariCheckReady, setSafariCheckReady] = useState(false)
+  const [safariRemoteBlocked, setSafariRemoteBlocked] = useState(false)
+  useEffect(() => {
+    setSafariRemoteBlocked(requestedSessionMode === 'remote' && isSafariBrowser())
+    setSafariCheckReady(true)
+  }, [requestedSessionMode])
 
   // Safari only: write a localStorage signal on mount so the candidate tab
   // can detect this window even when window.opener is null (happens when
@@ -1849,11 +1861,13 @@ export default function LobbyPage() {
 
   // Hard stop before any mic prompt or session-join logic — no lobby UI
   // renders underneath, since the raw shared link has no surrounding "Do a
-  // Case" page to speak of for whoever opened it.
-  if (safariRemoteBlocked) {
+  // Case" page to speak of for whoever opened it. Also covers the brief
+  // window before safariCheckReady flips true, so Safari never gets a
+  // single frame of the real (unblocked) lobby before the block kicks in.
+  if (requestedSessionMode === 'remote' && (!safariCheckReady || safariRemoteBlocked)) {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#fff8f0' }}>
-        {!safariRemoteBlockDismissed && (
+        {safariCheckReady && !safariRemoteBlockDismissed && (
           <SafariRemoteBlockModal
             closeTabOnDismiss
             onDismiss={() => setSafariRemoteBlockDismissed(true)}
