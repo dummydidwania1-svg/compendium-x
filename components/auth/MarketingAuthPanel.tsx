@@ -213,6 +213,7 @@ export default function MarketingAuthPanel({
     }
     if (error.message.includes('auth/invalid-credential')) return 'Invalid email or password.'
     if (error.message.includes('auth/user-not-found')) return 'No account found for this email.'
+    if (error.message.includes('auth/user-disabled')) return 'This account has been deactivated.'
     if (error.message.includes('auth/email-already-in-use')) {
       return 'This email is already registered. Please sign in.'
     }

@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { User } from 'firebase/auth'
-import { onAuthStateChanged } from 'firebase/auth'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import {
@@ -95,6 +95,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         doc(db, 'profiles', user.uid),
         (snapshot) => {
           const data = snapshot.data()
+          // The account was soft-deleted (Danger Zone > Deactivate account)
+          // while this session was still open. Sign out immediately rather
+          // than waiting for the user's ID token to expire — the Firestore
+          // security rules already block further reads/writes for this
+          // profile, so this just gets the client out of a now-locked state.
+          if (data?.pendingDeletion === true) {
+            void signOut(auth)
+            return
+          }
           const fullName = typeof data?.fullName === 'string' ? data.fullName.trim() : ''
           const goalTarget =
             typeof data?.goalTargetCases === 'number' &&

@@ -5,6 +5,17 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // True once the caller's own profile has been soft-deleted (see
+    // DELETE /api/account). This is the fast, authoritative lockout for an
+    // already-open session — it's checked on every request/listener-attach,
+    // so it doesn't wait on the caller's ID token to expire or refresh.
+    // A missing profile doc (get() returns no data) is treated as not
+    // pending deletion, so this never blocks a brand-new user.
+    function callerPendingDeletion() {
+      return signedIn()
+        && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('pendingDeletion', false) == true;
+    }
+
     // Public case library, admin-only writes (via console/script)
     match /cases/{caseId} {
       allow read: if true;
@@ -14,7 +25,11 @@ service cloud.firestore {
     // User profile
     match /profiles/{userId} {
       allow read: if signedIn();
-      allow create, update, delete: if signedIn() && request.auth.uid == userId;
+      // A deactivated account can no longer write anywhere, including its
+      // own profile doc (so it can't clear the pendingDeletion flag itself).
+      allow create, update, delete: if signedIn()
+        && request.auth.uid == userId
+        && !callerPendingDeletion();
     }
 
     // Sessions: clients read scoped to participants. All writes go through
@@ -43,6 +58,7 @@ service cloud.firestore {
 
       // Allow only workspace image URL updates (+updatedAt) by owner.
       allow update: if signedIn()
+        && !callerPendingDeletion()
         && (
           resource.data.candidateId == request.auth.uid ||
           (

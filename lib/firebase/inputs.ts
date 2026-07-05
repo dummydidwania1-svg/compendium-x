@@ -144,3 +144,14 @@ export const attachWorkspaceImageInput = z.object({
   workspaceImageUrl: z.string().url().max(2048),
 })
 export type AttachWorkspaceImageInput = z.infer<typeof attachWorkspaceImageInput>
+
+/* -------------------------------------------------------------------------- */
+/* DELETE /api/account                                                        */
+/* -------------------------------------------------------------------------- */
+
+// Requires the user to type the literal string DELETE, matching the client
+// confirmation field. Server derives the uid from the verified caller token.
+export const deleteAccountInput = z.object({
+  confirm: z.literal('DELETE'),
+})
+export type DeleteAccountInput = z.infer<typeof deleteAccountInput>

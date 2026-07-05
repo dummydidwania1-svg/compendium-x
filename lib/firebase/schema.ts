@@ -49,6 +49,14 @@ export const profileSchema = z
     fullName: z.string(),
     university: z.string(),
     goalTargetCases: z.number().optional(),
+    /** Uploaded avatar (Firebase Storage download URL). Null/absent = none. */
+    photoURL: optionalString,
+    /** Chosen preset avatar id (see lib/avatars.ts). Null/absent = none. */
+    avatarPreset: optionalString,
+    /** True once the account has been soft-deleted; blocks sign-in and further reads/writes. Data is kept, not erased. */
+    pendingDeletion: z.boolean().optional(),
+    /** Server timestamp when pendingDeletion was set. */
+    pendingDeletionAt: timestamp.optional(),
     updatedAt: timestamp.optional(),
   })
   .loose()
