@@ -10,7 +10,9 @@ import type { LobbyOverlayProps } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { InterviewerMicRecovery } from '@/components/permissions/InterviewerMicRecovery'
 import { InterviewerMicGate } from '@/components/permissions/InterviewerMicGate'
+import SafariRemoteBlockModal from '@/components/permissions/SafariRemoteBlockModal'
 import PlatformLoader from '@/components/PlatformLoader'
+import { isSafariBrowser } from '@/lib/browser'
 import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
@@ -1422,6 +1424,13 @@ export default function LobbyPage() {
   const isInterviewer = searchParams.get('role') === 'interviewer'
   const requestedSessionMode = searchParams.get('mode') === 'local' ? 'local' : 'remote'
 
+  // Safari only grants one live mic stream per browser process, so Remote
+  // mode is blocked outright there — for either role, however this URL was
+  // reached (fresh start, shared invite link, reopened tab) — before any
+  // mic prompt or session-join logic runs.
+  const [safariRemoteBlockDismissed, setSafariRemoteBlockDismissed] = useState(false)
+  const safariRemoteBlocked = requestedSessionMode === 'remote' && isSafariBrowser()
+
   // Safari only: write a localStorage signal on mount so the candidate tab
   // can detect this window even when window.opener is null (happens when
   // Safari opens the popup after the user unblocks via the address bar).
@@ -1836,6 +1845,19 @@ export default function LobbyPage() {
     } catch {
       flashCandidateActionStatus('Unable to copy')
     }
+  }
+
+  // Hard stop before any mic prompt or session-join logic — no lobby UI
+  // renders underneath, since the raw shared link has no surrounding "Do a
+  // Case" page to speak of for whoever opened it.
+  if (safariRemoteBlocked) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#fff8f0' }}>
+        {!safariRemoteBlockDismissed && (
+          <SafariRemoteBlockModal onDismiss={() => setSafariRemoteBlockDismissed(true)} />
+        )}
+      </div>
+    )
   }
 
   if (!isInterviewer && checkingCandidate) {

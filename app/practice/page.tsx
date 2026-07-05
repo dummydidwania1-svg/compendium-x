@@ -7,6 +7,8 @@ import Navbar from '@/components/dashboard/Navbar'
 import { waitForAuthUser } from '@/lib/firebase/config'
 import PlatformLoader from '@/components/PlatformLoader'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
+import SafariRemoteBlockModal from '@/components/permissions/SafariRemoteBlockModal'
+import { isSafariBrowser } from '@/lib/browser'
 import { interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
 import { startPrimedRecording, pickSupportedMimeType, micDebug } from '@/lib/session/primedMic'
 
@@ -27,6 +29,9 @@ export default function PracticeModeSelection() {
   const [localPreparing, setLocalPreparing] = useState(false)
   // Tracks which session launcher set micBlocked so the overlay can call the right retry.
   const micBlockedForRef = useRef<'local' | 'remote'>('local')
+  // Safari only grants one live mic stream per browser process, so Remote
+  // mode is blocked outright there rather than failing confusingly mid-call.
+  const [safariRemoteBlocked, setSafariRemoteBlocked] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -44,6 +49,10 @@ export default function PracticeModeSelection() {
 
 
   const startRemoteSession = async (skipRecording = false) => {
+    if (isSafariBrowser()) {
+      setSafariRemoteBlocked(true)
+      return
+    }
     setMicBlocked(false)
     micBlockedForRef.current = 'remote'
     const lobbyId = Math.random().toString(36).substring(7)
@@ -74,8 +83,7 @@ export default function PracticeModeSelection() {
     setMicBlocked(false)
     micBlockedForRef.current = 'local'
 
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
-    const isSafari = ua.includes('Safari') && !ua.includes('Chrome')
+    const isSafari = isSafariBrowser()
 
     const lobbyId = Math.random().toString(36).substring(7)
     const popupHost = window as Window & { __compendiumInterviewerWindow?: Window | null }
@@ -301,6 +309,10 @@ export default function PracticeModeSelection() {
       `}</style>
 
       <Navbar currentPage="practice" />
+
+      {safariRemoteBlocked ? (
+        <SafariRemoteBlockModal onDismiss={() => setSafariRemoteBlocked(false)} />
+      ) : null}
 
       {popupBlocked ? (
         <LobbyOverlay
