@@ -8,7 +8,6 @@ import {
   reauthenticateWithCredential,
   signOut,
   updatePassword,
-  updateProfile,
   type User,
 } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
@@ -16,12 +15,16 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { auth, db, storage } from '@/lib/firebase/config'
 import { apiDelete } from '@/lib/api/client'
 import { PRESET_AVATARS } from '@/lib/avatars'
+import PresetAvatarView from '@/components/avatars/PresetAvatarView'
 
 type ProfileOverlayProps = {
   onClose: () => void
 }
 
 type Section = 'profile' | 'account' | 'security'
+
+/** Sentinel preset id: the user explicitly chose plain initials over any photo. */
+const INITIALS_PRESET = 'initials'
 
 function initials(name: string | null, email: string | null): string {
   if (name?.trim()) return name.trim()[0].toUpperCase()
@@ -54,29 +57,28 @@ async function resizeToSquare(file: File, size = 256): Promise<Blob> {
   )
 }
 
-function PresetAvatarView({ id, className }: { id: string; className?: string }) {
-  const a = PRESET_AVATARS.find((p) => p.id === id)
-  if (!a) return null
-  const svgHtml = { __html: a.svg }
-  return <span className={className} aria-hidden dangerouslySetInnerHTML={svgHtml} />
-}
-
 const fieldClass = 'ccx-input w-full px-4 py-2.5 text-[13px] text-[#1e1b15] outline-none'
 const labelClass =
-  'mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5c4033]/60'
-const sectionTitleClass = 'text-[18px] font-medium text-[#3B2F2F]'
-const sectionTitleStyle = { fontFamily: "'Newsreader', serif" }
+  'mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5c4033]/55'
+const sectionTitleClass = 'text-[19px] font-medium text-[#3B2F2F]'
+const serifStyle = { fontFamily: "'Newsreader', serif" }
 const iconStyle = { fontSize: 18 }
-const initialsStyle = { fontFamily: "'Newsreader', serif" }
-const signInBadgeStyle = {
-  border: '1px solid rgba(61,90,53,0.28)',
-  background: 'rgba(61,90,53,0.08)',
-  color: '#3D5A35',
-}
-const deleteMsgStyle = {
-  border: '1px solid rgba(180,84,62,0.25)',
-  background: 'rgba(180,84,62,0.06)',
-  color: '#b4543e',
+
+/** Tiny inline status that fades in beside an action, then fades away. No boxes. */
+function InlineStatus({ status }: { status: { text: string; ok: boolean } | null }) {
+  if (!status) return null
+  return (
+    <span
+      key={status.text}
+      className="ccx-inline-status inline-flex items-center gap-1.5 text-[11px] font-medium"
+      style={{ color: status.ok ? '#3D5A35' : '#b4543e' }}
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+        {status.ok ? 'check' : 'error'}
+      </span>
+      {status.text}
+    </span>
+  )
 }
 
 function SubmitButton({ disabled, children }: { disabled: boolean; children: React.ReactNode }) {
@@ -91,18 +93,23 @@ function SubmitButton({ disabled, children }: { disabled: boolean; children: Rea
   )
 }
 
-// Centered, blurred, same tone/build as the rest of the "are you sure"
-// overlays in the app (e.g. the Safari remote-mode block) — a last, friendly
-// gate before a Danger Zone action actually fires, not a scary legal wall.
+// Centered, blurred, same tone and build as the platform's other
+// "are you sure" overlays — one short line, the typed confirmation,
+// and a clear way out. No walls of text.
 function DeactivateConfirmModal({
   deleting,
+  errorMsg,
   onConfirm,
   onCancel,
 }: {
   deleting: boolean
+  errorMsg: string | null
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const [confirmText, setConfirmText] = useState('')
+  const ready = confirmText === 'DELETE' && !deleting
+
   return (
     <div
       className="fixed inset-0 z-[300] flex items-center justify-center px-4"
@@ -124,10 +131,10 @@ function DeactivateConfirmModal({
         aria-labelledby="ccx-dcm-title"
         style={{
           position: 'relative', zIndex: 1,
-          width: 'min(380px, calc(100vw - 48px))',
+          width: 'min(400px, calc(100vw - 48px))',
           borderRadius: 0,
           border: '1px solid rgba(180,84,62,0.28)',
-          background: 'rgba(255,248,240,0.96)',
+          background: 'rgba(255,248,240,0.97)',
           backdropFilter: 'blur(40px) saturate(1.8)',
           WebkitBackdropFilter: 'blur(40px) saturate(1.8)',
           boxShadow: '0 12px 48px rgba(59,47,47,0.16), 0 2px 8px rgba(59,47,47,0.07)',
@@ -135,21 +142,29 @@ function DeactivateConfirmModal({
           animation: 'ccx-dcm-card-in 0.32s cubic-bezier(0.22,1,0.36,1) both',
         }}
       >
-        <div style={{ height: '2px', background: 'linear-gradient(90deg, #b4543e 0%, rgba(180,84,62,0.12) 100%)' }} />
-        <div style={{ padding: '24px 22px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <p id="ccx-dcm-title" style={{ fontFamily: "'Newsreader', serif", fontSize: '18px', fontWeight: 500, color: '#3B2F2F', lineHeight: 1.3 }}>
-              Hang on, one more check
+        <div style={{ height: 2, background: 'linear-gradient(90deg, #b4543e 0%, rgba(180,84,62,0.12) 100%)' }} />
+        <div style={{ padding: '24px 22px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <p id="ccx-dcm-title" style={{ ...serifStyle, fontSize: 19, fontWeight: 500, color: '#3B2F2F', lineHeight: 1.25 }}>
+              Deactivate your account?
             </p>
-            <p style={{ fontSize: '12.5px', color: 'rgba(92,64,51,0.72)', lineHeight: 1.55 }}>
-              This deactivates your account and signs you out everywhere.
-              It&apos;s not a delete though, nothing gets erased. Your
-              profile, evaluations, and files all stay put, we just
-              won&apos;t let anyone sign back in until it&apos;s sorted out
-              on our end. Still want to go ahead?
+            <p style={{ fontSize: 12.5, color: 'rgba(92,64,51,0.72)', lineHeight: 1.55 }}>
+              You&apos;ll be signed out everywhere and sign-in gets blocked.
+              Nothing is deleted, everything stays safe on our end.
             </p>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="Type DELETE to confirm"
+            disabled={deleting}
+            className="ccx-input w-full px-4 py-2.5 text-[13px] text-[#1e1b15] outline-none"
+            autoFocus
+          />
+          {errorMsg ? (
+            <p style={{ fontSize: 11.5, color: '#b4543e', margin: 0 }}>{errorMsg}</p>
+          ) : null}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
             <button
               type="button"
               onClick={onCancel}
@@ -161,10 +176,10 @@ function DeactivateConfirmModal({
             <button
               type="button"
               onClick={onConfirm}
-              disabled={deleting}
+              disabled={!ready}
               className="ccx-danger-solid px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
             >
-              {deleting ? 'Deactivating...' : 'Yes, deactivate'}
+              {deleting ? 'Deactivating...' : 'Deactivate'}
             </button>
           </div>
         </div>
@@ -205,9 +220,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordMsg, setPasswordMsg] = useState<{ text: string; ok: boolean } | null>(null)
 
-  // Delete account
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState('')
+  // Deactivate account
   const [showDeactivateModal, setShowDeactivateModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteMsg, setDeleteMsg] = useState<string | null>(null)
@@ -248,25 +261,30 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     load()
   }, [user])
 
-  // Close on Escape
+  // Escape closes the deactivate modal first, then the whole overlay.
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key !== 'Escape') return
+      if (showDeactivateModal) {
+        if (!deleting) setShowDeactivateModal(false)
+        return
+      }
+      onClose()
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [onClose])
+  }, [onClose, showDeactivateModal, deleting])
 
   const showProfileMsg = (text: string, ok: boolean) => {
     setProfileMsg({ text, ok })
     if (profileMsgTimer.current) clearTimeout(profileMsgTimer.current)
-    profileMsgTimer.current = setTimeout(() => setProfileMsg(null), 4000)
+    profileMsgTimer.current = setTimeout(() => setProfileMsg(null), 3200)
   }
 
   const showPasswordMsg = (text: string, ok: boolean) => {
     setPasswordMsg({ text, ok })
     if (passwordMsgTimer.current) clearTimeout(passwordMsgTimer.current)
-    passwordMsgTimer.current = setTimeout(() => setPasswordMsg(null), 5000)
+    passwordMsgTimer.current = setTimeout(() => setPasswordMsg(null), 4200)
   }
 
   const isProfileDirty =
@@ -279,7 +297,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     e.preventDefault()
     if (!user || !isProfileDirty) return
     if (!fullName.trim()) {
-      showProfileMsg('Full name cannot be empty.', false)
+      showProfileMsg('Name cannot be empty', false)
       return
     }
     setProfileSaving(true)
@@ -291,22 +309,40 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       )
       setOriginalFullName(fullName.trim())
       setOriginalUniversity(university.trim())
-      showProfileMsg('Profile saved.', true)
+      showProfileMsg('Saved', true)
     } catch {
-      showProfileMsg('Could not save profile. Please try again.', false)
+      showProfileMsg('Could not save', false)
     } finally {
       setProfileSaving(false)
+    }
+  }
+
+  const persistAvatar = async (next: { photoURL: string | null; avatarPreset: string | null }) => {
+    if (!user) return
+    setAvatarBusy(true)
+    try {
+      await setDoc(
+        doc(db, 'profiles', user.uid),
+        { ...next, updatedAt: serverTimestamp() },
+        { merge: true },
+      )
+      setPhotoURL(next.photoURL)
+      setAvatarPreset(next.avatarPreset)
+    } catch {
+      showProfileMsg('Could not update avatar', false)
+    } finally {
+      setAvatarBusy(false)
     }
   }
 
   const handleAvatarFile = async (file: File) => {
     if (!user) return
     if (!file.type.startsWith('image/')) {
-      showProfileMsg('Please choose an image file.', false)
+      showProfileMsg('Choose an image file', false)
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      showProfileMsg('Image must be under 5 MB.', false)
+      showProfileMsg('Image must be under 5 MB', false)
       return
     }
     setAvatarBusy(true)
@@ -315,59 +351,19 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       const storageRef = ref(storage, `avatars/${user.uid}/avatar_${Date.now()}.jpg`)
       await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' })
       const url = await getDownloadURL(storageRef)
+      // Intentionally NOT calling updateProfile(user, { photoURL: url }):
+      // user.photoURL must keep pointing at the Google account photo so
+      // "Use Google photo" can always restore it. Firestore is the source
+      // of truth for the in-app avatar.
       await setDoc(
         doc(db, 'profiles', user.uid),
         { photoURL: url, avatarPreset: null, updatedAt: serverTimestamp() },
         { merge: true },
       )
-      try {
-        await updateProfile(user, { photoURL: url })
-      } catch {
-        // non-fatal: Firestore is the source of truth for the in-app avatar
-      }
       setPhotoURL(url)
       setAvatarPreset(null)
-      setShowAvatarPicker(false)
-      showProfileMsg('Photo updated.', true)
     } catch {
-      showProfileMsg('Could not upload photo. Please try again.', false)
-    } finally {
-      setAvatarBusy(false)
-    }
-  }
-
-  const handleSelectPreset = async (id: string) => {
-    if (!user) return
-    setAvatarBusy(true)
-    try {
-      await setDoc(
-        doc(db, 'profiles', user.uid),
-        { avatarPreset: id, photoURL: null, updatedAt: serverTimestamp() },
-        { merge: true },
-      )
-      setAvatarPreset(id)
-      setPhotoURL(null)
-      setShowAvatarPicker(false)
-      showProfileMsg('Avatar updated.', true)
-    } catch {
-      showProfileMsg('Could not update avatar. Please try again.', false)
-    } finally {
-      setAvatarBusy(false)
-    }
-  }
-
-  const handleUseGooglePhoto = async () => {
-    if (!user) return
-    setAvatarBusy(true)
-    try {
-      await setDoc(
-        doc(db, 'profiles', user.uid),
-        { avatarPreset: null, photoURL: null, updatedAt: serverTimestamp() },
-        { merge: true },
-      )
-      setAvatarPreset(null)
-      setPhotoURL(null)
-      setShowAvatarPicker(false)
+      showProfileMsg('Upload failed', false)
     } finally {
       setAvatarBusy(false)
     }
@@ -377,7 +373,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     e.preventDefault()
     if (!user || !user.email || !isPasswordReady) return
     if (newPassword !== confirmPassword) {
-      showPasswordMsg('Passwords do not match.', false)
+      showPasswordMsg('Passwords do not match', false)
       return
     }
     setPasswordSaving(true)
@@ -388,15 +384,15 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      showPasswordMsg('Password updated successfully.', true)
+      showPasswordMsg('Password updated', true)
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
       if (msg.includes('auth/wrong-password') || msg.includes('auth/invalid-credential')) {
-        showPasswordMsg('Current password is incorrect.', false)
+        showPasswordMsg('Current password is incorrect', false)
       } else if (msg.includes('auth/too-many-requests')) {
-        showPasswordMsg('Too many attempts. Please wait and try again.', false)
+        showPasswordMsg('Too many attempts, try again shortly', false)
       } else {
-        showPasswordMsg('Could not update password. Please try again.', false)
+        showPasswordMsg('Could not update password', false)
       }
     } finally {
       setPasswordSaving(false)
@@ -410,8 +406,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     router.refresh()
   }
 
-  const handleDeleteAccount = async () => {
-    if (deleteConfirm !== 'DELETE') return
+  const handleDeactivateAccount = async () => {
     setDeleting(true)
     setDeleteMsg(null)
     try {
@@ -422,7 +417,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       router.refresh()
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
-      setDeleteMsg(msg || 'Could not deactivate account. Please try again.')
+      setDeleteMsg(msg || 'Could not deactivate. Please try again.')
       setDeleting(false)
     }
   }
@@ -435,20 +430,30 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     ...(emailProvider ? [{ id: 'security' as Section, label: 'Security', icon: 'lock' }] : []),
   ]
 
-  const resolvedPhoto = photoURL || user?.photoURL || null
-  const avatarNode = avatarPreset ? (
-    <PresetAvatarView id={avatarPreset} className="block h-full w-full [&>svg]:h-full [&>svg]:w-full" />
-  ) : resolvedPhoto ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={resolvedPhoto} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-  ) : (
-    <span
-      className="ccx-avatar-initials flex h-full w-full items-center justify-center text-[20px] font-semibold text-[#fff8f0]"
-      style={initialsStyle}
-    >
-      {initials(fullName || user?.displayName || null, user?.email ?? null)}
-    </span>
-  )
+  // Avatar resolution, in priority order:
+  //   1. explicit preset ('initials' sentinel forces the monogram)
+  //   2. uploaded photo (Firestore photoURL)
+  //   3. Google account photo (auth user.photoURL)
+  //   4. monogram initials
+  const usingInitials = avatarPreset === INITIALS_PRESET
+  const activePreset = avatarPreset && !usingInitials ? avatarPreset : null
+  const resolvedPhoto = usingInitials ? null : photoURL || user?.photoURL || null
+  const monogram = initials(fullName || user?.displayName || null, user?.email ?? null)
+
+  const renderAvatar = (sizeClass: string, fontPx: number) =>
+    activePreset ? (
+      <PresetAvatarView id={activePreset} className={`block ${sizeClass} [&>svg]:h-full [&>svg]:w-full`} />
+    ) : resolvedPhoto ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={resolvedPhoto} alt="" className={`${sizeClass} object-cover`} referrerPolicy="no-referrer" />
+    ) : (
+      <span
+        className={`flex ${sizeClass} items-center justify-center font-semibold text-[#fff8f0]`}
+        style={{ ...serifStyle, fontSize: fontPx, background: 'linear-gradient(180deg, #5C4033 0%, #3B2F2F 100%)' }}
+      >
+        {monogram}
+      </span>
+    )
 
   return (
     <div
@@ -480,35 +485,62 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.6; transform: scale(0.93); }
         }
-        .ccx-flicker { animation: ccx-flicker 1.1s ease-in-out infinite; }
+        .ccx-flicker { animation: ccx-flicker 2.4s ease-in-out infinite; }
+        @keyframes ccx-section-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .ccx-section { animation: ccx-section-in 0.26s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes ccx-picker-in {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .ccx-picker { animation: ccx-picker-in 0.24s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes ccx-status-in {
+          from { opacity: 0; transform: translateX(-4px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        .ccx-inline-status { animation: ccx-status-in 0.22s ease both; }
         .ccx-input {
-          background: #fffdf9;
-          border: 1px solid rgba(92,64,51,0.18);
+          background: transparent;
+          border: 1px solid rgba(92,64,51,0.20);
           border-radius: 0;
           transition: border-color 0.18s ease, box-shadow 0.18s ease;
         }
         .ccx-input:focus {
           border-color: #3D5A35;
-          box-shadow: 0 0 0 3px rgba(61,90,53,0.12);
+          box-shadow: 0 0 0 3px rgba(61,90,53,0.10);
         }
         .ccx-input::placeholder { color: rgba(92,64,51,0.38); }
         .ccx-btn-primary {
           background: #3D5A35;
           color: #fff8f0;
           border-radius: 0;
-          transition: background 0.16s ease, transform 0.16s ease;
+          transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
         }
-        .ccx-btn-primary:hover:not(:disabled) { background: #33502d; transform: translateY(-1px); }
+        .ccx-btn-primary:hover:not(:disabled) {
+          background: #33502d;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px -8px rgba(61,90,53,0.5);
+        }
         .ccx-btn-primary:disabled {
-          background: rgba(92,64,51,0.10);
-          color: rgba(92,64,51,0.4);
+          background: rgba(92,64,51,0.08);
+          color: rgba(92,64,51,0.38);
           cursor: not-allowed;
         }
+        .ccx-btn-ghost {
+          border: 1px solid rgba(92,64,51,0.24);
+          color: #5C4033;
+          background: transparent;
+          border-radius: 0;
+          transition: background-color 0.18s ease, transform 0.18s ease;
+        }
+        .ccx-btn-ghost:hover:not(:disabled) { background: rgba(92,64,51,0.06); transform: translateY(-1px); }
         .ccx-nav-item {
           color: #5C4033;
           border-radius: 0;
           position: relative;
-          transition: background-color 0.16s ease, color 0.16s ease;
+          transition: background-color 0.18s ease, color 0.18s ease;
         }
         .ccx-nav-item:hover { background: rgba(92,64,51,0.06); }
         .ccx-nav-active { background: rgba(61,90,53,0.10); color: #3D5A35; font-weight: 600; }
@@ -516,50 +548,72 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
           content: '';
           position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #D8B978;
         }
-        .ccx-signout { color: #5C4033; border-radius: 0; transition: background-color 0.16s ease, color 0.16s ease; }
-        .ccx-signout:hover { background: rgba(180,84,62,0.10); color: #b4543e; }
-        .ccx-avatar {
+        .ccx-signout {
+          color: rgba(92,64,51,0.72);
+          border-radius: 0;
+          transition: background-color 0.18s ease, color 0.18s ease;
+        }
+        .ccx-signout:hover { background: rgba(92,64,51,0.07); color: #3B2F2F; }
+        .ccx-avatar-frame {
           border: 1px solid rgba(92,64,51,0.18);
           border-radius: 0;
-          background: linear-gradient(180deg, #5C4033 0%, #3B2F2F 100%);
+          overflow: hidden;
+          position: relative;
+          cursor: pointer;
+          transition: box-shadow 0.18s ease;
         }
+        .ccx-avatar-frame:hover { box-shadow: 0 0 0 2px rgba(61,90,53,0.28); }
+        .ccx-avatar-frame .ccx-avatar-edit {
+          position: absolute; inset: 0;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(43,34,24,0.44);
+          color: #fff8f0;
+          opacity: 0;
+          transition: opacity 0.18s ease;
+        }
+        .ccx-avatar-frame:hover .ccx-avatar-edit { opacity: 1; }
         .ccx-avatar-choice {
-          border: 1px solid rgba(92,64,51,0.14);
+          border: 1px solid rgba(92,64,51,0.16);
           border-radius: 0;
           cursor: pointer;
-          transition: transform 0.14s ease, box-shadow 0.14s ease;
+          padding: 0;
+          background: transparent;
+          transition: transform 0.16s ease, box-shadow 0.16s ease;
         }
-        .ccx-avatar-choice:hover { transform: translateY(-1px); box-shadow: 0 6px 14px -8px rgba(43,34,24,0.5); }
+        .ccx-avatar-choice:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 16px -10px rgba(43,34,24,0.55); }
         .ccx-avatar-choice-active { box-shadow: 0 0 0 2px #3D5A35; }
-        .ccx-avatar-picker { border: 1px solid rgba(92,64,51,0.14); background: #f4ede3; border-radius: 0; }
-        .ccx-chip {
+        .ccx-avatar-action {
           display: inline-flex; align-items: center; gap: 6px;
           border: 1px solid rgba(92,64,51,0.22);
-          background: #fffdf9; color: #5C4033;
-          padding: 6px 12px; font-size: 11px; font-weight: 600;
+          background: transparent; color: #5C4033;
+          padding: 6px 12px; font-size: 10.5px; font-weight: 600;
           text-transform: uppercase; letter-spacing: 0.12em; border-radius: 0;
-          transition: background-color 0.16s ease;
+          cursor: pointer;
+          transition: background-color 0.18s ease, transform 0.18s ease;
         }
-        .ccx-chip:hover { background: rgba(92,64,51,0.06); }
+        .ccx-avatar-action:hover { background: rgba(92,64,51,0.06); transform: translateY(-1px); }
         .ccx-danger-btn {
-          border: 1px solid rgba(180,84,62,0.4);
+          border: 1px solid rgba(180,84,62,0.35);
           color: #b4543e; background: transparent; border-radius: 0;
-          transition: background-color 0.16s ease, color 0.16s ease;
+          transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
         }
-        .ccx-danger-btn:hover { background: #b4543e; color: #fff8f0; }
-        .ccx-danger-solid { background: #b4543e; color: #fff8f0; border-radius: 0; transition: background-color 0.16s ease; }
+        .ccx-danger-btn:hover { background: rgba(180,84,62,0.08); transform: translateY(-1px); }
+        .ccx-danger-solid { background: #b4543e; color: #fff8f0; border-radius: 0; transition: background-color 0.18s ease; }
         .ccx-danger-solid:hover:not(:disabled) { background: #9d4433; }
-        .ccx-danger-solid:disabled { background: rgba(180,84,62,0.35); cursor: not-allowed; }
-        .ccx-btn-ghost { border: 1px solid rgba(92,64,51,0.22); color: #5C4033; background: transparent; border-radius: 0; }
-        .ccx-btn-ghost:hover { background: rgba(92,64,51,0.06); }
-        .ccx-msg { border-radius: 0; }
+        .ccx-danger-solid:disabled { background: rgba(180,84,62,0.30); cursor: not-allowed; }
+        .ccx-scroll::-webkit-scrollbar { width: 5px; }
+        .ccx-scroll::-webkit-scrollbar-thumb { background: rgba(92,64,51,0.18); }
+        .ccx-scroll::-webkit-scrollbar-track { background: transparent; }
       `}</style>
 
-      <div className="ccx-profile-panel relative flex w-full max-w-[680px] overflow-hidden bg-[#fff8f0]">
+      <div
+        className="ccx-profile-panel relative flex w-full max-w-[720px] overflow-hidden bg-[#fff8f0]"
+        style={{ height: 'min(560px, calc(100vh - 64px))', fontFamily: "'Work Sans', sans-serif" }}
+      >
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-5 right-5 z-20 flex h-8 w-8 items-center justify-center text-[#8a7c6a] text-xl leading-none bg-[rgba(180,138,87,0.08)] border-none cursor-pointer hover:bg-[rgba(180,138,87,0.16)] hover:text-[#453a2a] transition-colors"
+          className="absolute top-4 right-4 z-20 flex h-8 w-8 items-center justify-center text-[#8a7c6a] text-xl leading-none bg-transparent border-none cursor-pointer hover:bg-[rgba(92,64,51,0.07)] hover:text-[#453a2a] transition-colors"
           aria-label="Close"
         >
           &times;
@@ -568,39 +622,40 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
         {showDeactivateModal ? (
           <DeactivateConfirmModal
             deleting={deleting}
-            onCancel={() => setShowDeactivateModal(false)}
-            onConfirm={() => {
+            errorMsg={deleteMsg}
+            onCancel={() => {
               setShowDeactivateModal(false)
-              void handleDeleteAccount()
+              setDeleteMsg(null)
             }}
+            onConfirm={() => void handleDeactivateAccount()}
           />
         ) : null}
 
-        {deleting ? (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#fff8f0]/90">
+        {deleting && !showDeactivateModal ? (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#fff8f0]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo2.png" alt="" width={44} height={44} className="ccx-flicker" />
+            <img src="/logo.png" alt="" width={52} height={52} className="ccx-flicker" style={{ objectFit: 'contain' }} />
           </div>
         ) : null}
 
         {!authReady || profileLoading || !user ? (
-          <div className="flex w-full items-center justify-center py-20">
+          <div className="flex w-full items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo2.png" alt="Loading" width={44} height={44} className="ccx-flicker" />
+            <img src="/logo.png" alt="Loading" width={52} height={52} className="ccx-flicker" style={{ objectFit: 'contain' }} />
           </div>
         ) : (
           <>
-            {/* Left sidebar */}
-            <div className="w-[190px] shrink-0 border-r border-[#b48a57]/20 bg-[#f4ede3] px-4 py-7 sm:w-[210px]">
+            {/* Left sidebar — same surface as the content, hairline divider */}
+            <div className="flex w-[190px] shrink-0 flex-col border-r border-[#5c4033]/12 px-4 py-6 sm:w-[210px]">
               <div className="mb-6 flex items-center gap-2.5 px-1.5">
-                <div className="ccx-avatar flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden">
-                  {avatarNode}
+                <div className="h-9 w-9 shrink-0 overflow-hidden border border-[#5c4033]/18">
+                  {renderAvatar('h-full w-full', 15)}
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-[12.5px] font-medium text-[#453a2a]">
                     {fullName || user.displayName || 'Account'}
                   </p>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-[#3D5A35]/55 font-semibold">
+                  <p className="text-[9.5px] uppercase tracking-[0.14em] text-[#3D5A35]/55 font-semibold">
                     Settings
                   </p>
                 </div>
@@ -624,7 +679,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                 ))}
               </nav>
 
-              <div className="mt-5 border-t border-[#b48a57]/20 pt-4">
+              <div className="mt-auto border-t border-[#5c4033]/12 pt-3">
                 <button
                   type="button"
                   onClick={handleSignOut}
@@ -638,85 +693,109 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
               </div>
             </div>
 
-            {/* Right content */}
-            <div className="flex-1 px-7 py-7 sm:px-9">
+            {/* Right content — fixed height, scrolls internally */}
+            <div className="ccx-scroll flex-1 overflow-y-auto px-7 py-7 sm:px-9">
               {section === 'profile' ? (
-                <>
-                  <p className={`${sectionTitleClass} mb-5`} style={sectionTitleStyle}>
+                <div className="ccx-section" key="profile">
+                  <p className={`${sectionTitleClass} mb-6`} style={serifStyle}>
                     Profile
                   </p>
 
-                  <div className="mb-6 flex items-center gap-4">
-                    <div className="ccx-avatar h-16 w-16 shrink-0 overflow-hidden">{avatarNode}</div>
-                    <div className="flex flex-col gap-1.5">
+                  {/* Avatar — click the tile to change it. No explainer copy. */}
+                  <div className="mb-6">
+                    <p className={labelClass}>Avatar</p>
+                    <div className="flex items-center gap-4">
                       <button
                         type="button"
                         onClick={() => setShowAvatarPicker((v) => !v)}
-                        className="text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-[#3D5A35] hover:text-[#33502d]"
+                        className="ccx-avatar-frame h-[68px] w-[68px] shrink-0"
+                        aria-label="Change avatar"
                       >
-                        {showAvatarPicker ? 'Close' : 'Change avatar'}
+                        {renderAvatar('h-full w-full', 24)}
+                        <span className="ccx-avatar-edit">
+                          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                            {showAvatarPicker ? 'close' : 'edit'}
+                          </span>
+                        </span>
                       </button>
-                      <p className="text-[11px] text-[#5c4033]/60">
-                        Upload a photo, pick a CompendiumX avatar, or use your Google photo.
-                      </p>
+                      {avatarBusy ? (
+                        <span className="text-[11px] text-[#5c4033]/55">Updating...</span>
+                      ) : null}
                     </div>
-                  </div>
 
-                  {showAvatarPicker ? (
-                    <div className="ccx-avatar-picker mb-6 p-4">
-                      <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5c4033]/60">
-                        Choose an avatar
-                      </p>
-                      <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-8">
-                        {PRESET_AVATARS.map((a) => (
+                    {showAvatarPicker ? (
+                      <div className="ccx-picker mt-4">
+                        <div className="grid grid-cols-9 gap-2">
+                          {/* Monogram tile — explicit "no photo" choice */}
                           <button
-                            key={a.id}
                             type="button"
-                            title={a.label}
+                            title="Initials"
                             disabled={avatarBusy}
-                            onClick={() => handleSelectPreset(a.id)}
+                            onClick={() => void persistAvatar({ photoURL: null, avatarPreset: INITIALS_PRESET })}
                             className={`ccx-avatar-choice aspect-square overflow-hidden ${
-                              avatarPreset === a.id ? 'ccx-avatar-choice-active' : ''
+                              usingInitials || (!activePreset && !resolvedPhoto) ? 'ccx-avatar-choice-active' : ''
                             }`}
                           >
-                            <PresetAvatarView
-                              id={a.id}
-                              className="block h-full w-full [&>svg]:h-full [&>svg]:w-full"
+                            <span
+                              className="flex h-full w-full items-center justify-center font-semibold text-[#fff8f0]"
+                              style={{ ...serifStyle, fontSize: 16, background: 'linear-gradient(180deg, #5C4033 0%, #3B2F2F 100%)' }}
+                            >
+                              {monogram}
+                            </span>
+                          </button>
+                          {PRESET_AVATARS.map((a) => (
+                            <button
+                              key={a.id}
+                              type="button"
+                              title={a.label}
+                              disabled={avatarBusy}
+                              onClick={() => void persistAvatar({ photoURL: null, avatarPreset: a.id })}
+                              className={`ccx-avatar-choice aspect-square overflow-hidden ${
+                                activePreset === a.id ? 'ccx-avatar-choice-active' : ''
+                              }`}
+                            >
+                              <PresetAvatarView
+                                id={a.id}
+                                className="block h-full w-full [&>svg]:h-full [&>svg]:w-full"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <label className="ccx-avatar-action cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={avatarBusy}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0]
+                                if (f) void handleAvatarFile(f)
+                                e.currentTarget.value = ''
+                              }}
                             />
-                          </button>
-                        ))}
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                              upload
+                            </span>
+                            Upload
+                          </label>
+                          {!emailProvider && user.photoURL ? (
+                            <button
+                              type="button"
+                              className="ccx-avatar-action"
+                              disabled={avatarBusy}
+                              onClick={() => void persistAvatar({ photoURL: null, avatarPreset: null })}
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                account_circle
+                              </span>
+                              Google photo
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <label className="ccx-chip cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            disabled={avatarBusy}
-                            onChange={(e) => {
-                              const f = e.target.files?.[0]
-                              if (f) handleAvatarFile(f)
-                              e.currentTarget.value = ''
-                            }}
-                          />
-                          Upload photo
-                        </label>
-                        {!emailProvider ? (
-                          <button
-                            type="button"
-                            className="ccx-chip"
-                            disabled={avatarBusy}
-                            onClick={handleUseGooglePhoto}
-                          >
-                            Use Google photo
-                          </button>
-                        ) : null}
-                        {avatarBusy ? (
-                          <span className="text-[11px] text-[#5c4033]/60">Working...</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : null}
+                    ) : null}
+                  </div>
 
                   <form onSubmit={handleSaveProfile} className="space-y-4">
                     <div>
@@ -740,110 +819,62 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                       />
                     </div>
 
-                    {profileMsg ? (
-                      <div
-                        className="ccx-msg px-4 py-2.5 text-[12px]"
-                        style={{
-                          border: `1px solid ${profileMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(180,84,62,0.25)'}`,
-                          background: profileMsg.ok ? 'rgba(61,90,53,0.06)' : 'rgba(180,84,62,0.06)',
-                          color: profileMsg.ok ? '#3D5A35' : '#b4543e',
-                        }}
-                      >
-                        {profileMsg.text}
-                      </div>
-                    ) : null}
-
-                    <SubmitButton disabled={!isProfileDirty || profileSaving}>
-                      {profileSaving ? 'Saving...' : 'Save Changes'}
-                    </SubmitButton>
+                    <div className="flex items-center gap-3 pt-1">
+                      <SubmitButton disabled={!isProfileDirty || profileSaving}>
+                        {profileSaving ? 'Saving...' : 'Save Changes'}
+                      </SubmitButton>
+                      <InlineStatus status={profileMsg} />
+                    </div>
                   </form>
-                </>
+                </div>
               ) : null}
 
               {section === 'account' ? (
-                <>
-                  <p className={`${sectionTitleClass} mb-5`} style={sectionTitleStyle}>
+                <div className="ccx-section" key="account">
+                  <p className={`${sectionTitleClass} mb-6`} style={serifStyle}>
                     Account
                   </p>
                   <div className="space-y-5">
                     <div>
-                      <p className={labelClass}>Email Address</p>
+                      <p className={labelClass}>Email</p>
                       <p className="text-[13.5px] text-[#453a2a] font-medium">{user.email ?? '—'}</p>
                     </div>
                     <div>
-                      <p className={labelClass}>Sign-In Method</p>
-                      <span
-                        className="inline-block px-3.5 py-1 text-[11px] uppercase tracking-[0.15em] font-semibold"
-                        style={signInBadgeStyle}
-                      >
+                      <p className={labelClass}>Sign-In</p>
+                      <p className="flex items-center gap-2 text-[13.5px] text-[#453a2a] font-medium">
+                        <span className="material-symbols-outlined text-[#3D5A35]" style={{ fontSize: 16 }}>
+                          {emailProvider ? 'key' : 'account_circle'}
+                        </span>
                         {emailProvider ? 'Email & Password' : 'Google'}
-                      </span>
+                      </p>
                     </div>
                   </div>
 
-                  <div className="mt-8 border-t border-[#b4543e]/20 pt-5">
-                    <p className="mb-1 text-[12px] font-semibold uppercase tracking-[0.16em] text-[#b4543e]">
-                      Danger Zone
-                    </p>
-                    <p className="mb-3 text-[12px] text-[#5c4033]/70">
-                      Deactivating your account signs you out everywhere and blocks sign-in.
-                      Nothing is deleted; your profile, avatars, evaluations, and recordings
-                      are all kept exactly as they are.
-                    </p>
-                    {!deleteOpen ? (
+                  <div className="mt-9 border-t border-[#5c4033]/12 pt-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#b4543e]">
+                          Danger Zone
+                        </p>
+                        <p className="mt-1 text-[12px] text-[#5c4033]/65">
+                          Deactivating blocks sign-in. Nothing gets deleted.
+                        </p>
+                      </div>
                       <button
                         type="button"
-                        className="ccx-danger-btn px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
-                        onClick={() => setDeleteOpen(true)}
+                        className="ccx-danger-btn shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
+                        onClick={() => setShowDeactivateModal(true)}
                       >
-                        Deactivate account
+                        Deactivate
                       </button>
-                    ) : (
-                      <div className="space-y-3">
-                        <p className="text-[12px] text-[#453a2a]">
-                          Type <span className="font-semibold">DELETE</span> to confirm.
-                        </p>
-                        <input
-                          value={deleteConfirm}
-                          onChange={(e) => setDeleteConfirm(e.target.value)}
-                          placeholder="DELETE"
-                          className={fieldClass}
-                        />
-                        {deleteMsg ? (
-                          <div className="ccx-msg px-4 py-2.5 text-[12px]" style={deleteMsgStyle}>
-                            {deleteMsg}
-                          </div>
-                        ) : null}
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            disabled={deleteConfirm !== 'DELETE' || deleting}
-                            onClick={() => setShowDeactivateModal(true)}
-                            className="ccx-danger-solid px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
-                          >
-                            {deleting ? 'Deactivating...' : 'Deactivate account'}
-                          </button>
-                          <button
-                            type="button"
-                            className="ccx-btn-ghost px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
-                            onClick={() => {
-                              setDeleteOpen(false)
-                              setDeleteConfirm('')
-                              setDeleteMsg(null)
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
-                </>
+                </div>
               ) : null}
 
               {section === 'security' && emailProvider ? (
-                <>
-                  <p className={`${sectionTitleClass} mb-5`} style={sectionTitleStyle}>
+                <div className="ccx-section" key="security">
+                  <p className={`${sectionTitleClass} mb-6`} style={serifStyle}>
                     Security
                   </p>
                   <form onSubmit={handleChangePassword} className="space-y-4">
@@ -881,24 +912,14 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                       />
                     </div>
 
-                    {passwordMsg ? (
-                      <div
-                        className="ccx-msg px-4 py-2.5 text-[12px]"
-                        style={{
-                          border: `1px solid ${passwordMsg.ok ? 'rgba(61,90,53,0.2)' : 'rgba(180,84,62,0.25)'}`,
-                          background: passwordMsg.ok ? 'rgba(61,90,53,0.06)' : 'rgba(180,84,62,0.06)',
-                          color: passwordMsg.ok ? '#3D5A35' : '#b4543e',
-                        }}
-                      >
-                        {passwordMsg.text}
-                      </div>
-                    ) : null}
-
-                    <SubmitButton disabled={!isPasswordReady || passwordSaving}>
-                      {passwordSaving ? 'Updating...' : 'Update Password'}
-                    </SubmitButton>
+                    <div className="flex items-center gap-3 pt-1">
+                      <SubmitButton disabled={!isPasswordReady || passwordSaving}>
+                        {passwordSaving ? 'Updating...' : 'Update Password'}
+                      </SubmitButton>
+                      <InlineStatus status={passwordMsg} />
+                    </div>
                   </form>
-                </>
+                </div>
               ) : null}
             </div>
           </>

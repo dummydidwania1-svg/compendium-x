@@ -9,25 +9,33 @@ import {
   increment, serverTimestamp, setDoc, updateDoc, type Timestamp,
 } from 'firebase/firestore'
 import { db, waitForAuthUser } from '@/lib/firebase/config'
+import PresetAvatarView from '@/components/avatars/PresetAvatarView'
 
 /* ── Types ──────────────────────────────────────────────────────── */
 
 type ThreadDoc = {
   body?: string; title?: string; authorId?: string; authorName?: string
+  authorPhotoURL?: string | null; authorAvatarPreset?: string | null
   createdAt?: Timestamp; updatedAt?: Timestamp; editedAt?: Timestamp; voteScore?: number
 }
 type ReplyDoc = {
   body?: string; authorId?: string; authorName?: string
+  authorPhotoURL?: string | null; authorAvatarPreset?: string | null
   createdAt?: Timestamp; updatedAt?: Timestamp; voteScore?: number
 }
 type Thread = {
   id: string; body: string; authorId: string | null; authorName: string
+  authorPhotoURL: string | null; authorAvatarPreset: string | null
   createdAt?: Timestamp; updatedAt?: Timestamp; editedAt?: Timestamp; voteScore: number
 }
 type Reply = {
   id: string; body: string; authorId: string | null; authorName: string
+  authorPhotoURL: string | null; authorAvatarPreset: string | null
   createdAt?: Timestamp; updatedAt?: Timestamp; voteScore: number
 }
+
+/** The poster's chosen in-app identity, mirroring the My Account avatar system. */
+type AvatarIdentity = { photoURL: string | null; avatarPreset: string | null }
 
 /* ── Helpers ────────────────────────────────────────────────────── */
 
@@ -63,6 +71,8 @@ function mapThread(id: string, d: ThreadDoc): Thread {
     id, body: (d.body?.trim() || d.title?.trim() || ''),
     authorId: typeof d.authorId === 'string' ? d.authorId : null,
     authorName: d.authorName?.trim() || 'Anonymous',
+    authorPhotoURL: typeof d.authorPhotoURL === 'string' ? d.authorPhotoURL : null,
+    authorAvatarPreset: typeof d.authorAvatarPreset === 'string' ? d.authorAvatarPreset : null,
     createdAt: d.createdAt, updatedAt: d.updatedAt, editedAt: d.editedAt,
     voteScore: typeof d.voteScore === 'number' ? d.voteScore : 0,
   }
@@ -72,6 +82,8 @@ function mapReply(id: string, d: ReplyDoc): Reply {
     id, body: d.body ?? '',
     authorId: typeof d.authorId === 'string' ? d.authorId : null,
     authorName: d.authorName?.trim() || 'Anonymous',
+    authorPhotoURL: typeof d.authorPhotoURL === 'string' ? d.authorPhotoURL : null,
+    authorAvatarPreset: typeof d.authorAvatarPreset === 'string' ? d.authorAvatarPreset : null,
     createdAt: d.createdAt, updatedAt: d.updatedAt,
     voteScore: typeof d.voteScore === 'number' ? d.voteScore : 0,
   }
@@ -91,7 +103,42 @@ function collectAuthors(threads: Thread[], replies: Record<string, Reply[]>, sel
 
 /* ── Avatar ─────────────────────────────────────────────────────── */
 
-function Avatar({ name, px = 28 }: { name: string; px?: number }) {
+// Renders the poster's chosen in-app avatar (preset tile or uploaded/Google
+// photo), matching what My Account shows — falling back to the classic
+// colored-initials circle when no identity is set (older posts, anonymous).
+// The 'initials' preset is an explicit "no photo" choice, so it also falls
+// through to the monogram.
+function Avatar({
+  name,
+  px = 28,
+  identity,
+}: {
+  name: string
+  px?: number
+  identity?: AvatarIdentity | null
+}) {
+  const preset = identity?.avatarPreset && identity.avatarPreset !== 'initials' ? identity.avatarPreset : null
+  const photo = identity?.avatarPreset === 'initials' ? null : identity?.photoURL ?? null
+
+  if (preset) {
+    return (
+      <div className="shrink-0 rounded-full overflow-hidden select-none" style={{ width: px, height: px }}>
+        <PresetAvatarView id={preset} className="block h-full w-full [&>svg]:h-full [&>svg]:w-full" />
+      </div>
+    )
+  }
+  if (photo) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={photo}
+        alt=""
+        className="shrink-0 rounded-full object-cover select-none"
+        style={{ width: px, height: px }}
+        referrerPolicy="no-referrer"
+      />
+    )
+  }
   return (
     <div className="shrink-0 rounded-full flex items-center justify-center font-semibold select-none"
       style={{
@@ -178,6 +225,11 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [displayName, setDisplayName] = useState<string>('')
+  const [selfIdentity, setSelfIdentity] = useState<AvatarIdentity | null>(null)
+  // Live avatar per authorId, refreshed on every load — so a post someone
+  // made before choosing an avatar (or before changing it) still shows
+  // their CURRENT avatar, not whatever was frozen on the post at write time.
+  const [authorIdentities, setAuthorIdentities] = useState<Record<string, AvatarIdentity>>({})
   const [threads, setThreads] = useState<Thread[]>([])
   const [replies, setReplies] = useState<Record<string, Reply[]>>({})
   const [votes, setVotes] = useState<Record<string, number>>({})
@@ -200,10 +252,17 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
     router.push(`/login?redirect=${encodeURIComponent(`/case/${caseId}/interviewer?preview=1&tab=forum`)}`),
     [router, caseId])
 
-  const resolveAuthorName = useCallback(async (u: User) => {
+  // Resolves the signed-in user's display name AND chosen avatar in one
+  // profile read, so posts carry the same identity My Account shows.
+  const resolveAuthorIdentity = useCallback(async (u: User) => {
     const s = await getDoc(doc(db, 'profiles', u.uid))
     const d = s.exists() ? s.data() : null
-    return (typeof d?.fullName === 'string' && d.fullName.trim()) ? d.fullName.trim() : u.email ?? 'Member'
+    const name = (typeof d?.fullName === 'string' && d.fullName.trim()) ? d.fullName.trim() : u.email ?? 'Member'
+    const preset = typeof d?.avatarPreset === 'string' ? d.avatarPreset : null
+    const uploaded = typeof d?.photoURL === 'string' ? d.photoURL : null
+    // Same fallback order as the account overlay: preset > uploaded > Google.
+    const photoURL = preset === 'initials' ? null : uploaded || u.photoURL || null
+    return { name, identity: { photoURL, avatarPreset: preset } as AvatarIdentity }
   }, [])
 
   const loadAll = useCallback(async (u: User | null) => {
@@ -228,6 +287,27 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
       const allReplies = Object.entries(replyMap).flatMap(([tid, rs]) => (rs as Reply[]).map(r => ({ tid, r })))
       setReplyScores(Object.fromEntries(allReplies.map(({ tid, r }) => [`${tid}:${r.id}`, r.voteScore])))
 
+      // Look up every unique poster's CURRENT profile, so avatars always
+      // reflect what's set today — not whatever was frozen on the post at
+      // write time (covers both older posts made before avatars existed,
+      // and posts from someone who has since changed their avatar).
+      const authorIds = Array.from(new Set([
+        ...rows.map(t => t.authorId),
+        ...allReplies.map(({ r }) => r.authorId),
+      ].filter((id): id is string => !!id)))
+      const identityEntries = await Promise.all(authorIds.map(async (authorId) => {
+        try {
+          const s = await getDoc(doc(db, 'profiles', authorId))
+          const d = s.exists() ? s.data() : null
+          const preset = typeof d?.avatarPreset === 'string' ? d.avatarPreset : null
+          const uploaded = typeof d?.photoURL === 'string' ? d.photoURL : null
+          return [authorId, { photoURL: preset === 'initials' ? null : uploaded, avatarPreset: preset } as AvatarIdentity] as const
+        } catch {
+          return [authorId, { photoURL: null, avatarPreset: null } as AvatarIdentity] as const
+        }
+      }))
+      setAuthorIdentities(Object.fromEntries(identityEntries))
+
       if (u) {
         const vAll = await Promise.all(rows.map(async t => {
           const vs = await getDoc(doc(db, 'case_forums', caseId, 'threads', t.id, 'votes', u.uid))
@@ -251,12 +331,13 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
     waitForAuthUser().then(async u => {
       setUser(u)
       if (u) {
-        const name = await resolveAuthorName(u)
+        const { name, identity } = await resolveAuthorIdentity(u)
         setDisplayName(name)
+        setSelfIdentity(identity)
       }
       loadAll(u)
     })
-  }, [loadAll, resolveAuthorName])
+  }, [loadAll, resolveAuthorIdentity])
 
   const authors = collectAuthors(threads, replies, displayName)
 
@@ -265,10 +346,13 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
     const body = draft.trim(); if (!body) return
     setPosting(true); setError('')
     try {
-      const name = displayName || await resolveAuthorName(user)
+      const { name, identity } = displayName && selfIdentity
+        ? { name: displayName, identity: selfIdentity }
+        : await resolveAuthorIdentity(user)
       await addDoc(collection(db, 'case_forums', caseId, 'threads'), {
         caseId, caseTitle: caseTitle ?? null, body,
         authorId: user.uid, authorName: name,
+        authorPhotoURL: identity.photoURL, authorAvatarPreset: identity.avatarPreset,
         voteScore: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
       })
       await setDoc(doc(db, 'case_forums', caseId),
@@ -284,9 +368,15 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
     const body = replyDraft.trim(); if (!body) return
     setPostingReply(threadId); setError('')
     try {
-      const name = displayName || await resolveAuthorName(user)
+      const { name, identity } = displayName && selfIdentity
+        ? { name: displayName, identity: selfIdentity }
+        : await resolveAuthorIdentity(user)
       await addDoc(collection(db, 'case_forums', caseId, 'threads', threadId, 'replies'),
-        { body, authorId: user.uid, authorName: name, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+        {
+          body, authorId: user.uid, authorName: name,
+          authorPhotoURL: identity.photoURL, authorAvatarPreset: identity.avatarPreset,
+          createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+        })
       await updateDoc(doc(db, 'case_forums', caseId, 'threads', threadId), { lastReplyAt: serverTimestamp() })
       setReplyDraft(''); setOpenReplyId(null); await loadAll(user)
     } catch (e) { setError(friendlyErr(e, 'Could not reply.')) }
@@ -443,7 +533,7 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
 
           {/* Composer */}
           <Composer
-            user={user} displayName={displayName} draft={draft} setDraft={setDraft}
+            user={user} displayName={displayName} selfIdentity={selfIdentity} draft={draft} setDraft={setDraft}
             composing={composing} setComposing={setComposing}
             posting={posting} onPost={handlePost} onLogin={login}
             authors={authors}
@@ -481,6 +571,7 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
                   savingEdit={savingEdit}
                   delay={i * 60}
                   authors={authors}
+                  authorIdentities={authorIdentities}
                   onVote={v => handleVote(t.id, v)}
                   onToggleReply={() => {
                     if (!user) { login(); return }
@@ -547,8 +638,8 @@ function BodyText({ text, className }: { text: string; className?: string }) {
 
 /* ── Composer ───────────────────────────────────────────────────── */
 
-function Composer({ user, displayName, draft, setDraft, composing, setComposing, posting, onPost, onLogin, authors }: {
-  user: User | null; displayName: string; draft: string; setDraft: (v: string) => void
+function Composer({ user, displayName, selfIdentity, draft, setDraft, composing, setComposing, posting, onPost, onLogin, authors }: {
+  user: User | null; displayName: string; selfIdentity: AvatarIdentity | null; draft: string; setDraft: (v: string) => void
   composing: boolean; setComposing: (v: boolean) => void
   posting: boolean; onPost: () => void; onLogin: () => void
   authors: string[]
@@ -600,7 +691,7 @@ function Composer({ user, displayName, draft, setDraft, composing, setComposing,
     <div>
       <div className="flex items-start gap-3">
         <div className="mt-0.5 shrink-0">
-          <Avatar name={authorName} px={24} />
+          <Avatar name={authorName} px={24} identity={selfIdentity} />
         </div>
         <div className="f-composer-wrap flex-1">
           <textarea
@@ -642,7 +733,7 @@ function ThreadRow({
   thread, myVote, threadReplies, currentUid,
   replyOpen, replyDraft, setReplyDraft, postingReply,
   isEditingThread, editingReplyKey, editDraft, setEditDraft, savingEdit, delay,
-  authors, replyVotes, replyScores,
+  authors, replyVotes, replyScores, authorIdentities,
   onVote, onToggleReply, onPostReply,
   onStartThreadEdit, onCancelThreadEdit, onSaveThreadEdit, onDeleteThread,
   onStartReplyEdit, onCancelReplyEdit, onSaveReplyEdit, onDeleteReply,
@@ -653,12 +744,17 @@ function ThreadRow({
   isEditingThread: boolean; editingReplyKey: string | null
   editDraft: string; setEditDraft: (v: string) => void; savingEdit: string | null; delay: number
   authors: string[]; replyVotes: Record<string, number>; replyScores: Record<string, number>
+  authorIdentities: Record<string, AvatarIdentity>
   onVote: (v: 1 | -1) => void; onToggleReply: () => void; onPostReply: () => void
   onStartThreadEdit: () => void; onCancelThreadEdit: () => void; onSaveThreadEdit: () => void; onDeleteThread: () => void
   onStartReplyEdit: (replyId: string, body: string) => void; onCancelReplyEdit: () => void
   onSaveReplyEdit: (replyId: string) => void; onDeleteReply: (replyId: string) => void
   onReplyVote: (replyId: string, v: 1 | -1) => void
 }) {
+  // Prefer the poster's live profile avatar; fall back to whatever was
+  // frozen on the post (older posts, or an author whose profile 404s).
+  const threadIdentity: AvatarIdentity = (thread.authorId && authorIdentities[thread.authorId])
+    || { photoURL: thread.authorPhotoURL, avatarPreset: thread.authorAvatarPreset }
   const isOwner = !!(currentUid && thread.authorId === currentUid)
   const [pop, setPop] = useState<1 | -1 | null>(null)
   const replyCount = threadReplies.length
@@ -696,7 +792,7 @@ function ThreadRow({
 
           {/* Meta row */}
           <div className="flex items-center gap-2 mb-1.5">
-            <Avatar name={thread.authorName} px={20} />
+            <Avatar name={thread.authorName} px={20} identity={threadIdentity} />
             <span className="text-[11.5px] font-semibold text-[#3B2F2F]/72">{thread.authorName}</span>
             <span className="text-[9px] text-[#5C4033]/25 select-none">·</span>
             <span className="text-[11px] text-[#5C4033]/38">{ago(thread.updatedAt ?? thread.createdAt)}</span>
@@ -806,10 +902,12 @@ function ThreadRow({
                   const isReplyOwner = !!(currentUid && r.authorId === currentUid)
                   const rMyVote = replyVotes[replyKey] ?? 0
                   const rScore = replyScores[replyKey] ?? 0
+                  const replyIdentity: AvatarIdentity = (r.authorId && authorIdentities[r.authorId])
+                    || { photoURL: r.authorPhotoURL, avatarPreset: r.authorAvatarPreset }
                   return (
                     <div key={r.id} className="f-rise f-reply-row group/reply" style={{ animationDelay: `${ri * 50}ms` }}>
                       <div className="flex items-start gap-2">
-                        <Avatar name={r.authorName} px={18} />
+                        <Avatar name={r.authorName} px={18} identity={replyIdentity} />
                         <div className="min-w-0 flex-1">
                           {/* Meta row */}
                           <div className="flex items-center gap-1.5 mb-0.5">
