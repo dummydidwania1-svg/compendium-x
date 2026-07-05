@@ -1,5 +1,5 @@
 import type { DocumentData, Timestamp } from 'firebase/firestore'
-import { PARAM_WEIGHTS } from '@/lib/constants'
+import { getCaseTypeWeights } from '@/lib/constants'
 import { mapEvaluationDoc } from './mappers'
 import type { EvaluationRecord } from './types'
 
@@ -139,11 +139,12 @@ function weightedScore(record: EvaluationRecord): number | null {
   const analysis = record.scores.understanding ?? 0
   const delivery = record.scores.delivery ?? 0
   const creativity = record.scores.creativity ?? 0
+  const w = getCaseTypeWeights(record.caseType)
   return +(
-    structure * PARAM_WEIGHTS.structure +
-    analysis * PARAM_WEIGHTS.analysis +
-    delivery * PARAM_WEIGHTS.delivery +
-    creativity * PARAM_WEIGHTS.creativity
+    structure * w.structure +
+    analysis * w.analysis +
+    delivery * w.delivery +
+    creativity * w.creativity
   ).toFixed(1)
 }
 

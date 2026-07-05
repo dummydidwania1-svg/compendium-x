@@ -3,17 +3,18 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronRight, X, Info } from 'lucide-react';
-import { COLORS, PARAM_WEIGHTS, PARAM_LABELS, FILTER_TYPES, FILTER_LEVELS } from '@/lib/constants';
+import { COLORS, PARAM_LABELS, FILTER_TYPES, FILTER_LEVELS, CASE_TYPE_WEIGHTS, DEFAULT_CASE_WEIGHTS, getCaseTypeWeights } from '@/lib/constants';
 import { filterDashboardEntries } from '@/lib/dashboard/live';
 import { useDashboard } from './DashboardContext';
 
-// ── Utility: compute weighted case score from 4 params ──
+// ── Utility: compute weighted case score using per-type matrix ──
 const computeWeightedScore = (c: any): number => {
+  const w = getCaseTypeWeights(c.type);
   return (
-    c.structure * PARAM_WEIGHTS.structure +
-    c.delivery * PARAM_WEIGHTS.delivery +
-    c.analysis * PARAM_WEIGHTS.analysis +
-    c.creativity * PARAM_WEIGHTS.creativity
+    (c.structure ?? 0) * w.structure +
+    (c.analysis ?? 0) * w.analysis +
+    (c.delivery ?? 0) * w.delivery +
+    (c.creativity ?? 0) * w.creativity
   );
 };
 
@@ -28,7 +29,127 @@ const scoreColor = (score: number): string => {
   return COLORS.dark;
 };
 
-// ── Floating Weight Tooltip (portal-based, never clipped) ──
+// ── Parameter color palette (consistent with SkillBalanceCard) ──
+const PARAM_COLORS: Record<string, { fill: string; label: string }> = {
+  structure: { fill: '#4A7C59',  label: PARAM_LABELS.structure },
+  analysis:  { fill: '#2D6A8A',  label: PARAM_LABELS.analysis },
+  delivery:  { fill: '#B07430',  label: PARAM_LABELS.delivery },
+  creativity:{ fill: '#8B3EA8',  label: PARAM_LABELS.creativity },
+};
+
+const MATRIX_ROWS: { type: string; keys: (keyof typeof PARAM_COLORS)[] }[] = [
+  { type: 'Profitability',  keys: ['structure','analysis','delivery','creativity'] },
+  { type: 'Market Entry',   keys: ['structure','analysis','delivery','creativity'] },
+  { type: 'Growth',         keys: ['structure','analysis','delivery','creativity'] },
+  { type: 'Pricing',        keys: ['structure','analysis','delivery','creativity'] },
+  { type: 'Guesstimate',    keys: ['structure','analysis','delivery','creativity'] },
+  { type: 'Unconventional', keys: ['structure','analysis','delivery','creativity'] },
+];
+
+// ── Single stacked bar row ──
+const WeightRow = ({
+  type,
+  animate,
+  rowIndex,
+}: {
+  type: string;
+  animate: boolean;
+  rowIndex: number;
+}) => {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const w = getCaseTypeWeights(type);
+  const segments: { key: string; pct: number }[] = [
+    { key: 'structure',  pct: w.structure  * 100 },
+    { key: 'analysis',   pct: w.analysis   * 100 },
+    { key: 'delivery',   pct: w.delivery   * 100 },
+    { key: 'creativity', pct: w.creativity * 100 },
+  ];
+
+  return (
+    <div className="flex items-center gap-2.5 group/row">
+      {/* Case type label */}
+      <span
+        className="text-[9.5px] font-medium text-[#5C4033]/60 shrink-0 text-right transition-colors duration-200 group-hover/row:text-[#3B2F2F]"
+        style={{ width: 76 }}
+      >
+        {type}
+      </span>
+
+      {/* Stacked bar */}
+      <div className="flex-1 flex h-[18px] rounded-full overflow-hidden gap-[1.5px]"
+        style={{ background: 'rgba(92,64,51,0.07)' }}
+      >
+        {segments.map(({ key, pct }, i) => {
+          const { fill, label } = PARAM_COLORS[key];
+          const isHovered = hoveredKey === key;
+          const delay = animate ? `${rowIndex * 60 + i * 30}ms` : '0ms';
+          return (
+            <div
+              key={key}
+              onMouseEnter={() => setHoveredKey(key)}
+              onMouseLeave={() => setHoveredKey(null)}
+              title={`${label}: ${pct.toFixed(0)}%`}
+              className="relative flex items-center justify-center overflow-hidden transition-all duration-300 ease-out cursor-default"
+              style={{
+                width: animate ? `${pct}%` : '0%',
+                backgroundColor: fill,
+                opacity: hoveredKey && !isHovered ? 0.45 : 1,
+                filter: isHovered ? 'brightness(1.15)' : 'none',
+                transform: isHovered ? 'scaleY(1.18)' : 'scaleY(1)',
+                transitionDelay: animate ? delay : '0ms',
+                transitionProperty: 'width, opacity, filter, transform',
+                borderRadius: i === 0 ? '9999px 2px 2px 9999px' : i === segments.length - 1 ? '2px 9999px 9999px 2px' : '2px',
+              }}
+            >
+              {/* Pct label — only show when wide enough or hovered */}
+              {(pct >= 22 || isHovered) && (
+                <span
+                  className="text-[8px] font-semibold text-white/90 tabular-nums leading-none select-none pointer-events-none transition-opacity duration-150"
+                  style={{ opacity: isHovered || pct >= 22 ? 1 : 0 }}
+                >
+                  {pct.toFixed(0)}%
+                </span>
+              )}
+              {/* Hover glow */}
+              {isHovered && (
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ boxShadow: `inset 0 0 10px ${fill}60` }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Hovered param label */}
+      <span
+        className="text-[9px] font-medium tabular-nums shrink-0 transition-all duration-150"
+        style={{
+          width: 68,
+          color: hoveredKey ? PARAM_COLORS[hoveredKey].fill : 'transparent',
+          opacity: hoveredKey ? 1 : 0,
+        }}
+      >
+        {hoveredKey ? PARAM_COLORS[hoveredKey].label : ''}
+      </span>
+    </div>
+  );
+};
+
+// ── Legend row ──
+const WeightLegend = () => (
+  <div className="flex items-center gap-3 flex-wrap">
+    {Object.entries(PARAM_COLORS).map(([key, { fill, label }]) => (
+      <div key={key} className="flex items-center gap-1">
+        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: fill }} />
+        <span className="text-[8.5px] text-[#5C4033]/50 font-medium leading-none">{label}</span>
+      </div>
+    ))}
+  </div>
+);
+
+// ── Floating Weight Matrix Tooltip (portal-based, never clipped) ──
 const WeightTooltip = ({
   anchorRef,
   visible,
@@ -41,15 +162,22 @@ const WeightTooltip = ({
   onMouseLeave?: () => void;
 }) => {
   const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [animate, setAnimate] = useState(false);
   const canUseDOM = typeof document !== 'undefined';
 
   useEffect(() => {
     if (visible && anchorRef.current) {
       const rect = anchorRef.current.getBoundingClientRect();
-      setPos({
-        top: rect.bottom - 102,
-        left: rect.left + rect.width / 2,
-      });
+      const cardWidth = 400;
+      let left = rect.left + rect.width / 2 - cardWidth / 2;
+      // Keep within viewport
+      left = Math.max(12, Math.min(left, window.innerWidth - cardWidth - 12));
+      const top = rect.bottom + 8;
+      setPos({ top, left });
+      // Trigger bar animation after mount frame
+      requestAnimationFrame(() => requestAnimationFrame(() => setAnimate(true)));
+    } else {
+      setAnimate(false);
     }
   }, [visible, anchorRef]);
 
@@ -57,29 +185,48 @@ const WeightTooltip = ({
 
   return createPortal(
     <div
-      className="fixed z-[9999] animate-scale-in"
-      style={{ top: pos.top, left: pos.left, transform: 'translateX(-50%)' }}
+      className="fixed z-[9999]"
+      style={{ top: pos.top, left: pos.left }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <div
-        className="rounded-xl border border-[#5C4033]/10 bg-[#fff8f0] backdrop-blur-xl shadow-xl px-3 py-2.5 min-w-[130px]"
-        style={{ boxShadow: '0 4px 24px rgba(92, 64, 51, 0.08), 0 1px 3px rgba(92, 64, 51, 0.06)' }}
+        className="rounded-2xl border border-[#5C4033]/10 bg-[#fff8f0]/95 backdrop-blur-xl shadow-2xl overflow-hidden"
+        style={{
+          width: 400,
+          boxShadow: '0 8px 40px rgba(92,64,51,0.13), 0 2px 8px rgba(92,64,51,0.07)',
+          animation: 'weight-card-in 0.22s cubic-bezier(0.16,1,0.3,1) both',
+        }}
       >
-        <p className="text-[8px] uppercase tracking-[0.12em] text-[#5C4033]/45 font-semibold mb-1.5">
-          Score Weights
-        </p>
-        {Object.entries(PARAM_WEIGHTS).map(([key, w]) => (
-          <div key={key} className="flex items-center justify-between py-[3px]">
-            <span className="text-[10px] text-[#5C4033]/65 font-medium leading-none">
-              {PARAM_LABELS[key]}
-            </span>
-            <span className="text-[10px] font-semibold text-[#3B2F2F] tabular-nums leading-none">
-              {(w * 100).toFixed(0)}%
-            </span>
-          </div>
-        ))}
+        {/* Header */}
+        <div className="px-4 pt-4 pb-3 border-b border-[#5C4033]/08">
+          <p className="text-[8.5px] uppercase tracking-[0.14em] text-[#5C4033]/40 font-semibold mb-0.5">
+            How K-Score is Calculated
+          </p>
+          <p className="text-[11px] font-medium text-[#3B2F2F]/70 leading-snug">
+            Weights vary by case type — hover a bar segment to see each parameter's contribution.
+          </p>
+        </div>
+
+        {/* Matrix rows */}
+        <div className="px-4 py-3 flex flex-col gap-2.5">
+          {MATRIX_ROWS.map(({ type }, i) => (
+            <WeightRow key={type} type={type} animate={animate} rowIndex={i} />
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div className="px-4 pb-4 pt-1 border-t border-[#5C4033]/06">
+          <WeightLegend />
+        </div>
       </div>
+
+      <style>{`
+        @keyframes weight-card-in {
+          from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0)   scale(1); }
+        }
+      `}</style>
     </div>,
     document.body
   );

@@ -24,7 +24,7 @@ export const FILTER_TIME_OPTIONS = [
 { value: 'custom', label: 'Custom Range' },
 ];
 
-// ADD these at the bottom of constants.ts:
+// Flat weights kept for legacy reference only — not used for scoring.
 export const PARAM_WEIGHTS = {
   structure: 0.30,
   delivery: 0.30,
@@ -33,11 +33,31 @@ export const PARAM_WEIGHTS = {
 };
 
 export const PARAM_LABELS: Record<string, string> = {
-  structure: 'Structure',
-  delivery: 'Delivery',
-  analysis: 'Analysis',
+  structure: 'Framework & Structure',
+  delivery: 'Delivery & Communication',
+  analysis: 'Problem Understanding',
   creativity: 'Creativity',
 };
+
+// Per-case-type weight matrix. Weights sum to 1.0 in every row.
+export type CaseWeightRow = { structure: number; analysis: number; delivery: number; creativity: number }
+
+export const CASE_TYPE_WEIGHTS: Record<string, CaseWeightRow> = {
+  'Profitability':  { structure: 0.40, analysis: 0.25, delivery: 0.20, creativity: 0.15 },
+  'Market Entry':   { structure: 0.30, analysis: 0.30, delivery: 0.25, creativity: 0.15 },
+  'Growth':         { structure: 0.30, analysis: 0.15, delivery: 0.20, creativity: 0.35 },
+  'Pricing':        { structure: 0.20, analysis: 0.25, delivery: 0.20, creativity: 0.35 },
+  'Guesstimate':    { structure: 0.25, analysis: 0.25, delivery: 0.25, creativity: 0.25 },
+  'Unconventional': { structure: 0.25, analysis: 0.25, delivery: 0.25, creativity: 0.25 },
+}
+
+// Fallback for unknown / General case types — equal weights.
+export const DEFAULT_CASE_WEIGHTS: CaseWeightRow = { structure: 0.25, analysis: 0.25, delivery: 0.25, creativity: 0.25 }
+
+export function getCaseTypeWeights(caseType: string | null | undefined): CaseWeightRow {
+  if (!caseType) return DEFAULT_CASE_WEIGHTS
+  return CASE_TYPE_WEIGHTS[caseType] ?? DEFAULT_CASE_WEIGHTS
+}
 
 // Canonical category order for the book-style Table of Contents grouping.
 // Matches the section ordering used in the printed edition.
