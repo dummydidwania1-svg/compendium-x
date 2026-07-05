@@ -78,11 +78,11 @@ export default function SafariRemoteBlockModal({
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <p id="srb-title" style={{ fontSize: '14px', fontWeight: 600, color: '#3B2F2F', lineHeight: 1.3, letterSpacing: '-0.01em' }}>
-                Remote mode doesn't work on Safari
+                Safari's a bit of a mic hog
               </p>
               <p style={{ fontSize: '12px', color: 'rgba(92,64,51,0.68)', lineHeight: 1.55 }}>
-                We don't allow it, no exceptions — Safari has a habit of cutting your
-                mic off without warning partway through, and we'd rather stop you now
+                It tends to cut your mic off mid-session without any warning, so we
+                don't allow Remote mode on Safari at all. We'd rather stop you now
                 than let a session break on you later. Switch to Chrome (or basically
                 anything that isn't Safari) and you'll be good to go.
               </p>

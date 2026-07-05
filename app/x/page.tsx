@@ -460,7 +460,7 @@ const FOOTER_LINKS = [
   { label: 'Acknowledgements', href: '/collaborators' },
   {
     label: 'Contact Us',
-    href: 'mailto:saksham@casecompendiumx.in?subject=Compendium%20X%20Enquiry',
+    href: 'mailto:contact@casecompendiumx.in?subject=Case%20CompendiumX%20Query',
   },
 ]
 
@@ -644,7 +644,7 @@ function Footer() {
               </svg>
             </a>
             <a
-              href="mailto:saksham@casecompendiumx.in"
+              href="mailto:contact@casecompendiumx.in"
               className="transition-all hover:text-white"
               style={{ color: 'rgba(213, 196, 177, 0.7)' }}
               aria-label="Email us"

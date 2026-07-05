@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { X, ChevronRight } from 'lucide-react';
+import { X } from 'lucide-react';
 import { COLORS, FILTER_TYPES, FILTER_LEVELS } from '@/lib/constants';
 import { filterDashboardEntries } from '@/lib/dashboard/live';
 import { useDashboard } from './DashboardContext';
@@ -272,9 +272,8 @@ const ParameterBarChart = ({ filters }: ParameterBarChartProps) => {
               ))}
 
               {/* ── Helper line ── */}
-              <span className="text-[9px] text-[#5C4033]/40 mt-1 group-hover:text-[#5C4033]/60 transition-all tracking-wide flex items-center gap-0.5 justify-center">
+              <span className="text-[9px] text-[#5C4033]/40 mt-1 group-hover:text-[#5C4033]/60 transition-all duration-300 tracking-wide flex items-center justify-center group-hover:tracking-[0.04em]">
                 Hover over a skill to explore
-                <ChevronRight className="w-2.5 h-2.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
               </span>
             </>
           )}
