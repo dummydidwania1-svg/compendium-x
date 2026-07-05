@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Footer from '@/components/dashboard/Footer';
 import Link from 'next/link';
+import Image from 'next/image';
 
 type EditionEra = 'ink' | 'mid' | 'digital';
 
@@ -82,13 +83,13 @@ const EDITIONS: Edition[] = [
     stat: { value: '3', label: 'AI personas' }, anchor: { x: 88, y: 44 },
     people: [
       { name: 'Nitya Mall', role: 'McKinsey', school: 'SRCC • Class of 2026', x: 81, y: 31,
-        linkedin: 'https://in.linkedin.com/in/nitya-mall-5a8728286/', photoSrc: '/team/nitya-mall.png',
+        linkedin: 'https://in.linkedin.com/in/nitya-mall-5a8728286/', photoSrc: '/team/nitya-mall.jpg',
         bio: 'Received a PPO from McKinsey & Co. Previously interned at Nomura Research Institute & Samsung. Conferred the L.N. Birla Gold Medal, she served as Strategy Head at the Placement Cell, SRCC.' },
       { name: 'Pratik Agarwal', role: 'Goldman Sachs', school: 'SRCC • Class of 2026', x: 99, y: 34,
         linkedin: 'https://in.linkedin.com/in/agpratik/', photoSrc: '/team/pratik-agarwal.jpg', objectPosition: 'center 42%',
         bio: 'Previously interned at Windrose Capital, a Series-A VC fund. Served as Corporate Communications Head at the Placement Cell, SRCC.' },
       { name: 'Saksham Didwania', role: 'Kearney', school: 'SRCC • Class of 2026', x: 78, y: 56,
-        linkedin: 'https://in.linkedin.com/in/sakshamd26', photoSrc: '/team/saksham-didwania.png',
+        linkedin: 'https://in.linkedin.com/in/sakshamd26', photoSrc: '/team/saksham-didwania.jpg',
         bio: 'Received a PPO from Accenture Strategy & interned at Samara Capital, a PE fund. With accolades in National Abacus & Chess, he served as Secretary General at the Placement Cell, SRCC.' },
       { name: 'Tanvi Bansal', role: 'Goldman Sachs • Intern', school: 'SRCC • Class of 2027', x: 99.5, y: 59,
         linkedin: 'https://in.linkedin.com/in/tanvi-bansal-298786233/', photoSrc: '/team/tanvi-bansal.jpg', objectPosition: 'center 46%', zoom: 1.15, zoomOrigin: '38% 46%',
@@ -149,11 +150,14 @@ function NodeAvatar({ person }: { person: Contributor }) {
   return (
     <span className="cst-avatar">
       {showImg ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={person.photoSrc}
+        <Image
+          src={person.photoSrc as string}
           alt=""
+          fill
+          sizes="84px"
+          quality={80}
           style={{
+	objectFit: 'cover',
 	objectPosition: person.objectPosition,
 	transform: person.zoom ? `scale(${person.zoom})` : undefined,
 	transformOrigin: person.zoomOrigin,

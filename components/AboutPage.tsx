@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import Footer from '@/components/dashboard/Footer';
 
@@ -13,7 +14,7 @@ const FOUNDERS = [
     description: 'Received a PPO from McKinsey & Co. Previously interned at Nomura Research Institute & Samsung. Conferred the L.N. Birla Gold Medal, she served as Strategy Head at the Placement Cell, SRCC.',
     school: 'SRCC • Class of 2026',
     linkedin: 'https://in.linkedin.com/in/nitya-mall-5a8728286/',
-    photoSrc: '/team/nitya-mall.png',
+    photoSrc: '/team/nitya-mall.jpg',
   },
   {
     name: 'Pratik Agarwal',
@@ -29,7 +30,7 @@ const FOUNDERS = [
     description: 'Received a PPO from Accenture Strategy & interned at Samara Capital, a PE fund. With accolades in National Abacus & Chess, he served as Secretary General at the Placement Cell, SRCC.',
     school: 'SRCC • Class of 2026',
     linkedin: 'https://in.linkedin.com/in/sakshamd26',
-    photoSrc: '/team/saksham-didwania.png',
+    photoSrc: '/team/saksham-didwania.jpg',
   },
   {
     name: 'Tanvi Bansal',
@@ -108,7 +109,15 @@ const FounderAvatar = ({ name, photoSrc }: { name: string; photoSrc?: string }) 
   return (
     <div className="founder-avatar">
       {!hasError && photoSrc ? (
-        <img src={photoSrc} alt={name} loading="lazy" style={imageStyle} onError={() => setHasError(true)} />
+        <Image
+          src={photoSrc}
+          alt={name}
+          fill
+          sizes="100px"
+          quality={80}
+          style={imageStyle}
+          onError={() => setHasError(true)}
+        />
       ) : (
         <div className="photo-placeholder" aria-hidden="true">
           <span className="material-symbols-outlined">person</span>
