@@ -4,7 +4,28 @@
 // grants one live mic stream per browser process, so a call already running
 // in another Safari tab silently kills ours mid-session — instead of failing
 // confusingly later, we block Remote mode outright, before any mic prompt.
-export default function SafariRemoteBlockModal({ onDismiss }: { onDismiss: () => void }) {
+export default function SafariRemoteBlockModal({
+  onDismiss,
+  closeTabOnDismiss,
+}: {
+  onDismiss: () => void;
+  // True for the raw shared-link path (interception point B) — there's no
+  // page to go back to, so the friendliest move is to close the tab itself.
+  closeTabOnDismiss?: boolean;
+}) {
+  const handleDismiss = () => {
+    onDismiss();
+    if (closeTabOnDismiss) {
+      // Browsers only let a script close a tab it opened itself (or one with
+      // no navigation history) — this silently no-ops otherwise, with no
+      // error or return value to detect. If close() worked, this tab is
+      // gone and nothing below ever runs; if it didn't, send them home
+      // immediately instead of leaving them stranded on a dead link.
+      window.close();
+      window.location.replace('/');
+    }
+  };
+
   return (
     <div
       style={{
@@ -57,19 +78,20 @@ export default function SafariRemoteBlockModal({ onDismiss }: { onDismiss: () =>
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <p id="srb-title" style={{ fontSize: '14px', fontWeight: 600, color: '#3B2F2F', lineHeight: 1.3, letterSpacing: '-0.01em' }}>
-                Safari's a bit of a mic hog
+                Remote mode doesn't work on Safari
               </p>
               <p style={{ fontSize: '12px', color: 'rgba(92,64,51,0.68)', lineHeight: 1.55 }}>
-                Safari only lets one tab use your mic at a time, so Remote mode won't
-                play nice if you've got a call open anywhere else. Hop over to Chrome
-                (or really any other browser) and you're good to go.
+                We don't allow it, no exceptions — Safari has a habit of cutting your
+                mic off without warning partway through, and we'd rather stop you now
+                than let a session break on you later. Switch to Chrome (or basically
+                anything that isn't Safari) and you'll be good to go.
               </p>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
               type="button"
-              onClick={onDismiss}
+              onClick={handleDismiss}
               style={{
                 fontSize: '11px', fontWeight: 600, letterSpacing: '0.02em',
                 color: '#92400e',

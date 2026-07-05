@@ -1854,7 +1854,10 @@ export default function LobbyPage() {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#fff8f0' }}>
         {!safariRemoteBlockDismissed && (
-          <SafariRemoteBlockModal onDismiss={() => setSafariRemoteBlockDismissed(true)} />
+          <SafariRemoteBlockModal
+            closeTabOnDismiss
+            onDismiss={() => setSafariRemoteBlockDismissed(true)}
+          />
         )}
       </div>
     )
