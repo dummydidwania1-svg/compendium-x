@@ -26,6 +26,8 @@ type SessionState = {
   selectedAt?: { toMillis: () => number }
   /** Set to false by the interviewer when they decline mic twice in remote mode. */
   interviewerAudioCaptured?: boolean
+  /** Mirrors the interviewer's live draft: true once all 4 rating sliders are filled in (remote mode only). */
+  interviewerDraftAllRated?: boolean
   recording?: {
     transcriptStatus?: 'pending' | 'processing' | 'completed' | 'failed'
     audioUrl?: string
@@ -188,6 +190,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [interviewerWindowClosed, setInterviewerWindowClosed] = useState(false)
   const [interviewerAudioDeclined, setInterviewerAudioDeclined] = useState(false)
   const interviewerDeclineShownRef = useRef(false)
+  // Mirrors the interviewer's live draft-rating completeness (remote mode only —
+  // see checkRatingStatus). Stays false forever in local mode.
+  const interviewerDraftAllRatedRef = useRef(false)
   const [caseName, setCaseName] = useState('')
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   // ── Session-complete overlay (timed, auto-dismisses then routes to dashboard) ──
@@ -913,9 +918,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     } catch {
       // Network/permission error — fall back to draft
     }
-    // Source B: localStorage draft with all 4 scores > 0
+    // Source B: localStorage draft with all 4 scores > 0 (local-mode / same-browser
+    // only — always null cross-device in remote mode, so this is a no-op there).
     const draft = readDraftScores(lid)
-    return draft !== null && isDraftAllRated(draft.scores)
+    if (draft !== null && isDraftAllRated(draft.scores)) return true
+    // Source C: interviewer's live draft mirrored via Firestore (remote mode only —
+    // stays false forever in local mode, so this is additive/safe there).
+    return interviewerDraftAllRatedRef.current === true
   }, [currentUser, readDraftScores, isDraftAllRated])
 
   const handleCandidateEndSession = useCallback(async () => {
@@ -1115,6 +1124,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       ) {
         interviewerDeclineShownRef.current = true
         setInterviewerAudioDeclined(true)
+      }
+      // Mirror the interviewer's live (unsubmitted) draft-rating completeness —
+      // the only cross-device signal for it in remote mode. Always reflects the
+      // latest value (can flip back to false if a slider gets cleared).
+      if (typeof raw.interviewerDraftAllRated === 'boolean') {
+        interviewerDraftAllRatedRef.current = raw.interviewerDraftAllRated
       }
       if (raw.status === 'replacing') {
         // Interviewer is swapping the case — abort recording (no upload), go back to lobby.

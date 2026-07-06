@@ -42,12 +42,20 @@ const presenceInput = z.object({
    * can show "Interviewer is choosing a case" in real time.
    */
   interviewerBrowsing: z.boolean().optional(),
+  /**
+   * Only meaningful for the interviewer role in remote mode. Merges
+   * `interviewerDraftAllRated` onto the session doc so the candidate's
+   * End Session check can see the interviewer's live (unsubmitted) draft
+   * rating completeness cross-device, since there's no shared localStorage
+   * across separate remote devices.
+   */
+  interviewerDraftAllRated: z.boolean().optional(),
 })
 
 export const POST = authenticatedRoute<{ lobbyId: string }>(
   '/api/sessions/[lobbyId]/presence',
   async (request, caller, { lobbyId }) => {
-    const { role, active, recording, interviewerAudioCaptured, candidateOptedOutRecording, interviewerBrowsing } = await parseBody(request, presenceInput)
+    const { role, active, recording, interviewerAudioCaptured, candidateOptedOutRecording, interviewerBrowsing, interviewerDraftAllRated } = await parseBody(request, presenceInput)
     const ref = adminDb.collection('sessions').doc(lobbyId)
 
     await adminDb.runTransaction(async (tx) => {
@@ -93,6 +101,9 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         }
         if (typeof interviewerBrowsing === 'boolean') {
           interviewerUpdate.interviewerBrowsing = interviewerBrowsing
+        }
+        if (typeof interviewerDraftAllRated === 'boolean') {
+          interviewerUpdate.interviewerDraftAllRated = interviewerDraftAllRated
         }
         tx.set(ref, interviewerUpdate, { merge: true })
       }

@@ -14,6 +14,7 @@ import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
 import PlatformLoader from '@/components/PlatformLoader'
 import { slugifyCase } from '@/lib/slug'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
+import { MandatoryTimedOverlay } from '@/components/lobby/MandatoryTimedOverlay'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { useMicPermission } from '@/lib/permissions/microphone'
@@ -822,7 +823,6 @@ export function InterviewerPageInner({
 	const [overlaySubmitError, setOverlaySubmitError] = useState('')
 	const [overlaySuccess, setOverlaySuccess] = useState(false)
 	const [overlayAutoClose, setOverlayAutoClose] = useState(0) // countdown seconds remaining
-	const [successAutoClose, setSuccessAutoClose] = useState(0) // same for currentView='success'
 	const showEvalOverlayRef = useRef(false)
 	useEffect(() => { showEvalOverlayRef.current = showEvalOverlay }, [showEvalOverlay])
 
@@ -886,26 +886,6 @@ export function InterviewerPageInner({
 		return () => clearInterval(iv)
 	}, [overlaySuccess, interviewerUploadState, isRemoteMode])
 
-	// Auto-close for currentView='success' (non-overlay path, e.g. skip-to-success).
-	// Local: window.close(). Remote: redirect to homepage.
-	useEffect(() => {
-		if (currentView !== 'success') return
-		if (interviewerUploadState === 'uploading') return
-		if (isRemoteMode) { router.push('/'); return }
-		setSuccessAutoClose(3)
-		const iv = setInterval(() => {
-			setSuccessAutoClose(prev => {
-				if (prev <= 1) {
-					clearInterval(iv)
-					window.open('', '_self')
-					window.close()
-					return 0
-				}
-				return prev - 1
-			})
-		}, 1000)
-		return () => clearInterval(iv)
-	}, [currentView, interviewerUploadState, isRemoteMode])
 	const [micGuardShowing, setMicGuardShowing] = useState(false)
 
 	// ── Interviewer mic recording (remote mode, dual-mic architecture) ────────────
@@ -975,6 +955,10 @@ export function InterviewerPageInner({
 	const [candidateEndedSession, setCandidateEndedSession] = useState(false)
 	// Ref so the auto-submit effect fires exactly once per session-end event.
 	const autoSubmitOnEndRef = useRef(false)
+	// D10: Candidate dropped/abandoned the session mid-way.
+	const [candidateAbandoned, setCandidateAbandoned] = useState(false)
+	// Ref so the recording-stop + overlay-trigger fires exactly once per session.
+	const candidateAbandonedRef = useRef(false)
 
 	// When the candidate ends the session, auto-save whatever the interviewer has
 	// entered so far (even partial scores). The /api/evaluations endpoint is now an
@@ -1047,6 +1031,25 @@ export function InterviewerPageInner({
 			// Storage quota exceeded — non-fatal.
 		}
 	}, [draftKey, scores, notes, currentView])
+
+	// Remote mode only: mirror "all 4 draft scores filled in" to Firestore so the
+	// candidate (separate device, no shared localStorage) can see it in
+	// checkRatingStatus. Local mode never fires this — its draft is already
+	// visible to the candidate via the same-browser localStorage read.
+	const lastMirroredAllRatedRef = useRef<boolean | null>(null)
+	useEffect(() => {
+		if (!isRemoteMode || !lobbyId || previewMode) return
+		const allRated =
+			scores.structure > 0 && scores.understanding > 0 &&
+			scores.delivery > 0 && scores.creativity > 0
+		if (lastMirroredAllRatedRef.current === allRated) return
+		lastMirroredAllRatedRef.current = allRated
+		apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+			role: 'interviewer',
+			active: true,
+			interviewerDraftAllRated: allRated,
+		}).catch(() => { /* best-effort */ })
+	}, [isRemoteMode, lobbyId, previewMode, scores])
 
 	// ── Remote mode: session doc subscription (mechanism #2) ────────────────────
 	// In remote mode there is no shared localStorage, so the interviewer must
@@ -1127,15 +1130,16 @@ export function InterviewerPageInner({
 				setCandidateEndedSession(true)
 			}
 
-			// D10: Session cancelled by candidate or expired — return interviewer to lobby.
-			if (status === 'waiting' || status === 'abandoned') {
+			// D10: Session cancelled ("waiting") — return interviewer to lobby.
+			// Grace-period logic unchanged from before the abandoned-branch split below.
+			if (status === 'waiting') {
 				if (view !== 'success') {
 					// If the interviewer just navigated here from the case picker before
 					// select-case finished, suppress the immediate redirect and schedule a
 					// fallback instead. When select-case writes in_progress the snapshot
 					// fires again and cancels the timer. If it never arrives (API error,
 					// network failure), the timer fires and returns the interviewer to lobby.
-					if (status === 'waiting' && lobbyId) {
+					if (lobbyId) {
 						try {
 							const raw = localStorage.getItem(`compendium-selecting-${lobbyId}`)
 							if (raw) {
@@ -1159,6 +1163,18 @@ export function InterviewerPageInner({
 						} catch { /* ignore */ }
 					}
 					router.replace(`/lobby/${encodeURIComponent(lobbyId)}?role=interviewer&mode=${searchParams.get('sessionMode') ?? 'remote'}`)
+				}
+			}
+
+			// New: candidate explicitly dropped the session ("abandoned"). Different
+			// UX than 'waiting' — show a brief non-dismissible notice, flush the
+			// interviewer's own trailing recording, then send them to the real
+			// landing page (not the lobby "Welcome, Interviewer" screen).
+			if (status === 'abandoned') {
+				if (view !== 'success' && !candidateAbandonedRef.current) {
+					candidateAbandonedRef.current = true
+					void stopInterviewerRecordingAndUpload()
+					setCandidateAbandoned(true)
 				}
 			}
 
@@ -1576,8 +1592,10 @@ export function InterviewerPageInner({
 		if (isLocalMode) {
 			window.close()
 		} else {
-			// Remote: no window to close; route to success view.
-			setCurrentView('success')
+			// Remote: no window to close; show the modern eval-overlay success state
+			// (same one every other submit path uses) instead of the old full-page view.
+			setShowEvalOverlay(true)
+			setOverlaySuccess(true)
 		}
 	}, [isLocalMode, lobbyId, resolvedCaseId, scores, notes, draftKey, stopInterviewerRecordingAndUpload])
 
@@ -1609,11 +1627,6 @@ export function InterviewerPageInner({
 	// ── End auto-end timers ───────────────────────────────────────────────────
 
 	const [submitError, setSubmitError] = useState('')
-	// Locked-by-default review screen: the interviewer fills scores/notes
-	// during the case (sidebar in CaseInterviewerMaster), then this view
-	// confirms what they have before submission. Toggle to false to edit
-	// in place; submit finalizes from either mode.
-	const [editingFeedback, setEditingFeedback] = useState(false)
 
 	const normalizedTitle = useMemo(() => (caseData?.title ?? '').trim().toLowerCase(), [caseData?.title])
 	const caseTypeLabel = useMemo(() => (caseData?.caseType ?? caseData?.case_type ?? 'General').trim(), [
@@ -2292,22 +2305,34 @@ if (previewMode && !forcePreview) {
 					/>
 				)}
 
-				{/* A3/D10 — Remote mode: candidate ended the session.
+				{/* D10 — Remote mode: candidate dropped/abandoned the session.
+				    Firestore status:'abandoned' detected via onSnapshot. Brief,
+				    non-dismissible notice, then home — not the interviewer lobby. */}
+				{isRemoteMode && candidateAbandoned && !micGuardShowing && !overlaySuccess && (
+					<MandatoryTimedOverlay
+						durationMs={2500}
+						onExpire={() => router.push('/')}
+						title="Your candidate stepped out"
+						body="They cancelled the session on their end, so we're taking you back to the homepage."
+					/>
+				)}
+
+				{/* A3/D10 — Remote mode: candidate ended and saved the session.
 				    Firestore status:'completed' detected via onSnapshot while the
-				    interviewer hasn't submitted feedback yet. Prompt to submit now. */}
-				{isRemoteMode && candidateEndedSession && !micGuardShowing && !overlaySuccess && (
-					<LobbyOverlay
-						type="warning"
-						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-						title="Candidate ended the session"
-						body={Object.values(scores).some((v) => v > 0)
-							? "Your candidate wrapped up. Submit your ratings to complete the evaluation — or skip and it'll be saved as pending for you to rate later."
-							: "Your candidate wrapped up before you rated the case. Submit feedback now or it will be saved as pending."}
-						actionLabel="Submit feedback"
-						onAction={() => { setCandidateEndedSession(false); setCurrentView('feedback') }}
-						secondaryActionLabel="Skip for now"
-						onSecondaryAction={() => { setCandidateEndedSession(false); void stopInterviewerRecordingAndUpload(); setCurrentView('success') }}
-						onDismiss={() => setCandidateEndedSession(false)}
+				    interviewer hasn't submitted feedback yet. Mandatory, non-dismissible,
+				    60s countdown — "Evaluate" reuses the same End Case & Evaluate overlay
+				    used elsewhere; "Close" and the auto-timeout both send the interviewer
+				    home after flushing their own recording. */}
+				{isRemoteMode && candidateEndedSession && !micGuardShowing && !overlaySuccess && !candidateAbandoned && (
+					<MandatoryTimedOverlay
+						durationMs={60000}
+						onExpire={() => { setCandidateEndedSession(false); void stopInterviewerRecordingAndUpload(); router.push('/') }}
+						title="Your candidate wrapped up"
+						body="They ended the session on their side. You can rate them now, or just close things out."
+						primaryLabel="Evaluate the candidate"
+						onPrimary={() => { setCandidateEndedSession(false); setShowEvalOverlay(true); setEditingOverlay(false) }}
+						secondaryLabel="Close the session"
+						onSecondary={() => { setCandidateEndedSession(false); void stopInterviewerRecordingAndUpload(); router.push('/') }}
 					/>
 				)}
 
@@ -2729,531 +2754,13 @@ if (previewMode && !forcePreview) {
 				})()}
 			</>
 		)
-
-		// Legacy block start (never reached)
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const _legacyCaseData = caseData!
-		const _noop = () => (
-			<div className="min-h-screen bg-[#e7e0d5] text-[#2d2520] font-sans flex flex-col">
-
-				{/* Minimal sticky nav */}
-					<nav className="sticky top-0 z-50 flex items-center justify-between border-b border-[#d2c7b9] bg-[#ece6dd]/95 px-6 py-3 backdrop-blur-md md:px-8">
-						<Link
-							href="/repository"
-							className="text-[11px] font-black uppercase tracking-[0.2em] text-[#5d4e45] transition hover:text-[#2b231f]"
-						>
-							← Exit Case
-						</Link>
-						{previewMode ? (
-							<div className="border border-[#a48562] bg-[#dbcdbd] px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-[#4d3423]">
-								Case Preview
-							</div>
-						) : (
-							<div className="border border-[#b7b29f] bg-[#ece7de] px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-[#5d4e45]">
-								Interviewer Mode
-							</div>
-						)}
-					</nav>
-
-					{/* Fluid document + narrower interviewer rail */}
-					<div className="flex flex-1 flex-col md:flex-row">
-
-						{/* Left column — flexible */}
-						<div className="flex min-w-0 flex-col bg-[#ece7de] md:flex-1">
-
-						{/* Editorial header */}
-						<header className="border-b border-[#d7cdbf]/70 px-10 pb-8 pt-10 md:px-20">
-							<div className="mx-auto max-w-4xl text-center">
-								<h1 className="mb-4 font-serif text-[3.4rem] font-bold leading-[0.96] tracking-tight text-[#2d2520] md:text-[4.25rem]">
-									{caseData!.title.trim()}
-								</h1>
-								{!isBankingOnYou && (
-									<div className="mb-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[13px] font-bold uppercase tracking-[0.35em] text-[#4a3f38]">
-										<span>{caseTypeLabel}</span>
-										<span className="text-[#b7b29f]">|</span>
-										<span>{industryLabel}</span>
-										<span className="text-[#b7b29f]">|</span>
-										<span>{difficultyLabel}</span>
-										{companyLabel !== 'Client Not Specified' && (
-											<>
-												<span className="text-[#b7b29f]">|</span>
-												<span>{companyLabel}</span>
-											</>
-										)}
-									</div>
-								)}
-								<div className="relative mx-auto flex h-4 w-full max-w-[58rem] items-center justify-center md:max-w-[62rem]">
-									<div className="h-[2px] w-full bg-[#3a2e26]" />
-									<div
-										className="absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 bg-[#3a2e26]"
-										style={{ clipPath: 'polygon(0 50%, 45% 0, 100% 0, 100% 100%, 45% 100%)' }}
-									/>
-									<div
-										className="absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 rotate-180 bg-[#3a2e26]"
-										style={{ clipPath: 'polygon(0 50%, 45% 0, 100% 0, 100% 100%, 45% 100%)' }}
-									/>
-								</div>
-							</div>
-						</header>
-
-						{/* Content body */}
-						<div className="flex-1 px-6 py-14 md:px-8 lg:px-10 xl:px-12">
-							{isBankingOnYou ? (
-								<div className="mx-auto w-full max-w-[80rem] rounded-[2.25rem] border border-[#d8cec1] bg-[linear-gradient(180deg,rgba(244,239,232,0.88),rgba(239,232,223,0.86))] px-5 py-6 shadow-[0_36px_70px_-58px_rgba(60,45,35,0.45)] md:px-7 md:py-8 xl:max-w-[84rem]">
-									<div className="flex items-start gap-4 xl:gap-6">
-										<BankingOnYouMetaRail
-											caseTypeLabel={caseTypeLabel}
-											companyLabel={companyLabel}
-											roundLabel={roundLabel}
-											industryLabel={industryLabel}
-											difficultyLevel={difficultyLevel}
-											difficultyLabel={difficultyLabel}
-										/>
-										<div className="min-w-0 flex-1 border-l border-[#d7ccbe]/85 pl-5 md:pl-7">
-											<div className="mx-auto flex max-w-[62rem] flex-col gap-14 xl:max-w-[65rem]">
-											{previewMode && (
-												<div className="border border-[#d4cabd] bg-[#f3ede4]/90 p-5 shadow-[0_18px_35px_-34px_rgba(58,45,35,0.5)]">
-													<p className="text-xs font-black uppercase tracking-[0.15em] text-[#6b5a4d]">
-														Read-Only Preview
-													</p>
-													<div className="mt-4">
-														<button
-															onClick={() => router.push('/practice')}
-															className="border border-[#b8ab9d] bg-[#fdfbf8] px-5 py-2.5 text-sm font-bold text-[#4f3f34] transition hover:bg-[#ece4d9]"
-														>
-															Do This Case
-														</button>
-													</div>
-												</div>
-											)}
-
-											{transcriptDisplayLines.length > 0 || promptLines.length > 0 ? (
-												<section className="space-y-2.5">
-													{promptLines.map((line, index) => (
-														<RevealBlock key={`prompt-${line}-${index + 1}`} delay="delay-0">
-															<TranscriptLine line={line} speaker="interviewer" />
-														</RevealBlock>
-													))}
-													{transcriptDisplayLines.map((entry, index) => {
-														const isHeading = /^[A-Z][A-Z0-9\s&'/-]{6,}$/.test(entry.text.trim())
-														return (
-															<RevealBlock key={`${entry.text}-${index}`} delay={isHeading ? 'delay-0' : 'delay-75'}>
-																<TranscriptLine line={entry.text} speaker={entry.speaker} />
-															</RevealBlock>
-														)
-													})}
-												</section>
-											) : (
-												<p className="text-[16px] leading-8 text-[#2e2722]">No transcript provided.</p>
-											)}
-											</div>
-
-											<div className="mx-auto mt-16 max-w-[62rem] xl:max-w-[65rem]">
-												<BankingOnYouFramework recommendations={parsedFramework.recommendations} />
-											</div>
-
-											{previewMode && resolvedCaseId && (
-												<div className="mx-auto mt-12 max-w-[62rem] xl:max-w-[65rem]">
-													<CaseForumSection caseId={resolvedCaseId} caseTitle={caseData!.title} />
-												</div>
-											)}
-										</div>
-									</div>
-								</div>
-							) : (
-								<>
-									<div className={`mx-auto flex ${documentTextWidthClass} flex-col gap-12`}>
-										{previewMode && (
-											<div className="border-2 border-[#c9c1b6] bg-[#f2eee8] p-5">
-												<p className="text-xs font-black uppercase tracking-[0.15em] text-[#6b5a4d]">
-													Read-Only Preview
-												</p>
-												<div className="mt-4">
-													<button
-														onClick={() => router.push('/practice')}
-														className="border border-[#b8ab9d] bg-[#fdfbf8] px-5 py-2.5 text-sm font-bold text-[#4f3f34] transition hover:bg-[#ece4d9]"
-													>
-														Do This Case
-													</button>
-												</div>
-											</div>
-										)}
-
-										{caseData!.prompt && (
-											<section>
-												<p className={documentPromptClass}>{caseData!.prompt.trim()}</p>
-											</section>
-										)}
-
-										{transcriptDisplayLines.length > 0 ? (
-											<section className="space-y-2.5">
-												{transcriptDisplayLines.map((entry, index) => {
-													const isHeading = /^[A-Z][A-Z0-9\s&'/-]{6,}$/.test(entry.text.trim())
-													return (
-														<RevealBlock key={`${entry.text}-${index}`} delay={isHeading ? 'delay-0' : 'delay-75'}>
-															<TranscriptLine line={entry.text} speaker={entry.speaker} />
-														</RevealBlock>
-													)
-												})}
-											</section>
-										) : (
-											<p className="text-[16px] leading-8 text-[#2e2722]">No transcript provided.</p>
-										)}
-									</div>
-
-									<div className={`${frameworkWidthClass} mt-12`}>
-										<DefaultFramework framework={parsedFramework} />
-									</div>
-
-									{previewMode && resolvedCaseId && (
-										<div className="mx-auto mt-12 max-w-3xl">
-											<CaseForumSection caseId={resolvedCaseId} caseTitle={caseData!.title} />
-										</div>
-									)}
-								</>
-							)}
-						</div>
-					</div>
-
-						{/* Right sidebar — fixed, narrower live rail */}
-						{!previewMode && (
-							<aside className="flex w-full flex-col border-t border-[#d8cdc0] bg-[linear-gradient(180deg,#eee6da_0%,#e8dfd2_100%)] shadow-[-18px_0_42px_-44px_rgba(58,44,35,0.45)] md:sticky md:top-[49px] md:self-start md:w-[17.5rem] md:border-l md:border-t-0 lg:w-[18.5rem] xl:w-[19rem]">
-							<style>{`
-  .eval-range { -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; }
-  .eval-range:focus { outline:none; }
-  .eval-range::-webkit-slider-runnable-track { height:3px; border-radius:2px; background:rgba(92,64,51,0.16); }
-  .eval-range::-moz-range-track { height:3px; border-radius:2px; background:rgba(92,64,51,0.16); }
-  .eval-range::-moz-range-progress { height:3px; border-radius:2px; background:#3D5A35; }
-  .eval-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; margin-top:-6px; width:15px; height:15px; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
-  .eval-range::-moz-range-thumb { width:15px; height:15px; border:none; border-radius:50%; background:#3D5A35; box-shadow:0 0 0 4px rgba(61,90,53,0.13); }
-  .eval-range.is-nr::-webkit-slider-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
-  .eval-range.is-nr::-moz-range-thumb { background:#FBF4EA; box-shadow:0 0 0 1.5px rgba(92,64,51,0.30); }
-  .eval-range.is-nr::-moz-range-progress { background:transparent; }
-`}</style>
-								<div className="flex flex-1 flex-col gap-6 p-6 md:p-8">
-									<section className="flex-shrink-0 border-b border-[#d8cdc0] pb-6">
-										<div className="mb-3 flex items-center gap-3">
-											<div className="h-2.5 w-2.5 rounded-full bg-[#7b5a3b]" />
-											<h3 className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#4a3f38]">
-												Interviewer Notes
-											</h3>
-										</div>
-										<NotesEditor
-											value={notes}
-											onChange={setNotes}
-											placeholder="Record observations..."
-											className="w-full rounded-[18px] border border-[#d5cabd] bg-[#f6efe5] p-4 text-[14px] italic leading-7 text-[#4a3f38] shadow-[inset_0_1px_2px_rgba(95,72,52,0.05)] transition-all placeholder:text-[#a09385] focus:border-[#4a3627] focus:outline-none focus:ring-2 focus:ring-[#4a3627]/10"
-										/>
-									</section>
-
-									<section className="flex flex-col gap-4">
-										<div className="border-b border-[#d8cdc0] pb-4">
-											<h3 className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#4a3f38]">
-												Evaluation
-											</h3>
-										</div>
-										<div className="space-y-5">
-											{LIVE_EVALUATION_CRITERIA.map((criteria) => {
-												const score = scores[criteria.id]
-												const rated = score > 0
-												const pct = (score / 5) * 100
-												return (
-													<div key={criteria.id}>
-														<div className="flex items-center justify-between gap-3">
-															<span className="text-[13px] font-semibold leading-5 text-[#5C4033]">
-																{criteria.label}
-															</span>
-															{rated && (
-																<span className="rounded-full border border-[#3D5A35]/35 bg-[rgba(174,208,161,0.22)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#3D5A35]">
-																	{score}/5
-																</span>
-															)}
-														</div>
-														<div className="pb-1 pt-3">
-															<input
-																type="range"
-																min="0"
-																max="5"
-																step="0.5"
-																value={score}
-																onChange={(e) =>
-																	setScores({
-																		...scores,
-																		[criteria.id]: Number.parseFloat(e.target.value),
-																	})
-																}
-																className={`eval-range${rated ? '' : ' is-nr'}`}
-																style={
-																	rated
-																		? { background: `linear-gradient(90deg, #3D5A35 ${pct}%, rgba(92,64,51,0.16) ${pct}%)`, height: '3px', borderRadius: '2px' }
-																		: undefined
-																}
-															/>
-															<div className="mt-2 flex justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-[#a99a87]">
-																<span className="italic">NR</span>
-																<span>1</span>
-																<span>2</span>
-																<span>3</span>
-																<span>4</span>
-																<span>5</span>
-															</div>
-														</div>
-													</div>
-												)
-											})}
-										</div>
-									</section>
-
-									<div className="mt-auto pt-4">
-										<button
-											onClick={() => setCurrentView('feedback')}
-											className="w-full rounded-[18px] bg-[#3D5A35] py-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#efe8de] transition hover:bg-[#34502d]"
-										>
-											End Case & Evaluate
-										</button>
-									</div>
-								</div>
-							</aside>
-						)}
-				</div>
-			</div>
-		) // end _noop
 	}
 
 	if (previewMode) return null
 
-	if (currentView === 'success') {
-		return (
-			<div
-				style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif", background: 'rgba(36,26,16,0.48)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)' }}
-			>
-				<div style={{ position: 'relative', zIndex: 1, width: 'min(420px, calc(100vw - 32px))', borderRadius: '22px', border: '1px solid rgba(61,90,53,0.18)', background: 'rgba(255,250,243,0.96)', backdropFilter: 'blur(40px) saturate(1.9)', WebkitBackdropFilter: 'blur(40px) saturate(1.9)', boxShadow: '0 12px 48px rgba(36,26,16,0.18), 0 2px 8px rgba(36,26,16,0.07), inset 0 1px 0 rgba(255,255,255,0.9)', overflow: 'hidden' }}>
-					<div style={{ height: '3px', background: 'linear-gradient(90deg, #3D5A35 0%, rgba(61,90,53,0.15) 100%)' }} />
-					<div style={{ padding: '10px 22px 6px' }}>
-						<p style={{ margin: 0, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.26em', color: '#3D5A35' }}>Final Evaluation</p>
-					</div>
-					{isRemoteMode ? (
-						<div style={{ padding: '20px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-							<div style={{ fontSize: '28px', lineHeight: 1 }}>👋</div>
-							<div>
-								<p style={{ margin: '0 0 5px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>That's a wrap!</p>
-								<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.6 }}>
-									Your feedback is in. You can close this tab now.
-								</p>
-							</div>
-						</div>
-					) : (
-						<div style={{ padding: '20px 22px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-							<div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(61,90,53,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-							</div>
-							<div>
-								<p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>All done.</p>
-								<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.55 }}>
-									{successAutoClose > 0 ? `Closing in ${successAutoClose}s…` : 'Closing…'}
-								</p>
-							</div>
-							<div style={{ width: '100%', height: '2px', borderRadius: '1px', background: 'rgba(92,64,51,0.1)', overflow: 'hidden' }}>
-								<div style={{ height: '100%', borderRadius: '1px', background: 'rgba(61,90,53,0.35)', width: `${(successAutoClose / 3) * 100}%`, transition: 'width 0.95s linear' }} />
-							</div>
-						</div>
-					)}
-				</div>
-			</div>
-		)
-	}
-
-	const allScored = LIVE_EVALUATION_CRITERIA.every((c) => scores[c.id] > 0)
-
-	return (
-		<div
-			className="relative min-h-screen bg-[#fff8f0] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
-			style={{ fontFamily: "'Work Sans', sans-serif", color: '#1e1b15' }}
-		>
-			<div className="pointer-events-none absolute inset-0">
-				<div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(61,90,53,0.08),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(92,64,51,0.08),transparent_32%),linear-gradient(180deg,#fff8f0_0%,#fbf4ea_100%)]" />
-			</div>
-
-			<main className="relative z-10 mx-auto flex min-h-screen max-w-[760px] flex-col px-4 py-10 md:px-6 md:py-14">
-				<button
-					onClick={() => setCurrentView('case')}
-					className="self-start text-[11px] font-medium uppercase tracking-[0.22em] text-[#5c4033]/55 transition hover:text-[#5c4033]"
-				>
-					← Back to Case Document
-				</button>
-
-				<header className="mt-6 flex items-start justify-between gap-4">
-					<div>
-						<span className="text-[10px] uppercase tracking-[0.32em] text-[#3D5A35]/55 font-semibold">
-							Final Review
-						</span>
-						<h1
-							style={{ fontFamily: "'Newsreader', serif" }}
-							className="mt-2 text-4xl font-light leading-[0.96] tracking-tight text-[#453a2a] md:text-5xl"
-						>
-							Candidate Evaluation
-						</h1>
-						<p className="mt-3 max-w-[480px] text-[13px] leading-relaxed text-[#5c4033]/68">
-							{editingFeedback ? 'Edit and lock your review before submitting.' : "Review locked. Submit when you're happy, or edit to change anything."}
-							{caseData ? (
-								<>
-									{' '}Case: <span className="font-semibold text-[#453a2a]">{caseData.title}</span>
-								</>
-							) : null}
-						</p>
-					</div>
-					<button
-						type="button"
-						onClick={() => setEditingFeedback((v) => !v)}
-						aria-label={editingFeedback ? 'Lock review' : 'Edit review'}
-						className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-[#b48a57]/22 bg-[rgba(255,248,240,0.7)] text-[#5c4033] transition hover:border-[#5c4033]/40 hover:bg-white/85"
-						title={editingFeedback ? 'Lock review' : 'Edit review'}
-					>
-						{editingFeedback ? (
-							<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-							</svg>
-						) : (
-							<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-							</svg>
-						)}
-					</button>
-				</header>
-
-				<section
-					className="mt-8 rounded-2xl border border-[#b48a57]/16 bg-[rgba(255,248,240,0.72)] px-6 py-7 backdrop-blur md:px-9 md:py-9"
-					style={{ boxShadow: '0 6px 22px rgba(59,47,47,0.04)' }}
-				>
-					<div className="space-y-7">
-						{LIVE_EVALUATION_CRITERIA.map((criteria) => {
-							const score = scores[criteria.id]
-							const filledDots = score > 0 ? score : 0
-							return (
-								<div key={criteria.id}>
-									<div className="flex items-center justify-between gap-3">
-										<label className="text-[14px] font-semibold tracking-tight text-[#453a2a]">
-											{criteria.label}
-										</label>
-										<span
-											className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-												score > 0
-													? 'border-[#3D5A35]/35 bg-[rgba(174,208,161,0.22)] text-[#3D5A35]'
-													: 'border-[#b48a57]/30 bg-[rgba(255,245,233,0.7)] text-[#92400e]'
-											}`}
-										>
-											{score > 0 ? `${score} / 5` : 'Not Rated'}
-										</span>
-									</div>
-
-									{editingFeedback ? (
-										<>
-											<input
-												type="range"
-												min="0"
-												max="5"
-												step="0.5"
-												value={score}
-												onChange={(e) =>
-													setScores({
-														...scores,
-														[criteria.id]: Number.parseFloat(e.target.value),
-													})
-												}
-												className="mt-3 w-full cursor-pointer appearance-none rounded-full bg-[#cec5b9]/50 accent-[#3D5A35]"
-												style={{ height: '6px' }}
-											/>
-											<div className="mt-1.5 flex justify-between text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5c4033]/55">
-												<span>1: Poor</span>
-												<span>5: Excellent</span>
-											</div>
-										</>
-									) : (
-										<div className="mt-3 flex items-center gap-2">
-											{[1, 2, 3, 4, 5].map((position) => (
-												<span
-													key={position}
-													className={`h-2.5 w-2.5 rounded-full ${
-														position <= filledDots
-															? 'bg-[#3D5A35]'
-															: 'bg-[#5c4033]/14'
-													}`}
-												/>
-											))}
-											<span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5c4033]/45">
-												{score > 0 ? `${score} of 5` : 'Pending'}
-											</span>
-										</div>
-									)}
-								</div>
-							)
-						})}
-
-						<div className="border-t border-[#b48a57]/16 pt-6">
-							<label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5c4033]/70">
-								Detailed Notes
-							</label>
-							{editingFeedback ? (
-								<NotesEditor
-									value={notes}
-									onChange={setNotes}
-									placeholder="Provide specific feedback. What did they do well? What should they improve?"
-									className="mt-3 w-full rounded-xl border border-[#b48a57]/22 bg-[rgba(255,249,242,0.78)] px-4 py-3 text-[13px] leading-relaxed text-[#1e1b15] outline-none transition placeholder:text-[#5c4033]/40 focus:border-[#3D5A35]/40 focus:ring-2 focus:ring-[#3D5A35]/15"
-								/>
-							) : (
-								<div className="mt-3 rounded-xl border border-[#b48a57]/16 bg-[rgba(255,249,242,0.55)] px-4 py-3 text-[13px] leading-relaxed text-[#1e1b15]">
-									{notes.trim().length > 0 ? (
-										<p className="whitespace-pre-wrap">{notes}</p>
-									) : (
-										<p className="italic text-[#5c4033]/45">No notes added.</p>
-									)}
-								</div>
-							)}
-						</div>
-					</div>
-				</section>
-
-				{!allScored ? (
-					<div className="mt-5 rounded-xl border border-[#92400e]/22 bg-[rgba(255,245,233,0.92)] px-4 py-3">
-						<p className="text-[10px] uppercase tracking-[0.18em] text-[#92400e]">
-							Missing rating
-						</p>
-						<p className="mt-1 text-[12px] leading-relaxed text-[#5c4033]">
-							Rate all four criteria before submitting. Click the edit icon above to adjust scores.
-						</p>
-					</div>
-				) : null}
-
-				{submitError ? (
-					<LobbyOverlay
-						key={submitError}
-						type="error"
-						icon={
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-								<circle cx="12" cy="12" r="10" />
-								<line x1="12" y1="8" x2="12" y2="12" />
-								<line x1="12" y1="16" x2="12.01" y2="16" />
-							</svg>
-						}
-						title="Couldn't submit feedback"
-						body={submitError}
-						actionLabel="Try again"
-						onAction={() => void handleSubmitFeedback()}
-						onDismiss={() => setSubmitError('')}
-					/>
-				) : null}
-
-				<button
-					onClick={() => void handleSubmitFeedback()}
-					disabled={submitting || !allScored}
-					className="mt-6 w-full rounded-full bg-[#3D5A35] px-4 py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-[#34502d] disabled:cursor-not-allowed disabled:opacity-55"
-					style={{ boxShadow: '0 6px 16px rgba(61,90,53,0.18), inset 0 1px 0 rgba(255,255,255,0.18)' }}
-				>
-					{submitting ? 'Submitting…' : 'Submit & Close Case'}
-				</button>
-			</main>
-		</div>
-	)
+	// currentView is always 'case' at this point — the block above always
+	// returns. Kept as an explicit fallback so the function's return type stays sound.
+	return null
 }
 
 export default function InterviewerPage({ params }: { params: Promise<{ id: string }> }) {
