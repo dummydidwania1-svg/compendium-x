@@ -1164,6 +1164,12 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
     interviewerDeclined ||
     (!interviewerSnap.exists && interviewerDeclined)
 
+  // Candidate closed their workspace before any recording ever started (waiting
+  // lobby, or mid-"replace") — set by /api/evaluations once it confirms no
+  // recordings/candidate doc exists at submit time. Symmetric to
+  // interviewerDeclined: a known absence, not something to keep waiting for.
+  const candidateNeverRecorded = sessionData.candidateNeverRecorded === true
+
   const candidateCompletedAt = (
     candidateData as { transcriptCompletedAt?: { toMillis: () => number } } | null
   )?.transcriptCompletedAt?.toMillis()
@@ -1176,14 +1182,45 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
     interviewerStatus !== 'pending' &&
     interviewerStatus !== 'processing'
 
+  // Symmetric to interviewerStuckInRecording: the candidate's periodic flush
+  // wrote a track doc but no final upload / interrupted beacon / promote-hook
+  // ever moved it off 'recording'.
+  const candidateStuckInRecording =
+    candidateSnap.exists &&
+    !terminal(candidateStatus as string | undefined) &&
+    candidateStatus !== 'pending' &&
+    candidateStatus !== 'processing'
+
   const pastGraceWindow =
     candidateDone &&
     (!interviewerSnap.exists || interviewerStuckInRecording) &&
     candidateCompletedAt !== undefined &&
     Date.now() - candidateCompletedAt > MERGE_GRACE_MS
 
-  if (!candidateDone) return
+  // Bypass the hard gate when we know for certain no candidate audio is
+  // coming at all — mirrors how interviewerDeclined already bypasses
+  // interviewerKnown for the interviewer side.
+  if (!candidateDone && !candidateNeverRecorded) return
   if (!interviewerKnown && !pastGraceWindow) return
+
+  // Safety net for a stuck candidate track. Unlike the interviewer's own
+  // safety net below, this fires immediately with no grace window: the
+  // realistic trigger is /api/evaluations's own promote-hook already having
+  // flipped the status by the time this function runs (fired by the
+  // interviewer's "End Case & Evaluate" submit), so there's real audio ready
+  // to transcribe with nothing left to wait for. This also serves as a
+  // fallback if that best-effort write silently failed.
+  if (candidateStuckInRecording) {
+    await recordingsCol.doc('candidate').set(
+      { transcriptStatus: 'pending', candidateInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true },
+    )
+    await sessionRef.set(
+      { candidateInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true },
+    )
+    return
+  }
 
   // Safety net: if the interviewer track is stuck in 'recording' (beacon never fired),
   // upgrade it to 'pending' and return — transcription will fire, then mergeTranscripts
@@ -1236,15 +1273,25 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
         ? '[Note: the interviewer left mid-session; their audio is partial up to the point they disconnected.]\n\n' + merged
         : merged
 
+    const mergedTranscriptReason =
+      interviewerInterrupted && !hasInterviewerTrack
+        ? 'interviewer_interrupted'
+        : sessionData.candidateInterrupted === true && candidateCompleted
+          ? 'candidate_interrupted'
+          : candidateNeverRecorded && !candidateSnap.exists
+            ? 'candidate_never_recorded'
+            : null
+
     await sessionRef.set(
       {
         mergedTranscript: finalMerged,
         mergedTranscriptStatus: isPartial ? 'partial' : 'completed',
         mergedTranscriptCompletedAt: FieldValue.serverTimestamp(),
         mergedTranscriptError: null,
-        mergedTranscriptReason: interviewerInterrupted && !hasInterviewerTrack ? 'interviewer_interrupted' : null,
-        // Clear stale interviewerInterrupted flag when the track arrived successfully.
+        mergedTranscriptReason,
+        // Clear stale interruption flags once each side's track actually arrived.
         ...(hasInterviewerTrack ? { interviewerInterrupted: FieldValue.delete() } : {}),
+        ...(candidateCompleted ? { candidateInterrupted: FieldValue.delete() } : {}),
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },

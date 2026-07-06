@@ -938,7 +938,11 @@ export default function CaseDetailOverlay({
                       >
                         {transcriptReason === 'interviewer_interrupted'
                           ? 'The interviewer disconnected mid-session so their audio cuts off partway through.'
-                          : 'Only your audio was captured this time, so the transcript only covers your side.'}
+                          : transcriptReason === 'candidate_interrupted'
+                            ? 'Your connection dropped mid-session, so your audio cuts off partway through.'
+                            : transcriptReason === 'candidate_never_recorded'
+                              ? "Your side wasn't recorded this time, so the transcript only covers the interviewer."
+                              : 'Only your audio was captured this time, so the transcript only covers your side.'}
                       </div>
                     )}
                     {turns.map((turn, i) => {

@@ -959,6 +959,14 @@ export function InterviewerPageInner({
 	const [candidateAbandoned, setCandidateAbandoned] = useState(false)
 	// Ref so the recording-stop + overlay-trigger fires exactly once per session.
 	const candidateAbandonedRef = useRef(false)
+	// B5 (rebuilt): candidate's workspace tab is gone or stale (crash/force-quit/
+	// lost connectivity — not a graceful End Session click). Mirrors the
+	// candidate's own interviewerPresence staleness check (workspace/page.tsx).
+	const CANDIDATE_PRESENCE_STALE_MS = 25_000
+	const [candidateRemoteDisconnected, setCandidateRemoteDisconnected] = useState(false)
+	// One-shot per disconnect episode; reset when the candidate is seen active
+	// again so a future reconnect->disconnect cycle can show the toast again.
+	const candidateDisconnectShownRef = useRef(false)
 
 	// When the candidate ends the session, auto-save whatever the interviewer has
 	// entered so far (even partial scores). The /api/evaluations endpoint is now an
@@ -1178,12 +1186,34 @@ export function InterviewerPageInner({
 				}
 			}
 
-			// B5 ("Candidate's recording window is closed") is removed for now. The old
-			// heuristic keyed off candidatePresence.recording === false, which is false in
-			// many normal states (opt-out / running without recording, brief start/stop
-			// ticks), so it false-fired while the candidate window was actually open.
-			// We'll redesign a proper "candidate disconnected" signal later. Until then we
-			// never raise this overlay.
+			// B5 (rebuilt): candidate's workspace is gone or stale, via candidatePresence
+			// staleness — not the old, removed candidatePresence.recording===false
+			// heuristic (which false-fired in many normal states). Mirrors the
+			// candidate's own interviewerPresence staleness check exactly. Deliberately
+			// NOT gated on `status`, since the candidate can disconnect in the waiting
+			// lobby, mid-session, or during a case replace equally. Suppressed once the
+			// session is already completed/abandoned, where it would be moot.
+			if (status !== 'completed' && status !== 'abandoned') {
+				const presence = data.candidatePresence as
+					| { active?: boolean; lastSeenAt?: { toDate: () => Date } }
+					| undefined
+				if (presence?.lastSeenAt) {
+					const age = Date.now() - presence.lastSeenAt.toDate().getTime()
+					const isStale = presence.active === false || age > CANDIDATE_PRESENCE_STALE_MS
+					if (isStale) {
+						if (!candidateDisconnectShownRef.current) {
+							candidateDisconnectShownRef.current = true
+							setCandidateRemoteDisconnected(true)
+						}
+					} else {
+						// Candidate confirmed active again — allow the toast to fire again
+						// on a future disconnect.
+						candidateDisconnectShownRef.current = false
+					}
+				}
+				// No presence data yet -> assume connected, same convention used for
+				// interviewerPresence on the candidate's own side.
+			}
 		}
 
 		const unsubscribe = onSnapshot(
@@ -2302,6 +2332,22 @@ if (previewMode && !forcePreview) {
 							interviewerDeclinedConsentRef.current = true
 							await signalNoInterviewerAudio()
 						}}
+					/>
+				)}
+
+				{/* B5 (rebuilt) — Remote mode: candidate's workspace presence went
+				    stale (tab closed / crashed / lost connectivity). Informal,
+				    dismissible, self-clearing toast — no action needed, recording
+				    continues on the interviewer's side only. */}
+				{isRemoteMode && candidateRemoteDisconnected && !micGuardShowing && !overlaySuccess &&
+					!candidateAbandoned && !candidateEndedSession && (
+					<LobbyOverlay
+						type="warning"
+						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><line x1="2" y1="2" x2="22" y2="22"/></svg>}
+						title="Candidate's window closed"
+						body="Looks like they've stepped away or lost their connection. No worries, we're still recording your side, so just carry on whenever you're ready."
+						autoDismissMs={9000}
+						onDismiss={() => setCandidateRemoteDisconnected(false)}
 					/>
 				)}
 

@@ -47,13 +47,16 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
   let candidateId: string
   let candidateEmail: string | null
   let sessionRef: FirebaseFirestore.DocumentReference | null = null
+  // Hoisted so the candidate stuck-track recovery below (used by both the
+  // upsert and fresh-create paths) can read sessionMode without a re-fetch.
+  let sessionData: FirebaseFirestore.DocumentData = {}
   if (input.lobbyId) {
     sessionRef = adminDb.collection('sessions').doc(input.lobbyId)
     const sessionSnap = await sessionRef.get()
     if (!sessionSnap.exists) {
       throw new TransitionError(404, 'session_not_found', 'Session does not exist.')
     }
-    const sessionData = sessionSnap.data() ?? {}
+    sessionData = sessionSnap.data() ?? {}
 
     if (sessionData.interviewerId && sessionData.interviewerId !== caller.uid) {
       throw new TransitionError(
@@ -122,6 +125,42 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
         }
       } catch {
         // best-effort — don't fail the evaluation submission if this errors
+      }
+
+      // Mirror-image recovery for the candidate's own track — remote mode only.
+      // Same-device sessions also write recordings/candidate (single-mic capture
+      // of both voices), but must never get these flags: their existing
+      // 5-minute-grace merge path in evaluateAndMerge is untouched by design.
+      if (sessionData.sessionMode === 'remote') {
+        try {
+          const evalSessionRef = adminDb.collection('sessions').doc(input.lobbyId)
+          const candidateTrackRef = evalSessionRef.collection('recordings').doc('candidate')
+          const candidateTrackSnap = await candidateTrackRef.get()
+          const candidateTrackData = candidateTrackSnap.data()
+          if (candidateTrackSnap.exists && candidateTrackData?.transcriptStatus === 'recording' && candidateTrackData?.audioUrl) {
+            // Candidate closed their tab mid-session: their last periodic flush
+            // left real partial audio stuck at 'recording'. Promote it now so
+            // transcription fires instead of waiting on the grace-window sweep.
+            await candidateTrackRef.set(
+              { transcriptStatus: 'pending', candidateInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
+              { merge: true },
+            )
+            await evalSessionRef.set(
+              { candidateInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
+              { merge: true },
+            )
+          } else if (!candidateTrackSnap.exists) {
+            // Candidate never started recording at all (disconnected before
+            // select-case, or during a case replace). Flag it so evaluateAndMerge
+            // treats "no candidate audio" as a known absence, not something to wait for.
+            await evalSessionRef.set(
+              { candidateNeverRecorded: true, updatedAt: FieldValue.serverTimestamp() },
+              { merge: true },
+            )
+          }
+        } catch {
+          // best-effort — don't fail the evaluation submission if this errors
+        }
       }
 
       return jsonOk({ ok: true, evaluationId: existing.docs[0].id })
@@ -194,6 +233,45 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
       }
     } catch {
       // best-effort — don't fail the evaluation submission if this errors
+    }
+
+    // Mirror-image recovery for the candidate's own track — remote mode only.
+    // Same-device sessions also write recordings/candidate (single-mic capture
+    // of both voices), but must never get these flags: their existing
+    // 5-minute-grace merge path in evaluateAndMerge is untouched by design.
+    if (sessionData.sessionMode === 'remote') {
+      try {
+        const candidateTrackRef = adminDb
+          .collection('sessions')
+          .doc(input.lobbyId)
+          .collection('recordings')
+          .doc('candidate')
+        const candidateTrackSnap = await candidateTrackRef.get()
+        const candidateTrackData = candidateTrackSnap.data()
+        if (candidateTrackSnap.exists && candidateTrackData?.transcriptStatus === 'recording' && candidateTrackData?.audioUrl) {
+          // Candidate closed their tab mid-session: their last periodic flush
+          // left real partial audio stuck at 'recording'. Promote it now so
+          // transcription fires instead of waiting on the grace-window sweep.
+          await candidateTrackRef.set(
+            { transcriptStatus: 'pending', candidateInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
+            { merge: true },
+          )
+          await sessionRef.set(
+            { candidateInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
+            { merge: true },
+          )
+        } else if (!candidateTrackSnap.exists) {
+          // Candidate never started recording at all (disconnected before
+          // select-case, or during a case replace). Flag it so evaluateAndMerge
+          // treats "no candidate audio" as a known absence, not something to wait for.
+          await sessionRef.set(
+            { candidateNeverRecorded: true, updatedAt: FieldValue.serverTimestamp() },
+            { merge: true },
+          )
+        }
+      } catch {
+        // best-effort — don't fail the evaluation submission if this errors
+      }
     }
   }
 

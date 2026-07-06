@@ -1834,10 +1834,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
   }, [clearLocalPrep, clearRemotePrep, teardownMedia])
 
-  // Candidate presence heartbeat (remote mode only, B5).
+  // Candidate presence heartbeat (remote mode only).
   // Writes `candidatePresence` to the session doc every 10s so the interviewer's
-  // onSnapshot can detect whether the candidate's recording window is live.
-  // The `recording` field drives the B5 overlay on the interviewer side.
+  // onSnapshot can detect staleness (tab closed/crashed/lost connectivity) via
+  // `lastSeenAt` age, mirroring the candidate's own interviewerPresence check.
   useEffect(() => {
     if (preferredRecordingMode === 'local' || !lobbyId) return
 
