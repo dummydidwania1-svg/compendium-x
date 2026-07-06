@@ -1074,6 +1074,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // If lastSeenAt is older than 25s (2.5× the 10s heartbeat), the interviewer
   // is treated as disconnected. Only used in remote mode.
   const PRESENCE_STALE_MS = 25_000
+  // Latest interviewerPresence payload, cached so a periodic timer (not just
+  // each incoming Firestore snapshot) can re-check staleness.
+  const interviewerPresenceRef = useRef<{ active?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined>(undefined)
 
   useEffect(() => {
     let unsubscribeSession = () => {}
@@ -1167,16 +1170,29 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       // B4 — Remote mode: detect interviewer disconnection via presence staleness.
       // In local mode the popup-window poll drives interviewerWindowClosed; in
       // remote mode we derive it from interviewerPresence on the session doc.
+      // Cache the raw presence payload so the periodic re-check below (not just
+      // this snapshot handler) can re-evaluate staleness independently — see
+      // checkInterviewerPresenceStale for why a snapshot alone isn't enough.
       if (preferredRecordingModeRef.current !== 'local' && !endSessionInitiatedRef.current && !feedbackSubmitted) {
-        const presence = (raw as { interviewerPresence?: { active?: boolean; lastSeenAt?: { toDate: () => Date } } }).interviewerPresence
-        if (presence?.lastSeenAt) {
-          const age = Date.now() - presence.lastSeenAt.toDate().getTime()
-          const isDisconnected = presence.active === false || age > PRESENCE_STALE_MS
-          setInterviewerWindowClosed(isDisconnected)
-        }
-        // If no presence data yet (interviewer hasn't sent first heartbeat), don't
-        // show the overlay — assume connected until we have data.
+        interviewerPresenceRef.current = (raw as { interviewerPresence?: { active?: boolean; lastSeenAt?: { toDate: () => Date } } }).interviewerPresence
+        checkInterviewerPresenceStale()
       }
+    }
+
+    // Re-checks staleness against the cached interviewerPresence value. Called
+    // both right after every snapshot AND on a periodic timer below — a
+    // snapshot alone isn't enough, since lastSeenAt stops advancing the moment
+    // the interviewer's tab closes, so nothing about the document changes
+    // again until some unrelated field happens to be written. Without the
+    // timer, the overlay could lag far past the 25s threshold.
+    function checkInterviewerPresenceStale() {
+      const presence = interviewerPresenceRef.current
+      // No presence data yet -> assume connected, same convention used for
+      // candidatePresence on the interviewer's own side.
+      if (!presence?.lastSeenAt) return
+      const age = Date.now() - presence.lastSeenAt.toDate().getTime()
+      const isDisconnected = presence.active === false || age > PRESENCE_STALE_MS
+      setInterviewerWindowClosed(isDisconnected)
     }
 
     const init = async () => {
@@ -1287,9 +1303,16 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
 
     window.addEventListener('storage', onStorage)
+
+    // Periodic re-check so the overlay fires promptly (within a few seconds)
+    // even when no new Firestore snapshot happens to arrive right after the
+    // interviewer actually goes stale.
+    const staleCheckTimer = setInterval(checkInterviewerPresenceStale, 2000)
+
     return () => {
       clearPoll()
       unsubscribeSession()
+      clearInterval(staleCheckTimer)
       window.removeEventListener('storage', onStorage)
     }
   }, [handleSessionCompleted, lobbyId, params, requestedMode, resolveSessionMode, router])
@@ -2732,8 +2755,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           />
         ) : (
           // B4 — Remote mode: interviewer disconnected on their own device.
-          // No "Reopen window" — we can't open their browser. The overlay
-          // auto-clears via routeIfCompleted when their heartbeat resumes.
+          // No "Reopen window" — we can't open their browser. Instead: let the
+          // candidate copy the original invite link to re-share, and reflect
+          // the rated/unrated draft state (via the Firestore-mirrored signal,
+          // since readDraftScores is local-only and never true here) so the
+          // copy matches what actually happens if they end the session now.
+          // The overlay auto-clears via routeIfCompleted when the heartbeat resumes.
           <LobbyOverlay
             key="interviewer-disconnected"
             type="warning"
@@ -2744,8 +2771,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 <line x1="2" y1="2" x2="22" y2="22" />
               </svg>
             }
-            title="Interviewer disconnected"
-            body="Your interviewer seems to have disconnected. Waiting for them to rejoin — your recording is still running."
+            title="Looks like your interviewer's window closed"
+            body={(() => {
+              const allRated = interviewerDraftAllRatedRef.current === true
+              if (recordingState === 'recording') {
+                return allRated
+                  ? "They'd rated all four parameters but hadn't submitted yet. Send them the link to hop back in, or end the session now and the ratings will be saved."
+                  : "They hadn't finished rating yet. Send them the link to hop back in, or end the session now and the case will be marked unrated."
+              }
+              return allRated
+                ? "They'd rated all four parameters already. Send them the link to hop back in and submit, or end the session to save what's there."
+                : "They hadn't finished rating yet. Send them the link to hop back in, or end the session."
+            })()}
+            actionLabel="Copy link"
+            onAction={() => {
+              if (typeof window === 'undefined') return
+              const link = `${window.location.origin}/lobby/${lobbyId}?role=interviewer&mode=${requestedMode}`
+              void navigator.clipboard.writeText(link).catch(() => {})
+            }}
             secondaryActionLabel={recordingState === 'recording' ? "End session" : undefined}
             onSecondaryAction={recordingState === 'recording' ? () => {
               setWindowClosedOverlayVisible(false)

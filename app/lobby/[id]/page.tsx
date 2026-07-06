@@ -29,6 +29,7 @@ type SessionState = {
   interviewerAudioCaptured?: boolean
   prevCaseId?: string
   prevCaseName?: string
+  interviewerPresence?: { active?: boolean; lastSeenAt?: { toDate: () => Date } }
 }
 
 type PopupWindowHost = Window & {
@@ -76,9 +77,11 @@ function CandidateLobby({
   waitingNudgeVisible,
   interviewerBrowsing,
   interviewerReplacing,
+  interviewerRemoteWindowClosed,
   isLaunching,
   launchCaseName,
   onCancelSession,
+  onCancelSessionRemote,
   onPrimaryAction,
   onReopenRepo,
 }: {
@@ -90,9 +93,11 @@ function CandidateLobby({
   waitingNudgeVisible: boolean
   interviewerBrowsing: boolean
   interviewerReplacing: boolean
+  interviewerRemoteWindowClosed: boolean
   isLaunching: boolean
   launchCaseName: string
   onCancelSession: () => void
+  onCancelSessionRemote: () => void
   onPrimaryAction: () => void
   onReopenRepo: () => void
 }) {
@@ -221,6 +226,38 @@ function CandidateLobby({
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewerBrowsing, isLocalSession, sessionPhase])
+
+  // Remote mode only: interviewer's window/tab went stale (waiting or
+  // replacing). No "reopen" action possible on someone else's device — offer
+  // "Copy link" to re-share the original invite, or "Cancel session" to back
+  // out to practice mode selection.
+  useEffect(() => {
+    if (isLocalSession) return
+    if (interviewerRemoteWindowClosed) {
+      dismissedRef.current.delete('interviewer-remote-window-closed')
+      showOverlay({
+        id: 'interviewer-remote-window-closed',
+        type: 'warning',
+        icon: (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <path d="M8 21h8M12 17v4" />
+            <line x1="2" y1="2" x2="22" y2="22" />
+          </svg>
+        ),
+        title: "Looks like your interviewer's window closed",
+        body: 'Send them the link again so they can hop back in, or cancel and pick a mode later.',
+        actionLabel: 'Copy link',
+        onAction: () => { void navigator.clipboard.writeText(interviewerLink).catch(() => {}) },
+        secondaryActionLabel: 'Cancel session',
+        onSecondaryAction: onCancelSessionRemote,
+      })
+    } else {
+      setActiveOverlay(prev => prev?.id === 'interviewer-remote-window-closed' ? null : prev)
+      if (reshowTimerRef.current) { clearTimeout(reshowTimerRef.current); reshowTimerRef.current = null }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interviewerRemoteWindowClosed, isLocalSession, interviewerLink])
 
   const interviewerLinkDisplay = isLocalSession ? '' : interviewerLink.replace(/^https?:\/\//, '')
   const interviewerLinkPreview = isLocalSession
@@ -1531,6 +1568,12 @@ export default function LobbyPage() {
   // 'compendium-interviewer-browsing' to localStorage.
   const [interviewerBrowsing, setInterviewerBrowsing] = useState(false)
   const [interviewerReplacing, setInterviewerReplacing] = useState(() => searchParams.get('replacing') === '1')
+  // Remote mode only: interviewer's window/tab went stale during the waiting
+  // lobby or a case replace (no equivalent to the local-mode popup-poll here
+  // before this). Mirrors the same interviewerPresence staleness pattern
+  // already used on the workspace page (B4) and the interviewer's own
+  // candidate-presence check.
+  const [interviewerRemoteWindowClosed, setInterviewerRemoteWindowClosed] = useState(false)
   // Brief launching state shown while router.replace fires after case selection.
   const [isLaunching, setIsLaunching] = useState(false)
   const [launchCaseName, setLaunchCaseName] = useState('')
@@ -1673,6 +1716,23 @@ export default function LobbyPage() {
     let waitingNudgeTimer: ReturnType<typeof setTimeout> | null = null
     const WAITING_NUDGE_DELAY_MS = 5 * 60 * 1000
     const sessionRef = sessionDoc(lobbyId)
+    // Remote-mode interviewer-window-closed detection (waiting/replacing only —
+    // in_progress is covered separately by the workspace page's own B4 check).
+    // Same 25s staleness threshold and periodic-recheck pattern used there.
+    const PRESENCE_STALE_MS = 25_000
+    const interviewerPresenceRef: { current: SessionState['interviewerPresence'] } = { current: undefined }
+    const latestStatusRef: { current: SessionState['status'] } = { current: undefined }
+    const checkInterviewerPresenceStale = () => {
+      if (isLocalSession) return
+      if (latestStatusRef.current !== 'waiting' && latestStatusRef.current !== 'replacing') return
+      const presence = interviewerPresenceRef.current
+      // No presence data yet -> assume connected, same convention used
+      // everywhere else this pattern appears.
+      if (!presence?.lastSeenAt) return
+      const age = Date.now() - presence.lastSeenAt.toDate().getTime()
+      const isDisconnected = presence.active === false || age > PRESENCE_STALE_MS
+      setInterviewerRemoteWindowClosed(isDisconnected)
+    }
     const clearPoll = () => {
       if (!pollTimer) return
       clearInterval(pollTimer)
@@ -1707,6 +1767,12 @@ export default function LobbyPage() {
       if (!isLocalSession && data.interviewerAudioCaptured === false) {
         try { sessionStorage.setItem(`compendium-interviewer-declined-${lobbyId}`, '1') } catch { /* quota */ }
       }
+      // Cache presence + status for the periodic re-check (see
+      // checkInterviewerPresenceStale) — must run before the early returns
+      // below, since 'replacing' is one of the two statuses this covers.
+      latestStatusRef.current = data.status
+      interviewerPresenceRef.current = data.interviewerPresence
+      checkInterviewerPresenceStale()
       if (data.status === 'replacing') {
         disarmWaitingNudge()
         setIsLaunching(false)
@@ -1718,6 +1784,7 @@ export default function LobbyPage() {
         disarmWaitingNudge()
         setInterviewerBrowsing(false)
         setInterviewerReplacing(false)
+        setInterviewerRemoteWindowClosed(false)
         setIsLaunching(true)
         setLaunchCaseName(data.caseName ?? '')
         setTimeout(() => router.replace(workspaceRoute(data.caseId!, data.sessionMode)), 600)
@@ -1725,6 +1792,7 @@ export default function LobbyPage() {
       }
       if (data.status === 'completed') {
         disarmWaitingNudge()
+        setInterviewerRemoteWindowClosed(false)
         router.replace('/dashboard')
         return
       }
@@ -1907,9 +1975,16 @@ export default function LobbyPage() {
 
     setupCandidateSession()
 
+    // Periodic re-check so the interviewer-window-closed overlay fires
+    // promptly even when no new Firestore snapshot happens to arrive right
+    // after the interviewer actually goes stale (same rationale as the
+    // workspace page's B4 fix).
+    const staleCheckTimer = setInterval(checkInterviewerPresenceStale, 2000)
+
     return () => {
       unsubscribeSession()
       clearPoll()
+      clearInterval(staleCheckTimer)
       if (waitingNudgeTimer) {
         clearTimeout(waitingNudgeTimer)
         waitingNudgeTimer = null
@@ -1923,6 +1998,18 @@ export default function LobbyPage() {
     popupHost.__compendiumInterviewerWindow?.close()
     // Fire-and-forget: don't block navigation on the API call
     apiPost(`/api/sessions/${lobbyId}/abandon`, {}).catch(() => {})
+    router.push('/practice')
+  }
+
+  // Remote-mode equivalent of handleCancelSession, used when the interviewer's
+  // window/tab has gone stale during waiting/replacing. Uses /cancel instead
+  // of /abandon: /abandon only accepts status:'in_progress' and no-ops
+  // (silently, since the failure is swallowed) from waiting/replacing, so the
+  // session was never actually being reset by the existing same-device call
+  // in this state. /cancel supports waiting/replacing and in_progress, and
+  // properly resets the session doc back to a fresh 'waiting' state.
+  const handleCancelSessionRemote = () => {
+    apiPost(`/api/sessions/${lobbyId}/cancel`, {}).catch(() => {})
     router.push('/practice')
   }
 
@@ -2002,9 +2089,11 @@ export default function LobbyPage() {
       waitingNudgeVisible={waitingNudgeVisible}
       interviewerBrowsing={interviewerBrowsing}
       interviewerReplacing={interviewerReplacing}
+      interviewerRemoteWindowClosed={interviewerRemoteWindowClosed}
       isLaunching={isLaunching}
       launchCaseName={launchCaseName}
       onCancelSession={() => void handleCancelSession()}
+      onCancelSessionRemote={() => void handleCancelSessionRemote()}
       onPrimaryAction={() => {
         const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
         const isSafari = ua.includes('Safari') && !ua.includes('Chrome')
