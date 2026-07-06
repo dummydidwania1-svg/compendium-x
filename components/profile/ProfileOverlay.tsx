@@ -194,6 +194,74 @@ function DeactivateConfirmModal({
   )
 }
 
+// Same overlay build as the deactivate modal, but shorter: no typed
+// confirmation, just a plain "are you sure" with two ways forward.
+function SignOutConfirmModal({
+  onConfirm,
+  onCancel,
+}: {
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[300] flex items-center justify-center px-4"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onCancel()
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(69,58,42,0.10)',
+          backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+          animation: 'ccx-dcm-scrim-in 0.4s ease forwards',
+        }}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ccx-som-title"
+        style={{
+          position: 'relative', zIndex: 1,
+          width: 'min(360px, calc(100vw - 48px))',
+          borderRadius: 0,
+          border: '1px solid rgba(92,64,51,0.20)',
+          background: 'rgba(255,248,240,0.97)',
+          backdropFilter: 'blur(40px) saturate(1.8)',
+          WebkitBackdropFilter: 'blur(40px) saturate(1.8)',
+          boxShadow: '0 12px 48px rgba(59,47,47,0.16), 0 2px 8px rgba(59,47,47,0.07)',
+          overflow: 'hidden',
+          animation: 'ccx-dcm-card-in 0.32s cubic-bezier(0.22,1,0.36,1) both',
+        }}
+      >
+        <div style={{ height: 2, background: 'linear-gradient(90deg, #3D5A35 0%, rgba(61,90,53,0.12) 100%)' }} />
+        <div style={{ padding: '22px 22px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p id="ccx-som-title" style={{ ...serifStyle, fontSize: 18, fontWeight: 500, color: '#3B2F2F', lineHeight: 1.25 }}>
+            Sign out?
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="ccx-btn-ghost px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
+            >
+              Stay
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="ccx-btn-primary px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
@@ -229,6 +297,9 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const [showDeactivateModal, setShowDeactivateModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteMsg, setDeleteMsg] = useState<string | null>(null)
+
+  // Sign out
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
 
   const profileMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const passwordMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -278,7 +349,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     load()
   }, [user])
 
-  // Escape closes the deactivate modal first, then the whole overlay.
+  // Escape closes whichever confirm modal is open first, then the whole overlay.
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
@@ -286,11 +357,15 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
         if (!deleting) setShowDeactivateModal(false)
         return
       }
+      if (showSignOutModal) {
+        setShowSignOutModal(false)
+        return
+      }
       onClose()
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [onClose, showDeactivateModal, deleting])
+  }, [onClose, showDeactivateModal, deleting, showSignOutModal])
 
   const showProfileMsg = (text: string, ok: boolean) => {
     setProfileMsg({ text, ok })
@@ -352,15 +427,16 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     }
   }
 
-  // Firebase Auth's user.photoURL can be permanently overwritten by an
-  // uploaded-avatar bug that shipped before this fix (updateProfile() was
-  // called with the uploaded image URL, clobbering the real Google photo
-  // at the Auth layer with no way to read the original back). The only way
-  // to recover the REAL Google photo is to re-ask Google for it directly,
-  // which a fresh popup sign-in does — result.user.photoURL comes straight
-  // from Google, not from whatever is currently cached on the Auth user.
+  // Switching to the Google photo is instant when we already have a good
+  // mirror stored (the normal case). We only fall back to a fresh Google
+  // popup re-auth when there's no stored photo yet, since that's the one
+  // reliable way to pull it directly from Google the first time.
   const handleUseGooglePhoto = async () => {
     if (!user) return
+    if (googlePhotoURL) {
+      void persistAvatar({ photoURL: null, avatarPreset: null })
+      return
+    }
     setAvatarBusy(true)
     try {
       const provider = new GoogleAuthProvider()
@@ -384,14 +460,25 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     }
   }
 
+  // Most browsers (Chrome, Firefox, Edge) can't decode HEIC/HEIF in canvas —
+  // createImageBitmap silently rejects it, which used to surface as a generic
+  // "Upload failed". Catch it up front by name/type so the message actually
+  // explains what's wrong instead of guessing.
+  const isHeic = (file: File) =>
+    /\.(heic|heif)$/i.test(file.name) || /heic|heif/i.test(file.type)
+
   const handleAvatarFile = async (file: File) => {
     if (!user) return
+    if (isHeic(file)) {
+      showProfileMsg('HEIC not supported, try JPG or PNG', false)
+      return
+    }
     if (!file.type.startsWith('image/')) {
       showProfileMsg('Choose an image file', false)
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      showProfileMsg('Image must be under 5 MB', false)
+      showProfileMsg('Too big, try under 5 MB', false)
       return
     }
     setAvatarBusy(true)
@@ -412,7 +499,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       setPhotoURL(url)
       setAvatarPreset(null)
     } catch {
-      showProfileMsg('Upload failed', false)
+      showProfileMsg('Upload failed, try a smaller photo', false)
     } finally {
       setAvatarBusy(false)
     }
@@ -449,6 +536,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   }
 
   const handleSignOut = async () => {
+    setShowSignOutModal(false)
     await signOut(auth)
     onClose()
     router.push('/')
@@ -658,8 +746,8 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       `}</style>
 
       <div
-        className="ccx-profile-panel relative flex w-full max-w-[720px] overflow-hidden bg-[#fff8f0]"
-        style={{ height: 'min(560px, calc(100vh - 64px))', fontFamily: "'Work Sans', sans-serif" }}
+        className="ccx-profile-panel relative flex w-full max-w-[680px] overflow-hidden bg-[#fff8f0]"
+        style={{ height: 'min(462px, calc(100vh - 64px))', fontFamily: "'Work Sans', sans-serif" }}
       >
         <button
           type="button"
@@ -682,6 +770,13 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
           />
         ) : null}
 
+        {showSignOutModal ? (
+          <SignOutConfirmModal
+            onCancel={() => setShowSignOutModal(false)}
+            onConfirm={() => void handleSignOut()}
+          />
+        ) : null}
+
         {deleting && !showDeactivateModal ? (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#fff8f0]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -697,28 +792,28 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
         ) : (
           <>
             {/* Left sidebar — same surface as the content, hairline divider */}
-            <div className="flex w-[190px] shrink-0 flex-col border-r border-[#5c4033]/12 px-4 py-6 sm:w-[210px]">
-              <div className="mb-6 flex items-center gap-2.5 px-1.5">
-                <div className="h-9 w-9 shrink-0 overflow-hidden border border-[#5c4033]/18">
-                  {renderAvatar('h-full w-full', 15)}
+            <div className="flex w-[168px] shrink-0 flex-col border-r border-[#5c4033]/12 px-3 py-4 sm:w-[186px]">
+              <div className="mb-4 flex items-center gap-2 px-1">
+                <div className="h-8 w-8 shrink-0 overflow-hidden border border-[#5c4033]/18">
+                  {renderAvatar('h-full w-full', 13)}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-[12.5px] font-medium text-[#453a2a]">
+                  <p className="truncate text-[12px] font-medium text-[#453a2a]">
                     {fullName || user.displayName || 'Account'}
                   </p>
-                  <p className="text-[9.5px] uppercase tracking-[0.14em] text-[#3D5A35]/55 font-semibold">
+                  <p className="text-[9px] uppercase tracking-[0.14em] text-[#3D5A35]/55 font-semibold">
                     Settings
                   </p>
                 </div>
               </div>
 
-              <nav className="space-y-1">
+              <nav className="space-y-0.5">
                 {NAV_ITEMS.map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => setSection(item.id)}
-                    className={`ccx-nav-item flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] ${
+                    className={`ccx-nav-item flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-[12.5px] ${
                       section === item.id ? 'ccx-nav-active' : ''
                     }`}
                   >
@@ -730,11 +825,11 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                 ))}
               </nav>
 
-              <div className="mt-auto border-t border-[#5c4033]/12 pt-3">
+              <div className="mt-auto border-t border-[#5c4033]/12 pt-2">
                 <button
                   type="button"
-                  onClick={handleSignOut}
-                  className="ccx-signout flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px]"
+                  onClick={() => setShowSignOutModal(true)}
+                  className="ccx-signout flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-[12.5px]"
                 >
                   <span className="material-symbols-outlined" style={iconStyle}>
                     logout
@@ -745,26 +840,26 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
             </div>
 
             {/* Right content — fixed height, scrolls internally */}
-            <div className="ccx-scroll flex-1 overflow-y-auto px-7 py-7 sm:px-9">
+            <div className="ccx-scroll flex-1 overflow-y-auto px-6 py-5 sm:px-8">
               {section === 'profile' ? (
                 <div className="ccx-section" key="profile">
-                  <p className={`${sectionTitleClass} mb-6`} style={serifStyle}>
+                  <p className={`${sectionTitleClass} mb-4`} style={serifStyle}>
                     Profile
                   </p>
 
                   {/* Avatar — click the tile to change it. No explainer copy. */}
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <p className={labelClass}>Avatar</p>
                     <div className="flex items-center gap-4">
                       <button
                         type="button"
                         onClick={() => setShowAvatarPicker((v) => !v)}
-                        className="ccx-avatar-frame h-[68px] w-[68px] shrink-0"
+                        className="ccx-avatar-frame h-14 w-14 shrink-0"
                         aria-label="Change avatar"
                       >
-                        {renderAvatar('h-full w-full', 24)}
+                        {renderAvatar('h-full w-full', 20)}
                         <span className="ccx-avatar-edit">
-                          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
                             {showAvatarPicker ? 'close' : 'edit'}
                           </span>
                         </span>
@@ -775,7 +870,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                     </div>
 
                     {showAvatarPicker ? (
-                      <div className="ccx-picker mt-4">
+                      <div className="ccx-picker mt-3">
                         <div className="grid grid-cols-9 gap-2">
                           {/* Monogram tile — explicit "no photo" choice */}
                           <button
@@ -848,7 +943,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                     ) : null}
                   </div>
 
-                  <form onSubmit={handleSaveProfile} className="space-y-4">
+                  <form onSubmit={handleSaveProfile} className="space-y-3">
                     <div>
                       <label className={labelClass}>Full Name</label>
                       <input
@@ -882,10 +977,10 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
 
               {section === 'account' ? (
                 <div className="ccx-section" key="account">
-                  <p className={`${sectionTitleClass} mb-6`} style={serifStyle}>
+                  <p className={`${sectionTitleClass} mb-4`} style={serifStyle}>
                     Account
                   </p>
-                  <div className="space-y-5">
+                  <div className="space-y-3">
                     <div>
                       <p className={labelClass}>Email</p>
                       <p className="text-[13.5px] text-[#453a2a] font-medium">{user.email ?? '—'}</p>
@@ -901,7 +996,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                     </div>
                   </div>
 
-                  <div className="mt-9 border-t border-[#5c4033]/12 pt-5">
+                  <div className="mt-6 border-t border-[#5c4033]/12 pt-4">
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#b4543e]">
@@ -925,10 +1020,10 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
 
               {section === 'security' && emailProvider ? (
                 <div className="ccx-section" key="security">
-                  <p className={`${sectionTitleClass} mb-6`} style={serifStyle}>
+                  <p className={`${sectionTitleClass} mb-4`} style={serifStyle}>
                     Security
                   </p>
-                  <form onSubmit={handleChangePassword} className="space-y-4">
+                  <form onSubmit={handleChangePassword} className="space-y-3">
                     <div>
                       <label className={labelClass}>Current Password</label>
                       <input
