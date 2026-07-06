@@ -908,6 +908,13 @@ export function InterviewerPageInner({
 	// tracks into one merged transcript. Permission flow: auto-ask → remind once
 	// → continue without forcing (signal interviewerAudioCaptured:false).
 	const [interviewerMicBannerVisible, setInterviewerMicBannerVisible] = useState(false)
+	// LobbyOverlay owns its own "leaving" animation state internally, which
+	// only resets on a genuine remount. When "Allow mic" fails and we need to
+	// re-show the SAME banner right after LobbyOverlay's own forced dismiss
+	// animation already started, just flipping interviewerMicBannerVisible
+	// back to true is a no-op if it was never actually set to false -- bump
+	// this key to force a fresh instance so it reliably reappears.
+	const [micBannerInstanceKey, setMicBannerInstanceKey] = useState(0)
 	// Permission-state watcher for a manual mid-session mic block (recorder.onerror
 	// does not always fire when the user toggles the mic in site settings). When the
 	// banner is raised from this path we track it so a later 'granted' can clear it
@@ -926,12 +933,13 @@ export function InterviewerPageInner({
 	// Tracks whether the interviewer declined consent at the gate (NOCONSENT_KEY) or
 	// the candidate opted out at launch. Either suppresses the mid-session recovery banner.
 	const interviewerDeclinedConsentRef = useRef(false)
-	// LobbyOverlay always fires onDismiss after ANY action button click (not
-	// just when the user closes it with no action taken). Set by the mic
-	// recovery banner's own action handlers so onDismiss knows whether to
-	// leave things alone, re-open the banner (failed retry), or fall through
-	// to the decline-consent path (a genuine dismiss with no action taken).
-	const micRecoveryOutcomeRef = useRef<'resolved' | 'retry_failed' | null>(null)
+	// LobbyOverlay always fires onDismiss ~280ms after ANY action button
+	// click, without awaiting an async onAction first -- so onDismiss can't
+	// rely on that handler's async work having finished. Set synchronously,
+	// in the same click, so onDismiss can tell "a button was just clicked"
+	// apart from a real dismiss (X button / auto-dismiss) no matter how long
+	// the click handler's own async work takes.
+	const micRecoveryButtonClickedRef = useRef(false)
 	const candidateOptedOutRef = useRef(false)
 	const lastInterviewerFlushUrlRef = useRef<string | null>(null)
 	const lastInterviewerFlushPathRef = useRef<string | null>(null)
@@ -2512,57 +2520,67 @@ if (previewMode && !forcePreview) {
 				    handles that). Guard disengages once upload has begun. */}
 				{isRemoteMode && interviewerMicBannerVisible && !micGuardShowing && interviewerUploadState === 'idle' && !overlaySuccess && (
 					<LobbyOverlay
+						key={micBannerInstanceKey}
 						type="warning"
 						icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>}
 						title="Looks like your mic dropped"
 						body="Your mic just cut out, so your side stopped recording. Turn it back on and tap Allow mic to keep going, or skip and we'll just record the candidate. Either way the case keeps running."
 						actionLabel="Allow mic"
-						onAction={async () => {
-							// Don't assume success: re-check permission first. If the browser
-							// still reports it as denied (e.g. the user clicked this before
-							// actually flipping the OS/site toggle), the retry failed -- tell
-							// onDismiss (which LobbyOverlay always fires next) to re-open the
-							// banner instead of treating this as giving up.
-							const state = await interviewerMicRetry()
-							if (state !== 'granted') {
-								micRecoveryOutcomeRef.current = 'retry_failed'
-								return
-							}
-							micRecoveryOutcomeRef.current = 'resolved'
-							bannerFromPermissionRef.current = false
-							setInterviewerMicBannerVisible(false)
-							await startInterviewerRecording()
+						onAction={() => {
+							// LobbyOverlay calls dismiss() synchronously right after this
+							// returns, WITHOUT awaiting it (its onClick is `() => { onAction();
+							// dismiss() }`, and onAction here is async) -- so onDismiss below
+							// fires ~280ms later regardless of how long the permission
+							// check/restart actually takes. Set this ref synchronously, in the
+							// same tick as the click, so onDismiss can reliably tell "this was
+							// a button click" apart from a real dismiss, no matter how long the
+							// async work below takes to finish.
+							micRecoveryButtonClickedRef.current = true
+							void (async () => {
+								// Don't assume success: re-check permission first. If the browser
+								// still reports it as denied (e.g. clicked before actually
+								// flipping the OS/site toggle), re-open the banner so the user
+								// can fix it and try again, instead of silently giving up. Bump
+								// the instance key too -- LobbyOverlay's own "leaving" animation
+								// state already started when this button was clicked, so just
+								// setting visible=true again (already true) wouldn't force it to
+								// reappear on its own.
+								const state = await interviewerMicRetry()
+								if (state !== 'granted') {
+									setMicBannerInstanceKey((k) => k + 1)
+									setInterviewerMicBannerVisible(true)
+									return
+								}
+								bannerFromPermissionRef.current = false
+								setInterviewerMicBannerVisible(false)
+								await startInterviewerRecording()
+							})()
 						}}
 						secondaryActionLabel="Skip recording"
-						onSecondaryAction={async () => {
-							micRecoveryOutcomeRef.current = 'resolved'
+						onSecondaryAction={() => {
+							micRecoveryButtonClickedRef.current = true
 							bannerFromPermissionRef.current = false
 							setInterviewerMicBannerVisible(false)
 							try { if (lobbyId) sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
 							interviewerDeclinedConsentRef.current = true
-							await signalNoInterviewerAudio()
+							void signalNoInterviewerAudio()
 						}}
-						onDismiss={async () => {
-							// LobbyOverlay always fires dismiss() after ANY action button click,
-							// not just a true "closed with no choice made". Three cases:
-							//  - 'resolved': Allow mic succeeded, or Skip recording ran. Nothing
-							//    more to do here.
-							//  - 'retry_failed': Allow mic was clicked but permission is still
-							//    denied. Re-open the banner instead of silently giving up.
-							//  - unset (real dismiss, e.g. clicking the X): fall through to the
-							//    decline-consent fallback below, same as before.
-							const outcome = micRecoveryOutcomeRef.current
-							micRecoveryOutcomeRef.current = null
-							if (outcome === 'resolved') return
-							if (outcome === 'retry_failed') {
-								setInterviewerMicBannerVisible(true)
+						onDismiss={() => {
+							// LobbyOverlay always fires dismiss() after ANY action button
+							// click too, not just a true "closed with no choice made" (X
+							// button or auto-dismiss). If either button was just clicked,
+							// its own handler above already did everything needed -- so just
+							// clear the flag and stop, regardless of whether that handler's
+							// async work has finished yet.
+							if (micRecoveryButtonClickedRef.current) {
+								micRecoveryButtonClickedRef.current = false
 								return
 							}
 							bannerFromPermissionRef.current = false
 							setInterviewerMicBannerVisible(false)
 							try { if (lobbyId) sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
 							interviewerDeclinedConsentRef.current = true
-							await signalNoInterviewerAudio()
+							void signalNoInterviewerAudio()
 						}}
 					/>
 				)}
