@@ -1018,6 +1018,10 @@ export function InterviewerPageInner({
 		autoSubmitOnEndRef.current = true
 		void (async () => {
 			try {
+				// keepalive: true so this write survives the tab closing mid-request
+				// (e.g. the interviewer closes right after the candidate ends the
+				// session) — matches the keepalive already used on every other
+				// finalize-style beacon (presence, recording finalize) in this file.
 				await apiPost('/api/evaluations', {
 					lobbyId,
 					caseId: resolvedCaseId,
@@ -1028,7 +1032,7 @@ export function InterviewerPageInner({
 						...(scores.creativity > 0 && { creativity: scores.creativity }),
 					},
 					notes,
-				})
+				}, { keepalive: true })
 			} catch { /* best-effort — overlay still shows so interviewer can submit manually */ }
 		})()
 	// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1700,6 +1704,7 @@ export function InterviewerPageInner({
 		autoEndFiredRef.current = true
 
 		try {
+			// keepalive: true so this write survives the tab closing mid-request.
 			await apiPost('/api/evaluations', {
 				lobbyId,
 				caseId: resolvedCaseId,
@@ -1710,7 +1715,7 @@ export function InterviewerPageInner({
 					creativity: scores.creativity,
 				},
 				notes,
-			})
+			}, { keepalive: true })
 		} catch {
 			// Non-fatal — still signal the candidate
 		}
@@ -2265,6 +2270,9 @@ useEffect(() => {
 		}
 
 		try {
+			// keepalive: true so this write survives the tab closing mid-request —
+			// this is the interviewer's actual "Submit" click, the highest-stakes
+			// of the three /api/evaluations call sites in this file.
 			await apiPost('/api/evaluations', {
 				lobbyId: lobbyId ?? null,
 				caseId: resolvedCaseId,
@@ -2275,7 +2283,7 @@ useEffect(() => {
 					creativity: scores.creativity === 0 ? undefined : scores.creativity,
 				},
 				notes,
-			})
+			}, { keepalive: true })
 		} catch (error) {
 			const msg = error instanceof Error ? error.message : 'Unable to save feedback.'
 			if (showEvalOverlay) {

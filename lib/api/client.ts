@@ -71,6 +71,7 @@ export async function apiDelete<TResponse = unknown>(
 export async function apiPost<TResponse = unknown>(
   path: string,
   body: unknown,
+  opts?: { keepalive?: boolean },
 ): Promise<TResponse> {
   const token = await getIdTokenOrThrow()
 
@@ -83,6 +84,7 @@ export async function apiPost<TResponse = unknown>(
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(body),
+      ...(opts?.keepalive ? { keepalive: true } : {}),
     })
   } catch (err) {
     throw new ApiError(
