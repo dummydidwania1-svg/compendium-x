@@ -982,6 +982,14 @@ export function InterviewerPageInner({
 	// One-shot per disconnect episode; reset when the candidate is seen active
 	// again so a future reconnect->disconnect cycle can show the toast again.
 	const candidateDisconnectShownRef = useRef(false)
+	// Latest candidatePresence payload, cached so a periodic timer (not just
+	// each incoming Firestore snapshot) can re-check staleness. Without this,
+	// a candidate who's already been gone for a while only gets "noticed" the
+	// next time some unrelated field on the session doc happens to change
+	// (e.g. select-case firing status:'in_progress' after a replace) — which
+	// can lag well past the 25s threshold since lastSeenAt itself stopped
+	// advancing the moment their tab closed.
+	const candidatePresenceRef = useRef<{ active?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined>(undefined)
 
 	// When the candidate ends the session, auto-save whatever the interviewer has
 	// entered so far (even partial scores). The /api/evaluations endpoint is now an
@@ -1089,9 +1097,11 @@ export function InterviewerPageInner({
 		const clearPoll = () => { if (pollTimer) { clearInterval(pollTimer); pollTimer = null } }
 
 		let seedApplied = false
+		const latestStatusRef = { current: undefined as string | undefined }
 		const handleSnapshot = (data: Record<string, unknown> | null) => {
 			if (!data) return
 			const status = data.status as string | undefined
+			latestStatusRef.current = status
 			const view = currentViewRef.current
 
 			// D9: Seed inactivity clocks from server timestamps on the first snapshot.
@@ -1204,30 +1214,42 @@ export function InterviewerPageInner({
 			// B5 (rebuilt): candidate's workspace is gone or stale, via candidatePresence
 			// staleness — not the old, removed candidatePresence.recording===false
 			// heuristic (which false-fired in many normal states). Mirrors the
-			// candidate's own interviewerPresence staleness check exactly. Deliberately
-			// NOT gated on `status`, since the candidate can disconnect in the waiting
-			// lobby, mid-session, or during a case replace equally. Suppressed once the
-			// session is already completed/abandoned, where it would be moot.
-			if (status !== 'completed' && status !== 'abandoned') {
-				const presence = data.candidatePresence as
-					| { active?: boolean; lastSeenAt?: { toDate: () => Date } }
-					| undefined
-				if (presence?.lastSeenAt) {
-					const age = Date.now() - presence.lastSeenAt.toDate().getTime()
-					const isStale = presence.active === false || age > CANDIDATE_PRESENCE_STALE_MS
-					if (isStale) {
-						if (!candidateDisconnectShownRef.current) {
-							candidateDisconnectShownRef.current = true
-							setCandidateRemoteDisconnected(true)
-						}
-					} else {
-						// Candidate confirmed active again — allow the toast to fire again
-						// on a future disconnect.
-						candidateDisconnectShownRef.current = false
-					}
+			// candidate's own interviewerPresence staleness check exactly. The actual
+			// check (below) applies across the waiting lobby, mid-session, and
+			// case-replace equally, only suppressed once completed/abandoned.
+			candidatePresenceRef.current = data.candidatePresence as
+				| { active?: boolean; lastSeenAt?: { toDate: () => Date } }
+				| undefined
+			checkCandidatePresenceStale()
+		}
+
+		// Re-checks staleness against the cached candidatePresence value. Called
+		// both right after every snapshot AND on a periodic timer below — a
+		// snapshot alone isn't enough, since lastSeenAt stops advancing the
+		// moment the candidate's tab closes, so nothing about the DOCUMENT
+		// changes again until some unrelated field happens to be written (e.g.
+		// select-case flipping status after a replace). Without the timer, the
+		// toast could lag far past the 25s threshold, or on a status
+		// transition that lands right at/near a fresh-looking lastSeenAt.
+		// Suppressed once the session is completed/abandoned — moot at that
+		// point, and matches B5's original status guard.
+		function checkCandidatePresenceStale() {
+			if (latestStatusRef.current === 'completed' || latestStatusRef.current === 'abandoned') return
+			const presence = candidatePresenceRef.current
+			// No presence data yet -> assume connected, same convention used for
+			// interviewerPresence on the candidate's own side.
+			if (!presence?.lastSeenAt) return
+			const age = Date.now() - presence.lastSeenAt.toDate().getTime()
+			const isStale = presence.active === false || age > CANDIDATE_PRESENCE_STALE_MS
+			if (isStale) {
+				if (!candidateDisconnectShownRef.current) {
+					candidateDisconnectShownRef.current = true
+					setCandidateRemoteDisconnected(true)
 				}
-				// No presence data yet -> assume connected, same convention used for
-				// interviewerPresence on the candidate's own side.
+			} else {
+				// Candidate confirmed active again — allow the toast to fire again
+				// on a future disconnect.
+				candidateDisconnectShownRef.current = false
 			}
 		}
 
@@ -1250,9 +1272,17 @@ export function InterviewerPageInner({
 			},
 		)
 
+		// Periodic re-check so the toast fires promptly (within a few seconds)
+		// even when no new Firestore snapshot happens to arrive right after the
+		// candidate actually goes stale — e.g. they disconnected during the
+		// waiting lobby or mid-replace, then the session starts/resumes with no
+		// further presence writes to re-trigger handleSnapshot on its own.
+		const staleCheckTimer = setInterval(checkCandidatePresenceStale, 2000)
+
 		return () => {
 			unsubscribe()
 			clearPoll()
+			clearInterval(staleCheckTimer)
 			if (selectingGraceTimerRef.current) {
 				clearTimeout(selectingGraceTimerRef.current)
 				selectingGraceTimerRef.current = null
