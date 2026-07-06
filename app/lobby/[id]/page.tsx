@@ -2013,8 +2013,14 @@ export default function LobbyPage() {
   const handleCancelSession = () => {
     const popupHost = window as PopupWindowHost
     popupHost.__compendiumInterviewerWindow?.close()
-    // Fire-and-forget: don't block navigation on the API call
-    apiPost(`/api/sessions/${lobbyId}/abandon`, {}).catch(() => {})
+    // Fire-and-forget: don't block navigation on the API call.
+    // Uses /cancel, not /abandon: /abandon only accepts status:'in_progress'
+    // and silently no-ops (409, swallowed) from waiting/replacing — the two
+    // statuses the candidate is actually in when this button is reachable (it
+    // only shows on the lobby page). /cancel supports waiting/replacing and
+    // in_progress, and actually resets the session doc instead of leaving it
+    // stuck. Same fix already applied to the remote-mode Cancel button.
+    apiPost(`/api/sessions/${lobbyId}/cancel`, {}).catch(() => {})
     router.push('/practice')
   }
 
