@@ -1484,6 +1484,43 @@ export default function LobbyPage() {
     })
   }, [isInterviewer])
 
+  // Candidate presence heartbeat (remote mode only) — mirrors the identical
+  // effect in app/case/[id]/workspace/page.tsx. That page's heartbeat only
+  // runs once a case is actually in progress, so without this one here the
+  // interviewer has zero live signal for a candidate who closes their tab
+  // while still waiting for the interviewer to pick a case, or while
+  // sitting on this same lobby screen during a case replace (the candidate
+  // is routed back here for the whole "replacing" window).
+  useEffect(() => {
+    if (isInterviewer || requestedSessionMode === 'local' || !lobbyId) return
+
+    const sendHeartbeat = async (active: boolean) => {
+      try {
+        const token = await auth.currentUser?.getIdToken()
+        if (!token) return
+        await fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ role: 'candidate', active }),
+          keepalive: true,
+        })
+      } catch {
+        // Best-effort — a missed heartbeat is tolerable; the stale threshold is 25s.
+      }
+    }
+
+    void sendHeartbeat(true)
+    const timer = setInterval(() => { void sendHeartbeat(true) }, 10_000)
+
+    const onPageHide = () => { void sendHeartbeat(false) }
+    window.addEventListener('pagehide', onPageHide)
+
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('pagehide', onPageHide)
+    }
+  }, [isInterviewer, requestedSessionMode, lobbyId])
+
   const isLocalSession = requestedSessionMode === 'local'
   const interviewerLink =
     typeof window !== 'undefined'
