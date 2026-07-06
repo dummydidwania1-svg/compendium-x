@@ -9,7 +9,7 @@ import {
   signInWithPopup,
   signOut,
 } from 'firebase/auth'
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { auth, db, missingFirebaseClientConfig } from '@/lib/firebase/config'
 import { getPostAuthRoute } from '@/lib/auth/postAuth'
@@ -187,6 +187,15 @@ export default function MarketingAuthPanel({
   const [verificationSent, setVerificationSent] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState('')
 
+  // Google sign-in only collects a display name from the OAuth profile — college
+  // still needs to be collected. Rather than routing to the separate /onboarding
+  // page, we swap this same panel's content in place so no new screen appears.
+  const [needsCollege, setNeedsCollege] = useState(false)
+  const [collegeUid, setCollegeUid] = useState<string | null>(null)
+  const [collegeValue, setCollegeValue] = useState('')
+  const [collegeLoading, setCollegeLoading] = useState(false)
+  const [collegeError, setCollegeError] = useState('')
+
   const isSignUp = mode === 'signup'
 
   const shouldPreferFallback = () => {
@@ -295,6 +304,23 @@ export default function MarketingAuthPanel({
         }
       }
 
+      try {
+        const profileSnapshot = await getDoc(doc(db, 'profiles', user.uid))
+        const existingUniversity = profileSnapshot.exists() ? profileSnapshot.data()?.university : null
+        const hasUniversity =
+          typeof existingUniversity === 'string' && existingUniversity.trim().length > 0
+
+        if (!hasUniversity) {
+          setCollegeUid(user.uid)
+          setNeedsCollege(true)
+          setGoogleLoading(false)
+          return
+        }
+      } catch {
+        // If this check fails, finishAuth's own getPostAuthRoute call below
+        // still safely falls back to /onboarding if college is missing.
+      }
+
       await finishAuth(user.uid, true)
     } catch (error) {
       // User dismissed the popup — no message needed
@@ -305,6 +331,39 @@ export default function MarketingAuthPanel({
       setMessageTone('error')
     } finally {
       setGoogleLoading(false)
+    }
+  }
+
+  const handleCollegeSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!collegeUid) return
+    const trimmed = collegeValue.trim()
+    if (!trimmed) {
+      setCollegeError('Enter your university or college.')
+      return
+    }
+
+    setCollegeLoading(true)
+    setCollegeError('')
+    try {
+      await setDoc(
+        doc(db, 'profiles', collegeUid),
+        { university: trimmed, updatedAt: serverTimestamp() },
+        { merge: true }
+      )
+      onSuccess?.()
+      if (currentPath && redirectTarget === currentPath) {
+        router.refresh()
+      } else {
+        router.push(redirectTarget)
+        router.refresh()
+      }
+    } catch (error) {
+      setCollegeError(
+        error instanceof Error ? error.message : 'Unable to save your college right now.'
+      )
+    } finally {
+      setCollegeLoading(false)
     }
   }
 
@@ -439,6 +498,101 @@ export default function MarketingAuthPanel({
     } finally {
       setLoading(false)
     }
+  }
+
+  // --- College step (Google sign-in only; same panel, no separate screen) ---
+  if (needsCollege) {
+    return (
+      <div className="relative" style={PANEL_STYLE}>
+        <style>{PANEL_STYLES}</style>
+
+        <h1
+          style={{
+            fontFamily: "'Newsreader', serif",
+            fontSize: '1.75rem',
+            color: '#453a2a',
+            marginBottom: '12px',
+          }}
+        >
+          One last step
+        </h1>
+
+        <p
+          style={{
+            fontFamily: "'Work Sans', sans-serif",
+            fontSize: '14px',
+            color: '#73796f',
+            lineHeight: 1.6,
+            marginBottom: '20px',
+          }}
+        >
+          Add your university or college so your dashboard and feedback history stay personalized.
+        </p>
+
+        <form
+          onSubmit={handleCollegeSubmit}
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          className="marketing-auth-form"
+        >
+          <div className="marketing-auth-input-wrap" style={FIELD_WRAPPER_STYLE}>
+            <input
+              className="marketing-auth-field"
+              type="text"
+              placeholder="University / College"
+              value={collegeValue}
+              onChange={(event) => setCollegeValue(event.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              style={INPUT_STYLE}
+            />
+          </div>
+
+          {collegeError ? (
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '12px 14px',
+                border: '1px solid rgba(146, 64, 14, 0.18)',
+                background: 'rgba(146, 64, 14, 0.05)',
+                color: '#92400e',
+                fontSize: '13px',
+                lineHeight: 1.5,
+              }}
+            >
+              {collegeError}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={collegeLoading}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: '#3D5A35',
+              color: '#fff',
+              fontFamily: "'Work Sans', sans-serif",
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              border: 'none',
+              cursor: collegeLoading ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
+              opacity: collegeLoading ? 0.7 : 1,
+            }}
+          >
+            {collegeLoading ? 'Saving...' : 'Continue'}
+          </button>
+        </form>
+      </div>
+    )
   }
 
   // --- Verification sent state ---
