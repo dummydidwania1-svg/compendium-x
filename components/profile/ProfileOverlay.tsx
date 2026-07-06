@@ -747,7 +747,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
 
       <div
         className="ccx-profile-panel relative flex w-full max-w-[680px] overflow-hidden bg-[#fff8f0]"
-        style={{ height: 'min(462px, calc(100vh - 64px))', fontFamily: "'Work Sans', sans-serif" }}
+        style={{ height: 'min(560px, calc(100vh - 64px))', fontFamily: "'Work Sans', sans-serif" }}
       >
         <button
           type="button"
@@ -839,8 +839,10 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
               </div>
             </div>
 
-            {/* Right content — fixed height, scrolls internally */}
-            <div className="ccx-scroll flex-1 overflow-y-auto px-6 py-5 sm:px-8">
+            {/* Right content — fixed height, no scroll: sized to fit the
+                tallest state (Profile with the avatar picker open) and
+                vertically centered so shorter tabs don't look unfinished. */}
+            <div className="ccx-scroll flex flex-1 flex-col justify-center overflow-y-auto px-6 py-5 sm:px-8">
               {section === 'profile' ? (
                 <div className="ccx-section" key="profile">
                   <p className={`${sectionTitleClass} mb-4`} style={serifStyle}>
