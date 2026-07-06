@@ -15,7 +15,6 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { auth, db, storage } from '@/lib/firebase/config'
-import { apiDelete } from '@/lib/api/client'
 import { PRESET_AVATARS } from '@/lib/avatars'
 import PresetAvatarView from '@/components/avatars/PresetAvatarView'
 
@@ -95,106 +94,7 @@ function SubmitButton({ disabled, children }: { disabled: boolean; children: Rea
   )
 }
 
-// Centered, blurred, same tone and build as the platform's other
-// "are you sure" overlays — one short line, the typed confirmation,
-// and a clear way out. No walls of text.
-function DeactivateConfirmModal({
-  deleting,
-  errorMsg,
-  onConfirm,
-  onCancel,
-}: {
-  deleting: boolean
-  errorMsg: string | null
-  onConfirm: () => void
-  onCancel: () => void
-}) {
-  const [confirmText, setConfirmText] = useState('')
-  const ready = confirmText === 'DELETE' && !deleting
-
-  return (
-    <div
-      className="fixed inset-0 z-[300] flex items-center justify-center px-4"
-      onClick={(event) => {
-        if (event.target === event.currentTarget && !deleting) onCancel()
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(69,58,42,0.10)',
-          backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-          animation: 'ccx-dcm-scrim-in 0.4s ease forwards',
-        }}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="ccx-dcm-title"
-        style={{
-          position: 'relative', zIndex: 1,
-          width: 'min(400px, calc(100vw - 48px))',
-          borderRadius: 0,
-          border: '1px solid rgba(180,84,62,0.28)',
-          background: 'rgba(255,248,240,0.97)',
-          backdropFilter: 'blur(40px) saturate(1.8)',
-          WebkitBackdropFilter: 'blur(40px) saturate(1.8)',
-          boxShadow: '0 12px 48px rgba(59,47,47,0.16), 0 2px 8px rgba(59,47,47,0.07)',
-          overflow: 'hidden',
-          animation: 'ccx-dcm-card-in 0.32s cubic-bezier(0.22,1,0.36,1) both',
-        }}
-      >
-        <div style={{ height: 2, background: 'linear-gradient(90deg, #b4543e 0%, rgba(180,84,62,0.12) 100%)' }} />
-        <div style={{ padding: '24px 22px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <p id="ccx-dcm-title" style={{ ...serifStyle, fontSize: 19, fontWeight: 500, color: '#3B2F2F', lineHeight: 1.25 }}>
-              Deactivate your account?
-            </p>
-            <p style={{ fontSize: 12.5, color: 'rgba(92,64,51,0.72)', lineHeight: 1.55 }}>
-              You&apos;ll be signed out everywhere and sign-in gets blocked.
-              Nothing is deleted, everything stays safe on our end.
-            </p>
-          </div>
-          <input
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            placeholder="Type DELETE to confirm"
-            disabled={deleting}
-            className="ccx-input w-full px-4 py-2.5 text-[13px] text-[#1e1b15] outline-none"
-            autoFocus
-          />
-          {errorMsg ? (
-            <p style={{ fontSize: 11.5, color: '#b4543e', margin: 0 }}>{errorMsg}</p>
-          ) : null}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={deleting}
-              className="ccx-btn-ghost px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
-            >
-              Never mind
-            </button>
-            <button
-              type="button"
-              onClick={onConfirm}
-              disabled={!ready}
-              className="ccx-danger-solid px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
-            >
-              {deleting ? 'Deactivating...' : 'Deactivate'}
-            </button>
-          </div>
-        </div>
-      </div>
-      <style>{`
-        @keyframes ccx-dcm-scrim-in { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes ccx-dcm-card-in { from { opacity: 0; transform: translateY(10px) scale(0.97) } to { opacity: 1; transform: translateY(0) scale(1) } }
-      `}</style>
-    </div>
-  )
-}
-
-// Same overlay build as the deactivate modal, but shorter: no typed
+// Same overlay build used elsewhere on the platform: no typed
 // confirmation, just a plain "are you sure" with two ways forward.
 function SignOutConfirmModal({
   onConfirm,
@@ -215,7 +115,7 @@ function SignOutConfirmModal({
           position: 'absolute', inset: 0,
           background: 'rgba(69,58,42,0.10)',
           backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-          animation: 'ccx-dcm-scrim-in 0.4s ease forwards',
+          animation: 'ccx-som-scrim-in 0.4s ease forwards',
         }}
       />
       <div
@@ -232,7 +132,7 @@ function SignOutConfirmModal({
           WebkitBackdropFilter: 'blur(40px) saturate(1.8)',
           boxShadow: '0 12px 48px rgba(59,47,47,0.16), 0 2px 8px rgba(59,47,47,0.07)',
           overflow: 'hidden',
-          animation: 'ccx-dcm-card-in 0.32s cubic-bezier(0.22,1,0.36,1) both',
+          animation: 'ccx-som-card-in 0.32s cubic-bezier(0.22,1,0.36,1) both',
         }}
       >
         <div style={{ height: 2, background: 'linear-gradient(90deg, #3D5A35 0%, rgba(61,90,53,0.12) 100%)' }} />
@@ -258,6 +158,10 @@ function SignOutConfirmModal({
           </div>
         </div>
       </div>
+      <style>{`
+        @keyframes ccx-som-scrim-in { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes ccx-som-card-in { from { opacity: 0; transform: translateY(10px) scale(0.97) } to { opacity: 1; transform: translateY(0) scale(1) } }
+      `}</style>
     </div>
   )
 }
@@ -292,11 +196,6 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordMsg, setPasswordMsg] = useState<{ text: string; ok: boolean } | null>(null)
-
-  // Deactivate account
-  const [showDeactivateModal, setShowDeactivateModal] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [deleteMsg, setDeleteMsg] = useState<string | null>(null)
 
   // Sign out
   const [showSignOutModal, setShowSignOutModal] = useState(false)
@@ -353,10 +252,6 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      if (showDeactivateModal) {
-        if (!deleting) setShowDeactivateModal(false)
-        return
-      }
       if (showSignOutModal) {
         setShowSignOutModal(false)
         return
@@ -365,7 +260,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [onClose, showDeactivateModal, deleting, showSignOutModal])
+  }, [onClose, showSignOutModal])
 
   const showProfileMsg = (text: string, ok: boolean) => {
     setProfileMsg({ text, ok })
@@ -543,22 +438,6 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     router.refresh()
   }
 
-  const handleDeactivateAccount = async () => {
-    setDeleting(true)
-    setDeleteMsg(null)
-    try {
-      await apiDelete('/api/account', { confirm: 'DELETE' })
-      await signOut(auth)
-      onClose()
-      router.push('/')
-      router.refresh()
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : ''
-      setDeleteMsg(msg || 'Could not deactivate. Please try again.')
-      setDeleting(false)
-    }
-  }
-
   const emailProvider = user ? isEmailProvider(user) : false
 
   const NAV_ITEMS: Array<{ id: Section; label: string; icon: string }> = [
@@ -731,15 +610,6 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
           transition: background-color 0.18s ease, transform 0.18s ease;
         }
         .ccx-avatar-action:hover { background: rgba(92,64,51,0.06); transform: translateY(-1px); }
-        .ccx-danger-btn {
-          border: 1px solid rgba(180,84,62,0.35);
-          color: #b4543e; background: transparent; border-radius: 0;
-          transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
-        }
-        .ccx-danger-btn:hover { background: rgba(180,84,62,0.08); transform: translateY(-1px); }
-        .ccx-danger-solid { background: #b4543e; color: #fff8f0; border-radius: 0; transition: background-color 0.18s ease; }
-        .ccx-danger-solid:hover:not(:disabled) { background: #9d4433; }
-        .ccx-danger-solid:disabled { background: rgba(180,84,62,0.30); cursor: not-allowed; }
         .ccx-scroll::-webkit-scrollbar { width: 5px; }
         .ccx-scroll::-webkit-scrollbar-thumb { background: rgba(92,64,51,0.18); }
         .ccx-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -758,30 +628,11 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
           &times;
         </button>
 
-        {showDeactivateModal ? (
-          <DeactivateConfirmModal
-            deleting={deleting}
-            errorMsg={deleteMsg}
-            onCancel={() => {
-              setShowDeactivateModal(false)
-              setDeleteMsg(null)
-            }}
-            onConfirm={() => void handleDeactivateAccount()}
-          />
-        ) : null}
-
         {showSignOutModal ? (
           <SignOutConfirmModal
             onCancel={() => setShowSignOutModal(false)}
             onConfirm={() => void handleSignOut()}
           />
-        ) : null}
-
-        {deleting && !showDeactivateModal ? (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#fff8f0]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="" width={52} height={52} className="ccx-flicker" style={{ objectFit: 'contain' }} />
-          </div>
         ) : null}
 
         {!authReady || profileLoading || !user ? (
@@ -996,26 +847,6 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                         </span>
                         {emailProvider ? 'Email & Password' : 'Google'}
                       </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 border-t border-[#5c4033]/12 pt-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#b4543e]">
-                          Danger Zone
-                        </p>
-                        <p className="mt-1 text-[12px] text-[#5c4033]/65">
-                          Deactivating blocks sign-in. Nothing gets deleted.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="ccx-danger-btn shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
-                        onClick={() => setShowDeactivateModal(true)}
-                      >
-                        Deactivate
-                      </button>
                     </div>
                   </div>
                 </div>
