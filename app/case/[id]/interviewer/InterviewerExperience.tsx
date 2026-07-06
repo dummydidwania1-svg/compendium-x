@@ -926,6 +926,12 @@ export function InterviewerPageInner({
 	// Tracks whether the interviewer declined consent at the gate (NOCONSENT_KEY) or
 	// the candidate opted out at launch. Either suppresses the mid-session recovery banner.
 	const interviewerDeclinedConsentRef = useRef(false)
+	// LobbyOverlay always fires onDismiss after ANY action button click (not
+	// just when the user closes it with no action taken). Set by the mic
+	// recovery banner's own action handlers so onDismiss knows whether to
+	// leave things alone, re-open the banner (failed retry), or fall through
+	// to the decline-consent path (a genuine dismiss with no action taken).
+	const micRecoveryOutcomeRef = useRef<'resolved' | 'retry_failed' | null>(null)
 	const candidateOptedOutRef = useRef(false)
 	const lastInterviewerFlushUrlRef = useRef<string | null>(null)
 	const lastInterviewerFlushPathRef = useRef<string | null>(null)
@@ -1546,13 +1552,16 @@ export function InterviewerPageInner({
 		}
 	}, [isRemoteMode, lobbyId, previewMode, signalNoInterviewerAudio, flushInterviewerAudio])
 
-	// Mic-loss recovery, part 2: when the mic comes back on its own (Chrome's
-	// site-settings toggle, an OS-level permission change, anything other than
-	// clicking "Allow mic" in the banner above — that path already restarts
-	// recording itself), restart recording here too. Without this, the
-	// permission state silently flips back to 'granted', the banner
-	// disappears, but no new MediaRecorder is ever created — recording never
-	// actually resumes and the browser's mic-in-use indicator never returns.
+	// Mic-loss recovery, part 2: this is the ONLY place recording actually
+	// restarts. It fires whenever interviewerMicPermState becomes 'granted'
+	// while the banner is up for a permission reason -- whether that's the
+	// mic coming back on its own (Chrome's site-settings toggle, an OS-level
+	// change) or the "Allow mic" button's own re-check confirming a real
+	// grant. Never restart eagerly on click alone, since at click time we
+	// don't yet know whether the browser will actually grant it --
+	// bannerFromPermissionRef stays true (and the banner stays up) until this
+	// effect sees a real grant, so a failed retry correctly leaves the banner
+	// in place instead of silently giving up.
 	useEffect(() => {
 		if (!isRemoteMode || previewMode) return
 		if (currentView === 'success' || interviewerUploadState !== 'idle') return
@@ -2509,12 +2518,24 @@ if (previewMode && !forcePreview) {
 						body="Your mic just cut out, so your side stopped recording. Turn it back on and tap Allow mic to keep going, or skip and we'll just record the candidate. Either way the case keeps running."
 						actionLabel="Allow mic"
 						onAction={async () => {
+							// Don't assume success: re-check permission first. If the browser
+							// still reports it as denied (e.g. the user clicked this before
+							// actually flipping the OS/site toggle), the retry failed -- tell
+							// onDismiss (which LobbyOverlay always fires next) to re-open the
+							// banner instead of treating this as giving up.
+							const state = await interviewerMicRetry()
+							if (state !== 'granted') {
+								micRecoveryOutcomeRef.current = 'retry_failed'
+								return
+							}
+							micRecoveryOutcomeRef.current = 'resolved'
 							bannerFromPermissionRef.current = false
 							setInterviewerMicBannerVisible(false)
 							await startInterviewerRecording()
 						}}
 						secondaryActionLabel="Skip recording"
 						onSecondaryAction={async () => {
+							micRecoveryOutcomeRef.current = 'resolved'
 							bannerFromPermissionRef.current = false
 							setInterviewerMicBannerVisible(false)
 							try { if (lobbyId) sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
@@ -2522,10 +2543,21 @@ if (previewMode && !forcePreview) {
 							await signalNoInterviewerAudio()
 						}}
 						onDismiss={async () => {
-							// Guard: onSecondaryAction already ran if the user clicked "Skip recording",
-							// and LobbyOverlay always fires dismiss() after any action. Return early
-							// so we don't double-signal signalNoInterviewerAudio.
-							if (interviewerDeclinedConsentRef.current) return
+							// LobbyOverlay always fires dismiss() after ANY action button click,
+							// not just a true "closed with no choice made". Three cases:
+							//  - 'resolved': Allow mic succeeded, or Skip recording ran. Nothing
+							//    more to do here.
+							//  - 'retry_failed': Allow mic was clicked but permission is still
+							//    denied. Re-open the banner instead of silently giving up.
+							//  - unset (real dismiss, e.g. clicking the X): fall through to the
+							//    decline-consent fallback below, same as before.
+							const outcome = micRecoveryOutcomeRef.current
+							micRecoveryOutcomeRef.current = null
+							if (outcome === 'resolved') return
+							if (outcome === 'retry_failed') {
+								setInterviewerMicBannerVisible(true)
+								return
+							}
 							bannerFromPermissionRef.current = false
 							setInterviewerMicBannerVisible(false)
 							try { if (lobbyId) sessionStorage.setItem(`compendium-interviewer-noconsent-${lobbyId}`, '1') } catch { /* quota */ }
