@@ -1501,6 +1501,24 @@ export function InterviewerPageInner({
 		}
 	}, [isRemoteMode, lobbyId, signalNoInterviewerAudio])
 
+	// Disabling the mic via the browser's site-permission toggle does NOT
+	// reliably fire recorder.onerror (see the comment where interviewerMicPermState
+	// is set up) -- so interviewerRecorderRef can be left pointing at a stale
+	// MediaRecorder that still reports state:'recording' while its underlying
+	// track is actually dead/muted. Called only from the two mic-RECOVERY paths
+	// below, which already know independently (via the permission-loss signal)
+	// that the old recorder is done for -- so they don't need to trust its
+	// self-reported state before discarding it and letting a fresh one start.
+	const discardStaleInterviewerRecorder = useCallback(() => {
+		if (interviewerFlushTimerRef.current) {
+			clearInterval(interviewerFlushTimerRef.current)
+			interviewerFlushTimerRef.current = null
+		}
+		interviewerRecorderRef.current = null
+		interviewerMicStreamRef.current?.getTracks().forEach((t) => t.stop())
+		interviewerMicStreamRef.current = null
+	}, [])
+
 	const startInterviewerRecording = useCallback(async () => {
 		if (!isRemoteMode || !lobbyId || previewMode) return
 		// Already recording (e.g. the manual "Allow mic" click and the
@@ -1577,9 +1595,10 @@ export function InterviewerPageInner({
 		if (interviewerMicPermState === 'granted' && bannerFromPermissionRef.current) {
 			bannerFromPermissionRef.current = false
 			setInterviewerMicBannerVisible(false)
+			discardStaleInterviewerRecorder()
 			void startInterviewerRecording()
 		}
-	}, [interviewerMicPermState, isRemoteMode, previewMode, currentView, interviewerUploadState, startInterviewerRecording])
+	}, [interviewerMicPermState, isRemoteMode, previewMode, currentView, interviewerUploadState, startInterviewerRecording, discardStaleInterviewerRecorder])
 
 	const stopInterviewerRecordingAndUpload = useCallback(async () => {
 		if (recordingFinalizedRef.current) return  // pagehide beacon already fired
@@ -2553,6 +2572,7 @@ if (previewMode && !forcePreview) {
 								}
 								bannerFromPermissionRef.current = false
 								setInterviewerMicBannerVisible(false)
+								discardStaleInterviewerRecorder()
 								await startInterviewerRecording()
 							})()
 						}}
