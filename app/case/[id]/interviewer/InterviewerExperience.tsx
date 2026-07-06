@@ -1306,9 +1306,10 @@ export function InterviewerPageInner({
 	}, [isRemoteMode, lobbyId, previewMode])
 
 	// ── Remote mode: interviewer presence heartbeat ──────────────────────────────
-	// Sends a heartbeat to Firestore every 10s so the candidate's workspace can
-	// detect if the interviewer disconnects (B4). Also marks inactive on pagehide.
-	// Local mode uses compendium-interviewer-window localStorage — unchanged.
+	// Sends a heartbeat to Firestore every 2s so the candidate's workspace can
+	// detect if the interviewer disconnects (B4) within a ~5s buffer. Also marks
+	// inactive on pagehide. Local mode uses compendium-interviewer-window
+	// localStorage — unchanged.
 	useEffect(() => {
 		if (!isRemoteMode || !lobbyId || previewMode) return
 
@@ -1325,9 +1326,9 @@ export function InterviewerPageInner({
 		sendHeartbeat(true)
 		const interval = setInterval(() => {
 			sendHeartbeat(true)
-			// Keep token fresh for the pagehide beacon (tokens last 1 h; 10 s refresh is fine)
+			// Keep token fresh for the pagehide beacon (tokens last 1 h; frequent refresh is fine)
 			auth.currentUser?.getIdToken(false).then((t) => { cachedAuthTokenRef.current = t }).catch(() => {})
-		}, 10_000)
+		}, 2_000)
 
 		// On page close: mark presence inactive and, if recording is still live,
 		// fire a keepalive beacon to finalize the last-flushed interviewer audio.

@@ -555,22 +555,32 @@ const clearAllFilters = () => {
     // Local mode: localStorage storage event (same device).
     // Remote mode: Firestore presence field (cross-device).
     localStorage.setItem('compendium-interviewer-browsing', JSON.stringify({ lobbyId, ts: Date.now() }))
+    let heartbeatInterval: ReturnType<typeof setInterval> | null = null
     if (sessionMode !== 'local') {
-      void (async () => {
-        try {
-          const { auth } = await import('@/lib/firebase/config')
-          const token = await auth.currentUser?.getIdToken()
-          if (!token) return
-          await fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ role: 'interviewer', active: true, interviewerBrowsing: true }),
-          })
-        } catch { /* best-effort */ }
-      })()
+      const sendPresence = (browsing: boolean) => {
+        void (async () => {
+          try {
+            const { auth } = await import('@/lib/firebase/config')
+            const token = await auth.currentUser?.getIdToken()
+            if (!token) return
+            await fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ role: 'interviewer', active: true, interviewerBrowsing: browsing }),
+            })
+          } catch { /* best-effort */ }
+        })()
+      }
+      sendPresence(true)
+      // Periodic heartbeat while browsing the case library (covers 'replacing'
+      // in the candidate's interviewer-disconnect detection) — without this,
+      // interviewerPresence.lastSeenAt only updates once on mount and never
+      // again, so the candidate would see the interviewer as instantly stale.
+      heartbeatInterval = setInterval(() => sendPresence(true), 2_000)
     }
     return () => {
       localStorage.removeItem('compendium-interviewer-browsing')
+      if (heartbeatInterval) clearInterval(heartbeatInterval)
       if (sessionMode !== 'local') {
         void (async () => {
           try {

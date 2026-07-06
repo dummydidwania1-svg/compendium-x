@@ -1071,9 +1071,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   useEffect(() => { preferredRecordingModeRef.current = preferredRecordingMode }, [preferredRecordingMode])
 
   // B4 (remote): staleness threshold for interviewerPresence.
-  // If lastSeenAt is older than 25s (2.5× the 10s heartbeat), the interviewer
+  // If lastSeenAt is older than 5s (2.5× the 2s heartbeat), the interviewer
   // is treated as disconnected. Only used in remote mode.
-  const PRESENCE_STALE_MS = 25_000
+  const PRESENCE_STALE_MS = 5_000
   // Latest interviewerPresence payload, cached so a periodic timer (not just
   // each incoming Firestore snapshot) can re-check staleness.
   const interviewerPresenceRef = useRef<{ active?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined>(undefined)
@@ -1304,10 +1304,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
     window.addEventListener('storage', onStorage)
 
-    // Periodic re-check so the overlay fires promptly (within a few seconds)
-    // even when no new Firestore snapshot happens to arrive right after the
-    // interviewer actually goes stale.
-    const staleCheckTimer = setInterval(checkInterviewerPresenceStale, 2000)
+    // Periodic re-check so the overlay fires within ~1s of crossing the 5s
+    // staleness mark, even when no new Firestore snapshot happens to arrive
+    // right after the interviewer actually goes stale.
+    const staleCheckTimer = setInterval(checkInterviewerPresenceStale, 1000)
 
     return () => {
       clearPoll()
