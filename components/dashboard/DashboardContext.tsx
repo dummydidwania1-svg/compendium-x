@@ -61,7 +61,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       setAuthResolved(true)
-      setUser(nextUser)
+      // Anonymous users (silently provisioned for guest interviewers on shared
+      // invite links) must never see the real dashboard — treat them exactly
+      // like a signed-out visitor so isPreview/loading/records all fall back
+      // to the preview state automatically.
+      setUser(nextUser?.isAnonymous ? null : nextUser)
     })
 
     return () => unsubscribe()

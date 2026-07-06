@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useRef, ReactNode, Component
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getDoc, onSnapshot } from 'firebase/firestore'
+import { signOut } from 'firebase/auth'
 import { auth, storage, waitForAuthUser } from '@/lib/firebase/config'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { caseDoc, sessionDoc } from '@/lib/firebase/collections'
@@ -864,13 +865,27 @@ export function InterviewerPageInner({
 	// No localStorage sharing — all cross-device coordination goes through Firestore.
 	const isRemoteMode = !isLocalMode
 
+	// Guests who open a remote-mode interviewer link without ever signing up
+	// get a silent anonymous Firebase user (see signInAnonymouslyIfNeeded) so
+	// they can call authenticated API routes. That anonymous session must never
+	// survive the trip back to the homepage — otherwise a never-signed-in
+	// visitor lands there as a "signed in" user with dashboard/practice access.
+	// A visitor who WAS already signed in (real account) keeps that session.
+	const goHomeAfterSession = useCallback(() => {
+		if (auth.currentUser?.isAnonymous) {
+			void signOut(auth).finally(() => router.push('/'))
+			return
+		}
+		router.push('/')
+	}, [router])
+
 	// When overlay is in success state and upload is done, start the 3s countdown.
 	// Local/split-screen: window.close() works (tab opened by script) — fires at 0.
 	// Remote: redirect to homepage instead.
 	useEffect(() => {
 		if (!overlaySuccess) return
 		if (interviewerUploadState === 'uploading') return
-		if (isRemoteMode) { router.push('/'); return }
+		if (isRemoteMode) { goHomeAfterSession(); return }
 		setOverlayAutoClose(3)
 		const iv = setInterval(() => {
 			setOverlayAutoClose(prev => {
@@ -884,7 +899,7 @@ export function InterviewerPageInner({
 			})
 		}, 1000)
 		return () => clearInterval(iv)
-	}, [overlaySuccess, interviewerUploadState, isRemoteMode])
+	}, [overlaySuccess, interviewerUploadState, isRemoteMode, goHomeAfterSession])
 
 	const [micGuardShowing, setMicGuardShowing] = useState(false)
 
@@ -2357,7 +2372,7 @@ if (previewMode && !forcePreview) {
 				{isRemoteMode && candidateAbandoned && !micGuardShowing && !overlaySuccess && (
 					<MandatoryTimedOverlay
 						durationMs={2500}
-						onExpire={() => router.push('/')}
+						onExpire={() => goHomeAfterSession()}
 						title="Your candidate stepped out"
 						body="They cancelled the session on their end, so we're taking you back to the homepage."
 					/>
@@ -2372,13 +2387,13 @@ if (previewMode && !forcePreview) {
 				{isRemoteMode && candidateEndedSession && !micGuardShowing && !overlaySuccess && !candidateAbandoned && (
 					<MandatoryTimedOverlay
 						durationMs={60000}
-						onExpire={() => { setCandidateEndedSession(false); void stopInterviewerRecordingAndUpload(); router.push('/') }}
+						onExpire={() => { setCandidateEndedSession(false); void stopInterviewerRecordingAndUpload(); goHomeAfterSession() }}
 						title="Your candidate wrapped up"
 						body="They ended the session on their side. You can rate them now, or just close things out."
 						primaryLabel="Evaluate the candidate"
 						onPrimary={() => { setCandidateEndedSession(false); setShowEvalOverlay(true); setEditingOverlay(false) }}
 						secondaryLabel="Close the session"
-						onSecondary={() => { setCandidateEndedSession(false); void stopInterviewerRecordingAndUpload(); router.push('/') }}
+						onSecondary={() => { setCandidateEndedSession(false); void stopInterviewerRecordingAndUpload(); goHomeAfterSession() }}
 					/>
 				)}
 

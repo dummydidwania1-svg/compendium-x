@@ -37,7 +37,10 @@ export default function PracticeModeSelection() {
   useEffect(() => {
     const checkUser = async () => {
       const user = await waitForAuthUser()
-      if (!user) {
+      // Anonymous users (silently provisioned for guest interviewers on
+      // shared invite links) must never reach practice mode — only real
+      // signed-up accounts.
+      if (!user || user.isAnonymous) {
         router.push('/login?redirect=/practice')
         return
       }

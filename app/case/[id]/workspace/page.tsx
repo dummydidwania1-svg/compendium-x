@@ -1439,28 +1439,19 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
 
     // pagehide fires more reliably than beforeunload when the tab is actually
-    // closing (Chrome may defer/drop beforeunload writes on real close).
-    // We use it as a belt-and-suspenders signal for the interviewer popup.
+    // closing (Chrome may defer/drop beforeunload writes on real close). Used
+    // here only to preserve whatever audio was already recorded — see below.
     const onPageHide = () => {
       writeAbandonedSignal()
-      // E13 — Remote: fire /abandon so the interviewer's onSnapshot reacts and
-      // the 24h Cloud Function fallback engages. keepalive: true ensures the
-      // fetch survives page unload even if the page context is torn down first.
-      // Skip if we already ended the session cleanly (endSessionInitiatedRef).
-      if (preferredRecordingModeRef.current !== 'local' && lobbyId && !endSessionInitiatedRef.current) {
-        // Use the cached token (primed at recording start, refreshed on each flush)
-        // rather than getIdToken() — an async Promise chain won't resolve during
-        // page teardown, so the fetch would never fire.
-        const abandonToken = cachedCandidateTokenRef.current
-        if (abandonToken) {
-          void fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/abandon`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${abandonToken}` },
-            body: '{}',
-            keepalive: true,
-          })
-        }
-      }
+      // Tab-close/crash/navigate-away must NOT be treated as "Drop session" —
+      // that's a distinct, explicit user action (the Drop session button on
+      // the End Session prompt), which already calls /abandon itself via
+      // handleEndSessionDrop. Just closing or killing the tab should leave the
+      // session status alone; the interviewer instead learns about it (softly,
+      // non-destructively) through the candidatePresence-staleness notice on
+      // their own screen. Previously this beacon also fired /abandon here,
+      // which incorrectly triggered the full "candidate dropped the session"
+      // flow (redirect home) just from a tab close.
       // Candidate audio beacon: if at least one periodic flush succeeded but the
       // final upload was cancelled by the tab close, register the last flush URL
       // as the final recording so transcription still fires.
