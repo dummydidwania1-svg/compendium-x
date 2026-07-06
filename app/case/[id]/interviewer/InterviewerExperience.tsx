@@ -937,6 +937,9 @@ export function InterviewerPageInner({
 	// Mid-session mic-LOSS recovery (manual block). Raises the recovery banner when
 	// a previously-granted mic flips to 'denied'. Hard-suppressed when the interviewer
 	// declined at the gate or the candidate opted out, and once upload has begun.
+	// The "mic came back on its own" half of this (restarting recording, not just
+	// hiding the banner) lives further down, right after startInterviewerRecording
+	// is declared — see that effect for why it can't live here.
 	useEffect(() => {
 		if (!isRemoteMode || previewMode) return
 		if (currentView === 'success' || interviewerUploadState !== 'idle') return
@@ -945,10 +948,6 @@ export function InterviewerPageInner({
 			bannerFromPermissionRef.current = true
 			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setInterviewerMicBannerVisible(true)
-		} else if (interviewerMicPermState === 'granted' && bannerFromPermissionRef.current) {
-			bannerFromPermissionRef.current = false
-			// eslint-disable-next-line react-hooks/set-state-in-effect
-			setInterviewerMicBannerVisible(false)
 		}
 	}, [interviewerMicPermState, isRemoteMode, previewMode, currentView, interviewerUploadState])
 
@@ -1490,6 +1489,10 @@ export function InterviewerPageInner({
 
 	const startInterviewerRecording = useCallback(async () => {
 		if (!isRemoteMode || !lobbyId || previewMode) return
+		// Already recording (e.g. the manual "Allow mic" click and the
+		// mic-came-back-on-its-own effect both firing around the same time) --
+		// don't spin up a second concurrent MediaRecorder.
+		if (interviewerRecorderRef.current && interviewerRecorderRef.current.state !== 'inactive') return
 		try {
 			await auth.currentUser?.getIdToken(true).catch(() => {})
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
@@ -1542,6 +1545,24 @@ export function InterviewerPageInner({
 			void signalNoInterviewerAudio()
 		}
 	}, [isRemoteMode, lobbyId, previewMode, signalNoInterviewerAudio, flushInterviewerAudio])
+
+	// Mic-loss recovery, part 2: when the mic comes back on its own (Chrome's
+	// site-settings toggle, an OS-level permission change, anything other than
+	// clicking "Allow mic" in the banner above — that path already restarts
+	// recording itself), restart recording here too. Without this, the
+	// permission state silently flips back to 'granted', the banner
+	// disappears, but no new MediaRecorder is ever created — recording never
+	// actually resumes and the browser's mic-in-use indicator never returns.
+	useEffect(() => {
+		if (!isRemoteMode || previewMode) return
+		if (currentView === 'success' || interviewerUploadState !== 'idle') return
+		if (interviewerDeclinedConsentRef.current || candidateOptedOutRef.current) return
+		if (interviewerMicPermState === 'granted' && bannerFromPermissionRef.current) {
+			bannerFromPermissionRef.current = false
+			setInterviewerMicBannerVisible(false)
+			void startInterviewerRecording()
+		}
+	}, [interviewerMicPermState, isRemoteMode, previewMode, currentView, interviewerUploadState, startInterviewerRecording])
 
 	const stopInterviewerRecordingAndUpload = useCallback(async () => {
 		if (recordingFinalizedRef.current) return  // pagehide beacon already fired
