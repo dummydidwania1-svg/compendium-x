@@ -1369,14 +1369,19 @@ export function InterviewerPageInner({
 					keepalive: true,
 				}).catch(() => {})
 			} else if (interviewerRecordingStartedRef.current) {
-				// Recording started but no flush ever succeeded — signal no audio via presence
+				// Recording started but no flush ever succeeded — signal no audio via
+				// presence. active:false here (not true) since the tab is genuinely
+				// closing — this used to say active:true, which stomped the
+				// active:false + fresh lastSeenAt from sendHeartbeat(false) just above,
+				// making the candidate's window-closed detection see a live,
+				// just-touched heartbeat instead of a disconnect.
 				fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${cachedAuthTokenRef.current}`,
 					},
-					body: JSON.stringify({ role: 'interviewer', active: true, interviewerAudioCaptured: false }),
+					body: JSON.stringify({ role: 'interviewer', active: false, interviewerAudioCaptured: false }),
 					keepalive: true,
 				}).catch(() => {})
 			}
