@@ -747,7 +747,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
 
       <div
         className="ccx-profile-panel relative flex w-full max-w-[680px] overflow-hidden bg-[#fff8f0]"
-        style={{ height: 'min(462px, calc(100vh - 64px))', fontFamily: "'Work Sans', sans-serif" }}
+        style={{ height: 'min(478px, calc(100vh - 64px))', fontFamily: "'Work Sans', sans-serif" }}
       >
         <button
           type="button"
@@ -871,7 +871,10 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
 
                     {showAvatarPicker ? (
                       <div className="ccx-picker mt-3">
-                        <div className="grid grid-cols-9 gap-2">
+                        {/* 10 tiles (monogram + 9 presets) in 10 columns — a
+                            single row, so opening the picker never wraps to an
+                            orphan second row or forces the panel to scroll. */}
+                        <div className="grid grid-cols-10 gap-2">
                           {/* Monogram tile — explicit "no photo" choice */}
                           <button
                             type="button"
