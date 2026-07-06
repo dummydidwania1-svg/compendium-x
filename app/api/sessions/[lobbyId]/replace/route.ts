@@ -43,12 +43,20 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         )
       }
 
+      // Remember what's being replaced so the interviewer's welcome link can
+      // resume correctly into replace mode ("Jump back into X") even if their
+      // tab closes before/during the navigation to the case picker.
+      const prevCaseId = typeof data.caseId === 'string' ? data.caseId : undefined
+      const prevCaseName = typeof data.caseName === 'string' ? data.caseName : undefined
+
       tx.set(
         ref,
         {
           status: 'replacing',
           caseId: FieldValue.delete(),
           caseName: FieldValue.delete(),
+          ...(prevCaseId ? { prevCaseId } : {}),
+          ...(prevCaseName ? { prevCaseName } : {}),
           replacingAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         },

@@ -204,6 +204,14 @@ export const sessionSchema = z
     status: sessionStatus,
     sessionMode: sessionMode,
     caseId: optionalString,
+    /**
+     * The case that was in progress right before a "replace" was started.
+     * Set by /replace, cleared by /select-case once a new case is confirmed.
+     * Lets the interviewer's welcome link resume correctly into replace mode
+     * ("Jump back into X") even after their tab closed mid-swap.
+     */
+    prevCaseId: optionalString,
+    prevCaseName: optionalString,
 
     createdAt: timestamp.optional(),
     updatedAt: timestamp.optional(),

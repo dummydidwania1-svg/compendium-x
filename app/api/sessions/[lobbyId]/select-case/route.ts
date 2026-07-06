@@ -50,6 +50,10 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
           interviewerId: caller.uid,
           interviewerEmail: caller.email,
           selectedAt: FieldValue.serverTimestamp(),
+          // A new case is now confirmed — any remembered "previous case" from
+          // a replace is resolved, so clear it.
+          prevCaseId: FieldValue.delete(),
+          prevCaseName: FieldValue.delete(),
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true },

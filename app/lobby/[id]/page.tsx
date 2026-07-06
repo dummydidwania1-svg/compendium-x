@@ -27,6 +27,8 @@ type SessionState = {
   expiresAt?: { toDate: () => Date } | Date
   interviewerBrowsing?: boolean
   interviewerAudioCaptured?: boolean
+  prevCaseId?: string
+  prevCaseName?: string
 }
 
 type PopupWindowHost = Window & {
@@ -948,6 +950,12 @@ function InterviewerLobby({
   const [showCloseWarning, setShowCloseWarning] = useState(false)
   const closeAttemptRef = useRef(false)
   const isLocalMode = requestedSessionMode === 'local'
+  // Welcome-link auto-resume: this is the ONE link the interviewer ever gets,
+  // shared before the session even starts. If their tab closes/crashes at any
+  // later point, reopening this same link should take them straight back to
+  // wherever they left off, instead of always showing the generic welcome
+  // screen. Checked once on mount, before the welcome UI renders.
+  const [checkingResume, setCheckingResume] = useState(true)
   // Remote mode: show the full-screen mic gate before the welcome lobby.
   // Gate is skipped if mic was already granted on this device or the session
   // key indicates it was already shown and resolved.
@@ -1016,6 +1024,57 @@ function InterviewerLobby({
     }
   }, [])
 
+  // Welcome-link auto-resume: one-shot read of the session doc, before the
+  // welcome UI renders, so a returning interviewer lands exactly where they
+  // left off instead of always seeing "Welcome, Interviewer" again.
+  useEffect(() => {
+    let cancelled = false
+    const resume = async () => {
+      try {
+        const snap = await getDoc(sessionDoc(lobbyId))
+        if (cancelled) return
+        if (!snap.exists()) {
+          setCheckingResume(false)
+          return
+        }
+        const data = snap.data() as SessionState
+        const mode = data.sessionMode === 'local' ? 'local' : 'remote'
+
+        if (data.status === 'completed' || data.status === 'abandoned') {
+          router.replace('/')
+          return
+        }
+        if (data.status === 'in_progress' && data.caseId) {
+          router.replace(`/case/${data.caseId}/interviewer?lobby=${lobbyId}&role=interviewer&sessionMode=${mode}`)
+          return
+        }
+        if (data.status === 'replacing') {
+          const params = new URLSearchParams({ mode: 'select', lobby: lobbyId, sessionMode: mode })
+          if (data.prevCaseId) params.set('prevCaseId', data.prevCaseId)
+          if (data.prevCaseName) params.set('prevCaseName', data.prevCaseName)
+          router.replace(`/repository?${params.toString()}`)
+          return
+        }
+        if (data.status === 'waiting' && data.interviewerBrowsing === true) {
+          // Last seen on the case picker (tab closed before that page's own
+          // cleanup could clear this flag) — go straight back there.
+          router.replace(`/repository?mode=select&lobby=${lobbyId}&sessionMode=${mode}`)
+          return
+        }
+        // Fresh session, or plain 'waiting' with no browsing history — show
+        // the normal welcome screen exactly as before.
+        setCheckingResume(false)
+      } catch {
+        // Best-effort — if the check fails for any reason, fall back to the
+        // normal welcome screen rather than leaving the interviewer stuck.
+        if (!cancelled) setCheckingResume(false)
+      }
+    }
+    void resume()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lobbyId])
+
   useEffect(() => {
     // Don't start the handoff timer while the mic gate is covering the screen.
     if (!handoffVisible || micGateVisible) return
@@ -1045,6 +1104,10 @@ function InterviewerLobby({
     const m = Math.floor(s / 60)
     const sec = s % 60
     return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  if (checkingResume) {
+    return <PlatformLoader message="Getting your space ready" />
   }
 
   return (

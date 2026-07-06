@@ -55,6 +55,8 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
           interviewerEmail: FieldValue.delete(),
           selectedAt: FieldValue.delete(),
           replacingAt: FieldValue.delete(),
+          prevCaseId: FieldValue.delete(),
+          prevCaseName: FieldValue.delete(),
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true },
