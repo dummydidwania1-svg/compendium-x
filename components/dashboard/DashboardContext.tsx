@@ -99,11 +99,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         doc(db, 'profiles', user.uid),
         (snapshot) => {
           const data = snapshot.data()
-          // The account was soft-deleted (Danger Zone > Deactivate account)
-          // while this session was still open. Sign out immediately rather
-          // than waiting for the user's ID token to expire — the Firestore
-          // security rules already block further reads/writes for this
-          // profile, so this just gets the client out of a now-locked state.
+          // The account was soft-deleted (pendingDeletion flag set, e.g. via
+          // support) while this session was still open. Sign out immediately
+          // rather than waiting for the user's ID token to expire — the
+          // Firestore security rules already block further reads/writes for
+          // this profile, so this just gets the client out of a now-locked state.
           if (data?.pendingDeletion === true) {
             void signOut(auth)
             return

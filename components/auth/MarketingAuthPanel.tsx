@@ -5,15 +5,17 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
 } from 'firebase/auth'
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { auth, db, missingFirebaseClientConfig } from '@/lib/firebase/config'
 import { getPostAuthRoute } from '@/lib/auth/postAuth'
 import { authenticateWithPasswordFallback } from '@/lib/auth/passwordFallback'
+import { requestPasswordResetFallback } from '@/lib/auth/passwordResetFallback'
 
 export type AuthMode = 'signin' | 'signup'
 
@@ -187,6 +189,22 @@ export default function MarketingAuthPanel({
   const [verificationSent, setVerificationSent] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState('')
 
+  // Google sign-in only collects a display name from the OAuth profile — college
+  // still needs to be collected. Rather than routing to the separate /onboarding
+  // page, we swap this same panel's content in place so no new screen appears.
+  const [needsCollege, setNeedsCollege] = useState(false)
+  const [collegeUid, setCollegeUid] = useState<string | null>(null)
+  const [collegeValue, setCollegeValue] = useState('')
+  const [collegeLoading, setCollegeLoading] = useState(false)
+  const [collegeError, setCollegeError] = useState('')
+
+  // Forgot password — same panel, swapped content, same as the college step above.
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetSent, setResetSent] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetError, setResetError] = useState('')
+
   const isSignUp = mode === 'signup'
 
   const shouldPreferFallback = () => {
@@ -212,6 +230,7 @@ export default function MarketingAuthPanel({
       return 'Direct Firebase auth is being blocked in this browser. A fallback path should have been attempted automatically. If this message still appears, restart the dev server and retry.'
     }
     if (error.message.includes('auth/invalid-credential')) return 'Invalid email or password.'
+    if (error.message.includes('auth/invalid-email')) return 'Enter a valid email.'
     if (error.message.includes('auth/user-not-found')) return 'No account found for this email.'
     if (error.message.includes('auth/user-disabled')) return 'This account has been deactivated.'
     if (error.message.includes('auth/email-already-in-use')) {
@@ -295,6 +314,23 @@ export default function MarketingAuthPanel({
         }
       }
 
+      try {
+        const profileSnapshot = await getDoc(doc(db, 'profiles', user.uid))
+        const existingUniversity = profileSnapshot.exists() ? profileSnapshot.data()?.university : null
+        const hasUniversity =
+          typeof existingUniversity === 'string' && existingUniversity.trim().length > 0
+
+        if (!hasUniversity) {
+          setCollegeUid(user.uid)
+          setNeedsCollege(true)
+          setGoogleLoading(false)
+          return
+        }
+      } catch {
+        // If this check fails, finishAuth's own getPostAuthRoute call below
+        // still safely falls back to /onboarding if college is missing.
+      }
+
       await finishAuth(user.uid, true)
     } catch (error) {
       // User dismissed the popup — no message needed
@@ -305,6 +341,99 @@ export default function MarketingAuthPanel({
       setMessageTone('error')
     } finally {
       setGoogleLoading(false)
+    }
+  }
+
+  const handleCollegeSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!collegeUid) return
+    const trimmed = collegeValue.trim()
+    if (!trimmed) {
+      setCollegeError('Enter your university or college.')
+      return
+    }
+
+    setCollegeLoading(true)
+    setCollegeError('')
+    try {
+      await setDoc(
+        doc(db, 'profiles', collegeUid),
+        { university: trimmed, updatedAt: serverTimestamp() },
+        { merge: true }
+      )
+      onSuccess?.()
+      if (currentPath && redirectTarget === currentPath) {
+        router.refresh()
+      } else {
+        router.push(redirectTarget)
+        router.refresh()
+      }
+    } catch (error) {
+      setCollegeError(
+        error instanceof Error ? error.message : 'Unable to save your college right now.'
+      )
+    } finally {
+      setCollegeLoading(false)
+    }
+  }
+
+  const openForgotPassword = () => {
+    setResetEmail(email.trim())
+    setResetError('')
+    setResetSent(false)
+    setShowForgotPassword(true)
+  }
+
+  const closeForgotPassword = () => {
+    setShowForgotPassword(false)
+    setResetSent(false)
+    setResetError('')
+  }
+
+  const handleForgotPasswordSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    const trimmedEmail = resetEmail.trim()
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setResetError('Enter a valid email.')
+      return
+    }
+
+    if (missingFirebaseClientConfig.length > 0) {
+      setResetError(
+        'Firebase web config is missing in this client build. Restart the dev server after updating .env.local and try again.'
+      )
+      return
+    }
+
+    setResetLoading(true)
+    setResetError('')
+
+    try {
+      if (shouldPreferFallback()) {
+        await requestPasswordResetFallback(trimmedEmail)
+      } else {
+        try {
+          await sendPasswordResetEmail(auth, trimmedEmail)
+        } catch (error) {
+          if (error instanceof Error && error.message.includes('auth/network-request-failed')) {
+            setPreferFallback(true)
+            await requestPasswordResetFallback(trimmedEmail)
+          } else {
+            throw error
+          }
+        }
+      }
+      setResetSent(true)
+    } catch (error) {
+      // Treat "no account for this email" as success too — showing the same
+      // generic confirmation either way avoids leaking which emails are registered.
+      if (error instanceof Error && error.message.includes('auth/user-not-found')) {
+        setResetSent(true)
+        return
+      }
+      setResetError(toFriendlyMessage(error, 'Unable to send reset email. Try again.'))
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -439,6 +568,294 @@ export default function MarketingAuthPanel({
     } finally {
       setLoading(false)
     }
+  }
+
+  // --- Forgot password (same panel, swapped content) ---
+  if (showForgotPassword) {
+    if (resetSent) {
+      return (
+        <div className="relative" style={PANEL_STYLE}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 text-[#73796f] text-2xl leading-none bg-transparent border-none cursor-pointer"
+            aria-label="Close"
+          >
+            &times;
+          </button>
+
+          <h1
+            style={{
+              fontFamily: "'Newsreader', serif",
+              fontSize: '1.75rem',
+              color: '#453a2a',
+              marginBottom: '12px',
+            }}
+          >
+            Check your inbox
+          </h1>
+
+          <p
+            style={{
+              fontFamily: "'Work Sans', sans-serif",
+              fontSize: '14px',
+              color: '#73796f',
+              lineHeight: 1.6,
+              marginBottom: '28px',
+            }}
+          >
+            If an account exists for{' '}
+            <strong style={{ color: '#453a2a' }}>{resetEmail.trim()}</strong>, we&apos;ve sent a
+            link to reset the password. Click it, choose a new password, then come back and sign in.
+          </p>
+
+          <button
+            type="button"
+            onClick={closeForgotPassword}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: '#3D5A35',
+              color: '#fff',
+              fontFamily: "'Work Sans', sans-serif",
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+          >
+            Back to Sign In
+          </button>
+        </div>
+      )
+    }
+
+    return (
+      <div className="relative" style={PANEL_STYLE}>
+        <style>{PANEL_STYLES}</style>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 text-[#73796f] text-2xl leading-none bg-transparent border-none cursor-pointer"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+
+        <h1
+          style={{
+            fontFamily: "'Newsreader', serif",
+            fontSize: '1.75rem',
+            color: '#453a2a',
+            marginBottom: '12px',
+          }}
+        >
+          Reset your password
+        </h1>
+
+        <p
+          style={{
+            fontFamily: "'Work Sans', sans-serif",
+            fontSize: '14px',
+            color: '#73796f',
+            lineHeight: 1.6,
+            marginBottom: '20px',
+          }}
+        >
+          Enter your email and we&apos;ll send you a link to reset your password.
+        </p>
+
+        <form
+          onSubmit={handleForgotPasswordSubmit}
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          className="marketing-auth-form"
+        >
+          <div className="marketing-auth-input-wrap" style={FIELD_WRAPPER_STYLE}>
+            <input
+              className="marketing-auth-field"
+              type="text"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder="Email"
+              value={resetEmail}
+              onChange={(event) => setResetEmail(event.target.value)}
+              autoComplete="off"
+              autoFocus
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              style={INPUT_STYLE}
+            />
+          </div>
+
+          {resetError ? (
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '12px 14px',
+                border: '1px solid rgba(146, 64, 14, 0.18)',
+                background: 'rgba(146, 64, 14, 0.05)',
+                color: '#92400e',
+                fontSize: '13px',
+                lineHeight: 1.5,
+              }}
+            >
+              {resetError}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={resetLoading}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: '#3D5A35',
+              color: '#fff',
+              fontFamily: "'Work Sans', sans-serif",
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              border: 'none',
+              cursor: resetLoading ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
+              opacity: resetLoading ? 0.7 : 1,
+            }}
+          >
+            {resetLoading ? 'Sending...' : 'Send Reset Link'}
+          </button>
+        </form>
+
+        <div
+          style={{
+            marginTop: '16px',
+            textAlign: 'center',
+            fontFamily: "'Work Sans', sans-serif",
+            fontSize: '13px',
+            color: '#73796f',
+          }}
+        >
+          <button
+            type="button"
+            onClick={closeForgotPassword}
+            style={{
+              color: '#3D5A35',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              background: 'none',
+              border: 'none',
+              fontFamily: "'Work Sans', sans-serif",
+              fontSize: '13px',
+            }}
+          >
+            Back to Sign In
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // --- College step (Google sign-in only; same panel, no separate screen) ---
+  if (needsCollege) {
+    return (
+      <div className="relative" style={PANEL_STYLE}>
+        <style>{PANEL_STYLES}</style>
+
+        <h1
+          style={{
+            fontFamily: "'Newsreader', serif",
+            fontSize: '1.75rem',
+            color: '#453a2a',
+            marginBottom: '12px',
+          }}
+        >
+          One last step
+        </h1>
+
+        <p
+          style={{
+            fontFamily: "'Work Sans', sans-serif",
+            fontSize: '14px',
+            color: '#73796f',
+            lineHeight: 1.6,
+            marginBottom: '20px',
+          }}
+        >
+          Add your university or college so your dashboard and feedback history stay personalized.
+        </p>
+
+        <form
+          onSubmit={handleCollegeSubmit}
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          className="marketing-auth-form"
+        >
+          <div className="marketing-auth-input-wrap" style={FIELD_WRAPPER_STYLE}>
+            <input
+              className="marketing-auth-field"
+              type="text"
+              placeholder="University / College"
+              value={collegeValue}
+              onChange={(event) => setCollegeValue(event.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              style={INPUT_STYLE}
+            />
+          </div>
+
+          {collegeError ? (
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '12px 14px',
+                border: '1px solid rgba(146, 64, 14, 0.18)',
+                background: 'rgba(146, 64, 14, 0.05)',
+                color: '#92400e',
+                fontSize: '13px',
+                lineHeight: 1.5,
+              }}
+            >
+              {collegeError}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={collegeLoading}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: '#3D5A35',
+              color: '#fff',
+              fontFamily: "'Work Sans', sans-serif",
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              border: 'none',
+              cursor: collegeLoading ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
+              opacity: collegeLoading ? 0.7 : 1,
+            }}
+          >
+            {collegeLoading ? 'Saving...' : 'Continue'}
+          </button>
+        </form>
+      </div>
+    )
   }
 
   // --- Verification sent state ---
@@ -664,6 +1081,27 @@ export default function MarketingAuthPanel({
             style={INPUT_STYLE}
           />
         </div>
+
+        {!isSignUp ? (
+          <div style={{ marginTop: '-10px', marginBottom: '16px', textAlign: 'right' }}>
+            <button
+              type="button"
+              onClick={openForgotPassword}
+              style={{
+                color: '#3D5A35',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                background: 'none',
+                border: 'none',
+                fontFamily: "'Work Sans', sans-serif",
+                fontSize: '12px',
+                padding: 0,
+              }}
+            >
+              Forgot password?
+            </button>
+          </div>
+        ) : null}
 
         {isSignUp ? (
           <div className="marketing-auth-input-wrap" style={FIELD_WRAPPER_STYLE}>
