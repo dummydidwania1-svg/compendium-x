@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   EmailAuthProvider,
+  GoogleAuthProvider,
   onAuthStateChanged,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
   signOut,
   updatePassword,
   type User,
@@ -209,6 +211,9 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
 
   // Avatar
   const [photoURL, setPhotoURL] = useState<string | null>(null)
+  // Firestore-mirrored Google account photo — see handleUseGooglePhoto for
+  // why this can't just be read from the live Auth user.photoURL.
+  const [googlePhotoURL, setGooglePhotoURL] = useState<string | null>(null)
   const [avatarPreset, setAvatarPreset] = useState<string | null>(null)
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [avatarBusy, setAvatarBusy] = useState(false)
@@ -253,6 +258,18 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
           setOriginalUniversity(loadedUniversity)
           setPhotoURL(typeof data.photoURL === 'string' ? data.photoURL : null)
           setAvatarPreset(typeof data.avatarPreset === 'string' ? data.avatarPreset : null)
+
+          const storedGooglePhoto = typeof data.googlePhotoURL === 'string' ? data.googlePhotoURL : null
+          setGooglePhotoURL(storedGooglePhoto)
+          // First-ever load only: seed googlePhotoURL from the live Auth
+          // user. Never overwrite an EXISTING value here — user.photoURL
+          // can be permanently poisoned by the old upload bug (it clobbered
+          // Auth's photoURL with the uploaded image), so only the explicit
+          // "Use Google photo" re-auth flow is allowed to refresh it.
+          if (!storedGooglePhoto && user.photoURL) {
+            void setDoc(doc(db, 'profiles', user.uid), { googlePhotoURL: user.photoURL }, { merge: true })
+            setGooglePhotoURL(user.photoURL)
+          }
         }
       } finally {
         setProfileLoading(false)
@@ -330,6 +347,38 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       setAvatarPreset(next.avatarPreset)
     } catch {
       showProfileMsg('Could not update avatar', false)
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+
+  // Firebase Auth's user.photoURL can be permanently overwritten by an
+  // uploaded-avatar bug that shipped before this fix (updateProfile() was
+  // called with the uploaded image URL, clobbering the real Google photo
+  // at the Auth layer with no way to read the original back). The only way
+  // to recover the REAL Google photo is to re-ask Google for it directly,
+  // which a fresh popup sign-in does — result.user.photoURL comes straight
+  // from Google, not from whatever is currently cached on the Auth user.
+  const handleUseGooglePhoto = async () => {
+    if (!user) return
+    setAvatarBusy(true)
+    try {
+      const provider = new GoogleAuthProvider()
+      const result = await reauthenticateWithPopup(user, provider)
+      const freshGooglePhoto = result.user.photoURL
+      await setDoc(
+        doc(db, 'profiles', user.uid),
+        { photoURL: null, avatarPreset: null, googlePhotoURL: freshGooglePhoto ?? null, updatedAt: serverTimestamp() },
+        { merge: true },
+      )
+      setPhotoURL(null)
+      setAvatarPreset(null)
+      setGooglePhotoURL(freshGooglePhoto ?? null)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      if (!msg.includes('auth/popup-closed-by-user') && !msg.includes('auth/cancelled-popup-request')) {
+        showProfileMsg('Could not fetch your Google photo', false)
+      }
     } finally {
       setAvatarBusy(false)
     }
@@ -433,11 +482,13 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   // Avatar resolution, in priority order:
   //   1. explicit preset ('initials' sentinel forces the monogram)
   //   2. uploaded photo (Firestore photoURL)
-  //   3. Google account photo (auth user.photoURL)
+  //   3. Google account photo — the Firestore MIRROR (googlePhotoURL), not
+  //      the live Auth user.photoURL, which can be permanently poisoned by
+  //      the old upload bug (see handleUseGooglePhoto)
   //   4. monogram initials
   const usingInitials = avatarPreset === INITIALS_PRESET
   const activePreset = avatarPreset && !usingInitials ? avatarPreset : null
-  const resolvedPhoto = usingInitials ? null : photoURL || user?.photoURL || null
+  const resolvedPhoto = usingInitials ? null : photoURL || googlePhotoURL || null
   const monogram = initials(fullName || user?.displayName || null, user?.email ?? null)
 
   const renderAvatar = (sizeClass: string, fontPx: number) =>
@@ -779,12 +830,12 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                             </span>
                             Upload
                           </label>
-                          {!emailProvider && user.photoURL ? (
+                          {!emailProvider ? (
                             <button
                               type="button"
                               className="ccx-avatar-action"
                               disabled={avatarBusy}
-                              onClick={() => void persistAvatar({ photoURL: null, avatarPreset: null })}
+                              onClick={() => void handleUseGooglePhoto()}
                             >
                               <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
                                 account_circle

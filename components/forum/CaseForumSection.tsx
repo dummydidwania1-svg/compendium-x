@@ -261,7 +261,19 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
     const preset = typeof d?.avatarPreset === 'string' ? d.avatarPreset : null
     const uploaded = typeof d?.photoURL === 'string' ? d.photoURL : null
     // Same fallback order as the account overlay: preset > uploaded > Google.
-    const photoURL = preset === 'initials' ? null : uploaded || u.photoURL || null
+    // Reads the Firestore-mirrored googlePhotoURL, NOT the live u.photoURL —
+    // that field can be permanently poisoned by the old upload bug (see
+    // ProfileOverlay's handleUseGooglePhoto for the full explanation).
+    let googlePhoto = typeof d?.googlePhotoURL === 'string' ? d.googlePhotoURL : null
+    // First-ever read for this account: seed the mirror so a brand-new
+    // Google user (who has never opened My Account) still shows a photo in
+    // the forum. Never overwrites an existing value — only the explicit
+    // "Use Google photo" re-auth flow may refresh it after that.
+    if (!googlePhoto && u.photoURL) {
+      googlePhoto = u.photoURL
+      void setDoc(doc(db, 'profiles', u.uid), { googlePhotoURL: u.photoURL }, { merge: true })
+    }
+    const photoURL = preset === 'initials' ? null : (uploaded || googlePhoto)
     return { name, identity: { photoURL, avatarPreset: preset } as AvatarIdentity }
   }, [])
 
@@ -301,7 +313,13 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
           const d = s.exists() ? s.data() : null
           const preset = typeof d?.avatarPreset === 'string' ? d.avatarPreset : null
           const uploaded = typeof d?.photoURL === 'string' ? d.photoURL : null
-          return [authorId, { photoURL: preset === 'initials' ? null : uploaded, avatarPreset: preset } as AvatarIdentity] as const
+          // A poster using their Google photo (no upload, no preset) has a
+          // null `photoURL` — the Firestore-mirrored googlePhotoURL is the
+          // only way another user's forum view can see it, since it can
+          // never read someone else's live Auth state.
+          const googlePhoto = typeof d?.googlePhotoURL === 'string' ? d.googlePhotoURL : null
+          const photoURL = preset === 'initials' ? null : (uploaded || googlePhoto)
+          return [authorId, { photoURL, avatarPreset: preset } as AvatarIdentity] as const
         } catch {
           return [authorId, { photoURL: null, avatarPreset: null } as AvatarIdentity] as const
         }

@@ -51,6 +51,13 @@ export const profileSchema = z
     goalTargetCases: z.number().optional(),
     /** Uploaded avatar (Firebase Storage download URL). Null/absent = none. */
     photoURL: optionalString,
+    /**
+     * Mirror of the Google account photo (auth user.photoURL) at last
+     * sign-in, kept in Firestore because other users' forum posts can only
+     * ever read this profile's own document, never another user's live
+     * Auth state. Null/absent = no Google photo on this account.
+     */
+    googlePhotoURL: optionalString,
     /** Chosen preset avatar id (see lib/avatars.ts). Null/absent = none. */
     avatarPreset: optionalString,
     /** True once the account has been soft-deleted; blocks sign-in and further reads/writes. Data is kept, not erased. */
