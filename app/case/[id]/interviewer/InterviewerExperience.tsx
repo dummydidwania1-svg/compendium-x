@@ -2022,7 +2022,7 @@ export function InterviewerPageInner({
 		}
 	}, [currentView, lobbyId, previewMode])
 
-	// ── Window close guard ───────────────────────────────────────────────────────
+	// ── Window close guard (same-device only) ───────────────────────────────────
 	// The browser-level shortcut Cmd+W and the window X button CANNOT be blocked
 	// by a custom overlay — the browser tears the page down before React can
 	// render. The only sanctioned warning is the native beforeunload dialog
@@ -2031,19 +2031,20 @@ export function InterviewerPageInner({
 	// If the user cancels that native dialog (chooses to stay), the page never
 	// unloads and becomes visible/focused again — we detect that and show our
 	// own timed top-right toast reminding them to submit before closing.
+	//
+	// Remote mode gets a heavier, dedicated guard below (mirroring the
+	// candidate workspace's own close/reload protection, since the
+	// interviewer's mic is genuinely recording in remote mode too) — this
+	// effect is scoped to local mode only so that guard's behavior stays
+	// byte-for-byte unchanged.
 	const closeAttemptRef = useRef(false)
 	useEffect(() => {
-		if (!lobbyId || previewMode) return
+		if (!isLocalMode || !lobbyId || previewMode) return
 		let armed = false
 		const armTimer = setTimeout(() => { armed = true }, 4000)
 
 		const shouldBlock = () => {
 			if (!armed) return false
-			// Remote: localStorage keys are never written across devices.
-			// Use the current view as the resolved signal instead.
-			if (!isLocalMode) {
-				return currentViewRef.current !== 'success'
-			}
 			const ended = localStorage.getItem('compendium-session-ended')
 			const replacing = localStorage.getItem('compendium-session-replacing')
 			const cancelled = localStorage.getItem('compendium-session-cancelled')
@@ -2083,7 +2084,84 @@ export function InterviewerPageInner({
 			document.removeEventListener('visibilitychange', onVisibility)
 			window.removeEventListener('focus', onFocus)
 		}
-	}, [lobbyId, previewMode])
+	}, [isLocalMode, lobbyId, previewMode])
+
+	// ── Window close / reload guard (remote mode only) ──────────────────────────
+	// Mirrors the candidate workspace's own close/reload protection exactly
+	// (app/case/[id]/workspace/page.tsx) — the interviewer's mic is genuinely
+	// recording in remote mode too, so closing or reloading now destroys real
+	// audio, same as it would for the candidate.
+	const [warnBeforeReloadVisible, setWarnBeforeReloadVisible] = useState(false)
+	const [warnBeforeCloseVisible, setWarnBeforeCloseVisible] = useState(false)
+	const INTERVIEWER_RELOAD_WARN_KEY = `compendium-interviewer-reload-warnings-${lobbyId ?? ''}`
+	const INTERVIEWER_RELOAD_FLAG_KEY = `compendium-interviewer-was-reloaded-${lobbyId ?? ''}`
+	const INTERVIEWER_RELOAD_PLATFORM_KEY = `compendium-interviewer-platform-reload-${lobbyId ?? ''}`
+
+	// One-time cleanup: if we just came back from a forced (3rd-strike) reload,
+	// clear both keys right away. Unlike the candidate's original version (which
+	// never clears its platform-reload key), this prevents the close/reload
+	// guard from staying silently disabled for the rest of the tab's lifetime.
+	useEffect(() => {
+		if (!isRemoteMode || !lobbyId) return
+		if (sessionStorage.getItem(INTERVIEWER_RELOAD_FLAG_KEY) === '1') {
+			sessionStorage.removeItem(INTERVIEWER_RELOAD_FLAG_KEY)
+			sessionStorage.removeItem(INTERVIEWER_RELOAD_PLATFORM_KEY)
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isRemoteMode, lobbyId])
+
+	// Recording is "active" from the guard's perspective once it has started
+	// and the session hasn't already reached a success/done state — the
+	// interviewer-side equivalent of the candidate's recordingState==='recording'.
+	const interviewerSessionActive =
+		interviewerRecordingStartedRef.current && currentView !== 'success' && !overlaySuccess
+
+	// keydown fires BEFORE beforeunload — keyboard shortcuts (F5, Ctrl+R, Cmd+R)
+	// are intercepted here so our overlay appears with no browser dialog at all.
+	useEffect(() => {
+		if (isLocalMode || !lobbyId || previewMode || !interviewerSessionActive) return
+		const onKeyDown = (event: KeyboardEvent) => {
+			const isReloadKey =
+				event.key === 'F5' ||
+				((event.ctrlKey || event.metaKey) && event.key === 'r')
+			if (!isReloadKey) return
+			event.preventDefault()
+			if (interviewerUploadState === 'uploading') {
+				setWarnBeforeReloadVisible(true)
+				return
+			}
+			const count = parseInt(sessionStorage.getItem(INTERVIEWER_RELOAD_WARN_KEY) ?? '0', 10)
+			if (count >= 2) {
+				sessionStorage.setItem(INTERVIEWER_RELOAD_FLAG_KEY, '1')
+				sessionStorage.setItem(INTERVIEWER_RELOAD_WARN_KEY, '0')
+				sessionStorage.setItem(INTERVIEWER_RELOAD_PLATFORM_KEY, '1')
+				window.location.reload()
+				return
+			}
+			setWarnBeforeReloadVisible(true)
+			sessionStorage.setItem(INTERVIEWER_RELOAD_WARN_KEY, String(count + 1))
+		}
+		window.addEventListener('keydown', onKeyDown)
+		return () => window.removeEventListener('keydown', onKeyDown)
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isLocalMode, lobbyId, previewMode, interviewerSessionActive, interviewerUploadState])
+
+	// beforeunload fires for the reload button, tab-close, and address-bar
+	// navigation — keyboard reloads never reach this handler (already
+	// intercepted above). Warn-only: does not stop or finalize recording
+	// itself — the existing pagehide beacon (see the presence-heartbeat effect
+	// above) already handles finalization on genuine unload.
+	useEffect(() => {
+		if (isLocalMode || !lobbyId || previewMode || !interviewerSessionActive) return
+		const onBeforeUnload = (event: BeforeUnloadEvent) => {
+			if (sessionStorage.getItem(INTERVIEWER_RELOAD_PLATFORM_KEY) === '1') return
+			setWarnBeforeCloseVisible(true)
+			event.preventDefault()
+		}
+		window.addEventListener('beforeunload', onBeforeUnload)
+		return () => window.removeEventListener('beforeunload', onBeforeUnload)
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isLocalMode, lobbyId, previewMode, interviewerSessionActive])
 
 	// Legacy /case/[id]/interviewer?preview=1 links → bounce to the clean /case/[slug] URL.
 useEffect(() => {
@@ -2332,6 +2410,62 @@ if (previewMode && !forcePreview) {
 						onDismiss={() => setShowCloseWarning(false)}
 					/>
 				)}
+
+				{/* Remote mode — keyboard-shortcut reload intercept (F5/Ctrl+R/Cmd+R),
+				    mirrors the candidate workspace's own reload guard exactly. */}
+				{isRemoteMode && warnBeforeReloadVisible && !micGuardShowing && !overlaySuccess && (() => {
+					const isUploading = interviewerUploadState === 'uploading'
+					const warnCount = parseInt(sessionStorage.getItem(INTERVIEWER_RELOAD_WARN_KEY) ?? '0', 10)
+					const isFinalWarning = !isUploading && warnCount >= 2
+					return (
+						<LobbyOverlay
+							key="interviewer-warn-before-reload"
+							type="warning"
+							icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>}
+							title={
+								isUploading
+									? "Your audio is uploading right now"
+									: isFinalWarning
+										? "One more reload and we let you go"
+										: "Heads up: reloading will lose your recording"
+							}
+							body={
+								isUploading
+									? "Reloading now would cut the upload and your recording would be lost. It wraps up on its own, just wait a moment."
+									: isFinalWarning
+										? "You've tried to reload twice now. The next reload will go through and your recording will be gone. Stay on the page to keep it."
+										: "Reloading stops your mic and wipes everything captured so far. A new recording will start fresh once the page comes back. Stay on the page to keep what you have."
+							}
+							autoDismissMs={isUploading ? 8000 : isFinalWarning ? 8000 : 6000}
+							actionLabel="Stay on page"
+							onAction={() => setWarnBeforeReloadVisible(false)}
+							onDismiss={() => setWarnBeforeReloadVisible(false)}
+						/>
+					)
+				})()}
+
+				{/* Remote mode — close/reload warning via the native beforeunload
+				    dialog, mirrors the candidate workspace's own close guard exactly. */}
+				{isRemoteMode && warnBeforeCloseVisible && !micGuardShowing && !overlaySuccess && (() => {
+					const isUploadingNow = interviewerUploadState === 'uploading'
+					return (
+						<LobbyOverlay
+							key="interviewer-warn-before-close"
+							type="warning"
+							icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>}
+							title={isUploadingNow ? "Your audio is uploading right now" : "Leaving will lose your recording"}
+							body={
+								isUploadingNow
+									? "Closing or reloading now would cut the upload and your recording would be lost. It finishes on its own, just give it a few seconds."
+									: "You tried to close or reload this tab. If you go through with it, your mic stops and everything recorded so far is gone."
+							}
+							autoDismissMs={8000}
+							actionLabel="Stay on page"
+							onAction={() => setWarnBeforeCloseVisible(false)}
+							onDismiss={() => setWarnBeforeCloseVisible(false)}
+						/>
+					)
+				})()}
 
 				{/* Mic blocked — split-screen shares the candidate's mic permission, so
 				    a block here breaks the candidate's recording. This is the active
