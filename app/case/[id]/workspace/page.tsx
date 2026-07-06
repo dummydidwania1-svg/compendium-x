@@ -1071,9 +1071,9 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   useEffect(() => { preferredRecordingModeRef.current = preferredRecordingMode }, [preferredRecordingMode])
 
   // B4 (remote): staleness threshold for interviewerPresence.
-  // If lastSeenAt is older than 5s (2.5× the 2s heartbeat), the interviewer
+  // If lastSeenAt is older than 3s (3× the 1s heartbeat), the interviewer
   // is treated as disconnected. Only used in remote mode.
-  const PRESENCE_STALE_MS = 5_000
+  const PRESENCE_STALE_MS = 3_000
   // Latest interviewerPresence payload, cached so a periodic timer (not just
   // each incoming Firestore snapshot) can re-check staleness.
   const interviewerPresenceRef = useRef<{ active?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined>(undefined)
@@ -1118,12 +1118,23 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       }
       // Interviewer declined mic -- show a one-time timed overlay (fires once per session).
       // Suppressed when the candidate themselves opted out (they're running without
-      // recording too, so "your side only" is irrelevant and confusing).
+      // recording too, so "your side only" is irrelevant and confusing). Also
+      // suppressed when the interviewer's window is currently disconnected —
+      // interviewerAudioCaptured:false gets written as a best-effort pagehide
+      // signal when their tab closes mid-recording (so the backend transcript
+      // pipeline doesn't wait forever for audio that's never coming), but that's
+      // not a real "skipped sharing mic" decision — the window-closed overlay
+      // already owns that moment, so this one shouldn't also fire for it.
+      const presenceAtSnapshot = (raw as { interviewerPresence?: { active?: boolean; lastSeenAt?: { toDate: () => Date } } }).interviewerPresence
+      const interviewerCurrentlyDisconnected =
+        presenceAtSnapshot?.active === false ||
+        (presenceAtSnapshot?.lastSeenAt ? Date.now() - presenceAtSnapshot.lastSeenAt.toDate().getTime() > PRESENCE_STALE_MS : false)
       if (
         raw.interviewerAudioCaptured === false &&
         preferredRecordingModeRef.current !== 'local' &&
         !recordingConsentDeclinedRef.current &&
-        !interviewerDeclineShownRef.current
+        !interviewerDeclineShownRef.current &&
+        !interviewerCurrentlyDisconnected
       ) {
         interviewerDeclineShownRef.current = true
         setInterviewerAudioDeclined(true)
@@ -1304,10 +1315,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
     window.addEventListener('storage', onStorage)
 
-    // Periodic re-check so the overlay fires within ~1s of crossing the 5s
+    // Periodic re-check so the overlay fires within ~500ms of crossing the 3s
     // staleness mark, even when no new Firestore snapshot happens to arrive
     // right after the interviewer actually goes stale.
-    const staleCheckTimer = setInterval(checkInterviewerPresenceStale, 1000)
+    const staleCheckTimer = setInterval(checkInterviewerPresenceStale, 500)
 
     return () => {
       clearPoll()

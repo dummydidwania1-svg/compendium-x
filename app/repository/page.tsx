@@ -576,7 +576,7 @@ const clearAllFilters = () => {
       // in the candidate's interviewer-disconnect detection) — without this,
       // interviewerPresence.lastSeenAt only updates once on mount and never
       // again, so the candidate would see the interviewer as instantly stale.
-      heartbeatInterval = setInterval(() => sendPresence(true), 2_000)
+      heartbeatInterval = setInterval(() => sendPresence(true), 1_000)
     }
     return () => {
       localStorage.removeItem('compendium-interviewer-browsing')

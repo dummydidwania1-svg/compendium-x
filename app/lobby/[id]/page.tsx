@@ -1150,7 +1150,7 @@ function InterviewerLobby({
       }).catch(() => { /* best-effort */ })
     }
     sendHeartbeat()
-    const interval = setInterval(sendHeartbeat, 2_000)
+    const interval = setInterval(sendHeartbeat, 1_000)
     return () => clearInterval(interval)
   }, [isLocalMode, lobbyId])
 
@@ -1735,8 +1735,8 @@ export default function LobbyPage() {
     const sessionRef = sessionDoc(lobbyId)
     // Remote-mode interviewer-window-closed detection (waiting/replacing only —
     // in_progress is covered separately by the workspace page's own B4 check).
-    // Same 5s staleness threshold and periodic-recheck pattern used there.
-    const PRESENCE_STALE_MS = 5_000
+    // Same 3s staleness threshold and periodic-recheck pattern used there.
+    const PRESENCE_STALE_MS = 3_000
     const interviewerPresenceRef: { current: SessionState['interviewerPresence'] } = { current: undefined }
     const latestStatusRef: { current: SessionState['status'] } = { current: undefined }
     const checkInterviewerPresenceStale = () => {
@@ -1993,10 +1993,10 @@ export default function LobbyPage() {
     setupCandidateSession()
 
     // Periodic re-check so the interviewer-window-closed overlay fires within
-    // ~1s of crossing the 5s staleness mark, even when no new Firestore
+    // ~500ms of crossing the 3s staleness mark, even when no new Firestore
     // snapshot happens to arrive right after the interviewer actually goes
     // stale (same rationale as the workspace page's B4 fix).
-    const staleCheckTimer = setInterval(checkInterviewerPresenceStale, 1000)
+    const staleCheckTimer = setInterval(checkInterviewerPresenceStale, 500)
 
     return () => {
       unsubscribeSession()
