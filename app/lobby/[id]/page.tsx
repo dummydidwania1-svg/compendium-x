@@ -1628,12 +1628,12 @@ export default function LobbyPage() {
           keepalive: true,
         })
       } catch {
-        // Best-effort — a missed heartbeat is tolerable; the stale threshold is 3s.
+        // Best-effort — a missed heartbeat is tolerable; the stale threshold is 25s.
       }
     }
 
     void sendHeartbeat(true)
-    const timer = setInterval(() => { void sendHeartbeat(true) }, 1_000)
+    const timer = setInterval(() => { void sendHeartbeat(true) }, 10_000)
 
     const onPageHide = () => { void sendHeartbeat(false) }
     window.addEventListener('pagehide', onPageHide)

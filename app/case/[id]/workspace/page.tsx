@@ -1860,7 +1860,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   }, [clearLocalPrep, clearRemotePrep, teardownMedia])
 
   // Candidate presence heartbeat (remote mode only).
-  // Writes `candidatePresence` to the session doc every 1s so the interviewer's
+  // Writes `candidatePresence` to the session doc every 10s so the interviewer's
   // onSnapshot can detect staleness (tab closed/crashed/lost connectivity) via
   // `lastSeenAt` age, mirroring the candidate's own interviewerPresence check.
   useEffect(() => {
@@ -1877,12 +1877,12 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           keepalive: true,
         })
       } catch {
-        // Best-effort — a missed heartbeat is tolerable; the stale threshold is 3s.
+        // Best-effort — a missed heartbeat is tolerable; the stale threshold is 25s.
       }
     }
 
     void sendHeartbeat(true)
-    const timer = setInterval(() => { void sendHeartbeat(true) }, 1_000)
+    const timer = setInterval(() => { void sendHeartbeat(true) }, 10_000)
 
     const onPageHide = () => { void sendHeartbeat(false) }
     window.addEventListener('pagehide', onPageHide)

@@ -989,10 +989,8 @@ export function InterviewerPageInner({
 	const candidateAbandonedRef = useRef(false)
 	// B5 (rebuilt): candidate's workspace tab is gone or stale (crash/force-quit/
 	// lost connectivity — not a graceful End Session click). Mirrors the
-	// candidate's own interviewerPresence staleness check (workspace/page.tsx),
-	// including its 3s threshold — symmetrized so neither side of a remote
-	// session waits meaningfully longer than the other to notice a disconnect.
-	const CANDIDATE_PRESENCE_STALE_MS = 3_000
+	// candidate's own interviewerPresence staleness check (workspace/page.tsx).
+	const CANDIDATE_PRESENCE_STALE_MS = 25_000
 	const [candidateRemoteDisconnected, setCandidateRemoteDisconnected] = useState(false)
 	// One-shot per disconnect episode; reset when the candidate is seen active
 	// again so a future reconnect->disconnect cycle can show the toast again.
@@ -1002,7 +1000,7 @@ export function InterviewerPageInner({
 	// a candidate who's already been gone for a while only gets "noticed" the
 	// next time some unrelated field on the session doc happens to change
 	// (e.g. select-case firing status:'in_progress' after a replace) — which
-	// can lag well past the 3s threshold since lastSeenAt itself stopped
+	// can lag well past the 25s threshold since lastSeenAt itself stopped
 	// advancing the moment their tab closed.
 	const candidatePresenceRef = useRef<{ active?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined>(undefined)
 
@@ -1248,7 +1246,7 @@ export function InterviewerPageInner({
 		// moment the candidate's tab closes, so nothing about the DOCUMENT
 		// changes again until some unrelated field happens to be written (e.g.
 		// select-case flipping status after a replace). Without the timer, the
-		// toast could lag far past the 3s threshold, or on a status
+		// toast could lag far past the 25s threshold, or on a status
 		// transition that lands right at/near a fresh-looking lastSeenAt.
 		// Suppressed once the session is completed/abandoned — moot at that
 		// point, and matches B5's original status guard.
@@ -1291,12 +1289,12 @@ export function InterviewerPageInner({
 			},
 		)
 
-		// Periodic re-check so the toast fires within ~500ms of crossing the 3s
-		// staleness mark, even when no new Firestore snapshot happens to arrive
-		// right after the candidate actually goes stale — e.g. they disconnected
-		// during the waiting lobby or mid-replace, then the session starts/resumes
-		// with no further presence writes to re-trigger handleSnapshot on its own.
-		const staleCheckTimer = setInterval(checkCandidatePresenceStale, 500)
+		// Periodic re-check so the toast fires promptly (within a few seconds)
+		// even when no new Firestore snapshot happens to arrive right after the
+		// candidate actually goes stale — e.g. they disconnected during the
+		// waiting lobby or mid-replace, then the session starts/resumes with no
+		// further presence writes to re-trigger handleSnapshot on its own.
+		const staleCheckTimer = setInterval(checkCandidatePresenceStale, 2000)
 
 		return () => {
 			unsubscribe()
