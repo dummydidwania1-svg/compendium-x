@@ -1186,16 +1186,40 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   const terminal = (s: string | undefined) => s === 'completed' || s === 'failed'
 
   const candidateDone = terminal(candidateStatus as string | undefined)
-  const interviewerKnown =
-    terminal(interviewerStatus as string | undefined) ||
-    interviewerDeclined ||
-    (!interviewerSnap.exists && interviewerDeclined)
 
   // Candidate closed their workspace before any recording ever started (waiting
   // lobby, or mid-"replace") — set by /api/evaluations once it confirms no
   // recordings/candidate doc exists at submit time. Symmetric to
   // interviewerDeclined: a known absence, not something to keep waiting for.
   const candidateNeverRecorded = sessionData.candidateNeverRecorded === true
+  // Candidate side already known to have nothing more coming — either it
+  // never recorded at all, or the session has already ended (nobody is
+  // actively recording anymore, so there's no risk of cutting off a live
+  // conversation by treating the interviewer's missing track as known-absent
+  // below).
+  const candidateKnownAbsentOrEnded =
+    candidateNeverRecorded || sessionData.status === 'completed' || sessionData.status === 'abandoned'
+
+  const interviewerKnown =
+    terminal(interviewerStatus as string | undefined) ||
+    interviewerDeclined ||
+    (!interviewerSnap.exists && interviewerDeclined) ||
+    // Interviewer never had a track at all (never attempted, and never
+    // explicitly declined either — interviewerAudioCaptured was simply never
+    // set, e.g. because the candidate opted out first and the interviewer's
+    // own flow never reached a point that writes that flag). Previously this
+    // combination — genuinely no track on EITHER side, with no explicit
+    // decline flag — had no bypass at all: candidateNeverRecorded covers the
+    // candidate side, but nothing covered the interviewer side when its
+    // absence was implicit rather than explicit. Only trusted once the
+    // candidate side is ALSO already known-absent, so this never fires while
+    // a real, in-progress candidate recording is still live and might just be
+    // waiting on the interviewer to start theirs. Confirmed via session
+    // ewi4qc: candidateNeverRecorded:true, no interviewer track, no
+    // interviewerAudioCaptured flag ever set — evaluateAndMerge returned at
+    // the interviewerKnown gate forever, never reaching the "both absent"
+    // resolution branch a few lines below.
+    (!interviewerSnap.exists && candidateKnownAbsentOrEnded)
 
   // Anchor the grace-window clock off whichever terminal timestamp the
   // candidate track actually has — transcriptCompletedAt on success,
@@ -1239,13 +1263,9 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
     candidateStatus !== 'pending' &&
     candidateStatus !== 'processing'
 
-  // Candidate side already known to have nothing more coming — either it
-  // never recorded at all, or the session has already ended (nobody is
-  // actively recording anymore, so there's no risk of cutting off a live
-  // conversation by using the fallback anchor below).
-  const candidateKnownAbsentOrEnded = candidateNeverRecorded || sessionAlreadyEnded
-  // Mirror for the interviewer side, used to rescue a stuck CANDIDATE track —
-  // previously there was no equivalent rescue at all for this direction.
+  // candidateKnownAbsentOrEnded is declared earlier (needed by interviewerKnown
+  // above). Mirror for the interviewer side, used to rescue a stuck CANDIDATE
+  // track — previously there was no equivalent rescue at all for this direction.
   const interviewerKnownAbsentOrEnded = interviewerDeclined || sessionAlreadyEnded
 
   const pastGraceWindow =
