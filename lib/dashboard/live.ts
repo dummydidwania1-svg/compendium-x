@@ -239,8 +239,10 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
 const AUDIO_MERGE_PENDING_STATUSES = new Set(['none', 'pending', 'processing', 'partial'])
 // Terminal audio-merge outcomes — once mergedAudioStatus reaches one of these,
 // the audio side is definitively resolved and should never show "generating"
-// again, regardless of what mergedTranscriptStatus says.
-const AUDIO_MERGE_TERMINAL_STATUSES = new Set(['completed', 'single_side', 'none'])
+// again, regardless of what mergedTranscriptStatus says. 'failed' means the
+// merge step itself gave up after retries (ffmpeg/download/upload error) —
+// still terminal, just a different final answer than 'none'.
+const AUDIO_MERGE_TERMINAL_STATUSES = new Set(['completed', 'single_side', 'none', 'failed'])
 
 export function mapDashboardEntry(
   record: EvaluationRecord,

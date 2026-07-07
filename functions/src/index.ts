@@ -453,6 +453,12 @@ async function runTranscription(args: {
           transcriptStatus: 'processing',
           transcriptRequestedAt: FieldValue.serverTimestamp(),
           transcriptError: null,
+          // Clear the stuck-processing rescue marker (if this attempt was
+          // itself triggered by that sweep) now that a fresh worker has
+          // actually started — otherwise it would linger and incorrectly
+          // let some later, unrelated 'processing' write bypass the re-entry
+          // guard above.
+          processingStuckRescue: false,
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true },
@@ -1453,31 +1459,56 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
     if (MERGE_AUDIO_ENABLED && candidateAudioUsable && interviewerAudioUsable && !audioSourcesUnchanged) {
       // Best-effort time-aligned audio merge. Wrapped in its own try/catch so
       // any failure (ffmpeg, download, upload) is logged and NEVER affects
-      // the transcript merge above.
-      try {
-        const mergedAudioUrl = await mergeSessionAudio(
-          sessionId,
-          { audioUrl: candidateData!.audioUrl, startOffsetMs: candidateData?.startOffsetMs },
-          { audioUrl: interviewerData!.audioUrl, startOffsetMs: interviewerData?.startOffsetMs },
-        )
-        if (mergedAudioUrl) {
-          await sessionRef.set(
-            {
-              mergedAudioUrl,
-              mergedAudioCompletedAt: FieldValue.serverTimestamp(),
-              mergedAudioStatus: 'completed',
-              mergedAudioReason: null,
-              mergedAudioSourceSizes: {
-                candidate: candidateData?.byteSize ?? null,
-                interviewer: interviewerData?.byteSize ?? null,
-              },
-            },
-            { merge: true },
+      // the transcript merge above. Retries a couple of times first, since
+      // most failures here are transient (slow download, brief ffmpeg
+      // hiccup) — only after those are exhausted does this give up and write
+      // a real terminal 'failed' status, instead of leaving the dashboard's
+      // "Stitching your audio together" spinner running forever with no way
+      // to tell it had actually already given up.
+      const MERGE_AUDIO_RETRY_ATTEMPTS = 3
+      let mergedAudioUrl: string | null = null
+      let lastAudioErr: unknown = null
+      for (let attempt = 1; attempt <= MERGE_AUDIO_RETRY_ATTEMPTS; attempt++) {
+        try {
+          mergedAudioUrl = await mergeSessionAudio(
+            sessionId,
+            { audioUrl: candidateData!.audioUrl, startOffsetMs: candidateData?.startOffsetMs },
+            { audioUrl: interviewerData!.audioUrl, startOffsetMs: interviewerData?.startOffsetMs },
           )
+          lastAudioErr = null
+          break
+        } catch (audioErr) {
+          lastAudioErr = audioErr
+          const m = audioErr instanceof Error ? audioErr.message : 'Unknown audio merge error.'
+          logger.warn('audio_merge_failed', { sessionId, attempt, message: m })
+          if (attempt < MERGE_AUDIO_RETRY_ATTEMPTS) await sleep(1000 * attempt)
         }
-      } catch (audioErr) {
-        const m = audioErr instanceof Error ? audioErr.message : 'Unknown audio merge error.'
-        logger.warn('audio_merge_failed', { sessionId, message: m })
+      }
+      if (lastAudioErr) {
+        const m = lastAudioErr instanceof Error ? lastAudioErr.message : 'Unknown audio merge error.'
+        await sessionRef.set(
+          {
+            mergedAudioStatus: 'failed',
+            mergedAudioReason: 'merge_failed',
+            mergedAudioError: m,
+            mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        )
+      } else if (mergedAudioUrl) {
+        await sessionRef.set(
+          {
+            mergedAudioUrl,
+            mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+            mergedAudioStatus: 'completed',
+            mergedAudioReason: null,
+            mergedAudioSourceSizes: {
+              candidate: candidateData?.byteSize ?? null,
+              interviewer: interviewerData?.byteSize ?? null,
+            },
+          },
+          { merge: true },
+        )
       }
     } else if (candidateAudioUsable !== interviewerAudioUsable) {
       // Exactly one side has usable audio. mergedAudioUrl points directly at
@@ -1697,9 +1728,18 @@ export const transcribeParticipantRecording = onDocumentWritten(
     const afterData = event.data?.after?.data()
     const afterStatus = afterData?.transcriptStatus
 
+    // processingStuckRescue is set only by finalizePendingMerges' stuck-in-
+    // 'processing' sweep, once it has confirmed (via transcriptRequestedAt
+    // being far older than this function's own 540s ceiling) that whatever
+    // worker was previously running has certainly already died. This is the
+    // one deliberate, narrow bypass of the processing re-entry guard below —
+    // every other 'processing' -> anything write still correctly blocks
+    // re-entry against a genuinely still-running worker.
+    const isStuckRescue = afterData?.processingStuckRescue === true
+
     if (afterStatus !== 'pending') return
     if (beforeStatus === 'pending') return
-    if (beforeStatus === 'processing') return
+    if (beforeStatus === 'processing' && !isStuckRescue) return
 
     const role = event.params.role as 'candidate' | 'interviewer'
     if (role !== 'candidate' && role !== 'interviewer') {
@@ -1947,6 +1987,84 @@ export const finalizePendingMerges = onSchedule(
     }
 
     logger.info(`finalize_pending: evaluated ${evaluated} session(s)`)
+
+    // ------------------------------------------------------------------
+    // Stuck-in-'processing' rescue (remote/dual-mic tracks only).
+    //
+    // transcribeParticipantRecording writes transcriptStatus:'processing'
+    // before calling the transcription API, then unconditionally refuses to
+    // re-enter (`if (beforeStatus === 'processing') return`) — the correct
+    // guard against double-processing a track that's genuinely still being
+    // worked on. But if that function instance is killed mid-call (its hard
+    // 540s/9min Cloud Functions Gen2 ceiling for event-triggered functions,
+    // or a crash/cold-start issue), the 'processing' status is left behind
+    // with nobody ever coming back to it — the guard above then blocks any
+    // future attempt forever, and since evaluateAndMerge waits for both
+    // sides to reach a terminal state, the whole session's merge is stuck
+    // too. This only affects the recordings subcollection (remote/dual-mic
+    // mode) — same-device mode's embedded session.recording path is
+    // untouched here, matching how the rest of this pipeline already treats
+    // the two modes separately.
+    //
+    // A track is considered dead-stuck once transcriptRequestedAt is older
+    // than PROCESSING_STUCK_MS — comfortably past the 540s function ceiling
+    // plus room for upload/network time, so this never resets a track a
+    // worker is still genuinely, actively transcribing. Resetting back to
+    // 'pending' re-fires the same trigger a normal upload would, giving it a
+    // fresh attempt. Capped at PROCESSING_RETRY_LIMIT attempts so a track
+    // that fails the same way every time (e.g. audio too long for one
+    // 9-minute shift to ever transcribe) settles into a real 'failed'
+    // terminal state instead of being reset every 5 minutes forever.
+    const PROCESSING_STUCK_MS = 12 * 60 * 1000 // 12 minutes — past the 9-min function ceiling with buffer
+    const PROCESSING_RETRY_LIMIT = 3
+
+    const stuckSnapshot = await db
+      .collectionGroup('recordings')
+      .where('transcriptStatus', '==', 'processing')
+      .get()
+
+    let rescued = 0
+    for (const trackDoc of stuckSnapshot.docs) {
+      const trackData = trackDoc.data()
+      const requestedAtMs = (
+        trackData.transcriptRequestedAt as { toMillis?: () => number } | undefined
+      )?.toMillis?.()
+      if (requestedAtMs === undefined || Date.now() - requestedAtMs <= PROCESSING_STUCK_MS) continue
+
+      const priorAttempts = (trackData.processingStuckRetryCount as number | undefined) ?? 0
+      const sessionId = trackDoc.ref.parent.parent?.id
+      if (!sessionId) continue
+
+      if (priorAttempts >= PROCESSING_RETRY_LIMIT) {
+        await trackDoc.ref.set(
+          {
+            transcriptStatus: 'failed',
+            transcriptError: 'Transcription worker never returned after repeated retries.',
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        )
+        logger.warn('processing_stuck_gave_up', { sessionId, role: trackDoc.id, priorAttempts })
+        await evaluateAndMerge(sessionId)
+        continue
+      }
+
+      await trackDoc.ref.set(
+        {
+          transcriptStatus: 'pending',
+          processingStuckRescue: true,
+          processingStuckRetryCount: priorAttempts + 1,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+      rescued++
+      logger.info('processing_stuck_rescued', { sessionId, role: trackDoc.id, attempt: priorAttempts + 1 })
+    }
+
+    if (rescued > 0 || stuckSnapshot.size > 0) {
+      logger.info(`finalize_pending: rescued ${rescued} stuck-processing track(s) of ${stuckSnapshot.size} checked`)
+    }
   },
 )
 

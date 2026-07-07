@@ -366,8 +366,12 @@ export default function CaseDetailOverlay({
   const audioMergePending = entry.audioMergePending;
   const mergedAudioStatus = entry.mergedAudioStatus ?? null;
   const audioResolvedNone = mergedAudioStatus === 'none';
+  // 'failed' = the merge step itself gave up after retries (ffmpeg/download
+  // error) rather than there being no audio to stitch in the first place —
+  // shown with its own honest message instead of looking like eternal "generating".
+  const audioResolvedFailed = mergedAudioStatus === 'failed';
   const audioUrl         = audioMergePending ? null : (entry.mergedAudioUrl ?? entry.audioUrl ?? entry.interviewerAudioUrl ?? null);
-  const hasAudio         = !audioMergePending && !audioResolvedNone && entry.hasAudio && !!audioUrl;
+  const hasAudio         = !audioMergePending && !audioResolvedNone && !audioResolvedFailed && entry.hasAudio && !!audioUrl;
   const transcriptStatus = entry.transcriptStatus ?? null;
   const transcriptReason = entry.transcriptReason ?? null;
   const scoreVal         = entry.isUnrated ? null : (entry.score ?? null);
@@ -1160,6 +1164,18 @@ export default function CaseDetailOverlay({
           >
             <p className="text-[10.5px] font-medium" style={{ color: 'rgba(92,64,51,.48)' }}>
               No audio for this session.
+            </p>
+          </div>
+        )}
+
+        {/* ── AUDIO MERGE FAILED (both sides had usable audio, but stitching them together didn't work) ── */}
+        {!audioMergePending && audioResolvedFailed && (
+          <div
+            className="flex-shrink-0 px-[16px] py-[10px]"
+            style={{ borderTop: '1px solid rgba(92,64,51,.07)', background: 'linear-gradient(180deg, rgba(92,64,51,.012) 0%, rgba(92,64,51,.028) 100%)' }}
+          >
+            <p className="text-[10.5px] font-medium" style={{ color: 'rgba(92,64,51,.48)' }}>
+              Audio couldn't be generated for this session.
             </p>
           </div>
         )}
