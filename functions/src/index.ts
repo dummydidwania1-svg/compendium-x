@@ -1539,6 +1539,24 @@ export const transcribeRecording = onDocumentWritten(
       await evaluateAndMerge(event.params.sessionId)
     }
 
+    // Mirror of the above for the candidate side: when candidateNeverRecorded
+    // flips to true (written by /api/evaluations once it confirms no
+    // recordings/candidate doc exists — e.g. candidate clicked "continue
+    // without recording"), re-evaluate the merge. Without this, a session
+    // where neither side ever wrote a recordings/{role} doc at all (so
+    // mergeTranscripts never fires) and interviewerAudioCaptured was never
+    // explicitly set to false either (so the check above never fires) had NO
+    // trigger that ever called evaluateAndMerge — not even the 5-minute sweep,
+    // since that queries candidateTranscriptStatus, which is also never
+    // written when no candidate track exists. Confirmed via sessions nm7p7so
+    // and iq74s: both stuck forever on "generating" with mergedAudioStatus
+    // never written, because evaluateAndMerge itself was never invoked.
+    const beforeNeverRecorded = beforeData?.candidateNeverRecorded
+    const afterNeverRecorded = afterData?.candidateNeverRecorded
+    if (beforeNeverRecorded !== afterNeverRecorded && afterNeverRecorded === true) {
+      await evaluateAndMerge(event.params.sessionId)
+    }
+
     // Original path: local/old-session transcription triggered by pending status.
     const beforeStatus = beforeData?.recording?.transcriptStatus
     const afterStatus = afterData?.recording?.transcriptStatus
