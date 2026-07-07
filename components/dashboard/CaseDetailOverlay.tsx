@@ -1019,35 +1019,9 @@ export default function CaseDetailOverlay({
                     className="px-[12px] py-[10px] rounded-[7px]"
                     style={{ background: 'rgba(217,208,196,.10)', border: '1px solid rgba(217,208,196,.32)' }}
                   >
-                    {retryQueued ? (
-                      <p className="text-[12px] leading-[1.65]" style={{ color: 'rgba(92,64,51,.62)' }}>
-                        Retry queued. Your transcript will appear here once it's ready.
-                      </p>
-                    ) : (
-                      <>
-                        <p className="text-[12px] leading-[1.65]" style={{ color: 'rgba(92,64,51,.62)' }}>
-                          Transcript didn't come through. The audio might have been too short or mostly silent.
-                        </p>
-                        {entry.hasAudio && entry.lobbyId && (
-                          <div className="mt-[8px] flex items-center gap-[7px]">
-                            <button
-                              onClick={() => void handleRetry()}
-                              disabled={retrying}
-                              className="inline-flex items-center gap-[5px] px-[10px] py-[5px] rounded-full text-[10px] font-semibold tracking-[.02em] transition-all duration-150 disabled:opacity-60 hover:opacity-80"
-                              style={{ background: 'rgba(217,208,196,.18)', border: '1px solid rgba(92,64,51,.14)', color: 'rgba(92,64,51,.62)' }}
-                            >
-                              {retrying
-                                ? <><Loader2 className="w-[10px] h-[10px] animate-spin" />Queuing...</>
-                                : <><RefreshCw className="w-[10px] h-[10px]" />Try again</>
-                              }
-                            </button>
-                            {retryError && (
-                              <span className="text-[10px]" style={{ color: 'rgba(92,64,51,.52)' }}>{retryError}</span>
-                            )}
-                          </div>
-                        )}
-                      </>
-                    )}
+                    <p className="text-[12px] leading-[1.65]" style={{ color: 'rgba(92,64,51,.62)' }}>
+                      Transcript didn't come through. The audio might have been too short or mostly silent.
+                    </p>
                   </div>
                 )}
 
