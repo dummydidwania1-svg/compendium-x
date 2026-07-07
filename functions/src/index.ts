@@ -1372,7 +1372,15 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
           ? 'candidate_interrupted'
           : candidateNeverRecorded && !candidateSnap.exists
             ? 'candidate_never_recorded'
-            : null
+            // Candidate's track genuinely existed and uploaded something, but
+            // transcription rejected it (too short/silent) — distinct from
+            // candidate_never_recorded (no track at all). Previously fell
+            // through to null, which the frontend's fallback copy wrongly
+            // read as "your audio was captured" — the opposite of what
+            // actually happened.
+            : candidateSnap.exists && candidateStatus === 'failed' && !candidateCompleted
+              ? 'candidate_transcription_failed'
+              : null
 
     await sessionRef.set(
       {
