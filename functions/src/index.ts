@@ -1207,6 +1207,21 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   const candidateCompletedAt =
     candidateTerminalAt?.transcriptCompletedAt?.toMillis() ?? candidateTerminalAt?.transcriptFailedAt?.toMillis()
 
+  // Session-level fallback anchor for the grace-window clock, used only when
+  // the side that would normally provide it has no completion timestamp at
+  // all (no track doc ever existed — e.g. candidateNeverRecorded, or the
+  // interviewer never attempted/declined without a track). Previously the
+  // grace window could ONLY start from a real track's own completion time,
+  // so a session where one side never had a track at all had no way to ever
+  // start the clock, even once the OTHER side was stuck forever. selectedAt
+  // (set once when the case actually starts) is the natural anchor; createdAt
+  // (session/lobby creation) is a further fallback if selectedAt is missing.
+  const sessionAnchorAt = (
+    (sessionData.selectedAt as { toMillis?: () => number } | undefined)?.toMillis?.() ??
+    (sessionData.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.()
+  )
+  const sessionAlreadyEnded = sessionData.status === 'completed' || sessionData.status === 'abandoned'
+
   // 'recording' means a periodic flush wrote the doc but no final/beacon ever arrived.
   // Treat it like absent for the grace-window check so a stuck session still merges.
   const interviewerStuckInRecording =
@@ -1224,25 +1239,59 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
     candidateStatus !== 'pending' &&
     candidateStatus !== 'processing'
 
+  // Candidate side already known to have nothing more coming — either it
+  // never recorded at all, or the session has already ended (nobody is
+  // actively recording anymore, so there's no risk of cutting off a live
+  // conversation by using the fallback anchor below).
+  const candidateKnownAbsentOrEnded = candidateNeverRecorded || sessionAlreadyEnded
+  // Mirror for the interviewer side, used to rescue a stuck CANDIDATE track —
+  // previously there was no equivalent rescue at all for this direction.
+  const interviewerKnownAbsentOrEnded = interviewerDeclined || sessionAlreadyEnded
+
   const pastGraceWindow =
     candidateDone &&
     (!interviewerSnap.exists || interviewerStuckInRecording) &&
     candidateCompletedAt !== undefined &&
     Date.now() - candidateCompletedAt > MERGE_GRACE_MS
 
+  // Fallback version of the same check, anchored on session start instead of
+  // the candidate's own completion time — only trusted once the candidate
+  // side is already known to have nothing coming, so this never shortens or
+  // interrupts a genuinely still-in-progress candidate recording.
+  const pastGraceWindowFallback =
+    candidateKnownAbsentOrEnded &&
+    interviewerStuckInRecording &&
+    sessionAnchorAt !== undefined &&
+    Date.now() - sessionAnchorAt > MERGE_GRACE_MS
+
+  // Symmetric fallback for rescuing a stuck CANDIDATE track when the
+  // interviewer side is the one already known-absent/ended.
+  const pastGraceWindowFallbackForCandidate =
+    interviewerKnownAbsentOrEnded &&
+    candidateStuckInRecording &&
+    sessionAnchorAt !== undefined &&
+    Date.now() - sessionAnchorAt > MERGE_GRACE_MS
+
   // Bypass the hard gate when we know for certain no candidate audio is
   // coming at all — mirrors how interviewerDeclined already bypasses
-  // interviewerKnown for the interviewer side.
-  if (!candidateDone && !candidateNeverRecorded) return
-  if (!interviewerKnown && !pastGraceWindow) return
+  // interviewerKnown for the interviewer side. Also let a stuck candidate
+  // track through once the fallback grace window says it's safe to stop
+  // waiting — previously this gate returned unconditionally whenever
+  // candidateStuckInRecording was true, making the candidate-stuck rescue
+  // block below permanently unreachable in every scenario except a side
+  // effect of the interviewer's own "End Case & Evaluate" submission.
+  if (!candidateDone && !candidateNeverRecorded && !pastGraceWindowFallbackForCandidate) return
+  if (!interviewerKnown && !pastGraceWindow && !pastGraceWindowFallback) return
 
-  // Safety net for a stuck candidate track. Unlike the interviewer's own
-  // safety net below, this fires immediately with no grace window: the
-  // realistic trigger is /api/evaluations's own promote-hook already having
-  // flipped the status by the time this function runs (fired by the
-  // interviewer's "End Case & Evaluate" submit), so there's real audio ready
-  // to transcribe with nothing left to wait for. This also serves as a
-  // fallback if that best-effort write silently failed.
+  // Safety net for a stuck candidate track. Fires immediately (no grace
+  // window) when reached via the original path — the realistic trigger there
+  // is /api/evaluations's own promote-hook already having flipped the status
+  // by the time this function runs (fired by the interviewer's "End Case &
+  // Evaluate" submit), so there's real audio ready to transcribe with nothing
+  // left to wait for. Also reachable via pastGraceWindowFallbackForCandidate
+  // above, once the interviewer side is known-absent/ended and 5 minutes have
+  // passed since the session started — the fallback for the case that was
+  // previously never rescued at all.
   if (candidateStuckInRecording) {
     await recordingsCol.doc('candidate').set(
       { transcriptStatus: 'pending', candidateInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
@@ -1258,7 +1307,7 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   // Safety net: if the interviewer track is stuck in 'recording' (beacon never fired),
   // upgrade it to 'pending' and return — transcription will fire, then mergeTranscripts
   // will call evaluateAndMerge again once the track reaches a terminal state.
-  if (interviewerStuckInRecording && pastGraceWindow) {
+  if (interviewerStuckInRecording && (pastGraceWindow || pastGraceWindowFallback)) {
     await recordingsCol.doc('interviewer').set(
       { transcriptStatus: 'pending', interviewerInterrupted: true, updatedAt: FieldValue.serverTimestamp() },
       { merge: true },
@@ -1281,10 +1330,20 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
     const interviewerInterrupted = sessionData.interviewerInterrupted === true
 
     if (!candidateCompleted && !hasInterviewerTrack) {
+      // Neither side transcribed — covers both explicit-decline/opt-out
+      // combinations (including candidate "continue without recording",
+      // which also suppresses the interviewer's own upload by existing
+      // client-side design) as well as both sides genuinely failing
+      // transcription. Audio side gets the same definite "none" answer here
+      // too, since this branch returns before ever reaching the main
+      // audio-resolution block below.
       await sessionRef.set(
         {
           mergedTranscriptStatus: 'failed',
           mergedTranscriptError: 'Both recording tracks failed to transcribe.',
+          ...(!sessionData.mergedAudioUrl && sessionData.mergedAudioStatus !== 'none'
+            ? { mergedAudioStatus: 'none', mergedAudioReason: 'no_audio', mergedAudioCompletedAt: FieldValue.serverTimestamp() }
+            : {}),
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true },
@@ -1337,10 +1396,17 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
       hasInterviewerTrack,
     })
 
-    // Best-effort time-aligned audio merge. Runs only when BOTH mic tracks have
-    // audio. Wrapped in its own try/catch so any failure (ffmpeg, download,
-    // upload) is logged and NEVER affects the transcript merge above.
-    //
+    // Give the audio side the same kind of definite, terminal answer the
+    // transcript already has above (completed/partial/failed), instead of
+    // silently doing nothing when one or both sides lack usable audio. A
+    // track counts as "usable" only if it actually has an audioUrl AND its
+    // own transcript didn't fail — a phantom/too-short recording (upload
+    // succeeded, but rejected as too short/silent to transcribe) is treated
+    // as absent for audio purposes too, matching how it's already treated as
+    // absent for transcript purposes.
+    const candidateAudioUsable = Boolean(candidateData?.audioUrl) && candidateStatus !== 'failed'
+    const interviewerAudioUsable = Boolean(interviewerData?.audioUrl) && interviewerStatus !== 'failed'
+
     // Re-runs (overwriting a previous mergedAudioUrl) when the source audio has
     // genuinely changed since the last successful merge — same "last write
     // wins" principle as route.ts's finalProtected guard: a reload/close
@@ -1356,23 +1422,23 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
       mergedAudioSourceSizes?.candidate === candidateData?.byteSize &&
       mergedAudioSourceSizes?.interviewer === interviewerData?.byteSize
 
-    if (
-      MERGE_AUDIO_ENABLED &&
-      candidateData?.audioUrl &&
-      interviewerData?.audioUrl &&
-      !audioSourcesUnchanged
-    ) {
+    if (MERGE_AUDIO_ENABLED && candidateAudioUsable && interviewerAudioUsable && !audioSourcesUnchanged) {
+      // Best-effort time-aligned audio merge. Wrapped in its own try/catch so
+      // any failure (ffmpeg, download, upload) is logged and NEVER affects
+      // the transcript merge above.
       try {
         const mergedAudioUrl = await mergeSessionAudio(
           sessionId,
-          { audioUrl: candidateData.audioUrl, startOffsetMs: candidateData.startOffsetMs },
-          { audioUrl: interviewerData.audioUrl, startOffsetMs: interviewerData.startOffsetMs },
+          { audioUrl: candidateData!.audioUrl, startOffsetMs: candidateData?.startOffsetMs },
+          { audioUrl: interviewerData!.audioUrl, startOffsetMs: interviewerData?.startOffsetMs },
         )
         if (mergedAudioUrl) {
           await sessionRef.set(
             {
               mergedAudioUrl,
               mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+              mergedAudioStatus: 'completed',
+              mergedAudioReason: null,
               mergedAudioSourceSizes: {
                 candidate: candidateData?.byteSize ?? null,
                 interviewer: interviewerData?.byteSize ?? null,
@@ -1384,6 +1450,45 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
       } catch (audioErr) {
         const m = audioErr instanceof Error ? audioErr.message : 'Unknown audio merge error.'
         logger.warn('audio_merge_failed', { sessionId, message: m })
+      }
+    } else if (!sessionData.mergedAudioUrl && !audioSourcesUnchanged) {
+      // Exactly one side (or neither) has usable audio — this is a genuine,
+      // final answer, not a "still waiting" state. Write it definitively so
+      // the dashboard can stop showing "generating" forever. Also covers
+      // MERGE_AUDIO_ENABLED=false, which previously had this identical
+      // "never resolves" symptom for every remote session, not just these ones.
+      if (candidateAudioUsable && !interviewerAudioUsable) {
+        const reason = interviewerDeclined
+          ? 'interviewer_declined'
+          : 'interviewer_no_audio'
+        await sessionRef.set(
+          {
+            mergedAudioUrl: candidateData!.audioUrl,
+            mergedAudioStatus: 'single_side',
+            mergedAudioReason: reason,
+            mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        )
+      } else if (!candidateAudioUsable && interviewerAudioUsable) {
+        await sessionRef.set(
+          {
+            mergedAudioUrl: interviewerData!.audioUrl,
+            mergedAudioStatus: 'single_side',
+            mergedAudioReason: 'candidate_no_audio',
+            mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        )
+      } else if (!candidateAudioUsable && !interviewerAudioUsable) {
+        await sessionRef.set(
+          {
+            mergedAudioStatus: 'none',
+            mergedAudioReason: 'no_audio',
+            mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        )
       }
     }
   } catch (err) {

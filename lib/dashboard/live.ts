@@ -40,15 +40,28 @@ export type DashboardCaseEntry = {
   transcriptError: string | null
   transcriptReason: string | null
   audioUrl: string | null
+  interviewerAudioUrl: string | null
   mergedAudioUrl: string | null
   // Merge status of the dual-mic transcript on the session doc. Used to decide
   // whether merged audio is still being generated for a Remote session.
   mergedTranscriptStatus: string | null
+  // Terminal audio-merge outcome written by evaluateAndMerge: 'completed'
+  // (both sides merged), 'single_side' (only one side had usable audio —
+  // mergedAudioUrl points at that one side's own track), 'none' (neither side
+  // had usable audio), or null/undefined for a session whose merge hasn't
+  // resolved yet (or pre-dates this field entirely).
+  mergedAudioStatus: string | null
+  // Why the audio landed on a single-side/none outcome — e.g.
+  // 'interviewer_declined' | 'interviewer_no_audio' | 'candidate_no_audio' |
+  // 'no_audio'. Drives the specific copy shown alongside that outcome.
+  mergedAudioReason: string | null
   // True only for a Remote (dual-mic) session whose merged audio has not been
   // written yet AND whose merge is actively pending (none/pending/processing/
-  // partial). When true the UI shows a "generating" state and hides all audio,
-  // rather than falling back to a single mic track. False for Same Device
-  // sessions and for Remote sessions where the merge has failed, so those never
+  // partial) AND whose audio-merge step hasn't reached its OWN terminal state
+  // (mergedAudioStatus) either. When true the UI shows a "generating" state
+  // and hides all audio. False for Same Device sessions, for Remote sessions
+  // where the merge has failed, and for Remote sessions where the audio side
+  // resolved to a single-side or no-audio terminal outcome, so those never
   // get stuck on "generating".
   audioMergePending: boolean
   workspaceImageUrls: string[]
@@ -78,8 +91,11 @@ export type DashboardSessionMeta = {
   transcriptError: string | null
   transcriptReason: string | null
   audioUrl: string | null
+  interviewerAudioUrl: string | null
   mergedAudioUrl: string | null
   mergedTranscriptStatus: string | null
+  mergedAudioStatus: string | null
+  mergedAudioReason: string | null
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
@@ -203,17 +219,28 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     // Local sessions: embedded recording.audioUrl
     // Remote sessions: denormalized candidateAudioUrl written by the recording route
     audioUrl: asString(source.audioUrl) ?? asString(value?.candidateAudioUrl),
+    // Remote sessions only: denormalized interviewerAudioUrl written by the
+    // recording route — used as the single-side fallback when only the
+    // interviewer's track has usable audio.
+    interviewerAudioUrl: asString(value?.interviewerAudioUrl),
     // Server-side time-aligned combined audio (both mics), written to the doc root
     // by the Cloud Function. Preferred over a single mic track when present.
+    // For a single_side outcome this points at that one side's own track URL.
     mergedAudioUrl,
     // Raw merge status from the session doc root, used to tell "merge pending"
     // apart from "merge failed / no merge" for the generating-audio UI state.
     mergedTranscriptStatus: asString(value?.mergedTranscriptStatus),
+    mergedAudioStatus: asString(value?.mergedAudioStatus),
+    mergedAudioReason: asString(value?.mergedAudioReason),
   }
 }
 
 // Merge-in-progress states: merged audio is expected but not written yet.
 const AUDIO_MERGE_PENDING_STATUSES = new Set(['none', 'pending', 'processing', 'partial'])
+// Terminal audio-merge outcomes — once mergedAudioStatus reaches one of these,
+// the audio side is definitively resolved and should never show "generating"
+// again, regardless of what mergedTranscriptStatus says.
+const AUDIO_MERGE_TERMINAL_STATUSES = new Set(['completed', 'single_side', 'none'])
 
 export function mapDashboardEntry(
   record: EvaluationRecord,
@@ -254,14 +281,21 @@ export function mapDashboardEntry(
     transcriptError: sessionMeta?.transcriptError ?? null,
     transcriptReason: sessionMeta?.transcriptReason ?? null,
     audioUrl: sessionMeta?.audioUrl ?? null,
+    interviewerAudioUrl: sessionMeta?.interviewerAudioUrl ?? null,
     mergedAudioUrl: sessionMeta?.mergedAudioUrl ?? null,
     mergedTranscriptStatus: sessionMeta?.mergedTranscriptStatus ?? null,
-    // Remote (dual-mic) session, merged audio not written yet, and the merge is
-    // still actively running -> show "generating" and hide audio. Same Device
-    // sessions and failed merges are excluded so they never stall on this state.
+    mergedAudioStatus: sessionMeta?.mergedAudioStatus ?? null,
+    mergedAudioReason: sessionMeta?.mergedAudioReason ?? null,
+    // Remote (dual-mic) session, merged audio not written yet, the transcript
+    // merge is still actively running, AND the audio side hasn't separately
+    // reached its own terminal outcome (completed/single_side/none) ->
+    // show "generating" and hide audio. Same Device sessions, failed
+    // transcript merges, and sessions whose audio side already resolved
+    // (even if a single track failed) are excluded so they never stall.
     audioMergePending:
       (sessionMeta?.sessionMode ?? 'Remote') === 'Remote' &&
       !sessionMeta?.mergedAudioUrl &&
+      !AUDIO_MERGE_TERMINAL_STATUSES.has((sessionMeta?.mergedAudioStatus ?? '').toLowerCase()) &&
       AUDIO_MERGE_PENDING_STATUSES.has(
         (sessionMeta?.mergedTranscriptStatus ?? 'none').toLowerCase(),
       ),
@@ -269,7 +303,7 @@ export function mapDashboardEntry(
     hasTranscript: Boolean(transcript || transcriptPreview),
     hasPDF: false,
     hasSnapshot: workspaceImageUrls.length > 0,
-    hasAudio: Boolean(sessionMeta?.mergedAudioUrl || sessionMeta?.audioUrl),
+    hasAudio: Boolean(sessionMeta?.mergedAudioUrl || sessionMeta?.audioUrl || sessionMeta?.interviewerAudioUrl),
     isUnrated: record.isUnrated,
   }
 }

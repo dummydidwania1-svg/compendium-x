@@ -356,11 +356,18 @@ export default function CaseDetailOverlay({
   // Derived
   // While a Remote session's merged audio is still being generated, we neither
   // play nor load any single-mic track — the UI shows a "generating" state
-  // instead. Once merge completes, mergedAudioUrl is used; failed/Same Device
-  // sessions fall back to the single track as before.
+  // instead. Once the audio side resolves (mergedAudioStatus), it lands on one
+  // of: 'completed' (both sides stitched, mergedAudioUrl points at that file),
+  // 'single_side' (only one side had usable audio — mergedAudioUrl already
+  // points directly at that one side's own track, written by evaluateAndMerge),
+  // or 'none' (neither side had usable audio). Same Device sessions and
+  // sessions that pre-date this fix fall back to the single candidate track
+  // as before.
   const audioMergePending = entry.audioMergePending;
-  const audioUrl         = audioMergePending ? null : (entry.mergedAudioUrl ?? entry.audioUrl ?? null);
-  const hasAudio         = !audioMergePending && entry.hasAudio && !!audioUrl;
+  const mergedAudioStatus = entry.mergedAudioStatus ?? null;
+  const audioResolvedNone = mergedAudioStatus === 'none';
+  const audioUrl         = audioMergePending ? null : (entry.mergedAudioUrl ?? entry.audioUrl ?? entry.interviewerAudioUrl ?? null);
+  const hasAudio         = !audioMergePending && !audioResolvedNone && entry.hasAudio && !!audioUrl;
   const transcriptStatus = entry.transcriptStatus ?? null;
   const transcriptReason = entry.transcriptReason ?? null;
   const scoreVal         = entry.isUnrated ? null : (entry.score ?? null);
@@ -1152,6 +1159,34 @@ export default function CaseDetailOverlay({
                 Stitching your audio together, check back in 5
               </span>
             </div>
+          </div>
+        )}
+
+        {/* ── SINGLE-SIDE AUDIO REASON (only one side had usable audio) ── */}
+        {!audioMergePending && mergedAudioStatus === 'single_side' && hasAudio && (
+          <div
+            className="flex-shrink-0 px-[16px] pt-[9px]"
+            style={{ background: 'linear-gradient(180deg, rgba(92,64,51,.012) 0%, rgba(92,64,51,.028) 100%)' }}
+          >
+            <p className="text-[10.5px] leading-[1.5]" style={{ color: 'rgba(92,64,51,.55)' }}>
+              {entry.mergedAudioReason === 'interviewer_declined'
+                ? "Your interviewer skipped sharing their mic, so here's your side of the conversation."
+                : entry.mergedAudioReason === 'interviewer_no_audio'
+                ? "Looks like your interviewer's side never came through, so here's your side of the conversation."
+                : "Your side of the recording didn't come through, so here's your interviewer's side."}
+            </p>
+          </div>
+        )}
+
+        {/* ── NO AUDIO AT ALL (neither side had usable audio) ── */}
+        {!audioMergePending && audioResolvedNone && (
+          <div
+            className="flex-shrink-0 px-[16px] py-[10px]"
+            style={{ borderTop: '1px solid rgba(92,64,51,.07)', background: 'linear-gradient(180deg, rgba(92,64,51,.012) 0%, rgba(92,64,51,.028) 100%)' }}
+          >
+            <p className="text-[10.5px] font-medium" style={{ color: 'rgba(92,64,51,.48)' }}>
+              No audio for this session.
+            </p>
           </div>
         )}
 
