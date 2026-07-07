@@ -187,6 +187,18 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
             sessionUpdate.interviewerInterrupted = true
           }
         }
+        // The upload itself failed outright (never reached transcription, so
+        // the Cloud Function's writeFailure never runs for this case) — denormalize
+        // the same terminal-at-time-T signal writeSuccess/writeFailure already
+        // write on the transcription paths, so the 5-minute grace window (which
+        // anchors off these fields) still starts its clock instead of waiting
+        // forever for a timestamp that would otherwise never arrive.
+        if (body.status === 'upload_failed') {
+          const roleTranscriptStatusField = role === 'candidate' ? 'candidateTranscriptStatus' : 'interviewerTranscriptStatus'
+          const roleTranscriptCompletedAtField = role === 'candidate' ? 'candidateTranscriptCompletedAt' : 'interviewerTranscriptCompletedAt'
+          sessionUpdate[roleTranscriptStatusField] = 'failed'
+          sessionUpdate[roleTranscriptCompletedAtField] = FieldValue.serverTimestamp()
+        }
         tx.set(sessionRef, sessionUpdate, { merge: true })
       } else {
         // Legacy path: embedded recording map (local sessions, old clients).

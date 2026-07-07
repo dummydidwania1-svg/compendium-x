@@ -16,6 +16,7 @@ import PlatformLoader from '@/components/PlatformLoader'
 import { slugifyCase } from '@/lib/slug'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { MandatoryTimedOverlay } from '@/components/lobby/MandatoryTimedOverlay'
+import { MandatoryOverlay } from '@/components/lobby/MandatoryOverlay'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { useMicPermission } from '@/lib/permissions/microphone'
@@ -776,6 +777,9 @@ function NotesEditor({
 const isSafari = typeof navigator !== 'undefined' && navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')
 
 const INTERVIEWER_MIME_CANDIDATES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
+// Backoff delays (ms) between retry attempts when the interviewer's final
+// audio upload fails — see finalizeInterviewerUploadWithRetry.
+const RETRY_BACKOFF_MS = [1000, 2500]
 function pickInterviewerMimeType(): string | null {
   if (typeof MediaRecorder === 'undefined') return null
   for (const candidate of INTERVIEWER_MIME_CANDIDATES) {
@@ -823,7 +827,18 @@ export function InterviewerPageInner({
 	const [showUnratedConfirm, setShowUnratedConfirm] = useState(false)
 	const [overlaySubmitError, setOverlaySubmitError] = useState('')
 	const [overlaySuccess, setOverlaySuccess] = useState(false)
-	const [overlayAutoClose, setOverlayAutoClose] = useState(0) // countdown seconds remaining
+	const [overlayAutoClose, setOverlayAutoClose] = useState(0) // countdown seconds remaining (local mode)
+	// Remote-mode success countdown, in tenths of a second (35 -> 3.5s), so the
+	// displayed "3.5s" reads cleanly. Separate from overlayAutoClose so local
+	// mode's whole-second countdown/progress-bar math is untouched.
+	const REMOTE_SUCCESS_REDIRECT_MS = 3500
+	const [remoteSuccessTenths, setRemoteSuccessTenths] = useState(REMOTE_SUCCESS_REDIRECT_MS / 100)
+	// True once the interviewer's own audio upload has permanently failed after
+	// retries (see finalizeInterviewerUploadWithRetry) — surfaces a mandatory
+	// "please retry" overlay instead of the normal success state. Genuinely a
+	// last resort; the retry-with-backoff above should absorb almost all
+	// transient failures before this ever becomes true.
+	const [submitFailedPermanently, setSubmitFailedPermanently] = useState(false)
 	const showEvalOverlayRef = useRef(false)
 	useEffect(() => { showEvalOverlayRef.current = showEvalOverlay }, [showEvalOverlay])
 
@@ -879,13 +894,29 @@ export function InterviewerPageInner({
 		router.push('/')
 	}, [router])
 
-	// When overlay is in success state and upload is done, start the 3s countdown.
-	// Local/split-screen: window.close() works (tab opened by script) — fires at 0.
-	// Remote: redirect to homepage instead.
+	// When overlay is in success state and upload is done, start the countdown.
+	// Local/split-screen: window.close() works (tab opened by script) — 3s countdown, fires at 0.
+	// Remote: window.close() is blocked (tab opened manually), so redirect to
+	// homepage instead — with its own visible 3.5s countdown rather than the
+	// previous silent, immediate redirect (which contradicted the "you can
+	// close this tab now" copy shown at the same time).
 	useEffect(() => {
 		if (!overlaySuccess) return
 		if (interviewerUploadState === 'uploading') return
-		if (isRemoteMode) { goHomeAfterSession(); return }
+		if (isRemoteMode) {
+			setRemoteSuccessTenths(REMOTE_SUCCESS_REDIRECT_MS / 100)
+			const iv = setInterval(() => {
+				setRemoteSuccessTenths(prev => {
+					if (prev <= 1) {
+						clearInterval(iv)
+						goHomeAfterSession()
+						return 0
+					}
+					return prev - 1
+				})
+			}, 100)
+			return () => clearInterval(iv)
+		}
 		setOverlayAutoClose(3)
 		const iv = setInterval(() => {
 			setOverlayAutoClose(prev => {
@@ -1418,15 +1449,21 @@ export function InterviewerPageInner({
 	// ~20 s if the interviewer hard-closes the browser.
 	const INTERVIEWER_FLUSH_MS = 20_000
 
-	const flushInterviewerAudio = useCallback(async ({ final: isFinal }: { final: boolean }) => {
-		if (!isRemoteMode || !lobbyId) return
+	// Return value (only meaningful when `final: true`) tells the caller the
+	// real outcome of this flush attempt, since interviewerUploadState is a
+	// stale closure by the time an awaited call returns — used by
+	// stopInterviewerRecordingAndUpload's retry-with-backoff logic.
+	const flushInterviewerAudio = useCallback(async ({ final: isFinal }: { final: boolean }): Promise<
+		'uploaded' | 'upload_failed' | 'not_captured' | 'skipped'
+	> => {
+		if (!isRemoteMode || !lobbyId) return 'skipped'
 		// Candidate opted out -- never upload. Mark as not_captured on final so the
 		// success view shows the friendly "ran without recording" message.
 		if (candidateOptedOutRef.current) {
 			if (isFinal) setInterviewerUploadState('not_captured')
-			return
+			return 'not_captured'
 		}
-		if (flushInFlightRef.current) return  // skip tick if previous upload still in flight
+		if (flushInFlightRef.current) return 'skipped'  // skip tick if previous upload still in flight
 
 		// Force the current timeslice into ondataavailable before snapshotting
 		const recorder = interviewerRecorderRef.current
@@ -1443,7 +1480,7 @@ export function InterviewerPageInner({
 				setInterviewerUploadState('not_captured')
 				void signalNoInterviewerAudio()
 			}
-			return
+			return 'not_captured'
 		}
 
 		const mimeType = recorder?.mimeType || pickInterviewerMimeType() || 'audio/mp4'
@@ -1460,7 +1497,7 @@ export function InterviewerPageInner({
 					setInterviewerUploadState('not_captured')
 					void signalNoInterviewerAudio()
 				}
-				return
+				return 'not_captured'
 			}
 
 			await auth.currentUser?.getIdToken(true).catch(() => {})
@@ -1499,12 +1536,13 @@ export function InterviewerPageInner({
 
 			// Cache token for the pagehide keepalive beacon
 			auth.currentUser?.getIdToken(false).then((t) => { cachedAuthTokenRef.current = t }).catch(() => {})
+			return 'uploaded'
 		} catch {
 			if (isFinal) {
 				setInterviewerUploadState('upload_failed')
-				void signalNoInterviewerAudio()
 			}
 			// Non-final flush failure: non-fatal — next tick retries
+			return 'upload_failed'
 		} finally {
 			flushInFlightRef.current = false
 			if (isFinal) interviewerChunksRef.current = []
@@ -1610,8 +1648,32 @@ export function InterviewerPageInner({
 		}
 	}, [interviewerMicPermState, isRemoteMode, previewMode, currentView, interviewerUploadState, startInterviewerRecording, discardStaleInterviewerRecorder])
 
-	const stopInterviewerRecordingAndUpload = useCallback(async () => {
-		if (recordingFinalizedRef.current) return  // pagehide beacon already fired
+	// Retries a failed final flush with a short backoff (1s, then 2.5s) before
+	// giving up — covers a transient network blip so the vast majority of
+	// upload_failed outcomes resolve invisibly without ever surfacing the
+	// mandatory retry overlay. Returns the last outcome seen.
+	const finalizeInterviewerUploadWithRetry = useCallback(async (): Promise<
+		'uploaded' | 'upload_failed' | 'not_captured' | 'skipped'
+	> => {
+		let result = await flushInterviewerAudio({ final: true })
+		for (const delayMs of RETRY_BACKOFF_MS) {
+			if (result !== 'upload_failed') break
+			await new Promise((r) => setTimeout(r, delayMs))
+			result = await flushInterviewerAudio({ final: true })
+		}
+		if (result === 'upload_failed') {
+			// Exhausted retries — only now tell the backend there's genuinely no
+			// interviewer audio coming, matching the pre-existing behavior of the
+			// single-attempt catch block this replaces.
+			void signalNoInterviewerAudio()
+		}
+		return result
+	}, [flushInterviewerAudio, signalNoInterviewerAudio])
+
+	const stopInterviewerRecordingAndUpload = useCallback(async (): Promise<
+		'uploaded' | 'upload_failed' | 'not_captured' | 'skipped'
+	> => {
+		if (recordingFinalizedRef.current) return 'skipped'  // pagehide beacon already fired
 		recordingFinalizedRef.current = true
 
 		// Eagerly mark as uploading before the first await so React batches this
@@ -1635,14 +1697,12 @@ export function InterviewerPageInner({
 
 		if (!recorder) {
 			// Recorder was cleared (onerror) or never started — chunks may still exist
-			await flushInterviewerAudio({ final: true })
-			return
+			return finalizeInterviewerUploadWithRetry()
 		}
 
 		if (recorder.state === 'inactive') {
 			interviewerRecorderRef.current = null
-			await flushInterviewerAudio({ final: true })
-			return
+			return finalizeInterviewerUploadWithRetry()
 		}
 
 		// Active recorder: stop it and wait for all remaining data before the final flush
@@ -1654,8 +1714,8 @@ export function InterviewerPageInner({
 			try { recorder.stop() } catch { resolve() }
 		})
 
-		await flushInterviewerAudio({ final: true })
-	}, [flushInterviewerAudio])
+		return finalizeInterviewerUploadWithRetry()
+	}, [finalizeInterviewerUploadWithRetry])
 
 	// Cleanup recorder on unmount.
 	useEffect(() => {
@@ -2247,8 +2307,18 @@ useEffect(() => {
   router.replace(repoUrl)
 }, [loading, loadError, caseData, notFound, lobbyId, searchParams, router])
 
+	// Remembers the `force` flag from the last real submit attempt so the
+	// mandatory retry overlay's single "Retry submitting" button can replay the
+	// exact same call after a permanent upload failure, regardless of which of
+	// the three submit buttons (Yes Submit / Save & Submit / Submit & Close
+	// Case) originally triggered it. Safe to replay: /api/evaluations is an
+	// upsert, so resubmitting identical scores/notes is a harmless no-op.
+	const lastSubmitForceRef = useRef(false)
+
 	const handleSubmitFeedback = async (opts?: { force?: boolean }) => {
 		if (!resolvedCaseId || !caseData) return
+		lastSubmitForceRef.current = opts?.force === true
+		setSubmitFailedPermanently(false)
 		if (!opts?.force && Object.values(scores).some((value) => value === 0)) {
 			setSubmitError('Please rate all 4 criteria before submitting.')
 			return
@@ -2311,9 +2381,24 @@ useEffect(() => {
 		// Clear the remote overlay — interviewer just submitted successfully.
 		setCandidateEndedSession(false)
 		// Stop and upload the interviewer's mic recording (remote dual-mic).
-		// Fire-and-forget: the upload writes to the subcollection independently
-		// of the eval submission; the Cloud Function merges both tracks after.
-		void stopInterviewerRecordingAndUpload()
+		// Awaited (with its own internal retry-with-backoff) so the success
+		// screen never shows, and the interviewer never closes the tab, before
+		// their own audio has actually finished uploading — in local mode this
+		// resolves to 'skipped' near-instantly (flushInterviewerAudio is a no-op
+		// there), so this await is invisible/harmless for same-device sessions.
+		const uploadOutcome = await stopInterviewerRecordingAndUpload()
+
+		if (uploadOutcome === 'upload_failed') {
+			// Genuine last-resort: retries inside stopInterviewerRecordingAndUpload
+			// already ran and still failed. Close the End Case & Evaluate overlay
+			// (whichever of its three internal states triggered this) and replace
+			// it with the dedicated mandatory retry overlay — avoids both being
+			// visible/stacked at once, since they share the same zIndex:9999 family.
+			setSubmitting(false)
+			closeEvalOverlay()
+			setSubmitFailedPermanently(true)
+			return
+		}
 
 		// Overlay submits: show the success card immediately (with countdown).
 		// In local/split-screen mode window.close() works (tab opened by script),
@@ -2666,6 +2751,20 @@ if (previewMode && !forcePreview) {
 					/>
 				)}
 
+				{/* Remote mode: the interviewer's own audio upload permanently failed
+				    after retries (see finalizeInterviewerUploadWithRetry). Mandatory,
+				    no countdown — stays up until the retry succeeds. Sits above the
+				    End Case & Evaluate overlay (same zIndex:9999 family), so it's
+				    never hidden underneath it even while that overlay is also open. */}
+				{isRemoteMode && submitFailedPermanently && (
+					<MandatoryOverlay
+						title="Your submission didn't quite make it through"
+						body="Mind giving it another go? We'll pick up right where you left off."
+						primaryLabel={submitting ? 'Retry submitting…' : 'Retry submitting'}
+						onPrimary={() => { if (!submitting) void handleSubmitFeedback({ force: lastSubmitForceRef.current }) }}
+					/>
+				)}
+
 				{/* Keyframes for centered overlay animations */}
 				<style>{`
 					@keyframes ixo-scrim-in { from { opacity: 0 } to { opacity: 1 } }
@@ -2835,8 +2934,11 @@ if (previewMode && !forcePreview) {
 											<div>
 												<p style={{ margin: '0 0 5px', fontSize: '15px', fontWeight: 700, color: '#2e2318' }}>That's a wrap!</p>
 												<p style={{ margin: 0, fontSize: '11.5px', color: 'rgba(92,64,51,0.55)', lineHeight: 1.6 }}>
-													Your feedback is in. You can close this tab now.
+													Your feedback is in. Taking you home in {(remoteSuccessTenths / 10).toFixed(1)}s, or close this tab whenever you like.
 												</p>
+											</div>
+											<div style={{ width: '100%', height: '2px', borderRadius: '1px', background: 'rgba(92,64,51,0.1)', overflow: 'hidden' }}>
+												<div style={{ height: '100%', borderRadius: '1px', background: 'rgba(61,90,53,0.35)', width: `${(remoteSuccessTenths / (REMOTE_SUCCESS_REDIRECT_MS / 100)) * 100}%`, transition: 'width 0.15s linear' }} />
 											</div>
 										</div>
 									) : (

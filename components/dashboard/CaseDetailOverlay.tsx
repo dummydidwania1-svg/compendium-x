@@ -1003,7 +1003,7 @@ export default function CaseDetailOverlay({
                     className="px-[14px] py-[12px] rounded-[7px] text-[12px] leading-[1.65]"
                     style={{ color: 'rgba(92,64,51,.62)', background: 'rgba(61,90,53,.04)', border: '1px solid rgba(61,90,53,.09)' }}
                   >
-                    Generating your transcript right now. It'll show up here automatically once it's done.
+                    Generating your transcript right now. It'll show up here automatically once it's done. Still not here after 5 minutes? Check back shortly, it's likely just running a little behind.
                   </div>
                 )}
 
@@ -1149,7 +1149,7 @@ export default function CaseDetailOverlay({
                 style={{ border: '1.5px solid rgba(61,90,53,.22)', borderTopColor: '#3D5A35' }}
               />
               <span className="text-[10.5px] font-medium" style={{ color: 'rgba(92,64,51,.62)' }}>
-                Merged audio is being generated…
+                Stitching your audio together, check back in 5
               </span>
             </div>
           </div>

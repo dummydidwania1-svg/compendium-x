@@ -502,19 +502,23 @@ async function runTranscription(args: {
         },
         { merge: true },
       )
-      // Denormalize candidate completion onto the session doc so the scheduled
-      // sweep (finalizePendingMerges) can query sessions where the candidate
-      // transcription completed but the merge hasn't run yet (FIX 1c).
-      if (target.role === 'candidate') {
-        await target.sessionRef.set(
-          {
-            candidateTranscriptStatus: 'completed',
-            candidateTranscriptCompletedAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        )
-      }
+      // Denormalize completion onto the session doc so the scheduled sweep
+      // (finalizePendingMerges) can query sessions where transcription
+      // terminated (succeeded OR failed — see writeFailure's matching
+      // denormalization below) but the merge hasn't run yet (FIX 1c).
+      // Candidate and interviewer each get their own role-prefixed pair so the
+      // sweep can anchor its grace window off whichever side actually finished,
+      // instead of only ever being able to see the candidate's outcome.
+      const roleTranscriptStatusField = target.role === 'candidate' ? 'candidateTranscriptStatus' : 'interviewerTranscriptStatus'
+      const roleTranscriptCompletedAtField = target.role === 'candidate' ? 'candidateTranscriptCompletedAt' : 'interviewerTranscriptCompletedAt'
+      await target.sessionRef.set(
+        {
+          [roleTranscriptStatusField]: 'completed',
+          [roleTranscriptCompletedAtField]: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
     }
   }
 
@@ -537,6 +541,22 @@ async function runTranscription(args: {
           transcriptStatus: 'failed',
           transcriptFailedAt: FieldValue.serverTimestamp(),
           transcriptError: message,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+      // Same denormalization as writeSuccess, but reflecting 'failed' — without
+      // this, a failed transcript never starts the 5-minute grace-window clock
+      // (evaluateAndMerge/finalizePendingMerges only ever saw the success case),
+      // so a session where the candidate's transcript genuinely failed (e.g.
+      // audio too short) would otherwise be stuck waiting on the interviewer
+      // forever, with no safety net ever kicking in.
+      const roleTranscriptStatusField = target.role === 'candidate' ? 'candidateTranscriptStatus' : 'interviewerTranscriptStatus'
+      const roleTranscriptCompletedAtField = target.role === 'candidate' ? 'candidateTranscriptCompletedAt' : 'interviewerTranscriptCompletedAt'
+      await target.sessionRef.set(
+        {
+          [roleTranscriptStatusField]: 'failed',
+          [roleTranscriptCompletedAtField]: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true },
@@ -1170,9 +1190,15 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   // interviewerDeclined: a known absence, not something to keep waiting for.
   const candidateNeverRecorded = sessionData.candidateNeverRecorded === true
 
-  const candidateCompletedAt = (
-    candidateData as { transcriptCompletedAt?: { toMillis: () => number } } | null
-  )?.transcriptCompletedAt?.toMillis()
+  // Anchor the grace-window clock off whichever terminal timestamp the
+  // candidate track actually has — transcriptCompletedAt on success,
+  // transcriptFailedAt on failure. Previously only read the success field, so
+  // a failed candidate transcript never started this clock at all.
+  const candidateTerminalAt = (
+    candidateData as { transcriptCompletedAt?: { toMillis: () => number }; transcriptFailedAt?: { toMillis: () => number } } | null
+  )
+  const candidateCompletedAt =
+    candidateTerminalAt?.transcriptCompletedAt?.toMillis() ?? candidateTerminalAt?.transcriptFailedAt?.toMillis()
 
   // 'recording' means a periodic flush wrote the doc but no final/beacon ever arrived.
   // Treat it like absent for the grace-window check so a stuck session still merges.
@@ -1663,10 +1689,13 @@ export const promoteAbandonedSessions = onSchedule(
  * the merge after the grace window elapses.
  *
  * Relies on `candidateTranscriptStatus` / `candidateTranscriptCompletedAt` being
- * denormalized onto the session doc when the candidate track completes (see
- * writeSuccess in runTranscription). Sessions where the interviewer's decline
- * signal already arrived are handled immediately by 1b (transcribeRecording), so
- * this sweep is a safety net for the silent no-show case.
+ * denormalized onto the session doc when the candidate track terminates, either
+ * successfully (writeSuccess) or with a failure (writeFailure) — previously this
+ * only happened on success, so a session where the candidate's own transcript
+ * failed (audio too short, upload failed, etc.) would never be picked up by this
+ * sweep at all, regardless of how long it had been stuck. Sessions where the
+ * interviewer's decline signal already arrived are handled immediately by 1b
+ * (transcribeRecording), so this sweep is a safety net for the silent no-show case.
  */
 export const finalizePendingMerges = onSchedule(
   {
@@ -1680,11 +1709,11 @@ export const finalizePendingMerges = onSchedule(
   async () => {
     const snapshot = await db
       .collection('sessions')
-      .where('candidateTranscriptStatus', '==', 'completed')
+      .where('candidateTranscriptStatus', 'in', ['completed', 'failed'])
       .get()
 
     if (snapshot.empty) {
-      logger.info('finalize_pending: no candidate-completed sessions')
+      logger.info('finalize_pending: no terminal candidate-transcript sessions')
       return
     }
 
