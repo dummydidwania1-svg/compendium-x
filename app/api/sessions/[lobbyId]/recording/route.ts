@@ -142,21 +142,33 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         // that's already in the pipeline or done.
         //
         // Live flush  → protect pending/processing/completed/failed (never downgrade)
-        // Final upload → protect processing/completed/failed only; 'pending' is left
-        //   writable so the final upload can refresh audioUrl/storagePath while the
-        //   CF is still queued (improving audio quality before it fires).
+        // Final upload → always protect processing (never interrupt an in-flight
+        //   transcription). completed/failed are protected too, UNLESS the incoming
+        //   audio is genuinely different from what's already there (byteSize or
+        //   durationMs differ) — this is what lets a reload/close mid-recording
+        //   re-open the pipeline: the person reloads, keeps talking, and the next
+        //   final/interrupted write carries a different-sized recording than the
+        //   one that was already transcribed pre-reload. In that case let it
+        //   through to 'pending' so the track re-transcribes against the latest
+        //   audio, exactly mirroring the audio file's own existing "last write
+        //   wins" behavior at the stable storage path. A duplicate/late-arriving
+        //   final write for the SAME audio (identical byteSize/durationMs) still
+        //   preserves the existing terminal status, avoiding a wasted re-transcribe.
         //
         // All cases read inside the transaction so the check is atomic with the write.
         let safeTranscriptStatus = transcriptStatusOnUpload
         if (body.status === 'uploaded') {
           const existingTrack = await tx.get(trackRef)
-          const existingStatus = existingTrack.data()?.transcriptStatus as string | undefined
+          const existingData = existingTrack.data()
+          const existingStatus = existingData?.transcriptStatus as string | undefined
           if (existingStatus) {
             const liveProtected = new Set(['pending', 'processing', 'completed', 'failed'])
-            const finalProtected = new Set(['processing', 'completed', 'failed'])
+            const terminalStatuses = new Set(['completed', 'failed'])
+            const audioUnchanged =
+              existingData?.byteSize === body.byteSize && existingData?.durationMs === body.durationMs
             const shouldPreserve = isLiveFlush
               ? liveProtected.has(existingStatus)
-              : finalProtected.has(existingStatus)
+              : existingStatus === 'processing' || (terminalStatuses.has(existingStatus) && audioUnchanged)
             if (shouldPreserve) safeTranscriptStatus = existingStatus
           }
         }

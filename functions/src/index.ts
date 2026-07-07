@@ -832,6 +832,7 @@ type TrackData = {
   startOffsetMs?: number
   transcriptStatus?: string
   audioUrl?: string
+  byteSize?: number
 }
 
 /**
@@ -1141,7 +1142,13 @@ async function transcodeSessionAudio(
  *  - transcribeRecording (session-doc trigger, for interviewerAudioCaptured signal)
  *  - finalizePendingMerges (scheduled sweep)
  *
- * Idempotency: 'processing' and 'completed' statuses block re-entry.
+ * Idempotency: only 'processing' blocks re-entry (never interrupt an
+ * in-flight merge). 'completed' does NOT block re-entry — a reload/close
+ * mid-recording can re-open a track's transcriptStatus (see the route.ts
+ * finalProtected guard) once genuinely different audio lands, and when that
+ * happens the resulting fresh per-track transcript needs to be able to
+ * re-merge and overwrite the stale mergedTranscript, not be silently skipped
+ * because a merge already completed once before the reload.
  * 'partial' does NOT block re-entry so a late interviewer track can upgrade it.
  */
 async function evaluateAndMerge(sessionId: string): Promise<void> {
@@ -1151,7 +1158,7 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   if (!sessionSnap.exists) return
   const sessionData = sessionSnap.data() ?? {}
   const existingMergeStatus = sessionData.mergedTranscriptStatus as string | undefined
-  if (existingMergeStatus === 'completed' || existingMergeStatus === 'processing') return
+  if (existingMergeStatus === 'processing') return
 
   const recordingsCol = sessionRef.collection('recordings')
   const [candidateSnap, interviewerSnap] = await Promise.all([
@@ -1333,11 +1340,27 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
     // Best-effort time-aligned audio merge. Runs only when BOTH mic tracks have
     // audio. Wrapped in its own try/catch so any failure (ffmpeg, download,
     // upload) is logged and NEVER affects the transcript merge above.
+    //
+    // Re-runs (overwriting a previous mergedAudioUrl) when the source audio has
+    // genuinely changed since the last successful merge — same "last write
+    // wins" principle as route.ts's finalProtected guard: a reload/close
+    // mid-recording can re-open a track and produce a longer/different
+    // recording, and the merged audio should catch up to it rather than stay
+    // frozen on the pre-reload pairing. mergedAudioSourceSizes snapshots the
+    // byteSize of each source track at the moment of the last successful merge.
+    const mergedAudioSourceSizes = sessionData.mergedAudioSourceSizes as
+      | { candidate?: number; interviewer?: number }
+      | undefined
+    const audioSourcesUnchanged =
+      !!sessionData.mergedAudioUrl &&
+      mergedAudioSourceSizes?.candidate === candidateData?.byteSize &&
+      mergedAudioSourceSizes?.interviewer === interviewerData?.byteSize
+
     if (
       MERGE_AUDIO_ENABLED &&
       candidateData?.audioUrl &&
       interviewerData?.audioUrl &&
-      !sessionData.mergedAudioUrl
+      !audioSourcesUnchanged
     ) {
       try {
         const mergedAudioUrl = await mergeSessionAudio(
@@ -1347,7 +1370,14 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
         )
         if (mergedAudioUrl) {
           await sessionRef.set(
-            { mergedAudioUrl, mergedAudioCompletedAt: FieldValue.serverTimestamp() },
+            {
+              mergedAudioUrl,
+              mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+              mergedAudioSourceSizes: {
+                candidate: candidateData?.byteSize ?? null,
+                interviewer: interviewerData?.byteSize ?? null,
+              },
+            },
             { merge: true },
           )
         }
