@@ -104,6 +104,7 @@ export function buildPreviewDashboardData(): {
       mergedTranscriptStatus: null,
       mergedAudioStatus: null,
       mergedAudioReason: null,
+      mergedAudioDurationMs: null,
       audioMergePending: false,
       workspaceImageUrls,
       hasTranscript: Boolean(transcript),
