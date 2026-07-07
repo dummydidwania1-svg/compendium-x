@@ -2631,6 +2631,17 @@ if (previewMode && !forcePreview) {
 					active={isLocalMode && !previewMode}
 					lobbyId={lobbyId}
 					onShowingChange={setMicGuardShowing}
+					onAllowed={() => {
+						// Only the candidate tab owns the recorder in same-device mode.
+						// Nudge it to resume immediately if its recorder died mid-session
+						// -- Safari has no Permissions API onchange, so without this the
+						// candidate tab wouldn't notice a mic reallow done from THIS
+						// (interviewer) tab's overlay until its own next focus/visibility
+						// bounce. Chrome/Firefox already self-heal reactively, so this is
+						// a no-op there beyond a redundant, harmless message.
+						safariChannelRef.current?.postMessage({ type: 'mic-reconfirmed' })
+						setTimeout(() => safariChannelRef.current?.postMessage({ type: 'mic-reconfirmed' }), 1000)
+					}}
 				/>
 
 				{/* Interviewer mic recovery -- only for mic LOSS after a previously-granted

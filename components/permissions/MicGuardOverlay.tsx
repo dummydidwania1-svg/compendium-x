@@ -42,6 +42,10 @@ interface MicGuardOverlayProps {
   body?: string
   /** Called whenever recording is declined (this window or cross-window). */
   onDeclined?: () => void
+  /** Called after a successful "Allow mic" click (permission actually confirmed
+   *  granted). Used by the interviewer's split-screen view to notify the
+   *  candidate tab, which owns the actual recorder in same-device mode. */
+  onAllowed?: () => void
   /** Fires with true while the mic-blocked overlay is showing, so the parent
    *  can suppress its own overlays (mic-blocked is top priority). */
   onShowingChange?: (showing: boolean) => void
@@ -57,7 +61,7 @@ const MicIcon = (
   </svg>
 )
 
-export function MicGuardOverlay({ active, lobbyId, body, onDeclined, onShowingChange }: MicGuardOverlayProps) {
+export function MicGuardOverlay({ active, lobbyId, body, onDeclined, onAllowed, onShowingChange }: MicGuardOverlayProps) {
   const { state, request, retry } = useMicPermission()
   const [visible, setVisible] = useState(false)
   const [declined, setDeclined] = useState(() => hasDeclinedRecording(lobbyId))
@@ -136,9 +140,14 @@ export function MicGuardOverlay({ active, lobbyId, body, onDeclined, onShowingCh
 
   const allowMic = useCallback(async () => {
     const stream = await request()
-    if (stream) stream.getTracks().forEach((t) => t.stop())
-    else await retry()
-  }, [request, retry])
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop())
+      onAllowed?.()
+    } else {
+      const state = await retry()
+      if (state === 'granted') onAllowed?.()
+    }
+  }, [request, retry, onAllowed])
 
   const declineRecording = useCallback(() => {
     if (reshowTimerRef.current) { clearTimeout(reshowTimerRef.current); reshowTimerRef.current = null }

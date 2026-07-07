@@ -300,6 +300,14 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const candidateUploadedRef = useRef(false)
   const cachedCandidateTokenRef = useRef<string | null>(null)
   const autoStartAttemptedRef = useRef(false)
+  // Set when the mic track/recorder dies mid-recording (browser permission
+  // toggle, device unplug) rather than at start time (no device present,
+  // etc.) -- distinguishes "was recording, mic dropped, waiting to resume"
+  // from an ordinary start-time failure, so only the former auto-resumes
+  // once the mic comes back. Same-device mode equivalent of the interviewer's
+  // remote-mode discardStaleInterviewerRecorder/startInterviewerRecording
+  // pair in InterviewerExperience.tsx.
+  const micDiedMidRecordingRef = useRef(false)
   // Only true when we've previously started recording (auto-start ran) AND
   // the page was then reloaded. Set AFTER autoStartAttemptedRef so a fresh
   // case load that sees in_progress on its first snapshot doesn't trigger it.
@@ -344,6 +352,24 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
     audioContextRef.current = null
   }, [])
+
+  // Tears down a dead recorder/stream after a mid-recording mic drop so a
+  // fresh startRecording() call can acquire a new getUserMedia stream and
+  // MediaRecorder. Deliberately does NOT touch chunksRef or
+  // recordingStartMsRef -- unlike the interviewer's remote-mode equivalent
+  // (discardStaleInterviewerRecorder), same-device mode's flushCandidateAudio
+  // already uploads the cumulative chunksRef.current blob, so keeping the
+  // array intact means audio captured before the drop is preserved and the
+  // new recorder just keeps appending to the same array. Mirrors
+  // InterviewerExperience.tsx's discardStaleInterviewerRecorder.
+  const discardStaleCandidateRecorder = useCallback(() => {
+    if (candidateFlushTimerRef.current) {
+      clearInterval(candidateFlushTimerRef.current)
+      candidateFlushTimerRef.current = null
+    }
+    recorderRef.current = null
+    teardownMedia()
+  }, [teardownMedia])
 
   const flushCandidateAudio = useCallback(async ({ final: isFinal }: { final: boolean }) => {
     if (!lobbyId || !currentUser) return
@@ -641,6 +667,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     [stopRecordingAndFinalize]
   )
 
+  // Called from track.onmute/onended/recorder.onerror when the mic dies
+  // mid-recording (browser permission toggle, device unplug) -- flips
+  // recordingState to 'failed' (unlocking canStartRecording) only if we were
+  // actually recording, and marks WHY so the reconciliation effect below
+  // knows to auto-resume once the mic is confirmed back, instead of treating
+  // this like an ordinary start-time failure.
+  const handleMicDiedMidRecording = useCallback(() => {
+    if (recordingStateRef.current !== 'recording') return
+    micDiedMidRecordingRef.current = true
+    setRecordingState('failed')
+  }, [])
+
   const startRecording = useCallback(
     async (mode: RecordingMode) => {
       if (!canStartRecording) return
@@ -679,9 +717,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
 
             // Keep the mic-revoke handlers wired on the adopted stream's tracks.
             for (const track of primed.stream.getAudioTracks()) {
-              track.onmute = () => { void retryMicrophonePermission() }
-              track.onended = () => { void retryMicrophonePermission() }
+              track.onmute = () => { void retryMicrophonePermission(); handleMicDiedMidRecording() }
+              track.onended = () => { void retryMicrophonePermission(); handleMicDiedMidRecording() }
             }
+            primed.recorder.onerror = () => { handleMicDiedMidRecording() }
 
             setRecordingState('recording')
             if (lobbyId) {
@@ -734,8 +773,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         // mic-blocked overlay surfaces without waiting for a focus/visibility
         // bounce.
         for (const track of micTracks) {
-          track.onmute = () => { void retryMicrophonePermission() }
-          track.onended = () => { void retryMicrophonePermission() }
+          track.onmute = () => { void retryMicrophonePermission(); handleMicDiedMidRecording() }
+          track.onended = () => { void retryMicrophonePermission(); handleMicDiedMidRecording() }
         }
 
         const selectedMimeType = pickSupportedMimeType()
@@ -744,8 +783,16 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           : new MediaRecorder(recorderStream)
 
         recorderRef.current = recorder
-        chunksRef.current = []
-        recordingStartMsRef.current = Date.now()
+        // Only reset the cumulative chunk buffer / start-time anchor on a
+        // genuinely fresh recording. A resume-after-mic-drop (recognized by
+        // recordingStartMsRef already being set) keeps both so already-
+        // captured audio is preserved and durationMs/startOffsetMs math sent
+        // to the backend stays anchored to the original session start.
+        const isFreshStart = recordingStartMsRef.current === null
+        if (isFreshStart) {
+          chunksRef.current = []
+          recordingStartMsRef.current = Date.now()
+        }
         completionHandledRef.current = false
 
         recorder.ondataavailable = (event) => {
@@ -753,9 +800,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             chunksRef.current.push(event.data)
           }
         }
+        recorder.onerror = () => { handleMicDiedMidRecording() }
 
         recorder.start(1000)
         setRecordingState('recording')
+        micDiedMidRecordingRef.current = false
 
         // Periodic cumulative flush — mirrors the interviewer's flush architecture.
         // Every 20s we upload the cumulative blob to a stable storage path so that
@@ -778,8 +827,14 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       } catch (startError) {
         teardownMedia()
         recorderRef.current = null
-        chunksRef.current = []
-        recordingStartMsRef.current = null
+        // Only wipe already-captured audio / the start-time anchor on a
+        // genuinely fresh start failing. A failed RESUME attempt (mic still
+        // blocked when we tried) must preserve whatever was already captured
+        // before the drop — chunksRef.current keeps growing once a later
+        // resume attempt actually succeeds.
+        if (recordingStartMsRef.current === null) {
+          chunksRef.current = []
+        }
         setRecordingState('failed')
         const message = startError instanceof Error ? startError.message : 'Unable to start recording.'
         if (mode === 'local') {
@@ -814,7 +869,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         setRecordingError(message)
       }
     },
-    [canStartRecording, currentUser, lobbyId, retryMicrophonePermission, stopRecordingAndFinalize, teardownMedia, flushCandidateAudio]
+    [canStartRecording, currentUser, lobbyId, retryMicrophonePermission, stopRecordingAndFinalize, teardownMedia, flushCandidateAudio, handleMicDiedMidRecording]
   )
 
   const startCaptureFlow = useCallback(
@@ -1360,6 +1415,26 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
     }
   }, [retryMicrophonePermission])
 
+  // Mic-drop recovery: once the mic was confirmed dead mid-recording
+  // (micDiedMidRecordingRef, set by handleMicDiedMidRecording), resume
+  // capture as soon as the permission is confirmed back -- same idea as
+  // InterviewerExperience.tsx's discardStaleInterviewerRecorder +
+  // startInterviewerRecording pair for remote mode, adapted so no
+  // already-captured audio is discarded (see discardStaleCandidateRecorder).
+  // Chrome/Firefox: microphonePermissionState flips reactively via
+  // PermissionStatus.onchange. Safari has no Permissions API, so this only
+  // engages there once state is confirmed via the explicit "Allow mic" click
+  // (handleBannerAllow / handleEnableCapture) or the BroadcastChannel
+  // "mic-reconfirmed" signal below re-triggering retryMicrophonePermission.
+  useEffect(() => {
+    if (!micDiedMidRecordingRef.current) return
+    if (microphonePermissionState !== 'granted') return
+    if (recordingStateRef.current !== 'failed') return
+    micDiedMidRecordingRef.current = false
+    discardStaleCandidateRecorder()
+    void startRecording(preferredRecordingModeRef.current)
+  }, [microphonePermissionState, discardStaleCandidateRecorder, startRecording])
+
   useEffect(() => {
     micDebug('auto-start effect', {
       attempted: autoStartAttemptedRef.current,
@@ -1612,6 +1687,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
         if (state === 'recording' || state === 'uploading' || state === 'stopping') return
         autoStartAttemptedRef.current = true
         void startCaptureFlow(preferredRecordingModeRef.current)
+      }
+      // Sent by the interviewer tab's MicGuardOverlay after a successful
+      // "Allow mic" click. Safari has no Permissions API onchange, so the
+      // reactive mic-drop-recovery effect never fires there on its own --
+      // this is what makes resume immediate on Safari even when the user
+      // clicked "Allow mic" in the OTHER tab rather than this one.
+      if (e.data?.type === 'mic-reconfirmed') {
+        if (!micDiedMidRecordingRef.current || recordingStateRef.current !== 'failed') return
+        micDiedMidRecordingRef.current = false
+        discardStaleCandidateRecorder()
+        void startRecording(preferredRecordingModeRef.current)
       }
     }
     return () => {
