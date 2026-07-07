@@ -47,6 +47,13 @@ if (getApps().length === 0) initializeApp()
 const db = getFirestore()
 const execFileAsync = promisify(execFile)
 
+// PCM format used by normalizeAudioTimestamps below -- picked once so the
+// decode and re-encode steps agree, and so duration can be computed directly
+// from byte size without needing ffprobe (not bundled with ffmpeg-static).
+const PCM_SAMPLE_RATE = 48000
+const PCM_CHANNELS = 1
+const PCM_BYTES_PER_SAMPLE = 2 // s16le
+
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY')
 const GEMINI_MODEL = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-2.5-flash'
 
@@ -839,6 +846,7 @@ type TrackData = {
   transcriptStatus?: string
   audioUrl?: string
   byteSize?: number
+  durationMs?: number
 }
 
 /**
@@ -960,6 +968,61 @@ function mergeTranscriptTracks(
   return all.map((t) => `${t.role}: ${t.text}`).join('\n')
 }
 
+/**
+ * A MediaRecorder session that was paused/resumed (e.g. the mic dropped and
+ * came back) and later concatenated client-side into one file produces a
+ * container whose internal segments each restart their own timestamps from
+ * roughly zero. ffmpeg (and browsers) read the FIRST segment's duration as
+ * the whole file's duration and refuse to play/report past it, even though
+ * every segment's audio samples are actually present and decodable end to
+ * end. Confirmed on a real affected file: -fflags +genpts and +igndts alone
+ * do not fix this (the demuxer still clamps the later segments' timestamps
+ * backward instead of offsetting them forward) -- the only combination that
+ * actually produced a correct duration was decoding fully to raw PCM first
+ * (which sidesteps the broken container timestamps entirely, since PCM has
+ * none) and re-encoding that PCM into a fresh container from scratch.
+ *
+ * Returns the corrected file's duration in ms, computed directly from the
+ * PCM byte size (no ffprobe dependency) rather than trusting any container
+ * duration field again.
+ */
+async function normalizeAudioTimestamps(
+  ffmpegPath: string,
+  inPath: string,
+  outPath: string,
+  trimStartSec = 0,
+): Promise<number> {
+  const pcmPath = `${outPath}.pcm`
+  try {
+    await execFileAsync(
+      ffmpegPath,
+      ['-y', '-fflags', '+genpts+igndts+discardcorrupt', '-i', inPath,
+        '-ac', String(PCM_CHANNELS), '-ar', String(PCM_SAMPLE_RATE), '-f', 's16le', pcmPath],
+      { maxBuffer: 1024 * 1024 * 64 },
+    )
+    const pcmBytes = (await readFile(pcmPath)).length
+    const durationMs = Math.round(
+      (pcmBytes / (PCM_SAMPLE_RATE * PCM_CHANNELS * PCM_BYTES_PER_SAMPLE)) * 1000,
+    )
+
+    // Sample-accurate trim (Safari primed-recording dead head) applies here,
+    // on the now-correct PCM timeline, instead of on the original file's
+    // broken timestamps.
+    const trimArgs = trimStartSec > 0.05 ? ['-ss', trimStartSec.toFixed(3)] : []
+
+    await execFileAsync(
+      ffmpegPath,
+      ['-y', '-f', 's16le', '-ar', String(PCM_SAMPLE_RATE), '-ac', String(PCM_CHANNELS), '-i', pcmPath,
+        ...trimArgs, '-c:a', 'libopus', '-b:a', '64k', outPath],
+      { maxBuffer: 1024 * 1024 * 64 },
+    )
+
+    return trimArgs.length > 0 ? Math.max(0, durationMs - Math.round(trimStartSec * 1000)) : durationMs
+  } finally {
+    await rm(pcmPath, { force: true }).catch(() => {})
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* mergeSessionAudio — time-aligned mono mix of both mic tracks (best-effort) */
 /* -------------------------------------------------------------------------- */
@@ -983,7 +1046,7 @@ async function mergeSessionAudio(
   sessionId: string,
   candidate: { audioUrl?: string; startOffsetMs?: number } | null,
   interviewer: { audioUrl?: string; startOffsetMs?: number } | null,
-): Promise<string | null> {
+): Promise<{ url: string; durationMs: number } | null> {
   if (!candidate?.audioUrl || !interviewer?.audioUrl) return null
 
   // ffmpeg-static exports the absolute path to a bundled ffmpeg binary.
@@ -998,6 +1061,8 @@ async function mergeSessionAudio(
   const iDelay = Math.max(0, Math.round(interviewer.startOffsetMs ?? 0))
 
   const workDir = await mkdtemp(join(tmpdir(), `merge-${sessionId}-`))
+  const cRawPath = join(workDir, 'candidate-raw.webm')
+  const iRawPath = join(workDir, 'interviewer-raw.webm')
   const cPath = join(workDir, 'candidate.webm')
   const iPath = join(workDir, 'interviewer.webm')
   const outPath = join(workDir, 'merged.webm')
@@ -1013,8 +1078,17 @@ async function mergeSessionAudio(
       return null
     }
     await Promise.all([
-      writeFile(cPath, Buffer.from(await cRes.arrayBuffer())),
-      writeFile(iPath, Buffer.from(await iRes.arrayBuffer())),
+      writeFile(cRawPath, Buffer.from(await cRes.arrayBuffer())),
+      writeFile(iRawPath, Buffer.from(await iRes.arrayBuffer())),
+    ])
+
+    // Pre-normalize each side individually before mixing -- either track may
+    // independently have gone through a mic-drop/resume cycle (see
+    // normalizeAudioTimestamps' doc comment), and amix below has no way to
+    // correct a broken input's timestamps itself.
+    const [cDurationMs, iDurationMs] = await Promise.all([
+      normalizeAudioTimestamps(ffmpegPath, cRawPath, cPath),
+      normalizeAudioTimestamps(ffmpegPath, iRawPath, iPath),
     ])
 
     const filter =
@@ -1027,8 +1101,8 @@ async function mergeSessionAudio(
       ffmpegPath,
       [
         '-y',
-        '-fflags', '+genpts', '-i', cPath,
-        '-fflags', '+genpts', '-i', iPath,
+        '-i', cPath,
+        '-i', iPath,
         '-filter_complex', filter,
         '-map', '[out]',
         '-ac', '1',
@@ -1057,8 +1131,9 @@ async function mergeSessionAudio(
       `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
       `${encodeURIComponent(objectPath)}?alt=media&token=${token}`
 
-    logger.info('audio_merge_completed', { sessionId, cDelay, iDelay, bytes: merged.length })
-    return mergedAudioUrl
+    const durationMs = Math.max(cDelay + cDurationMs, iDelay + iDurationMs)
+    logger.info('audio_merge_completed', { sessionId, cDelay, iDelay, bytes: merged.length, durationMs })
+    return { url: mergedAudioUrl, durationMs }
   } finally {
     await rm(workDir, { recursive: true, force: true }).catch(() => {})
   }
@@ -1071,12 +1146,20 @@ async function mergeSessionAudio(
  * Re-encodes a single candidate track through ffmpeg (Opus/WebM) so it plays
  * on Safari. Same pipeline as mergeSessionAudio but with one input and no mix
  * step. Best-effort: callers must wrap it so a failure never blocks anything.
+ *
+ * Also runs the recording through normalizeAudioTimestamps -- a track that
+ * went through a mic-drop/resume cycle client-side (see workspace/page.tsx's
+ * mic-recovery fix, which deliberately keeps appending to one growing blob
+ * across the drop) is exactly the kind of multi-segment concatenation that
+ * produces a container with a misleadingly short duration. Returns the
+ * corrected duration in ms alongside the URL so the caller can store the
+ * true length instead of trusting the (broken) container metadata again.
  */
 async function transcodeSessionAudio(
   sessionId: string,
   audioUrl: string,
   trimStartSec = 0,
-): Promise<string | null> {
+): Promise<{ url: string; durationMs: number } | null> {
   const ffmpegMod = (await import('ffmpeg-static')) as unknown as { default: string | null }
   const ffmpegPath = ffmpegMod.default
   if (!ffmpegPath) {
@@ -1096,24 +1179,7 @@ async function transcodeSessionAudio(
     }
     await writeFile(inPath, Buffer.from(await res.arrayBuffer()))
 
-    // Safari primed-recording trims the dead head (launch click -> case start).
-    // -ss placed AFTER -i does a sample-accurate trim (decodes then seeks), which
-    // is what we want for a precise cut of a few seconds. Skip when trim <= 0.
-    const trimArgs = trimStartSec > 0.05 ? ['-ss', trimStartSec.toFixed(3)] : []
-
-    await execFileAsync(
-      ffmpegPath,
-      [
-        '-y',
-        '-fflags', '+genpts', '-i', inPath,
-        ...trimArgs,
-        '-ac', '1',
-        '-c:a', 'libopus',
-        '-b:a', '64k',
-        outPath,
-      ],
-      { maxBuffer: 1024 * 1024 * 64 },
-    )
+    const durationMs = await normalizeAudioTimestamps(ffmpegPath, inPath, outPath, trimStartSec)
 
     const transcoded = await readFile(outPath)
 
@@ -1131,8 +1197,8 @@ async function transcodeSessionAudio(
       `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
       `${encodeURIComponent(objectPath)}?alt=media&token=${token}`
 
-    logger.info('audio_transcode_completed', { sessionId, bytes: transcoded.length })
-    return mergedAudioUrl
+    logger.info('audio_transcode_completed', { sessionId, bytes: transcoded.length, durationMs })
+    return { url: mergedAudioUrl, durationMs }
   } finally {
     await rm(workDir, { recursive: true, force: true }).catch(() => {})
   }
@@ -1466,11 +1532,11 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
       // "Stitching your audio together" spinner running forever with no way
       // to tell it had actually already given up.
       const MERGE_AUDIO_RETRY_ATTEMPTS = 3
-      let mergedAudioUrl: string | null = null
+      let mergedAudioResult: { url: string; durationMs: number } | null = null
       let lastAudioErr: unknown = null
       for (let attempt = 1; attempt <= MERGE_AUDIO_RETRY_ATTEMPTS; attempt++) {
         try {
-          mergedAudioUrl = await mergeSessionAudio(
+          mergedAudioResult = await mergeSessionAudio(
             sessionId,
             { audioUrl: candidateData!.audioUrl, startOffsetMs: candidateData?.startOffsetMs },
             { audioUrl: interviewerData!.audioUrl, startOffsetMs: interviewerData?.startOffsetMs },
@@ -1495,10 +1561,11 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
           },
           { merge: true },
         )
-      } else if (mergedAudioUrl) {
+      } else if (mergedAudioResult) {
         await sessionRef.set(
           {
-            mergedAudioUrl,
+            mergedAudioUrl: mergedAudioResult.url,
+            mergedAudioDurationMs: mergedAudioResult.durationMs,
             mergedAudioCompletedAt: FieldValue.serverTimestamp(),
             mergedAudioStatus: 'completed',
             mergedAudioReason: null,
@@ -1538,6 +1605,13 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
           await sessionRef.set(
             {
               mergedAudioUrl: candidateData!.audioUrl,
+              // The raw track's own durationMs (wall-clock, set client-side)
+              // is used as-is here rather than reading it back from the file
+              // itself -- no ffmpeg step runs in this branch, so a track that
+              // went through a mic-drop/resume cycle would otherwise show the
+              // same misleading short container duration described in
+              // normalizeAudioTimestamps' doc comment.
+              mergedAudioDurationMs: candidateData?.durationMs ?? null,
               mergedAudioStatus: 'single_side',
               mergedAudioReason: reason,
               mergedAudioCompletedAt: FieldValue.serverTimestamp(),
@@ -1552,6 +1626,7 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
           await sessionRef.set(
             {
               mergedAudioUrl: interviewerData!.audioUrl,
+              mergedAudioDurationMs: interviewerData?.durationMs ?? null,
               mergedAudioStatus: 'single_side',
               mergedAudioReason: 'candidate_no_audio',
               mergedAudioCompletedAt: FieldValue.serverTimestamp(),
@@ -1688,10 +1763,14 @@ export const transcribeRecording = onDocumentWritten(
       if (!freshSnap.data()?.mergedAudioUrl) {
         try {
           const trimStartSec = (recording?.trimStartMs ?? 0) / 1000
-          const mergedAudioUrl = await transcodeSessionAudio(sessionId, audioUrl, trimStartSec)
-          if (mergedAudioUrl) {
+          const result = await transcodeSessionAudio(sessionId, audioUrl, trimStartSec)
+          if (result) {
             await sessionRef.set(
-              { mergedAudioUrl, mergedAudioCompletedAt: FieldValue.serverTimestamp() },
+              {
+                mergedAudioUrl: result.url,
+                mergedAudioDurationMs: result.durationMs,
+                mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+              },
               { merge: true },
             )
           }

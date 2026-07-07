@@ -55,6 +55,15 @@ export type DashboardCaseEntry = {
   // 'interviewer_declined' | 'interviewer_no_audio' | 'candidate_no_audio' |
   // 'no_audio'. Drives the specific copy shown alongside that outcome.
   mergedAudioReason: string | null
+  // Authoritative duration (ms) for mergedAudioUrl, computed server-side from
+  // the actual decoded PCM length rather than trusted from the file's own
+  // container metadata. Needed because a recording that went through a
+  // mic-drop/resume cycle (concatenated MediaRecorder segments) produces a
+  // WebM/MP4 file whose embedded duration is misleadingly short even though
+  // all the audio is present and plays in full — the dashboard should prefer
+  // this field over asking the <audio> element for its own (unreliable)
+  // .duration in that case.
+  mergedAudioDurationMs: number | null
   // True only for a Remote (dual-mic) session whose merged audio has not been
   // written yet AND whose merge is actively pending (none/pending/processing/
   // partial) AND whose audio-merge step hasn't reached its OWN terminal state
@@ -96,6 +105,7 @@ export type DashboardSessionMeta = {
   mergedTranscriptStatus: string | null
   mergedAudioStatus: string | null
   mergedAudioReason: string | null
+  mergedAudioDurationMs: number | null
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
@@ -232,6 +242,7 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     mergedTranscriptStatus: asString(value?.mergedTranscriptStatus),
     mergedAudioStatus: asString(value?.mergedAudioStatus),
     mergedAudioReason: asString(value?.mergedAudioReason),
+    mergedAudioDurationMs: asNumber(value?.mergedAudioDurationMs),
   }
 }
 
@@ -288,6 +299,7 @@ export function mapDashboardEntry(
     mergedTranscriptStatus: sessionMeta?.mergedTranscriptStatus ?? null,
     mergedAudioStatus: sessionMeta?.mergedAudioStatus ?? null,
     mergedAudioReason: sessionMeta?.mergedAudioReason ?? null,
+    mergedAudioDurationMs: sessionMeta?.mergedAudioDurationMs ?? null,
     // Remote (dual-mic) session, merged audio not written yet, the transcript
     // merge is still actively running, AND the audio side hasn't separately
     // reached its own terminal outcome (completed/single_side/none) ->

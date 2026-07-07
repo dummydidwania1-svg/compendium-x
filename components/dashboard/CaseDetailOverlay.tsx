@@ -437,11 +437,36 @@ export default function CaseDetailOverlay({
     return () => document.removeEventListener('keydown', fn);
   }, [handleClose, expandedUrl, feedbackOpen]);
 
+  // Server-computed duration (decoded from the actual audio, not the file's
+  // own container metadata) — authoritative when present. A recording that
+  // went through a mic-drop/resume cycle produces a WebM/MP4 file whose
+  // embedded duration is misleadingly short even though all the audio plays
+  // in full, so when this field exists we skip asking the browser entirely
+  // rather than risk it clobbering a correct value with a wrong one.
+  const authoritativeDurationSec =
+    entry.mergedAudioDurationMs && entry.mergedAudioDurationMs > 0
+      ? entry.mergedAudioDurationMs / 1000
+      : null;
+
+  // Seed duration from the authoritative server value the moment it's known,
+  // so the label/seek-bar are correct even before the <audio> element loads
+  // anything.
+  useEffect(() => {
+    if (authoritativeDurationSec) setDuration(authoritativeDurationSec);
+  }, [authoritativeDurationSec]);
+
   // Audio effects
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     let seekingForDuration = false;
+    // When the server already gave us the true duration, never let the
+    // browser's own (possibly wrong, see authoritativeDurationSec above)
+    // reading overwrite it — only track playback position.
+    const setDurationIfNotAuthoritative = (d: number) => {
+      if (authoritativeDurationSec) return;
+      setDuration(d);
+    };
 
     // MediaRecorder WebM files don't write the duration into the file header
     // (it's unknown during recording). The browser reports NaN/Infinity after
@@ -456,33 +481,37 @@ export default function CaseDetailOverlay({
     };
 
     const tryResolveDuration = () => {
+      if (authoritativeDurationSec) return;
       const d = audio.duration;
-      if (isFinite(d) && d > 0) { setDuration(d); return; }
+      if (isFinite(d) && d > 0) { setDurationIfNotAuthoritative(d); return; }
       if (!isSafari) seekForDuration();
     };
 
     // Safari: defer the seek until the element reports it can play.
     // At this point the browser has buffered enough that seeking won't abort.
     const onCanPlay = () => {
+      if (authoritativeDurationSec) return;
       const d = audio.duration;
-      if (isFinite(d) && d > 0) { setDuration(d); return; }
+      if (isFinite(d) && d > 0) { setDurationIfNotAuthoritative(d); return; }
       if (isSafari) seekForDuration();
     };
 
     const onDurationChange = () => {
       const d = audio.duration;
       if (!isFinite(d) || d <= 0) return;
-      setDuration(d);
+      setDurationIfNotAuthoritative(d);
       if (seekingForDuration) { seekingForDuration = false; audio.currentTime = 0; }
     };
     const onTime = () => {
       if (seekingForDuration) return;
       setCurrentTime(audio.currentTime);
+      if (authoritativeDurationSec) return;
       const d = audio.duration;
       if (isFinite(d) && d > 0) setDuration(prev => prev || d);
     };
     const onEnd = () => {
       setIsPlaying(false);
+      if (authoritativeDurationSec) return;
       if (audio.currentTime > 0) setDuration(prev => prev || audio.currentTime);
     };
     audio.addEventListener('loadedmetadata', tryResolveDuration);
@@ -499,7 +528,7 @@ export default function CaseDetailOverlay({
       audio.removeEventListener('timeupdate', onTime);
       audio.removeEventListener('ended', onEnd);
     };
-  }, [isSafari]);
+  }, [isSafari, authoritativeDurationSec]);
 
   // Tab switch — updated to new tab type
   const switchTab = (tab: 'overview' | 'transcript' | 'notes') => {
