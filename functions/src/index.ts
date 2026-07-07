@@ -1451,45 +1451,74 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
         const m = audioErr instanceof Error ? audioErr.message : 'Unknown audio merge error.'
         logger.warn('audio_merge_failed', { sessionId, message: m })
       }
-    } else if (!sessionData.mergedAudioUrl && !audioSourcesUnchanged) {
-      // Exactly one side (or neither) has usable audio — this is a genuine,
-      // final answer, not a "still waiting" state. Write it definitively so
-      // the dashboard can stop showing "generating" forever. Also covers
-      // MERGE_AUDIO_ENABLED=false, which previously had this identical
-      // "never resolves" symptom for every remote session, not just these ones.
-      if (candidateAudioUsable && !interviewerAudioUsable) {
-        const reason = interviewerDeclined
-          ? 'interviewer_declined'
-          : 'interviewer_no_audio'
-        await sessionRef.set(
-          {
-            mergedAudioUrl: candidateData!.audioUrl,
-            mergedAudioStatus: 'single_side',
-            mergedAudioReason: reason,
-            mergedAudioCompletedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        )
-      } else if (!candidateAudioUsable && interviewerAudioUsable) {
-        await sessionRef.set(
-          {
-            mergedAudioUrl: interviewerData!.audioUrl,
-            mergedAudioStatus: 'single_side',
-            mergedAudioReason: 'candidate_no_audio',
-            mergedAudioCompletedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        )
-      } else if (!candidateAudioUsable && !interviewerAudioUsable) {
-        await sessionRef.set(
-          {
-            mergedAudioStatus: 'none',
-            mergedAudioReason: 'no_audio',
-            mergedAudioCompletedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        )
+    } else if (candidateAudioUsable !== interviewerAudioUsable) {
+      // Exactly one side has usable audio. mergedAudioUrl points directly at
+      // that side's own track URL (no ffmpeg step needed) — but that URL
+      // embeds a Firebase Storage download TOKEN that is invalidated the
+      // moment the underlying file at that same stable path is uploaded
+      // again (e.g. the interviewer's own final upload landing right after
+      // this function already ran once using an earlier periodic-flush
+      // token). Re-write whenever the usable side's byteSize has changed
+      // since the last time this branch wrote mergedAudioUrl, using the same
+      // mergedAudioSourceSizes snapshot the full-merge branch already uses —
+      // this is what makes the URL/token "last write wins" here too, instead
+      // of freezing on a token that may already be dead by the time anyone
+      // clicks play. Confirmed via session 41te8g: merge ran early against
+      // the interviewer's periodic-flush token, the interviewer's own final
+      // upload landed a second later with a fresh token, and mergedAudioUrl
+      // was never refreshed — "permission denied" on click.
+      const singleSideSourceUnchanged =
+        !!sessionData.mergedAudioUrl &&
+        sessionData.mergedAudioStatus === 'single_side' &&
+        mergedAudioSourceSizes?.candidate === candidateData?.byteSize &&
+        mergedAudioSourceSizes?.interviewer === interviewerData?.byteSize
+
+      if (!singleSideSourceUnchanged) {
+        if (candidateAudioUsable) {
+          const reason = interviewerDeclined ? 'interviewer_declined' : 'interviewer_no_audio'
+          await sessionRef.set(
+            {
+              mergedAudioUrl: candidateData!.audioUrl,
+              mergedAudioStatus: 'single_side',
+              mergedAudioReason: reason,
+              mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+              mergedAudioSourceSizes: {
+                candidate: candidateData?.byteSize ?? null,
+                interviewer: interviewerData?.byteSize ?? null,
+              },
+            },
+            { merge: true },
+          )
+        } else {
+          await sessionRef.set(
+            {
+              mergedAudioUrl: interviewerData!.audioUrl,
+              mergedAudioStatus: 'single_side',
+              mergedAudioReason: 'candidate_no_audio',
+              mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+              mergedAudioSourceSizes: {
+                candidate: candidateData?.byteSize ?? null,
+                interviewer: interviewerData?.byteSize ?? null,
+              },
+            },
+            { merge: true },
+          )
+        }
       }
+    } else if (!candidateAudioUsable && !interviewerAudioUsable && sessionData.mergedAudioStatus !== 'none') {
+      // Neither side has usable audio — this is a genuine, final answer, not
+      // a "still waiting" state. Write it definitively so the dashboard can
+      // stop showing "generating" forever. Also covers MERGE_AUDIO_ENABLED=false,
+      // which previously had this identical "never resolves" symptom for
+      // every remote session, not just these ones.
+      await sessionRef.set(
+        {
+          mergedAudioStatus: 'none',
+          mergedAudioReason: 'no_audio',
+          mergedAudioCompletedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown merge error.'
