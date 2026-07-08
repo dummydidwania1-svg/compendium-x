@@ -1234,7 +1234,20 @@ const interviewerStaleStreakRef = useRef(0)
       }
       if (raw.status === 'completed') {
         const stopReason = raw.completedBy === 'candidate' ? 'candidate_ended' : 'feedback_submitted'
-        if (stopReason === 'feedback_submitted') setFeedbackSubmitted(true)
+        if (stopReason === 'feedback_submitted') {
+  setFeedbackSubmitted(true)
+  // FIX: deterministically arm the "window closes in 3.5s" overlay + route
+  // timer the instant the interviewer's Submit lands (status: completed).
+  // Previously this overlay was only armed as a side-effect at the tail of the
+  // stop+upload pipeline, so when the final recorder.stop() yielded an
+  // empty/null blob (common in remote mode — audio is already flushed
+  // periodically) or a concurrent finalize was running, it silently skipped
+  // arming and the candidate got stuck. This is a pure UI signal: it does NOT
+  // touch the audio upload / transcript / flush flow (handleSessionCompleted
+  // still runs unchanged below), it's idempotent (React no-ops the repeat
+  // state set), and the navigation stays one-shot via sessionCompleteRouteRef.
+  setSessionCompleteOverlayVisible(true)
+}
         void handleSessionCompleted(stopReason)
       }
 
