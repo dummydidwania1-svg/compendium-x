@@ -289,7 +289,15 @@ export function mapDashboardEntry(
 // A completed local transcript (even a partial one) keeps its audio playable.
 const localAudioResolvedNone =
   (sessionMeta?.sessionMode ?? 'Remote') === 'Same Device' &&
-  (sessionMeta?.transcriptStatus ?? '') === 'failed'
+  (
+    // zero-byte / silent audio that DID upload but failed embedded transcription
+    (sessionMeta?.transcriptStatus ?? '') === 'failed' ||
+    // candidate audio never existed at all — window closed before the first
+    // flush uploaded, or "continue without recording". No local track, and
+    // (being Same Device) no merged/interviewer track either. Mirrors remote's
+    // audioResolvedNone so the same "No audio for this session." text shows.
+    !(sessionMeta?.mergedAudioUrl || sessionMeta?.audioUrl || sessionMeta?.interviewerAudioUrl)
+  )
 
 return {
     id: record.id,

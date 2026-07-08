@@ -6,10 +6,23 @@
  */
 import { initializeApp, cert } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const sa = JSON.parse(readFileSync('C:/Users/Pratik/AppData/Local/Temp/gmail_key_nobom.json', 'utf8'))
-initializeApp({ credential: cert(sa), projectId: 'compendium-x' })
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const projectRoot = path.resolve(__dirname, '..')
+const credentialPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH
+  ? path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PATH)
+  : path.join(projectRoot, 'serviceAccountKey.json')
+
+if (!existsSync(credentialPath)) {
+  console.error(`Service account file not found at ${credentialPath}`)
+  process.exit(1)
+}
+
+const sa = JSON.parse(readFileSync(credentialPath, 'utf8'))
+initializeApp({ credential: cert(sa), projectId: process.env.FIREBASE_PROJECT_ID || 'compendium-x' })
 const db = getFirestore()
 
 const snapshot = await db.collection('sessions').where('sessionMode', '==', 'local').get()
