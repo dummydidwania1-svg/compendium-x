@@ -370,13 +370,19 @@ export default function CaseDetailOverlay({
   // error) rather than there being no audio to stitch in the first place —
   // shown with its own honest message instead of looking like eternal "generating".
   const audioResolvedFailed = mergedAudioStatus === 'failed';
-  const audioUrl         = audioMergePending ? null : (entry.mergedAudioUrl ?? entry.audioUrl ?? entry.interviewerAudioUrl ?? null);
-  const hasAudio         = !audioMergePending && !audioResolvedNone && !audioResolvedFailed && entry.hasAudio && !!audioUrl;
+// Same-device (local): audio resolved to nothing usable (embedded transcript
+// failed — empty/silent/zero-byte). Mirrors audioResolvedNone for local.
+const localAudioResolvedNone = entry.localAudioResolvedNone ?? false;
+const audioUrl         = audioMergePending ? null : (entry.mergedAudioUrl ?? entry.audioUrl ?? entry.interviewerAudioUrl ?? null);
+const hasAudio         = !audioMergePending && !audioResolvedNone && !audioResolvedFailed && !localAudioResolvedNone && entry.hasAudio && !!audioUrl;
   const transcriptStatus = entry.transcriptStatus ?? null;
   const transcriptReason = entry.transcriptReason ?? null;
   const scoreVal         = entry.isUnrated ? null : (entry.score ?? null);
   const sessionMode      = entry.sessionMode;
-  const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
+// Same-device (local) partial recording: candidate window closed mid-session
+// ('page_hide') but what was captured transcribed fine — show a partial notice.
+const localPartialRecording = sessionMode === 'Same Device' && transcriptStatus === 'completed' && entry.localStopReason === 'page_hide';
+const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
 
   // Overview computed flags
   const hasFeedback = !!entry.notes?.trim();
@@ -971,12 +977,14 @@ export default function CaseDetailOverlay({
 
                 {entry.hasTranscript && turns.length > 0 && (
                   <div className="flex flex-col gap-[10px]">
-                    {(transcriptStatus === 'partial') && (
+                    {(transcriptStatus === 'partial' || localPartialRecording) && (
                       <div
                         className="text-[12px] leading-[1.65] px-[12px] py-[9px] rounded-[7px] mb-[3px]"
                         style={{ color: 'rgba(92,64,51,.52)', background: 'rgba(217,208,196,.1)', border: '1px solid rgba(217,208,196,.32)' }}
                       >
-                        {transcriptReason === 'interviewer_interrupted'
+                        {localPartialRecording
+  ? "Only part of this recording came through, since the candidate's window closed partway through."
+  : transcriptReason === 'interviewer_interrupted'
                           ? 'The interviewer disconnected mid-session so their audio cuts off partway through.'
                           : transcriptReason === 'candidate_interrupted'
                             ? 'Your connection dropped mid-session, so your audio cuts off partway through.'
@@ -1170,13 +1178,15 @@ export default function CaseDetailOverlay({
         )}
 
         {/* ── SINGLE-SIDE AUDIO REASON (only one side had usable audio) ── */}
-        {!audioMergePending && mergedAudioStatus === 'single_side' && hasAudio && (
+        {!audioMergePending && (mergedAudioStatus === 'single_side' || localPartialRecording) && hasAudio && (
           <div
             className="flex-shrink-0 px-[16px] pt-[9px]"
             style={{ background: 'linear-gradient(180deg, rgba(92,64,51,.012) 0%, rgba(92,64,51,.028) 100%)' }}
           >
             <p className="text-[10.5px] leading-[1.5]" style={{ color: 'rgba(92,64,51,.55)' }}>
-              {entry.mergedAudioReason === 'interviewer_declined'
+              {localPartialRecording
+  ? "Only part of this recording came through, since the candidate's window closed partway through."
+  : entry.mergedAudioReason === 'interviewer_declined'
                 ? "Your interviewer skipped sharing their mic, so here's your side of the conversation."
                 : entry.mergedAudioReason === 'interviewer_no_audio'
                 ? "Looks like your interviewer's side never came through, so here's your side of the conversation."
@@ -1186,7 +1196,7 @@ export default function CaseDetailOverlay({
         )}
 
         {/* ── NO AUDIO AT ALL (neither side had usable audio) ── */}
-        {!audioMergePending && audioResolvedNone && (
+        {!audioMergePending && (audioResolvedNone || localAudioResolvedNone) && (
           <div
             className="flex-shrink-0 px-[16px] py-[10px]"
             style={{ borderTop: '1px solid rgba(92,64,51,.07)', background: 'linear-gradient(180deg, rgba(92,64,51,.012) 0%, rgba(92,64,51,.028) 100%)' }}

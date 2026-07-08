@@ -73,7 +73,14 @@ export type DashboardCaseEntry = {
   // resolved to a single-side or no-audio terminal outcome, so those never
   // get stuck on "generating".
   audioMergePending: boolean
-  workspaceImageUrls: string[]
+// Same-device (local) only: true when a local session's audio resolved to
+// nothing usable (embedded transcript failed / zero-byte), so the UI shows
+// "No audio for this session." immediately instead of a remote-style outcome.
+localAudioResolvedNone: boolean
+// Same-device (local) only: 'page_hide' when the candidate window closed
+// mid-session, driving the "only part of this recording came through" caption.
+localStopReason: string | null
+workspaceImageUrls: string[]
   hasTranscript: boolean
   hasPDF: boolean
   hasSnapshot: boolean
@@ -103,9 +110,14 @@ export type DashboardSessionMeta = {
   interviewerAudioUrl: string | null
   mergedAudioUrl: string | null
   mergedTranscriptStatus: string | null
-  mergedAudioStatus: string | null
+    mergedAudioStatus: string | null
   mergedAudioReason: string | null
   mergedAudioDurationMs: number | null
+  // Same-device (local) embedded recording map fields. A local session never
+  // goes through the dual-mic merge pipeline, so the dashboard resolves its
+  // audio/transcript state directly from these.
+  localAudioByteSize: number | null
+  localStopReason: string | null
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
@@ -241,8 +253,13 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     // apart from "merge failed / no merge" for the generating-audio UI state.
     mergedTranscriptStatus: asString(value?.mergedTranscriptStatus),
     mergedAudioStatus: asString(value?.mergedAudioStatus),
-    mergedAudioReason: asString(value?.mergedAudioReason),
+        mergedAudioReason: asString(value?.mergedAudioReason),
     mergedAudioDurationMs: asNumber(value?.mergedAudioDurationMs),
+    // Same-device (local) embedded recording map — stopReason drives the
+    // "only part of this recording came through" caption; byteSize kept for
+    // reference/backfill (the "no audio" gate keys off transcriptStatus).
+    localAudioByteSize: asNumber(source.byteSize),
+    localStopReason: asString(source.stopReason),
   }
 }
 
@@ -265,7 +282,16 @@ export function mapDashboardEntry(
   const transcriptPreview = sessionMeta?.transcriptPreview ?? null
   const workspaceImageUrls = [...record.workspaceImageUrls]
 
-  return {
+// Same-device (local) "no usable audio" resolution. A genuinely empty /
+// silent / zero-byte local recording ALWAYS fails embedded transcription,
+// so a failed local transcript is the reliable, immediate signal that there
+// is nothing to play — show "No audio for this session." and hide the player.
+// A completed local transcript (even a partial one) keeps its audio playable.
+const localAudioResolvedNone =
+  (sessionMeta?.sessionMode ?? 'Remote') === 'Same Device' &&
+  (sessionMeta?.transcriptStatus ?? '') === 'failed'
+
+return {
     id: record.id,
     evaluationId: record.id,
     caseId: record.caseId,
@@ -317,7 +343,9 @@ export function mapDashboardEntry(
     hasTranscript: Boolean(transcript || transcriptPreview),
     hasPDF: false,
     hasSnapshot: workspaceImageUrls.length > 0,
-    hasAudio: Boolean(sessionMeta?.mergedAudioUrl || sessionMeta?.audioUrl || sessionMeta?.interviewerAudioUrl),
+        hasAudio: Boolean(sessionMeta?.mergedAudioUrl || sessionMeta?.audioUrl || sessionMeta?.interviewerAudioUrl) && !localAudioResolvedNone,
+    localAudioResolvedNone,
+    localStopReason: sessionMeta?.localStopReason ?? null,
     isUnrated: record.isUnrated,
   }
 }

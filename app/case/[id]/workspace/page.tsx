@@ -297,7 +297,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const lastCandidateFlushUrlRef = useRef<string | null>(null)
   const lastCandidateFlushPathRef = useRef<string | null>(null)
   const lastCandidateFlushMimeTypeRef = useRef<string>('audio/webm')
-  const candidateUploadedRef = useRef(false)
+const candidateUploadedRef = useRef(false)
+const lastCandidateFlushByteSizeRef = useRef<number>(0)
   const cachedCandidateTokenRef = useRef<string | null>(null)
   const autoStartAttemptedRef = useRef(false)
   // Set when the mic track/recorder dies mid-recording (browser permission
@@ -398,15 +399,15 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
       const audioUrl = await getDownloadURL(sRef)
 
       lastCandidateFlushUrlRef.current = audioUrl
-      lastCandidateFlushPathRef.current = storagePath
-      lastCandidateFlushMimeTypeRef.current = mimeType
-
+lastCandidateFlushPathRef.current = storagePath
+lastCandidateFlushMimeTypeRef.current = mimeType
+lastCandidateFlushByteSizeRef.current = blob.size
       const nowMs = Date.now()
       await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/recording`, {
         status: 'uploaded',
         mode: preferredRecordingModeRef.current,
-        role: 'candidate' as const,
-        startedAtMs: recordingStartMsRef.current ?? nowMs,
+        ...(preferredRecordingModeRef.current !== 'local' ? { role: 'candidate' as const } : {}),
+startedAtMs: recordingStartMsRef.current ?? nowMs,
         stoppedAtMs: nowMs,
         durationMs: recordingStartMsRef.current ? nowMs - recordingStartMsRef.current : null,
         stopReason: isFinal ? 'session_completed' : 'periodic_flush',
@@ -1581,13 +1582,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           body: JSON.stringify({
             status: 'uploaded',
             mode: preferredRecordingModeRef.current,
-            role: 'candidate',
-            live: false,
-            interrupted: true,
+            ...(preferredRecordingModeRef.current !== 'local' ? { role: 'candidate' as const } : {}),
+live: false,
+interrupted: true,
             storagePath: lastCandidateFlushPathRef.current,
             audioUrl: lastCandidateFlushUrlRef.current,
             mimeType: lastCandidateFlushMimeTypeRef.current,
-            byteSize: 0,
+            byteSize: lastCandidateFlushByteSizeRef.current,
             startedAtMs: recordingStartMsRef.current ?? nowMs,
             stoppedAtMs: nowMs,
             durationMs: recordingStartMsRef.current ? nowMs - recordingStartMsRef.current : null,

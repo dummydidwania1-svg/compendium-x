@@ -1227,8 +1227,18 @@ async function evaluateAndMerge(sessionId: string): Promise<void> {
   const sessionRef = db.collection('sessions').doc(sessionId)
 
   const sessionSnap = await sessionRef.get()
-  if (!sessionSnap.exists) return
-  const sessionData = sessionSnap.data() ?? {}
+if (!sessionSnap.exists) return
+const sessionData = sessionSnap.data() ?? {}
+
+// Defense-in-depth: same-device (local) sessions must never run through the
+// dual-mic merge pipeline. With the client role-omission fix in place a
+// correctly-tagged local session never reaches this function, but a stray
+// local-tagged subcollection doc (old data / unaudited path) still could —
+// skip it instead of writing bogus single_side / candidate_never_recorded output.
+if (sessionData.sessionMode === 'local') {
+  logger.warn('evaluate_and_merge_skipped_local_mode', { sessionId })
+  return
+}
   const existingMergeStatus = sessionData.mergedTranscriptStatus as string | undefined
   if (existingMergeStatus === 'processing') return
 
@@ -2049,7 +2059,11 @@ export const finalizePendingMerges = onSchedule(
     let evaluated = 0
     for (const sessionDoc of snapshot.docs) {
       const data = sessionDoc.data()
-      const mergedStatus = data.mergedTranscriptStatus as string | undefined
+// Same-device (local) sessions resolve synchronously via the embedded
+// transcribeRecording pipeline and never populate candidateTranscriptStatus,
+// so they should never reach this sweep — skip defensively for stray data.
+if (data.sessionMode === 'local') continue
+const mergedStatus = data.mergedTranscriptStatus as string | undefined
       if (mergedStatus === 'completed' || mergedStatus === 'processing') continue
 
       const interviewerDeclined = data.interviewerAudioCaptured === false
