@@ -16,6 +16,14 @@ const SESSION_ENDED_KEY = 'compendium-session-ended'
 /** Heartbeat is considered stale (tab gone) once older than this. */
 export const CANDIDATE_TAB_STALE_MS = 2500
 
+/** Universal (non-Safari) heartbeat cadence + staleness thresholds.
+ * Visible tab: 8s (= 4 missed 2s beats). Hidden/backgrounded tab: 35s, since
+ * every browser throttles background timers. Safari keeps its own constant
+ * below and is intentionally left untouched. */
+export const CANDIDATE_HEARTBEAT_MS = 2000
+export const CANDIDATE_TAB_STALE_VISIBLE_MS = 8000
+export const CANDIDATE_TAB_STALE_HIDDEN_MS = 35000
+
 /** Extended stale threshold for Safari — background-tab timer throttling
  *  slows setInterval to as little as 30s, so the normal 2.5s window fires
  *  false positives. Safari also fires storage events instantly (no throttle)
@@ -26,6 +34,10 @@ export type CandidateTabBeat = {
   lobbyId: string
   url: string
   ts: number
+  /** Whether the tab was backgrounded when it wrote this beat, so the reader
+   * can pick the visible (8s) vs hidden (35s) threshold. Older beats without
+   * this field are treated as visible. */
+  hidden?: boolean
 }
 
 /** True only if the *current* lobby's session has ended (upload phase started). */
@@ -55,15 +67,24 @@ export function readCandidateBeat(lobbyId: string | null | undefined): Candidate
   }
 }
 
+/** Normal-flow (non-Safari) staleness test. Uses the longer window when the
+ * beat was written while hidden, because background timers are throttled.
+ * Safari has its own separate path and does not use this. */
+export function isCandidateBeatStale(beat: CandidateTabBeat, now: number = Date.now()): boolean {
+  const threshold = beat.hidden ? CANDIDATE_TAB_STALE_HIDDEN_MS : CANDIDATE_TAB_STALE_VISIBLE_MS
+  return now - beat.ts > threshold
+}
+
 /** Write a fresh heartbeat for this lobby. No-op if the session has ended. */
 export function writeCandidateBeat(lobbyId: string): void {
   if (sessionEndedForLobby(lobbyId)) return
   try {
     localStorage.setItem(CANDIDATE_TAB_KEY, JSON.stringify({
-      lobbyId,
-      url: window.location.href,
-      ts: Date.now(),
-    } satisfies CandidateTabBeat))
+  lobbyId,
+  url: window.location.href,
+  ts: Date.now(),
+  hidden: typeof document !== 'undefined' && document.hidden,
+} satisfies CandidateTabBeat))
   } catch { /* quota */ }
 }
 

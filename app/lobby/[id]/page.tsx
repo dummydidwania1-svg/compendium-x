@@ -16,7 +16,7 @@ import { isSafariBrowser } from '@/lib/browser'
 import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiPost } from '@/lib/api/client'
-import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession, interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
+import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, CANDIDATE_HEARTBEAT_MS, isCandidateBeatStale, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession, interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 type SessionState = {
@@ -110,11 +110,18 @@ function CandidateLobby({
   // it's on the lobby (waiting / browsing / replacing). Mirrors the workspace
   // heartbeat. Interviewer side treats a stale heartbeat (>4s) as "tab gone".
   useEffect(() => {
-    if (!isLocalSession) return
-    writeCandidateBeat(lobbyId)
-    const interval = setInterval(() => writeCandidateBeat(lobbyId), 1000)
-    return () => clearInterval(interval)
-  }, [isLocalSession, lobbyId])
+  if (!isLocalSession) return
+  writeCandidateBeat(lobbyId)
+  const interval = setInterval(() => writeCandidateBeat(lobbyId), CANDIDATE_HEARTBEAT_MS)
+  // Wake ping: refocusing un-throttles timers; write immediately so the
+  // interviewer's overlay clears on its very next poll instead of waiting.
+  const onVisible = () => { if (document.visibilityState === 'visible') writeCandidateBeat(lobbyId) }
+  document.addEventListener('visibilitychange', onVisible)
+  return () => {
+    clearInterval(interval)
+    document.removeEventListener('visibilitychange', onVisible)
+  }
+}, [isLocalSession, lobbyId])
 
 
   // ── Session phase ──────────────────────────────────────────────────────────
@@ -1012,6 +1019,7 @@ function InterviewerLobby({
   // True once we've seen at least one fresh heartbeat — so a candidate tab that
   // never opened doesn't immediately read as "closed".
   const candidateWasAliveRef = useRef(false)
+const candidateStaleStreakRef = useRef(0)
 
   // Poll every 1s for the candidate heartbeat. A heartbeat older than the stale
   // threshold, after we've seen the tab alive, means it closed unexpectedly.
@@ -1019,19 +1027,21 @@ function InterviewerLobby({
     if (!isLocalMode) return
     const interval = setInterval(() => {
       if (sessionEndedForLobby(lobbyId) || isCandidateClosedDismissed(lobbyId)) {
-        setCandidateTabClosed(false)
-        return
-      }
+  setCandidateTabClosed(false)
+  candidateStaleStreakRef.current = 0
+  return
+}
       const beat = readCandidateBeat(lobbyId)
-      if (!beat) return
-      if (beat.url) candidateTabUrlRef.current = beat.url
-      const age = Date.now() - beat.ts
-      if (age < CANDIDATE_TAB_STALE_MS) {
-        candidateWasAliveRef.current = true
-        setCandidateTabClosed(false)
-      } else if (candidateWasAliveRef.current) {
-        setCandidateTabClosed(true)
-      }
+if (!beat) return
+if (beat.url) candidateTabUrlRef.current = beat.url
+if (!isCandidateBeatStale(beat)) {
+  candidateWasAliveRef.current = true
+  candidateStaleStreakRef.current = 0
+  setCandidateTabClosed(false)              // clear instantly on a fresh beat
+} else if (candidateWasAliveRef.current) {
+  candidateStaleStreakRef.current += 1      // debounce: require 2 in a row
+  if (candidateStaleStreakRef.current >= 2) setCandidateTabClosed(true)
+}
     }, 1000)
     return () => clearInterval(interval)
   }, [isLocalMode, lobbyId])
@@ -1149,10 +1159,15 @@ function InterviewerLobby({
         active: true,
       }).catch(() => { /* best-effort */ })
     }
-    sendHeartbeat()
-    const interval = setInterval(sendHeartbeat, 1_000)
-    return () => clearInterval(interval)
-  }, [isLocalMode, lobbyId])
+      sendHeartbeat()
+  const interval = setInterval(sendHeartbeat, 2_000)
+  const onVisible = () => { if (document.visibilityState === 'visible') sendHeartbeat() }
+  document.addEventListener('visibilitychange', onVisible)
+  return () => {
+    clearInterval(interval)
+    document.removeEventListener('visibilitychange', onVisible)
+  }
+}, [isLocalMode, lobbyId])
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60)
@@ -1736,7 +1751,8 @@ export default function LobbyPage() {
     // Remote-mode interviewer-window-closed detection (waiting/replacing only —
     // in_progress is covered separately by the workspace page's own B4 check).
     // Same 3s staleness threshold and periodic-recheck pattern used there.
-    const PRESENCE_STALE_MS = 3_000
+    const PRESENCE_STALE_MS = 8_000 // was 3_000 — 4× the 2s heartbeat; tolerates jitter
+let interviewerStaleStreak = 0
     const interviewerPresenceRef: { current: SessionState['interviewerPresence'] } = { current: undefined }
     const latestStatusRef: { current: SessionState['status'] } = { current: undefined }
     const checkInterviewerPresenceStale = () => {
@@ -1746,10 +1762,20 @@ export default function LobbyPage() {
       // No presence data yet -> assume connected, same convention used
       // everywhere else this pattern appears.
       if (!presence?.lastSeenAt) return
-      const age = Date.now() - presence.lastSeenAt.toDate().getTime()
-      const isDisconnected = presence.active === false || age > PRESENCE_STALE_MS
-      setInterviewerRemoteWindowClosed(isDisconnected)
-    }
+        if (presence.active === false) {            // explicit leave -> trust immediately
+    interviewerStaleStreak = 0
+    setInterviewerRemoteWindowClosed(true)
+    return
+  }
+  const age = Date.now() - presence.lastSeenAt.toDate().getTime()
+  if (age > PRESENCE_STALE_MS) {
+    interviewerStaleStreak += 1
+    if (interviewerStaleStreak >= 2) setInterviewerRemoteWindowClosed(true)
+  } else {
+    interviewerStaleStreak = 0
+    setInterviewerRemoteWindowClosed(false)   // clear instantly
+  }
+}
     const clearPoll = () => {
       if (!pollTimer) return
       clearInterval(pollTimer)

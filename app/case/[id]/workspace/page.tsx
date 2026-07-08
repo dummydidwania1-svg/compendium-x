@@ -1130,9 +1130,13 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
   // If lastSeenAt is older than 3s (3× the 1s heartbeat), the interviewer
   // is treated as disconnected. Only used in remote mode.
   const PRESENCE_STALE_MS = 3_000
+// Overlay-only threshold (kept separate from the audio-declined check above,
+// which intentionally stays at PRESENCE_STALE_MS). 8s = 4× the 2s heartbeat.
+const INTERVIEWER_DISCONNECT_STALE_MS = 8_000
   // Latest interviewerPresence payload, cached so a periodic timer (not just
   // each incoming Firestore snapshot) can re-check staleness.
   const interviewerPresenceRef = useRef<{ active?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined>(undefined)
+const interviewerStaleStreakRef = useRef(0)
 
   useEffect(() => {
     let unsubscribeSession = () => {}
@@ -1257,10 +1261,20 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
       // No presence data yet -> assume connected, same convention used for
       // candidatePresence on the interviewer's own side.
       if (!presence?.lastSeenAt) return
-      const age = Date.now() - presence.lastSeenAt.toDate().getTime()
-      const isDisconnected = presence.active === false || age > PRESENCE_STALE_MS
-      setInterviewerWindowClosed(isDisconnected)
-    }
+        if (presence.active === false) {            // explicit leave -> trust immediately
+    interviewerStaleStreakRef.current = 0
+    setInterviewerWindowClosed(true)
+    return
+  }
+  const age = Date.now() - presence.lastSeenAt.toDate().getTime()
+  if (age > INTERVIEWER_DISCONNECT_STALE_MS) {
+    interviewerStaleStreakRef.current += 1    // debounce: require 2 in a row
+    if (interviewerStaleStreakRef.current >= 2) setInterviewerWindowClosed(true)
+  } else {
+    interviewerStaleStreakRef.current = 0
+    setInterviewerWindowClosed(false)         // clear instantly
+  }
+}
 
     const init = async () => {
       const resolved = await params
