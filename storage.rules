@@ -5,12 +5,14 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    // Workspace image uploads (used during interviewer-side evaluation flow)
+    // Workspace image uploads (used during interviewer-side evaluation flow).
+    // Candidates also attach handwritten notes/frameworks here — images or PDFs.
     match /workspace-images/{userId}/{evaluationId}/{fileName} {
       allow write: if signedIn()
         && request.auth.uid == userId
         && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && (request.resource.contentType.matches('image/.*')
+            || request.resource.contentType == 'application/pdf');
       allow read: if signedIn();
     }
 

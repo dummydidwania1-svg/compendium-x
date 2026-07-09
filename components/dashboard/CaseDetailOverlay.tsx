@@ -7,7 +7,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import {
   X, RefreshCw, Upload, Loader2, Play, Pause,
-  CalendarDays, Wifi, User, Trash2, Monitor, Feather, Minus,
+  CalendarDays, Wifi, User, Trash2, Monitor, Feather, Minus, FileText,
 } from 'lucide-react';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
 import { storage, waitForAuthUser } from '@/lib/firebase/config';
@@ -79,6 +79,22 @@ function scoreColor(score: number): string {
 
 function safeExt(filename: string): string {
   return filename.toLowerCase().split('.').pop()?.replace(/[^a-z0-9]/g, '') || 'jpg';
+}
+
+// Uploaded notes are stored as Firebase download URLs whose (URL-encoded) path
+// keeps the original file extension. PDFs can't be shown as an <img> thumbnail,
+// so we detect them from the URL and render an icon fallback instead.
+function isPdfUrl(url: string): boolean {
+  return url.split('?')[0].toLowerCase().endsWith('.pdf');
+}
+
+function fileNameFromUrl(url: string): string {
+  try {
+    const path = decodeURIComponent(new URL(url).pathname);
+    return path.split('/').pop() || 'document.pdf';
+  } catch {
+    return 'document.pdf';
+  }
 }
 
 const WAVE_HEIGHTS = [
@@ -626,11 +642,12 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
   const uploadFile = async (file: File | null | undefined) => {
     if (!file || uploading) return;
     setUploadError('');
-    if (!file.type.startsWith('image/')) {
-      setUploadError('Pick an image file (PNG, JPG, HEIC).'); return;
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!file.type.startsWith('image/') && !isPdf) {
+      setUploadError('Pick an image or PDF file (PNG, JPG, HEIC, PDF).'); return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setUploadError('Image must be under 10 MB.'); return;
+      setUploadError('File must be under 10 MB.'); return;
     }
     setUploading(true);
     try {
@@ -639,7 +656,8 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
       const ext  = safeExt(file.name);
       const path = `workspace-images/${user.uid}/${entry.evaluationId}/${Date.now()}.${ext}`;
       const ref  = storageRef(storage, path);
-      await uploadBytes(ref, file, { contentType: file.type });
+      const contentType = file.type || (isPdf ? 'application/pdf' : 'application/octet-stream');
+      await uploadBytes(ref, file, { contentType });
       const url  = await getDownloadURL(ref);
       await apiPost(`/api/evaluations/${encodeURIComponent(entry.evaluationId)}/workspace-image`, {
         storagePath: path, workspaceImageUrl: url,
@@ -1112,25 +1130,39 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
               </div>
             )}
 
-            {/* ── NOTES TAB ── (kept identical to original) */}
+            {/* ── NOTES TAB ── */}
             {activeTab === 'notes' && (
-              <div className="p-[18px_20px] pb-[40px]">
-                <p className="text-[12px] mb-[16px]" style={{ color: 'rgba(92,64,51,.48)' }}>
+              <div
+                className={`p-[18px_20px] pb-[40px]${localUrls.length === 0 ? ' flex flex-col' : ''}`}
+                style={localUrls.length === 0 ? { height: '100%' } : undefined}
+              >
+                <p className="text-[12px] mb-[16px] shrink-0" style={{ color: 'rgba(92,64,51,.48)' }}>
                   Photos of your handwritten notes and frameworks from this case.
                 </p>
 
                 {localUrls.length > 0 && (
                   <div className="flex flex-wrap gap-[9px] mb-[14px]">
-                    {localUrls.map((url, i) => (
+                    {localUrls.map((url, i) => {
+                      const pdf = isPdfUrl(url);
+                      return (
                       <div
                         key={i}
-                        onClick={() => setExpandedUrl(url)}
+                        onClick={() => { if (pdf) window.open(url, '_blank', 'noopener,noreferrer'); else setExpandedUrl(url); }}
                         className="group relative w-[92px] h-[92px] rounded-[8px] overflow-hidden cursor-pointer transition-all duration-150"
                         style={{ background: 'rgba(217,208,196,.18)', border: '1px solid rgba(217,208,196,.40)' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 16px rgba(59,47,47,.10)'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
                       >
-                        <img src={url} alt={`Note ${i + 1}`} className="w-full h-full object-cover" />
+                        {pdf ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-[6px] px-[6px] text-center">
+                            <FileText className="w-[24px] h-[24px]" style={{ color: 'rgba(92,64,51,.42)' }} />
+                            <span className="text-[8.5px] font-medium leading-[1.2] w-full truncate" style={{ color: 'rgba(92,64,51,.55)' }}>
+                              {fileNameFromUrl(url)}
+                            </span>
+                          </div>
+                        ) : (
+                          <img src={url} alt={`Note ${i + 1}`} className="w-full h-full object-cover" />
+                        )}
                         <div
                           className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-[4px] py-[6px] opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0"
                           style={{ background: 'linear-gradient(to top, rgba(59,47,47,.62) 0%, rgba(59,47,47,.0) 100%)', backdropFilter: 'blur(2px)' }}
@@ -1150,10 +1182,11 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
                           <X className="w-[8px] h-[8px]" />
                         </button>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
-                <input ref={replaceInputRef} type="file" accept="image/*" className="hidden" onChange={e => { void handleReplaceInput(e); }} />
+                <input ref={replaceInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={e => { void handleReplaceInput(e); }} />
 
                 <div
                   onDragEnter={() => setDragging(true)}
@@ -1161,7 +1194,7 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
                   onDragLeave={() => setDragging(false)}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center justify-center gap-[7px] rounded-[10px] py-[30px] cursor-pointer transition-all duration-200 w-full"
+                  className={`flex flex-col items-center justify-center gap-[7px] rounded-[10px] cursor-pointer transition-all duration-200 w-full${localUrls.length === 0 ? ' flex-1 min-h-[160px]' : ' py-[30px]'}`}
                   style={{ border: `1.5px dashed ${dragging ? '#3D5A35' : 'rgba(61,90,53,.20)'}`, background: dragging ? 'rgba(61,90,53,.04)' : 'transparent' }}
                   onMouseEnter={e => { if (!dragging) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(61,90,53,.34)'; (e.currentTarget as HTMLElement).style.background = 'rgba(61,90,53,.025)'; } }}
                   onMouseLeave={e => { if (!dragging) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(61,90,53,.20)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; } }}
@@ -1174,10 +1207,10 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
                     {uploading ? 'Uploading...' : localUrls.length > 0 ? 'Add another photo' : 'Drop your photo here'}
                   </p>
                   <p className="text-[10px]" style={{ color: 'rgba(92,64,51,.32)' }}>
-                    {uploading ? 'Hang on a moment' : 'or click to browse. PNG, JPG, HEIC up to 10 MB.'}
+                    {uploading ? 'Hang on a moment' : 'or click to browse. PNG, JPG, HEIC, PDF up to 10 MB.'}
                   </p>
                 </div>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileInput} />
+                <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileInput} />
                 {uploadError && (
                   <p className="text-[10.5px] mt-[10px]" style={{ color: 'rgba(92,64,51,.62)' }}>{uploadError}</p>
                 )}
