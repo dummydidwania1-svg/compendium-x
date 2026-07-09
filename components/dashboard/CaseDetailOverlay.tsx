@@ -7,7 +7,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import {
   X, RefreshCw, Upload, Loader2, Play, Pause,
-  CalendarDays, Wifi, User,
+  CalendarDays, Wifi, User, Trash2,
 } from 'lucide-react';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
 import { storage, waitForAuthUser } from '@/lib/firebase/config';
@@ -232,10 +232,12 @@ function MetaRow({
 export default function CaseDetailOverlay({
   entry,
   onClose,
+  onDeleted,
   initialTab = 'session',
 }: {
   entry: DashboardCaseEntry;
   onClose: () => void;
+  onDeleted?: (evaluationId: string) => void;
   initialTab?: 'session' | 'notes';
 }) {
   const [isExiting, setIsExiting]     = useState(false);
@@ -247,6 +249,10 @@ export default function CaseDetailOverlay({
   const [paramsReady, setParamsReady] = useState(false);
   // Feedback overlay
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // Delete confirmation
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Feedback clamp: measure whether the clamped feedback box actually overflows,
   // so the bottom fade + "Read full feedback" only appear when there's more to read.
@@ -434,14 +440,36 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
     setTimeout(onClose, 210);
   }, [onClose]);
 
-  // ESC closes modal (only when lightbox and feedback overlay are both closed)
+  // Delete this session/evaluation permanently, then remove it from the
+  // dashboard list and close the overlay.
+  const handleDelete = useCallback(async () => {
+    if (deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await apiDelete(`/api/evaluations/${encodeURIComponent(entry.evaluationId)}`, {});
+      onDeleted?.(entry.evaluationId);
+      setConfirmDelete(false);
+      handleClose();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Could not delete this session. Try again.');
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleting, entry.evaluationId, onDeleted, handleClose]);
+
+  // ESC closes modal (only when lightbox, feedback overlay, and delete confirm
+  // are all closed; the delete confirm swallows ESC to dismiss itself first).
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !expandedUrl && !feedbackOpen) handleClose();
+      if (e.key !== 'Escape') return;
+      if (expandedUrl || feedbackOpen) return;
+      if (confirmDelete) { setConfirmDelete(false); return; }
+      handleClose();
     };
     document.addEventListener('keydown', fn);
     return () => document.removeEventListener('keydown', fn);
-  }, [handleClose, expandedUrl, feedbackOpen]);
+  }, [handleClose, expandedUrl, feedbackOpen, confirmDelete]);
 
   // Server-computed duration (decoded from the actual audio, not the file's
   // own container metadata) — authoritative when present. A recording that
@@ -815,16 +843,32 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
               </div>
             </div>
           </div>
-          {/* Close button */}
-          <button
-            onClick={handleClose}
-            className="ml-[12px] w-[20px] h-[20px] rounded-full flex items-center justify-center transition-colors duration-150 shrink-0 mt-[2px]"
-            style={{ background: 'rgba(217,208,196,.5)', color: '#5C4033' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#3B2F2F'; (e.currentTarget as HTMLElement).style.color = '#F0EBE3'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(217,208,196,.5)'; (e.currentTarget as HTMLElement).style.color = '#5C4033'; }}
-          >
-            <X className="w-[10px] h-[10px]" />
-          </button>
+          {/* Header actions — delete + close */}
+          <div className="flex items-center gap-[7px] ml-[12px] shrink-0 mt-[2px]">
+            {/* Delete session */}
+            <button
+              onClick={() => { setDeleteError(null); setConfirmDelete(true); }}
+              aria-label="Delete this session"
+              title="Delete this session"
+              className="w-[20px] h-[20px] rounded-full flex items-center justify-center transition-colors duration-150"
+              style={{ background: 'rgba(217,208,196,.5)', color: '#5C4033' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#b4543e'; (e.currentTarget as HTMLElement).style.color = '#F0EBE3'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(217,208,196,.5)'; (e.currentTarget as HTMLElement).style.color = '#5C4033'; }}
+            >
+              <Trash2 className="w-[10px] h-[10px]" />
+            </button>
+            {/* Close button */}
+            <button
+              onClick={handleClose}
+              aria-label="Close"
+              className="w-[20px] h-[20px] rounded-full flex items-center justify-center transition-colors duration-150"
+              style={{ background: 'rgba(217,208,196,.5)', color: '#5C4033' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#3B2F2F'; (e.currentTarget as HTMLElement).style.color = '#F0EBE3'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(217,208,196,.5)'; (e.currentTarget as HTMLElement).style.color = '#5C4033'; }}
+            >
+              <X className="w-[10px] h-[10px]" />
+            </button>
+          </div>
         </div>
 
         {/* ── TAB BAR ── */}
@@ -1346,6 +1390,77 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
               style={{ color: 'rgba(92,64,51,.85)' }}
             >
               {renderNotesLines(entry.notes?.trim() ?? '')}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── DELETE CONFIRMATION ── */}
+      {confirmDelete && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center"
+          style={{ padding: '24px 16px' }}
+          onClick={() => { if (!deleting) setConfirmDelete(false); }}
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 animate-lightbox-bg-in"
+            style={{ background: 'rgba(59,47,47,.34)', backdropFilter: 'blur(4px)' }}
+          />
+          {/* Panel */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-10 flex flex-col overflow-hidden animate-scale-in"
+            style={{
+              width: 'min(90vw, 380px)',
+              borderRadius: '16px',
+              background: '#fff8f0',
+              border: '1px solid rgba(180,84,62,.22)',
+              boxShadow: '0 24px 60px rgba(59,47,47,.20)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ height: 2, background: 'linear-gradient(90deg, #b4543e 0%, rgba(180,84,62,.12) 100%)' }} />
+            <div className="px-[22px] pt-[18px] pb-[18px] flex flex-col gap-[12px]">
+              <h3 className="font-serif text-[19px] font-[500] leading-[1.2] tracking-[-0.01em]" style={{ color: '#3B2F2F' }}>
+                Delete this session?
+              </h3>
+              <p className="text-[12.5px] leading-[1.6]" style={{ color: 'rgba(92,64,51,.72)' }}>
+                <span className="font-semibold" style={{ color: '#3B2F2F' }}>{entry.name}</span>
+                {' '}and its score, feedback, transcript and recording will be permanently
+                removed from your history. This can&apos;t be undone.
+              </p>
+              {deleteError && (
+                <p className="text-[11.5px] leading-[1.5]" style={{ color: '#b4543e' }}>{deleteError}</p>
+              )}
+              <div className="flex justify-end items-center gap-[8px] mt-[2px]">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={deleting}
+                  className="px-[14px] py-[8px] rounded-full text-[11px] font-semibold uppercase tracking-[.1em] transition-colors duration-150 disabled:opacity-50"
+                  style={{ background: 'rgba(217,208,196,.5)', color: '#5C4033' }}
+                  onMouseEnter={e => { if (!deleting) (e.currentTarget as HTMLElement).style.background = 'rgba(217,208,196,.75)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(217,208,196,.5)'; }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { void handleDelete(); }}
+                  disabled={deleting}
+                  className="inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-full text-[11px] font-semibold uppercase tracking-[.1em] transition-colors duration-150 disabled:opacity-70"
+                  style={{ background: '#b4543e', color: '#F8F1E7', border: '1px solid rgba(180,84,62,.9)' }}
+                  onMouseEnter={e => { if (!deleting) (e.currentTarget as HTMLElement).style.background = '#9d4634'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#b4543e'; }}
+                >
+                  {deleting
+                    ? <><Loader2 className="w-[11px] h-[11px] animate-spin" /> Deleting</>
+                    : <><Trash2 className="w-[11px] h-[11px]" /> Delete</>}
+                </button>
+              </div>
             </div>
           </div>
         </div>,
