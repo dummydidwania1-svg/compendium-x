@@ -779,7 +779,7 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
           }}
         >
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-baseline gap-x-[10px] gap-y-[4px]">
+            <div className="flex flex-wrap items-center gap-x-[10px] gap-y-[4px]">
               <h2 className="font-serif text-[22px] font-[500] text-[#3B2F2F] leading-[1.15] tracking-[-0.01em]">
                 {entry.name}
               </h2>
