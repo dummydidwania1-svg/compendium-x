@@ -94,6 +94,9 @@ const CaseHistoryTable = ({ filters }: { filters: Filters }) => {
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [detailEntry, setDetailEntry] = useState<any>(null);
   const [detailTab, setDetailTab] = useState<'session' | 'notes'>('session');
+  // Evaluations deleted this session. The live Firestore listener removes them
+  // too, but hiding them optimistically avoids a flash while that round-trips.
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('date');
 const [sortDir, setSortDir] = useState<SortDir>('desc');
 const [showSortMenu, setShowSortMenu] = useState(false);
@@ -134,8 +137,9 @@ const filteredCases = useMemo(() => {
     normalizedFilters.customEnd = end.toISOString().slice(0, 10);
   }
 
-  return filterDashboardEntries(entries, normalizedFilters);
-}, [entries, filters]);
+  const filtered = filterDashboardEntries(entries, normalizedFilters);
+  return deletedIds.size > 0 ? filtered.filter((e) => !deletedIds.has(e.id)) : filtered;
+}, [entries, filters, deletedIds]);
 
 const sortedCases = useMemo(() => {
   const arr = [...filteredCases];
@@ -386,7 +390,12 @@ const sortedCases = useMemo(() => {
           Opens on the Session tab from Details, or straight to Notes from the
           asset button so the user can upload and view snapshots right there. */}
     {detailEntry && canUseDOM && createPortal(
-    <CaseDetailOverlay entry={detailEntry} initialTab={detailTab} onClose={() => setDetailEntry(null)} />,
+    <CaseDetailOverlay
+      entry={detailEntry}
+      initialTab={detailTab}
+      onClose={() => setDetailEntry(null)}
+      onDeleted={(id) => setDeletedIds((prev) => new Set(prev).add(id))}
+    />,
     document.body
     )}
     </>
