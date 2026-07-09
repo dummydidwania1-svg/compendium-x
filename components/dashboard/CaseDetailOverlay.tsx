@@ -7,7 +7,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import {
   X, RefreshCw, Upload, Loader2, Play, Pause,
-  CalendarDays, Wifi, User, Trash2,
+  CalendarDays, Wifi, User, Trash2, Monitor, Feather, Minus,
 } from 'lucide-react';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
 import { storage, waitForAuthUser } from '@/lib/firebase/config';
@@ -148,7 +148,7 @@ function useCountUp(target: number | null): number {
 // ── Measurement Ring ─────────────────────────────────────────────────────────
 function ScoreRing({ value, ready }: { value: number | null; ready: boolean }) {
   const animated = useCountUp(value);
-  const SIZE = 116;
+  const SIZE = 124;
   const STROKE = 11;
   const R = (SIZE - STROKE) / 2;
   const CIRC = 2 * Math.PI * R;
@@ -173,54 +173,61 @@ function ScoreRing({ value, ready }: { value: number | null; ready: boolean }) {
           />
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span className="font-serif" style={{ fontSize: 29, fontWeight: 500, lineHeight: 1, color: textColor, letterSpacing: '-0.01em' }}>
+          <span className="font-serif" style={{ fontSize: 32, fontWeight: 500, lineHeight: 1, color: textColor, letterSpacing: '-0.01em' }}>
             {display}
           </span>
-          <span style={{ fontSize: 9, marginTop: 3, color: 'rgba(92,64,51,.42)', lineHeight: 1 }}>/ 5</span>
+          <span style={{ fontSize: 9, marginTop: 4, color: 'rgba(92,64,51,.42)', lineHeight: 1 }}>out of 5</span>
         </div>
       </div>
     </div>
   );
 }
 
-function ParamBar({ label, score, ready }: { label: string; score: number | null; ready: boolean }) {
+function ParamBar({ label, score, ready, tag }: { label: string; score: number | null; ready: boolean; tag?: 'strongest' | 'focus' | null }) {
+  const fill =
+    tag === 'strongest' ? '#3D5A35'
+    : tag === 'focus'   ? 'rgba(201,138,61,.55)'
+    : 'rgba(61,90,53,.42)';
   return (
     <div className="flex items-center gap-[9px] mb-[10px]">
       <span className="text-[11px] font-medium w-[88px] text-right shrink-0" style={{ color: 'rgba(92,64,51,.46)' }}>
         {label}
       </span>
-      <div className="flex-1 h-[5px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
+      <div className="relative flex-1 h-[5px] rounded-full" style={{ background: 'rgba(217,208,196,.40)' }}>
         <div
           className="h-full rounded-full transition-all duration-[900ms] ease-out"
           style={{
             width: ready && score != null ? `${(score / 5) * 100}%` : '0%',
-            background: 'rgba(61,90,53,.42)',
+            background: fill,
           }}
         />
+        {/* midpoint tick — a quiet 2.5/5 reference mark on every track */}
+        <div
+          className="absolute pointer-events-none"
+          style={{ left: '50%', top: '-2px', width: 1, height: 9, background: 'rgba(92,64,51,.14)' }}
+        />
       </div>
-      <span className="text-[11px] font-semibold w-[18px] text-right shrink-0 tabular-nums" style={{ color: 'rgba(59,47,47,.78)' }}>
-        {score != null ? score : '--'}
+      <span className="text-[11px] font-semibold w-[22px] text-right shrink-0 tabular-nums" style={{ color: 'rgba(59,47,47,.78)' }}>
+        {score != null ? score.toFixed(1) : '--'}
       </span>
-    </div>
-  );
-}
-
-function MetaRow({
-  icon: Icon,
-  text,
-  textStyle,
-}: {
-  icon: React.ElementType;
-  text: string;
-  textStyle?: React.CSSProperties;
-}) {
-  return (
-    <div className="flex items-center gap-[7px] mb-[5px]">
-      <div className="w-[12px] h-[12px] shrink-0 flex items-center justify-center">
-        <Icon className="w-full h-full" style={{ color: 'rgba(92,64,51,.42)' }} />
-      </div>
-      <span className="text-[10.5px] leading-none" style={textStyle ?? { color: 'rgba(92,64,51,.56)' }}>
-        {text}
+      {/* Fixed-width tag column keeps every bar the same length whether or not a pill renders */}
+      <span className="w-[78px] shrink-0 flex justify-start">
+        {tag === 'strongest' && (
+          <span
+            className="text-[8px] font-semibold uppercase tracking-[.08em] px-[7px] py-[2px] rounded-full whitespace-nowrap"
+            style={{ color: '#3D5A35', background: 'rgba(61,90,53,.07)', border: '1px solid rgba(61,90,53,.30)' }}
+          >
+            Strongest
+          </span>
+        )}
+        {tag === 'focus' && (
+          <span
+            className="text-[8px] font-semibold uppercase tracking-[.08em] px-[7px] py-[2px] rounded-full whitespace-nowrap"
+            style={{ color: '#8a5a2b', background: 'rgba(201,138,61,.10)', border: '1px solid rgba(201,138,61,.45)' }}
+          >
+            Focus
+          </span>
+        )}
       </span>
     </div>
   );
@@ -687,33 +694,8 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
   };
 
   // ─────────────────────────────────────────────────────────────
-  // Shared JSX blocks for Overview tab
+  // Overview: performance parameters + strongest / focus tags
   // ─────────────────────────────────────────────────────────────
-
-  const sessionDetailsBlock = (
-    <div>
-      <SectionLabel>Session Details</SectionLabel>
-      <div>
-        <div className="flex items-center gap-[8px] py-[7px]" style={{ borderBottom: '1px solid rgba(92,64,51,.09)' }}>
-          <CalendarDays className="w-[12px] h-[12px] shrink-0" style={{ color: 'rgba(92,64,51,.42)' }} />
-          <span className="text-[12.5px] font-semibold text-[#3B2F2F]">{fmtDate(entry.date)}</span>
-        </div>
-        <div className="flex items-center gap-[8px] py-[7px]" style={{ borderBottom: '1px solid rgba(92,64,51,.09)' }}>
-          {sessionMode === 'Remote'
-            ? <Wifi className="w-[12px] h-[12px] shrink-0" style={{ color: 'rgba(92,64,51,.42)' }} />
-            : <User className="w-[12px] h-[12px] shrink-0" style={{ color: 'rgba(92,64,51,.42)' }} />
-          }
-          <span className="text-[12.5px]" style={{ color: 'rgba(92,64,51,.62)' }}>{sessionMode}</span>
-        </div>
-        <div className="flex items-center gap-[8px] py-[7px]">
-          <User className="w-[12px] h-[12px] shrink-0" style={{ color: 'rgba(92,64,51,.42)' }} />
-          <span className="text-[12.5px]" style={{ color: 'rgba(92,64,51,.62)' }}>
-            {entry.interviewerName ?? <em>Interviewer name not available</em>}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
 
   const paramRows = [
     { label: 'Structure',     val: entry.structure },
@@ -722,58 +704,19 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
     { label: 'Creativity',    val: entry.creativity },
   ];
 
-  const scoreBlock = (
-    <div>
-      <SectionLabel>Score</SectionLabel>
-      <div className="flex flex-col items-center gap-[18px]">
-        <ScoreRing value={scoreVal} ready={paramsReady} />
-        <div style={{ width: '100%', borderTop: '1px solid rgba(92,64,51,.09)', paddingTop: 18 }}>
-          {paramRows.map(({ label, val }) => (
-            <ParamBar key={label} label={label} score={val} ready={paramsReady} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const feedbackBlock = (
-    <div>
-      <SectionLabel>Interviewer Feedback</SectionLabel>
-      {/* The clamped text box is its OWN positioning context, so the bottom
-          fade lives inside it and can never overlap the "Read full feedback"
-          link below. Fade + link only render when the text actually overflows. */}
-      <div
-        ref={feedbackBoxRef}
-        className="text-[12.5px] leading-[1.7] rounded-[8px] px-[14px] py-[12px]"
-        style={{
-          color: 'rgba(92,64,51,.82)',
-          background: 'rgba(61,90,53,.06)',
-          maxHeight: '172px',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
-        {renderNotesLines(entry.notes?.trim() ?? '')}
-        {/* bottom fade — inside the box, only when clipped */}
-        {feedbackOverflows && (
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            height: 40, pointerEvents: 'none',
-            background: 'linear-gradient(to bottom, rgba(242,247,238,0), rgba(242,247,238,.97))',
-          }} />
-        )}
-      </div>
-      {feedbackOverflows && (
-        <button
-          className="mt-[8px] text-[11px] font-semibold"
-          style={{ color: '#3D5A35' }}
-          onClick={() => setFeedbackOpen(true)}
-        >
-          Read full feedback →
-        </button>
-      )}
-    </div>
-  );
+  // Tag the single best and single weakest parameter — only when the session
+  // is scored, at least two parameters are present, and they aren't all tied.
+  let strongestLabel: string | null = null;
+  let focusLabel: string | null = null;
+  const numericParams = paramRows.filter(r => r.val != null) as { label: string; val: number }[];
+  if (hasScore && numericParams.length >= 2) {
+    const maxVal = Math.max(...numericParams.map(r => r.val));
+    const minVal = Math.min(...numericParams.map(r => r.val));
+    if (maxVal !== minVal) {
+      strongestLabel = numericParams.find(r => r.val === maxVal)!.label;
+      focusLabel     = numericParams.find(r => r.val === minVal)!.label;
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────
   // Render
@@ -802,6 +745,12 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
         }}
         onClick={e => e.stopPropagation()}
       >
+        {/* ── EDITION STAMP — dossier signature line ── */}
+        <div
+          className="flex-shrink-0"
+          style={{ height: 3, background: 'linear-gradient(90deg, #3D5A35, #7a5a3f 60%, #5C4033)' }}
+        />
+
         {/* ── RAISED HEADER BAND ── */}
         <div
           className="flex items-start justify-between flex-shrink-0"
@@ -841,6 +790,27 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
                   </span>
                 )}
               </div>
+            </div>
+            {/* Byline — the single home for session metadata (date · mode · interviewer) */}
+            <div className="flex flex-wrap items-center gap-x-[8px] gap-y-[3px] mt-[8px]">
+              <span className="inline-flex items-center gap-[5px]">
+                <CalendarDays className="w-[11px] h-[11px]" style={{ color: 'rgba(92,64,51,.42)' }} />
+                <span className="text-[10.5px] font-semibold text-[#3B2F2F]">{fmtDate(entry.date)}</span>
+              </span>
+              <span className="text-[10px]" style={{ color: 'rgba(92,64,51,.30)' }}>·</span>
+              <span className="inline-flex items-center gap-[5px]">
+                {sessionMode === 'Remote'
+                  ? <Wifi className="w-[11px] h-[11px]" style={{ color: 'rgba(92,64,51,.42)' }} />
+                  : <Monitor className="w-[11px] h-[11px]" style={{ color: 'rgba(92,64,51,.42)' }} />}
+                <span className="text-[10.5px]" style={{ color: 'rgba(92,64,51,.56)' }}>{sessionMode}</span>
+              </span>
+              <span className="text-[10px]" style={{ color: 'rgba(92,64,51,.30)' }}>·</span>
+              <span className="inline-flex items-center gap-[5px]">
+                <User className="w-[11px] h-[11px]" style={{ color: 'rgba(92,64,51,.42)' }} />
+                {entry.interviewerName
+                  ? <span className="text-[10.5px]" style={{ color: 'rgba(92,64,51,.56)' }}>{entry.interviewerName}</span>
+                  : <span className="text-[10.5px] italic" style={{ color: 'rgba(92,64,51,.42)' }}>Interviewer name not available</span>}
+              </span>
             </div>
           </div>
           {/* Header actions — delete + close */}
@@ -919,98 +889,117 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
               @media(prefers-reduced-motion:reduce){.cdo-ring-fill{transition:none}}
             `}</style>
 
-            {/* ── OVERVIEW TAB ── */}
+            {/* ── OVERVIEW TAB ──
+                Stacked full-width bands: PERFORMANCE on top, INTERVIEWER
+                FEEDBACK below. Session metadata lives ONLY in the header
+                byline. The feedback band flex-grows so the two bands always
+                end flush with the bottom of the content area — empty states
+                render as dashed panels instead of leaving ragged blank space.
+                Covers all four hasScore × hasFeedback combinations. */}
             {activeTab === 'overview' && (
-              <div className="p-[20px_24px] pb-[28px]">
+              <div className="flex flex-col p-[18px_24px] pb-[22px]" style={{ height: '100%' }}>
 
-                {/* State A: hasFeedback && hasScore — 2-col, left=details+feedback, right=score.
-                    Grid stretches both columns to the same height (right col = score ring + bars).
-                    Left col is a flex column so feedback fills the remaining space and clips
-                    with a fade when the text is longer than what fits. */}
-                {hasFeedback && hasScore && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px', alignItems: 'stretch' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {sessionDetailsBlock}
-                      {/* Feedback grows to fill whatever height the right column sets */}
-                      <div style={{ marginTop: 22, flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <SectionLabel>Interviewer Feedback</SectionLabel>
-                        <div
-                          ref={feedbackBoxRef}
-                          className="text-[12.5px] leading-[1.7] rounded-[8px] px-[14px] py-[12px]"
-                          style={{
-                            color: 'rgba(92,64,51,.82)',
-                            background: 'rgba(61,90,53,.06)',
-                            flex: '1 1 0',
-                            minHeight: 0,
-                            overflow: 'hidden',
-                            position: 'relative',
-                          }}
-                        >
-                          {renderNotesLines(entry.notes?.trim() ?? '')}
-                          {feedbackOverflows && (
-                            <div style={{
-                              position: 'absolute', bottom: 0, left: 0, right: 0,
-                              height: 40, pointerEvents: 'none',
-                              background: 'linear-gradient(to bottom, rgba(242,247,238,0), rgba(242,247,238,.97))',
-                            }} />
-                          )}
-                        </div>
-                        {feedbackOverflows && (
-                          <button
-                            className="mt-[8px] text-[11px] font-semibold"
-                            style={{ color: '#3D5A35' }}
-                            onClick={() => setFeedbackOpen(true)}
-                          >
-                            Read full feedback →
-                          </button>
-                        )}
+                {/* Band 1 — Performance (scored: ring + parameter bars / unscored: dashed strip) */}
+                <div className="shrink-0">
+                  <SectionLabel>Performance</SectionLabel>
+                  {hasScore ? (
+                    <div className="flex items-center gap-[24px] py-[4px]">
+                      <ScoreRing value={scoreVal} ready={paramsReady} />
+                      <div className="self-stretch shrink-0" style={{ width: 1, background: 'rgba(92,64,51,.10)' }} />
+                      <div className="flex-1 min-w-0">
+                        {paramRows.map(({ label, val }) => (
+                          <ParamBar
+                            key={label}
+                            label={label}
+                            score={val}
+                            ready={paramsReady}
+                            tag={label === strongestLabel ? 'strongest' : label === focusLabel ? 'focus' : null}
+                          />
+                        ))}
                       </div>
                     </div>
-                    <div>{scoreBlock}</div>
-                  </div>
-                )}
-
-                {/* State B: !hasFeedback && hasScore — 2-col, left=details, right=compact score */}
-                {!hasFeedback && hasScore && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: '32px', alignItems: 'start' }}>
-                    <div>{sessionDetailsBlock}</div>
-                    <div>{scoreBlock}</div>
-                  </div>
-                )}
-
-                {/* State C: hasFeedback && !hasScore — 2-col, left=details, right=feedback stretched */}
-                {hasFeedback && !hasScore && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px', alignItems: 'stretch' }}>
-                    <div>{sessionDetailsBlock}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {feedbackBlock}
-                    </div>
-                  </div>
-                )}
-
-                {/* State D: !hasFeedback && !hasScore — centered single card */}
-                {!hasFeedback && !hasScore && (
-                  <div style={{ maxWidth: '440px', margin: '0 auto' }}>
-                    <div style={{
-                      background: '#fffdfa',
-                      border: '1px solid rgba(92,64,51,.12)',
-                      borderRadius: '14px',
-                      padding: '16px 18px',
-                    }}>
-                      {sessionDetailsBlock}
-                    </div>
-                    <div style={{
-                      marginTop: 14,
-                      border: '1px dashed rgba(92,64,51,.18)',
-                      borderRadius: '10px',
-                      padding: '12px 14px',
-                    }}>
-                      <span className="text-[12px] italic" style={{ color: 'rgba(92,64,51,.5)' }}>
-                        No feedback or score recorded yet for this session.
+                  ) : (
+                    <div
+                      className="flex items-center gap-[12px] rounded-[12px]"
+                      style={{ border: '1.5px dashed rgba(92,64,51,.20)', background: 'rgba(244,237,227,.35)', padding: '14px 16px' }}
+                    >
+                      <div
+                        className="flex items-center justify-center rounded-full shrink-0"
+                        style={{ width: 26, height: 26, border: '1.5px dashed rgba(92,64,51,.30)', color: 'rgba(92,64,51,.40)' }}
+                      >
+                        <Minus className="w-[11px] h-[11px]" />
+                      </div>
+                      <span className="font-serif italic text-[13px]" style={{ color: 'rgba(92,64,51,.55)' }}>
+                        This session wasn&apos;t scored.
                       </span>
                     </div>
+                  )}
+                </div>
+
+                {/* Band divider */}
+                <div className="shrink-0" style={{ height: 1, background: 'rgba(92,64,51,.08)', margin: '16px 0 14px' }} />
+
+                {/* Band 2 — Interviewer Feedback (fills remaining height) */}
+                <div className="flex flex-col flex-1 min-h-0">
+                  <div className="flex items-baseline justify-between">
+                    <SectionLabel>Interviewer Feedback</SectionLabel>
+                    {hasFeedback && entry.interviewerName && (
+                      <span className="text-[10.5px]" style={{ color: 'rgba(92,64,51,.48)' }}>
+                        by <span className="font-semibold" style={{ color: 'rgba(92,64,51,.72)' }}>{entry.interviewerName}</span>
+                      </span>
+                    )}
                   </div>
-                )}
+                  {hasFeedback ? (
+                    <>
+                      {/* The clamped text box is its OWN positioning context, so the
+                          bottom fade lives inside it and can never overlap the "Read
+                          full feedback" link below. Fade + link only render when the
+                          text actually overflows the space this band was given. */}
+                      <div
+                        ref={feedbackBoxRef}
+                        className="text-[12.5px] leading-[1.7] rounded-[8px] px-[14px] py-[12px]"
+                        style={{
+                          color: 'rgba(92,64,51,.82)',
+                          background: 'rgba(61,90,53,.06)',
+                          flex: '1 1 0',
+                          minHeight: 0,
+                          overflow: 'hidden',
+                          position: 'relative',
+                        }}
+                      >
+                        {renderNotesLines(entry.notes?.trim() ?? '')}
+                        {feedbackOverflows && (
+                          <div style={{
+                            position: 'absolute', bottom: 0, left: 0, right: 0,
+                            height: 40, pointerEvents: 'none',
+                            background: 'linear-gradient(to bottom, rgba(242,247,238,0), rgba(242,247,238,.97))',
+                          }} />
+                        )}
+                      </div>
+                      {feedbackOverflows && (
+                        <button
+                          className="mt-[8px] self-start text-[11px] font-semibold"
+                          style={{ color: '#3D5A35' }}
+                          onClick={() => setFeedbackOpen(true)}
+                        >
+                          Read full feedback →
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div
+                      className="flex-1 flex flex-col items-center justify-center gap-[10px] rounded-[12px]"
+                      style={{ border: '1.5px dashed rgba(92,64,51,.20)', background: 'rgba(244,237,227,.35)', minHeight: 110 }}
+                    >
+                      <div className="flex items-center justify-center rounded-full" style={{ width: 38, height: 38, background: 'rgba(92,64,51,.06)' }}>
+                        <Feather className="w-[18px] h-[18px]" style={{ color: 'rgba(92,64,51,.40)' }} />
+                      </div>
+                      <span className="font-serif italic text-[13.5px]" style={{ color: 'rgba(92,64,51,.55)' }}>
+                        No written feedback yet.
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1273,31 +1262,31 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
               <button
                 onClick={togglePlay}
                 aria-label={isPlaying ? 'Pause' : 'Play'}
-                className={`w-[28px] h-[28px] rounded-full flex items-center justify-center shrink-0 transition-all duration-200${!hasPlayedOnce ? ' animate-play-pulse' : ''}`}
-                style={{ background: isPlaying ? 'rgba(61,90,53,.13)' : 'rgba(92,64,51,.08)', color: '#3D5A35', border: `1px solid ${isPlaying ? 'rgba(61,90,53,.28)' : 'rgba(92,64,51,.16)'}` }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(61,90,53,.18)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(61,90,53,.34)'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isPlaying ? 'rgba(61,90,53,.13)' : 'rgba(92,64,51,.08)'; (e.currentTarget as HTMLElement).style.borderColor = isPlaying ? 'rgba(61,90,53,.28)' : 'rgba(92,64,51,.16)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                className={`w-[30px] h-[30px] rounded-full flex items-center justify-center shrink-0 transition-all duration-200${!hasPlayedOnce ? ' animate-play-pulse' : ''}`}
+                style={{ background: '#3D5A35', color: '#fff8f0', boxShadow: '0 2px 8px rgba(61,90,53,.28)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#33502c'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#3D5A35'; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
-                {isPlaying ? <Pause className="w-[10px] h-[10px]" /> : <Play className="w-[10px] h-[10px] ml-[1.5px]" />}
+                {isPlaying ? <Pause className="w-[11px] h-[11px]" /> : <Play className="w-[11px] h-[11px] ml-[1.5px]" />}
               </button>
 
               <div
                 className="group relative flex items-center gap-[2.5px] flex-1 min-w-0 cursor-pointer"
-                style={{ height: '22px' }}
+                style={{ height: '26px' }}
                 onClick={onWaveClick}
               >
                 {WAVE_HEIGHTS.map((h, i) => {
                   const barStart = i / WAVE_HEIGHTS.length;
                   const barEnd = (i + 1) / WAVE_HEIGHTS.length;
                   const frac = playedRatio <= barStart ? 0 : playedRatio >= barEnd ? 1 : (playedRatio - barStart) / (barEnd - barStart);
-                  const played = `rgba(61,90,53,${0.30 + 0.18 * frac})`;
-                  const unplayed = 'rgba(92,64,51,.10)';
+                  const played = `rgba(61,90,53,${0.32 + 0.20 * frac})`;
+                  const unplayed = 'rgba(92,64,51,.13)';
                   return (
                     <div
                       key={i}
                       className="flex-1 rounded-full transition-all duration-300 ease-out"
                       style={{
-                        height: `${h}px`,
+                        height: `${Math.round(h * 1.35)}px`,
                         background: frac >= 1 ? played : frac <= 0 ? unplayed : `linear-gradient(to right, ${played} ${frac * 100}%, ${unplayed} ${frac * 100}%)`,
                         transformOrigin: 'center',
                       }}
@@ -1309,7 +1298,7 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
                 {duration > 0 && (
                   <div
                     className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
-                    style={{ left: `${playedRatio * 100}%`, width: '1.5px', height: '20px', borderRadius: '1px', background: 'rgba(61,90,53,.55)', boxShadow: '0 0 4px rgba(61,90,53,.25)', transition: 'left .1s linear' }}
+                    style={{ left: `${playedRatio * 100}%`, width: '1.5px', height: '24px', borderRadius: '1px', background: 'rgba(61,90,53,.55)', boxShadow: '0 0 4px rgba(61,90,53,.25)', transition: 'left .1s linear' }}
                   />
                 )}
               </div>
