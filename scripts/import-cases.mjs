@@ -8,7 +8,27 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 
-const inputArg = process.argv[2]
+// Parse args: first non-flag positional is the input file; --only <docId> (repeatable)
+// filters the import to specific Firestore doc ids (e.g. --only case-56). When no
+// --only filters are given, ALL cases are imported (original behaviour, unchanged).
+const argv = process.argv.slice(2)
+const onlyDocIds = new Set()
+let inputArg
+for (let a = 0; a < argv.length; a += 1) {
+  const token = argv[a]
+  if (token === '--only') {
+    const next = argv[a + 1]
+    if (!next || next.startsWith('--')) {
+      throw new Error('--only requires a docId value, e.g. --only case-56')
+    }
+    onlyDocIds.add(next.trim())
+    a += 1
+  } else if (token.startsWith('--only=')) {
+    onlyDocIds.add(token.slice('--only='.length).trim())
+  } else if (!token.startsWith('--') && inputArg === undefined) {
+    inputArg = token
+  }
+}
 const inputPath = inputArg ? path.resolve(projectRoot, inputArg) : path.resolve(projectRoot, 'data', 'cases.json')
 const serviceAccountPath = path.resolve(projectRoot, 'serviceAccountKey.json')
 
@@ -127,13 +147,30 @@ async function main() {
     return
   }
 
+  if (onlyDocIds.size > 0) {
+    console.log(`Filtering import to ${onlyDocIds.size} doc id(s): ${[...onlyDocIds].join(', ')}`)
+  }
+
   let createdCount = 0
   let upsertedCount = 0
+  let skippedCount = 0
 const seenSlugs = new Map() // slug -> title, to catch collisions
 
   for (let i = 0; i < parsed.length; i += 1) {
     const rawCase = parsed[i]
     validateCase(rawCase, i)
+
+    const providedDocId = typeof rawCase.docId === 'string' ? rawCase.docId.trim() : ''
+    const derivedDocId = typeof rawCase.id === 'number' ? `case-${rawCase.id}` : ''
+    const docId = providedDocId || derivedDocId
+
+    // --only filter: skip any case whose resolved docId isn't in the allow-list.
+    // Cases without a docId can never match an --only filter, so skip them too.
+    if (onlyDocIds.size > 0 && (!docId || !onlyDocIds.has(docId))) {
+      skippedCount += 1
+      continue
+    }
+
 const payload = buildPayload(rawCase)
 
 if (seenSlugs.has(payload.slug)) {
@@ -143,10 +180,6 @@ if (seenSlugs.has(payload.slug)) {
   )
 }
 seenSlugs.set(payload.slug, payload.title)
-
-    const providedDocId = typeof rawCase.docId === 'string' ? rawCase.docId.trim() : ''
-    const derivedDocId = typeof rawCase.id === 'number' ? `case-${rawCase.id}` : ''
-    const docId = providedDocId || derivedDocId
 
     if (docId) {
       const ref = db.collection('cases').doc(docId)
@@ -161,9 +194,27 @@ seenSlugs.set(payload.slug, payload.title)
     }
   }
 
+  if (onlyDocIds.size > 0) {
+    const matched = upsertedCount + createdCount
+    const missing = [...onlyDocIds].filter(
+      id => !parsed.some(rc => {
+        const pid = typeof rc.docId === 'string' ? rc.docId.trim() : ''
+        const did = typeof rc.id === 'number' ? `case-${rc.id}` : ''
+        return (pid || did) === id
+      }),
+    )
+    if (matched === 0) {
+      console.warn(`\nWARNING: --only matched no cases in ${inputPath}.`)
+    }
+    if (missing.length > 0) {
+      console.warn(`WARNING: these --only doc id(s) were not found in the input file: ${missing.join(', ')}`)
+    }
+  }
+
   console.log('\nImport complete.')
   console.log(`Upserted: ${upsertedCount}`)
   console.log(`Created:  ${createdCount}`)
+  if (onlyDocIds.size > 0) console.log(`Skipped:  ${skippedCount} (filtered out by --only)`)
 }
 
 main().catch((error) => {
