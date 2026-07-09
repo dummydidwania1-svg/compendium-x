@@ -15329,9 +15329,15 @@
         "terrorism",
         "preventive-measures",
         "geographic-classification",
-        "domestic-terrorists"
+        "domestic-terrorists",
+        "international-terrorists",
+        "mode-of-entry",
+        "pattern-analysis",
+        "prediction-and-training",
+        "handling-the-situation"
       ],
       "defaultFocusedId": "domestic-terrorists",
+      "fullExpand": true,
       "notes": [
         {
           "title": "Questions",
