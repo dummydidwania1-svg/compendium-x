@@ -3876,7 +3876,7 @@ html::-webkit-scrollbar {
 <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)]">                {/* ── Desktop sidebar: case metadata ── */}
                 <aside className="hidden lg:block">
   <div
-className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: 'calc(100vh - 168px)'}}
+className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight: 'calc(100vh - 168px)'}}
   >
     {/* ── B: Ambient green glow behind sidebar ── */}
     <div
@@ -3902,7 +3902,10 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
           <div
             key={item.label}
             className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
-            style={{ animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
+            // flex-1 keeps cards stretched to fill the sidebar on tall screens; minHeight
+            // stops them compressing below their real content on short/zoomed viewports, so
+            // the sidebar grows (page scrolls) instead of clipping the last (Difficulty) card.
+            style={{ minHeight: '92px', animation: `cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 100}ms both, cpm-card-warmth 1.6s ease-out ${0.4 + idx * 0.12}s 1 both`, zIndex: 1 }}
           >
             <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: h.bg }}>
               <p className="text-[13px] uppercase tracking-[0.2em] font-bold leading-none" style={{ color: h.fg }}>{item.label}</p>
@@ -3920,7 +3923,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
     {/* Difficulty card */}
     <div
       className="group relative flex-1 flex flex-col gap-1.5 transition-all duration-300 ease-out hover:-translate-y-[2px]"
-      style={{ animation: 'cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both', zIndex: 1 }}
+      // Taller minHeight than the meta cards to fit the header + 48px difficulty bars
+      // without compressing on short/zoomed viewports (see note on meta cards above).
+      style={{ minHeight: '104px', animation: 'cpm-sidebar-card-in 0.5s cubic-bezier(0.22,1,0.36,1) 400ms both, cpm-card-warmth 1.6s ease-out 0.88s 1 both', zIndex: 1 }}
     >
       <div className="shrink-0 px-3 py-3.5 text-center" style={{ background: '#c5af95' }}>
         <p className="text-[13px] uppercase tracking-[0.2em] font-bold leading-none text-[#50423d]">Difficulty</p>
