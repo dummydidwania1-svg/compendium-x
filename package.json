@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "import:cases": "node scripts/import-cases.mjs",
+    "import:cases:only": "node scripts/import-cases.mjs --only",
     "seed:dashboard-demo": "node scripts/seed-dashboard-demo.mjs",
     "firebase": "firebase",
     "emulators": "firebase emulators:start",

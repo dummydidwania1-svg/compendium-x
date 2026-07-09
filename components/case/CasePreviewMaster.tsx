@@ -42,6 +42,13 @@ export type FrameworkTree = {
   defaultFocusedIds?: string[]
   notes: { title: string; items: string[] }[]
   label?: string
+  // When true, the primary case chart drops the single-active-path model and
+  // behaves like the framework panels' multiActive mode: every branch in
+  // defaultExpanded starts open, off-path nodes can expand in-chart, and
+  // expanding one branch does NOT collapse its siblings. Use for unconventional
+  // cases where the answer spans two or more branches simultaneously (the
+  // book-style parallel tree, e.g. Zero Dark Thirty).
+  fullExpand?: boolean
 }
 
 export type VisFormula = {
@@ -1447,13 +1454,14 @@ function buildSubtreeLayout(rootId: string, orient: 'TB' | 'LR' = 'TB') {
 }
 
 function InactiveDrilldownOverlay({
-  hostRef, visibleIds, mode = 'preview', tree, excludeVisible = false,
+  hostRef, visibleIds, mode = 'preview', tree, excludeVisible = false, multiActive = false,
 }: {
   hostRef: React.RefObject<HTMLDivElement | null>
   visibleIds?: string[]
   mode?: 'preview' | 'interviewer'
   tree?: FrameworkTree
   excludeVisible?: boolean
+  multiActive?: boolean
 }) {
   const localNodes = tree?.nodes ?? NODES
   const defaultPath = useMemo(
@@ -1478,8 +1486,11 @@ function InactiveDrilldownOverlay({
   const scheduleClose = () => { if (pinnedRef.current) return; cancelClose(); closeTimer.current = setTimeout(() => setActive(null), 160) }
   const closeNow = () => { pinnedRef.current = false; cancelClose(); setActive(null) }
   const visibleSet = useMemo(() => new Set(visibleIds ?? []), [visibleIds])
+  // In fullExpand (multiActive) mode there is no single chosen path: every branch
+  // is expanded in-chart, so the hover/tap drill overlay is unnecessary and would
+  // pop redundantly over already-visible content. Disable it entirely.
   const isDrillable = (id: string | null | undefined): id is string =>
-    !!id && !!localNodes[id] && !defaultPath.includes(id) && (!excludeVisible || !visibleSet.has(id)) && (localNodes[id].children?.length ?? 0) > 0
+    !multiActive && !!id && !!localNodes[id] && !defaultPath.includes(id) && (!excludeVisible || !visibleSet.has(id)) && (localNodes[id].children?.length ?? 0) > 0
   const openEl = (el: Element, pin: boolean) => {
   const id = el.getAttribute('data-node-id')
   if (!isDrillable(id)) return
@@ -3296,7 +3307,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
             )}
           </div>
         )}
-        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} excludeVisible={excludeVisible} />
+        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} excludeVisible={excludeVisible} multiActive={multiActive} />
       </div>
 
       {/* Chart — mobile. Use localRootId (not global ROOT_ID). */}
@@ -3330,6 +3341,10 @@ export default function CasePreviewMaster({
   DEFAULT_FOCUSED_ID = tree.defaultFocusedId
   DEFAULT_FOCUSED_IDS = tree.defaultFocusedIds ?? []
   NOTES = tree.notes
+  // Book-style parallel tree: when the case opts in via frameworkTree.fullExpand,
+  // the chart drops the single-active-path model so multiple sibling branches can
+  // stay expanded at once (see FrameworkTree.fullExpand).
+  const multiActive = !!tree.fullExpand
   // Capture primary-tree values into locals so that AdditionalFrameworkPanel's
   // loadTree() calls (which mutate the module-level globals) cannot corrupt the
   // values this component's JSX closes over. React concurrent mode can interleave
@@ -3451,6 +3466,7 @@ export default function CasePreviewMaster({
 
   // ─── Chart state ─────────────────────────────
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+  if (multiActive) return new Set(tree.defaultExpanded)
   const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
   return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
 })
@@ -3526,6 +3542,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   // (horizontal swipe navigation intentionally removed; native browser back/forward gesture is restored here)
 
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
+  if (multiActive) return new Set(tree.defaultExpanded)
   const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
   return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
 })
@@ -3574,7 +3591,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   loadTree(tree)
   setFocusedId(id)
   const node = NODES[id]
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && node?.children.length) return // inactive → overlay only
+  if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && node?.children.length) return // inactive → overlay only
   startChartTransition(() => {
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
@@ -3598,7 +3615,8 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   loadTree(tree)
   const node = NODES[id]; if (!node?.children.length) return
   // Inactive (off chosen-path) nodes never expand in-chart — they use the hover/tap overlay.
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return
+  // In fullExpand (multiActive) mode there is no single chosen path, so any node may expand.
+  if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return
     startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
@@ -3608,10 +3626,13 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
           if (focusedId && pathTo(focusedId).includes(id)) setFocusedId(id)
         } else {
           next.add(id)
-          const parent = PARENTS[id]
-          if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
-            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
-          })
+          // Single-path model collapses siblings; fullExpand keeps them open.
+          if (!multiActive) {
+            const parent = PARENTS[id]
+            if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
+              if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+            })
+          }
         }
         return next
       })
@@ -3622,7 +3643,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   const handleMobileSelect = (id: string) => {
   loadTree(tree)
   setMobileFocId(id)
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && NODES[id]?.children.length) return // inactive → tap overlay only
+  if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && NODES[id]?.children.length) return // inactive → tap overlay only
     setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) })
@@ -3633,7 +3654,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
   const handleMobileToggle = (id: string) => {
   loadTree(tree)
   const node = NODES[id]; if (!node?.children.length) return
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → tap overlay only
+  if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → tap overlay only
     setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree)
@@ -3642,10 +3663,12 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
         if (pathTo(mobileFocId).includes(id)) setMobileFocId(id)
       } else {
         next.add(id)
-        const parent = PARENTS[id]
-        if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
-          if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
-        })
+        if (!multiActive) {
+          const parent = PARENTS[id]
+          if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
+            if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
+          })
+        }
       }
       return next
     })
@@ -4082,14 +4105,14 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                       >
                         {useVerticalLayout ? (
                           <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds}
-                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} tree={tree} />
+                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} multiActive={multiActive} tree={tree} />
                         ) : (
                           <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds}
-                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} tree={tree} />
+                            focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} multiActive={multiActive} tree={tree} />
                         )}
                       </div>
                       )}
-<InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} />
+<InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="preview" tree={tree} multiActive={multiActive} />
 
                       {/* ── Additional framework trees (desktop — inside same column) ── */}
                       {additionalFrameworkTrees?.map((addTree, idx) => (
@@ -4510,6 +4533,9 @@ export function CaseInterviewerMaster({
   // ─── Sync tree data (same as preview) ────────────────
   const tree = frameworkTree ?? BANKING_ON_YOU_TREE
   loadTree(tree)
+  // Book-style parallel tree opt-in (see FrameworkTree.fullExpand): drop the
+  // single-active-path model so multiple sibling branches stay expanded at once.
+  const multiActive = !!tree.fullExpand
   // Capture primary-tree values before any child AdditionalFrameworkPanel can corrupt globals.
   const primaryNotes = tree.notes
   const primaryRootId = ROOT_ID
@@ -4866,12 +4892,14 @@ export function CaseInterviewerMaster({
   ]
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+  if (multiActive) return new Set(tree.defaultExpanded)
   const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
   return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
 })
   const [focusedId, setFocusedId]     = useState<string | null>(() => tree.defaultFocusedId || null)
   const [edgeAnimKey, setEdgeAnimKey] = useState(0)
   const [mobileExpIds, setMobileExpIds] = useState<Set<string>>(() => {
+  if (multiActive) return new Set(tree.defaultExpanded)
   const dp = Array.from(focusPathSet(tree.defaultFocusedIds, tree.defaultFocusedId))
   return new Set([...tree.defaultExpanded].filter(id => dp.includes(id)))
 })
@@ -4949,7 +4977,7 @@ export function CaseInterviewerMaster({
   setFocusedId(id)
   const node = NODES[id]
   // Inactive nodes only focus; their drill-down is shown via the overlay, not in-chart.
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && node?.children.length) return
+  if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && node?.children.length) return
     startChartTransition(() => {
       if (node?.children.length && expandedIds.has(id)) {
         setExpandedIds(prev => {
@@ -4969,27 +4997,27 @@ export function CaseInterviewerMaster({
   }
   const handleToggle = (id: string) => {
   loadTree(tree)
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → overlay only
+  if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → overlay only
   startChartTransition(() => {
       setExpandedIds(prev => {
         const next = new Set(prev)
         loadTree(tree)
         if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)) }
-        else { next.add(id); const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
+        else { next.add(id); if (!multiActive) { const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) } }
         return next
       })
       setEdgeAnimKey(k => k + 1)
     })
   }
-  const handleMobileSelect = (id: string) => { loadTree(tree); setMobileFocId(id); if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && NODES[id]?.children.length) return; setMobileExpIds(prev => { const next = new Set(prev); loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
+  const handleMobileSelect = (id: string) => { loadTree(tree); setMobileFocId(id); if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id) && NODES[id]?.children.length) return; setMobileExpIds(prev => { const next = new Set(prev); loadTree(tree); pathTo(id).forEach(p => { if (NODES[p]?.children.length) next.add(p) }); return next }) }
   const handleMobileToggle = (id: string) => {
   loadTree(tree)
-  if (!focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → tap overlay only
+  if (!multiActive && !focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID).has(id)) return // inactive → tap overlay only
   setMobileExpIds(prev => {
       const next = new Set(prev)
       loadTree(tree)
       if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)); if (pathTo(mobileFocId).includes(id)) setMobileFocId(id) }
-      else { next.add(id); const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) }
+      else { next.add(id); if (!multiActive) { const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) } }
       return next
     })
   }
@@ -5225,13 +5253,13 @@ export function CaseInterviewerMaster({
                           transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
                         }}>
                           {useVerticalLayout ? (
-                            <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} tree={tree} />
+                            <VerticalChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} multiActive={multiActive} tree={tree} />
                           ) : (
-                            <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} tree={tree} />
+                            <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={focusedId} onSelect={handleSelect} onToggle={handleToggle} revealDepth={revealDepth} edgeAnimKey={edgeAnimKey} multiActive={multiActive} tree={tree} />
                           )}
                         </div>
                         )}
-                        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="interviewer" tree={tree} />
+                        <InactiveDrilldownOverlay hostRef={overlayHostRef} visibleIds={visibleIds} mode="interviewer" tree={tree} multiActive={multiActive} />
                         {/* ── Additional framework trees (interviewer desktop — inside same column) ── */}
                         {additionalFrameworkTrees?.map((addTree, idx) => (
                           <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
