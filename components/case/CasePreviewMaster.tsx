@@ -1161,20 +1161,38 @@ function DesktopChart({
   const layout = useMemo(() => layoutDesktop(visibleIds, cW, metrics.h, metrics.tp, metrics.bp), [visibleIds, cW, metrics])
   const { positions, nodeWidths } = layout
 
-  // Detect if any node overflows the right edge and compute a corrective scale
+  // Presentation zoom that used to be applied by the host wrapper as an external
+  // transform: scale(1.05). Folding it in here lets the overflow guard below account
+  // for it, so the enlarged chart can never render wider than its measured container.
+  const PRESENTATION_SCALE = 1.05
+
+  // Detect if the tree overflows the container (either edge) and compute the final
+  // render scale. Includes PRESENTATION_SCALE so the rendered size is always known.
   const chartScale = useMemo(() => {
     let maxRight = 0
+    let minLeft = Infinity
     visibleIds.forEach(id => {
       const p = positions.get(id)
       const nw = nodeWidths.get(id) ?? estNodeW(id)
       const hasCh = NODES[id]?.children.length > 0
+      const cx = p?.x ?? 0
       // Right edge = centre x + half node width + chevron if has children
-      const rightEdge = (p?.x ?? 0) + nw / 2 + (hasCh ? 20 : 0)
+      const rightEdge = cx + nw / 2 + (hasCh ? 20 : 0)
+      const leftEdge = cx - nw / 2
       maxRight = Math.max(maxRight, rightEdge)
+      minLeft = Math.min(minLeft, leftEdge)
     })
+    if (!isFinite(minLeft)) minLeft = 0
     const margin = 24 // extra breathing room from container edge
-    if (maxRight + margin <= cW) return 1
-    return Math.max(0.7, (cW - margin) / maxRight)
+    // Width the tree needs once the presentation zoom is applied, measured from the
+    // centre so a symmetric scale keeps it inside [0, cW].
+    const centre = cW / 2
+    const halfSpan = Math.max(maxRight - centre, centre - minLeft) * PRESENTATION_SCALE
+    const available = cW / 2 - margin
+    if (halfSpan <= available) return PRESENTATION_SCALE
+    // Shrink below the presentation zoom until the widest layer fits. Lower floor
+    // (0.55) so 7-8 node layers stay on one row instead of clipping; still legible.
+    return Math.max(0.55, PRESENTATION_SCALE * (available / halfSpan))
   }, [positions, nodeWidths, visibleIds, cW])
 
   const labelFs = 12.25
@@ -1223,7 +1241,7 @@ function DesktopChart({
   return (
     <div ref={outerRef} className="relative w-full transition-all duration-700"
       style={{ opacity: (started && cWReady) ? 1 : 0, transform: (started && cWReady) ? 'translateY(0)' : 'translateY(24px)', filter: (started && cWReady) ? 'blur(0)' : 'blur(8px)' }}>
-      <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${metrics.h}px`, transform: chartScale < 1 ? `scale(${chartScale})` : undefined, transformOrigin: 'top center' }}>
+      <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${metrics.h}px`, transform: `scale(${chartScale})`, transformOrigin: 'top center' }}>
 
         <svg className="absolute inset-0 h-full w-full overflow-visible z-10" viewBox={`0 0 ${cW} ${metrics.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           {(() => {
@@ -3264,7 +3282,9 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
             ref={(el) => { chartRef.current = el; overlayHostRef.current = el }}
             style={{
               opacity: chartVisible ? 1 : 0,
-              transform: `${useVerticalLayout ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
+              // Presentation zoom (was scale(1.05)) is applied inside DesktopChart via
+              // chartScale so the overflow guard accounts for it — host keeps scale(1).
+              transform: `scale(1) translateY(${chartVisible ? '0px' : '18px'})`,
               filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
               transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
             }}
@@ -4046,9 +4066,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{height: '
                           return hasViz ? '' : 'flex-1'
                         })()}
                         style={{
-                          ...(useVerticalLayout ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
+                          transformOrigin: 'top center',
                           opacity: chartVisible ? 1 : 0,
-                          transform: `${useVerticalLayout ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
+                          // Presentation zoom (was scale(1.05)) is applied inside DesktopChart via
+                          // chartScale so the overflow guard accounts for it — host keeps scale(1).
+                          transform: `scale(1) translateY(${chartVisible ? '0px' : '18px'})`,
                           filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
                           transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
                         }}
@@ -5189,9 +5211,11 @@ export function CaseInterviewerMaster({
                           if (chartMaxDepth === 0) return hasTree ? 'flex-1 flex items-center' : ''
                           return hasViz ? '' : 'flex-1'
                         })()} style={{
-                          ...(useVerticalLayout ? { transform: 'scale(1)', transformOrigin: 'top center' } : { transform: 'scale(1.05)', transformOrigin: 'center center' }),
+                          transformOrigin: 'top center',
                           opacity: chartVisible ? 1 : 0,
-                          transform: `${useVerticalLayout ? 'scale(1)' : 'scale(1.05)'} translateY(${chartVisible ? '0px' : '18px'})`,
+                          // Presentation zoom (was scale(1.05)) is applied inside DesktopChart via
+                          // chartScale so the overflow guard accounts for it — host keeps scale(1).
+                          transform: `scale(1) translateY(${chartVisible ? '0px' : '18px'})`,
                           filter: chartVisible ? 'blur(0px)' : 'blur(6px)',
                           transition: 'opacity 0.72s cubic-bezier(0.22,1,0.36,1), transform 0.72s cubic-bezier(0.22,1,0.36,1), filter 0.6s ease',
                         }}>
