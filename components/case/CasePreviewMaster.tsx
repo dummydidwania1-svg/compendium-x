@@ -56,6 +56,15 @@ export type FrameworkTree = {
   // cases where the answer spans two or more branches simultaneously (the
   // book-style parallel tree, e.g. Zero Dark Thirty).
   fullExpand?: boolean
+  // Optional explicit override for which nodes render with the dark (brown)
+  // "active" highlight. By default a node is highlighted when it's on the
+  // default focus path (single-path mode) or is a drilled-open parent
+  // (multiActive) — but when a case expands EVERY branch there is no single
+  // chosen path, so highlighting the whole spine is misleading. Set highlightIds
+  // to the node(s) that represent the real choice (e.g. only 'self-driven-growth'
+  // over 'inorganic-growth'); all other nodes then render in the light tone.
+  // When omitted, the default isActive logic is unchanged (backward compatible).
+  highlightIds?: string[]
 }
 
 export type VisFormula = {
@@ -564,14 +573,33 @@ function layoutDesktop(
         const h = 40 + Math.max(0, lines - 1) * 22
         return Math.max(mx, h)
       }, 0) + 22
-      // First stacked row sits a comfortable distance below the parent.
-      const firstY = parentPoint.y + rowGap
-      children.forEach((childId, i) => {
+      // True rendered bottom edge (y + half box height) of a node's entire
+      // visible inline subtree. Used so a stacked child that expands its own
+      // children inline (e.g. Working Hours -> Extended Morning Hours, a tall
+      // 2-line box) reserves enough vertical space and the next sibling clears
+      // it. A collapsed child (kids shown as an overlay, not inline) counts only
+      // its own box. Computed AFTER the child subtree is shifted into place.
+      const subtreeBottom = (id: string): number => {
+        const p = pos.get(id)
+        if (!p) return -Infinity
+        const lines = estNodeLines(id)
+        const halfH = 20 + Math.max(0, lines - 1) * 11
+        let bottom = p.y + halfH
+        ;(NODES[id]?.children ?? [])
+          .filter(c => vis.has(c))
+          .forEach(c => { bottom = Math.max(bottom, subtreeBottom(c)) })
+        return bottom
+      }
+      // Running Y cursor: place each child at cursorY, then advance past the
+      // true bottom of its inline subtree plus breathing room.
+      let cursorY = parentPoint.y + rowGap
+      children.forEach((childId) => {
         const cur = pos.get(childId)
         if (!cur) return
-        const targetX = colX
-        const targetY = firstY + i * rowGap
-        shiftSubtreeXY(childId, targetX - cur.x, targetY - cur.y)
+        shiftSubtreeXY(childId, colX - cur.x, cursorY - cur.y)
+        // Next row starts a rowGap below this child's subtree bottom.
+        const bottom = subtreeBottom(childId)
+        cursorY = bottom + rowGap
       })
     })
   }
@@ -1100,7 +1128,11 @@ function VerticalChart({
           const isDefaultPath = defaultPath.includes(id)
           const hasChildren = (NODES[id]?.children.length ?? 0) > 0
           const isDrilledParent = expandedIds.has(id) && hasChildren
-          const isActive = multiActive ? isDrilledParent : isDefaultPath
+          // If the case supplies an explicit highlightIds override, use it verbatim
+          // (no spine highlighting); otherwise fall back to the default logic.
+          const isActive = (tree?.highlightIds && tree.highlightIds.length > 0)
+            ? tree.highlightIds.includes(id)
+            : (multiActive ? isDrilledParent : isDefaultPath)
           const hasCh = node.children.length > 0
 
           const cls = isActive
@@ -1418,7 +1450,10 @@ function DesktopChart({
           const isDefaultPath = defaultPath.includes(id)
           const hasChildren = (NODES[id]?.children.length ?? 0) > 0
           const isDrilledParent = expandedIds.has(id) && hasChildren
-          const isActive = multiActive ? isDrilledParent : isDefaultPath
+          // Explicit per-case highlight override (see FrameworkTree.highlightIds).
+          const isActive = (tree?.highlightIds && tree.highlightIds.length > 0)
+            ? tree.highlightIds.includes(id)
+            : (multiActive ? isDrilledParent : isDefaultPath)
           const hasCh = node.children.length > 0
           const nw = nodeWidths.get(id) ?? estNodeW(id)
           const lw = hasCh ? nw - 18 : nw
