@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore'
 import { db, waitForAuthUser } from '@/lib/firebase/config'
 import PresetAvatarView from '@/components/avatars/PresetAvatarView'
+import { Loader2, Trash2 } from 'lucide-react'
 
 /* ── Types ──────────────────────────────────────────────────────── */
 
@@ -247,6 +248,13 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
   const [editingReplyKey, setEditingReplyKey] = useState<string | null>(null) // "threadId:replyId"
   const [editDraft, setEditDraft] = useState('')
   const [savingEdit, setSavingEdit] = useState<string | null>(null)
+  // Delete confirmation — same dashboard-style modal used for deleting a
+  // case session, instead of the browser's native confirm() prompt.
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<
+    { kind: 'thread'; threadId: string } | { kind: 'reply'; threadId: string; replyId: string } | null
+  >(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   const login = useCallback(() =>
     router.push(`/login?redirect=${encodeURIComponent(`/case/${caseId}/interviewer?preview=1&tab=forum`)}`),
@@ -441,20 +449,45 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
     finally { setSavingEdit(null) }
   }
 
-  const handleDeleteThread = async (threadId: string) => {
-    if (!confirm('Delete this post?')) return
-    try {
-      await deleteDoc(doc(db, 'case_forums', caseId, 'threads', threadId))
-      setThreads(r => r.filter(t => t.id !== threadId))
-    } catch (e) { setError(friendlyErr(e, 'Could not delete.')) }
+  const handleDeleteThread = (threadId: string) => {
+    setDeleteError('')
+    setConfirmDeleteTarget({ kind: 'thread', threadId })
   }
 
-  const handleDeleteReply = async (threadId: string, replyId: string) => {
-    if (!confirm('Delete this reply?')) return
+  const handleDeleteReply = (threadId: string, replyId: string) => {
+    setDeleteError('')
+    setConfirmDeleteTarget({ kind: 'reply', threadId, replyId })
+  }
+
+  useEffect(() => {
+    if (!confirmDeleteTarget) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !deleting) setConfirmDeleteTarget(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [confirmDeleteTarget, deleting])
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteTarget || deleting) return
+    setDeleting(true)
+    setDeleteError('')
     try {
-      await deleteDoc(doc(db, 'case_forums', caseId, 'threads', threadId, 'replies', replyId))
-      setReplies(r => ({ ...r, [threadId]: (r[threadId] ?? []).filter(x => x.id !== replyId) }))
-    } catch (e) { setError(friendlyErr(e, 'Could not delete.')) }
+      if (confirmDeleteTarget.kind === 'thread') {
+        const { threadId } = confirmDeleteTarget
+        await deleteDoc(doc(db, 'case_forums', caseId, 'threads', threadId))
+        setThreads(r => r.filter(t => t.id !== threadId))
+      } else {
+        const { threadId, replyId } = confirmDeleteTarget
+        await deleteDoc(doc(db, 'case_forums', caseId, 'threads', threadId, 'replies', replyId))
+        setReplies(r => ({ ...r, [threadId]: (r[threadId] ?? []).filter(x => x.id !== replyId) }))
+      }
+      setConfirmDeleteTarget(null)
+    } catch (e) {
+      setDeleteError(friendlyErr(e, 'Could not delete.'))
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const handleReplyVote = async (threadId: string, replyId: string, next: 1 | -1) => {
@@ -613,6 +646,75 @@ export function CaseForumSection({ caseId, caseTitle }: { caseId: string; caseTi
           )}
         </div>
       </div>
+
+      {/* ── DELETE CONFIRMATION — same dashboard "delete session" modal style ── */}
+      {confirmDeleteTarget && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center"
+          style={{ padding: '24px 16px' }}
+          onClick={() => { if (!deleting) setConfirmDeleteTarget(null) }}
+        >
+          <div
+            className="absolute inset-0 animate-lightbox-bg-in"
+            style={{ background: 'rgba(59,47,47,.34)', backdropFilter: 'blur(4px)' }}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-10 flex flex-col overflow-hidden animate-scale-in"
+            style={{
+              width: 'min(90vw, 380px)',
+              borderRadius: '16px',
+              background: '#fff8f0',
+              border: '1px solid rgba(180,84,62,.22)',
+              boxShadow: '0 24px 60px rgba(59,47,47,.20)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ height: 2, background: 'linear-gradient(90deg, #b4543e 0%, rgba(180,84,62,.12) 100%)' }} />
+            <div className="px-[22px] pt-[18px] pb-[18px] flex flex-col gap-[12px]">
+              <h3 className="font-serif text-[19px] font-[500] leading-[1.2] tracking-[-0.01em]" style={{ color: '#3B2F2F' }}>
+                {confirmDeleteTarget.kind === 'thread' ? 'Delete this post?' : 'Delete this reply?'}
+              </h3>
+              <p className="text-[12.5px] leading-[1.6]" style={{ color: 'rgba(92,64,51,.72)' }}>
+                {confirmDeleteTarget.kind === 'thread'
+                  ? 'This post and its replies will be permanently removed from the forum. This can’t be undone.'
+                  : 'This reply will be permanently removed from the forum. This can’t be undone.'}
+              </p>
+              {deleteError && (
+                <p className="text-[11.5px] leading-[1.5]" style={{ color: '#b4543e' }}>{deleteError}</p>
+              )}
+              <div className="flex justify-end items-center gap-[8px] mt-[2px]">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteTarget(null)}
+                  disabled={deleting}
+                  className="px-[14px] py-[8px] rounded-full text-[11px] font-semibold uppercase tracking-[.1em] transition-colors duration-150 disabled:opacity-50"
+                  style={{ background: 'rgba(217,208,196,.5)', color: '#5C4033' }}
+                  onMouseEnter={e => { if (!deleting) (e.currentTarget as HTMLElement).style.background = 'rgba(217,208,196,.75)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(217,208,196,.5)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { void confirmDelete() }}
+                  disabled={deleting}
+                  className="inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-full text-[11px] font-semibold uppercase tracking-[.1em] transition-colors duration-150 disabled:opacity-70"
+                  style={{ background: '#b4543e', color: '#F8F1E7', border: '1px solid rgba(180,84,62,.9)' }}
+                  onMouseEnter={e => { if (!deleting) (e.currentTarget as HTMLElement).style.background = '#9d4634' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#b4543e' }}
+                >
+                  {deleting
+                    ? <><Loader2 className="w-[11px] h-[11px] animate-spin" /> Deleting</>
+                    : <><Trash2 className="w-[11px] h-[11px]" /> Delete</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   )
 }
