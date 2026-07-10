@@ -15,6 +15,7 @@ import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { releaseDisplayMedia } from '@/lib/permissions/displayMedia'
 import { writeCandidateBeat } from '@/lib/session/candidateTab'
 import { consumePrimedRecording, clearPrimedMic, micDebug } from '@/lib/session/primedMic'
+import SessionEndedScreen from '@/components/session/SessionEndedScreen'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
@@ -172,6 +173,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [resolvedCaseId, setResolvedCaseId] = useState('')
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [sessionIssue, setSessionIssue] = useState('')
+  // True when this lobby's session was ALREADY completed/abandoned before this
+  // page ever mounted (a stale link, browser back, or old bookmark) — as
+  // opposed to a session that completes WHILE this tab is open, which the
+  // existing onSnapshot handling below already covers separately.
+  const [sessionAlreadyEnded, setSessionAlreadyEnded] = useState(false)
   const [recordingMode, setRecordingMode] = useState<RecordingMode>(requestedMode)
   const [preferredRecordingMode, setPreferredRecordingMode] = useState<RecordingMode>(requestedMode)
   const [recordingState, setRecordingState] = useState<RecordingState>('idle')
@@ -1302,6 +1308,26 @@ const interviewerStaleStreakRef = useRef(0)
       }
       setCurrentUser(user)
 
+      // One-shot pre-check, before subscribing to anything: was this session
+      // already completed/abandoned before this page ever mounted (stale
+      // link, browser back, old bookmark)? If so, stop here — never start
+      // polling, never subscribe to onSnapshot, never touch the mic.
+      if (sessionRef) {
+        try {
+          const preCheckSnapshot = await getDoc(sessionRef)
+          if (preCheckSnapshot.exists()) {
+            const preCheckData = preCheckSnapshot.data() as SessionState
+            if (preCheckData.status === 'completed' || preCheckData.status === 'abandoned') {
+              setSessionAlreadyEnded(true)
+              return
+            }
+          }
+        } catch {
+          // Best-effort — if this check fails, fall through to the normal
+          // flow rather than blocking a legitimate active session.
+        }
+      }
+
       parseAndHandleEnded(localStorage.getItem('compendium-session-ended'))
 
       if (sessionRef) {
@@ -1470,6 +1496,7 @@ const interviewerStaleStreakRef = useRef(0)
       canStart: canStartRecording, declined: recordingConsentDeclined, mic: microphonePermissionState,
     })
     if (autoStartAttemptedRef.current) return
+    if (sessionAlreadyEnded) return
     if (!lobbyId || !resolvedCaseId || !currentUser) return
     if (!canStartRecording) return
     // Candidate chose to run the case without recording — never auto-start.
@@ -1498,7 +1525,7 @@ const interviewerStaleStreakRef = useRef(0)
         : 'Auto-starting microphone recording...'
     )
     void startCaptureFlow(preferredRecordingMode)
-  }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, recordingConsentDeclined, resolvedCaseId, startCaptureFlow])
+  }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, recordingConsentDeclined, resolvedCaseId, sessionAlreadyEnded, startCaptureFlow])
 
   // Reload guard — intercepts reload triggers while recording is active.
   // Two separate sessionStorage keys:
@@ -2223,6 +2250,10 @@ interrupted: true,
               : isWaitingForUserStart
                 ? `When you press the button below, ${BROWSER === 'safari' ? 'Safari' : BROWSER === 'edge' ? 'Edge' : BROWSER === 'firefox' ? 'Firefox' : 'Chrome'} will ask for microphone access.`
                 : recoverableCaptureMessage || 'Use the Allow Recording button below to try again.'
+
+  if (sessionAlreadyEnded) {
+    return <SessionEndedScreen />
+  }
 
   return (
     <div

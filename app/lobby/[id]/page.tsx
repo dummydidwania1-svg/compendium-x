@@ -12,6 +12,7 @@ import { InterviewerMicRecovery } from '@/components/permissions/InterviewerMicR
 import { InterviewerMicGate } from '@/components/permissions/InterviewerMicGate'
 import SafariRemoteBlockModal from '@/components/permissions/SafariRemoteBlockModal'
 import PlatformLoader from '@/components/PlatformLoader'
+import SessionEndedScreen from '@/components/session/SessionEndedScreen'
 import { isSafariBrowser } from '@/lib/browser'
 import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
@@ -1000,6 +1001,7 @@ function InterviewerLobby({
   // wherever they left off, instead of always showing the generic welcome
   // screen. Checked once on mount, before the welcome UI renders.
   const [checkingResume, setCheckingResume] = useState(true)
+  const [sessionAlreadyEnded, setSessionAlreadyEnded] = useState(false)
   // Remote mode: show the full-screen mic gate before the welcome lobby.
   // Gate is skipped if mic was already granted on this device or the session
   // key indicates it was already shown and resolved.
@@ -1088,7 +1090,8 @@ if (!isCandidateBeatStale(beat)) {
         const mode = data.sessionMode === 'local' ? 'local' : 'remote'
 
         if (data.status === 'completed' || data.status === 'abandoned') {
-          router.replace('/')
+          setSessionAlreadyEnded(true)
+          setCheckingResume(false)
           return
         }
         if (data.status === 'in_progress' && data.caseId) {
@@ -1177,6 +1180,10 @@ if (!isCandidateBeatStale(beat)) {
 
   if (checkingResume) {
     return <PlatformLoader message="Getting your space ready" />
+  }
+
+  if (sessionAlreadyEnded) {
+    return <SessionEndedScreen />
   }
 
   return (
@@ -1588,6 +1595,7 @@ export default function LobbyPage() {
   }, [isInterviewer, requestedSessionMode, lobbyId])
 
   const [checkingCandidate, setCheckingCandidate] = useState(!isInterviewer)
+  const [sessionAlreadyEnded, setSessionAlreadyEnded] = useState(false)
   const [sessionIssue, setSessionIssue] = useState('')
   const [candidateActionStatus, setCandidateActionStatus] = useState('')
   // After ~5 min in 'waiting' status (interviewer hasn't joined yet) we show
@@ -1833,10 +1841,11 @@ let interviewerStaleStreak = 0
         setTimeout(() => router.replace(workspaceRoute(data.caseId!, data.sessionMode)), 600)
         return
       }
-      if (data.status === 'completed') {
+      if (data.status === 'completed' || data.status === 'abandoned') {
         disarmWaitingNudge()
         setInterviewerRemoteWindowClosed(false)
-        router.replace('/dashboard')
+        stopPolling()
+        setSessionAlreadyEnded(true)
         return
       }
       if (data.status === 'waiting') {
@@ -1927,8 +1936,9 @@ let interviewerStaleStreak = 0
             router.replace(workspaceRoute(existingData.caseId, existingData.sessionMode))
             return
           }
-          if (existingData.status === 'completed') {
-            router.replace('/dashboard')
+          if (existingData.status === 'completed' || existingData.status === 'abandoned') {
+            setSessionAlreadyEnded(true)
+            setCheckingCandidate(false)
             return
           }
           // Check 24h expiry on waiting sessions — if expired, block and
@@ -2115,6 +2125,10 @@ let interviewerStaleStreak = 0
 
   if (!isInterviewer && checkingCandidate) {
     return <PlatformLoader message="Getting your space ready" />
+  }
+
+  if (!isInterviewer && sessionAlreadyEnded) {
+    return <SessionEndedScreen />
   }
 
   if (isInterviewer) {
