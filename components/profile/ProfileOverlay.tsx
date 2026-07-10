@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   EmailAuthProvider,
   GoogleAuthProvider,
+  linkWithCredential,
   onAuthStateChanged,
   reauthenticateWithCredential,
   reauthenticateWithPopup,
@@ -22,7 +23,7 @@ type ProfileOverlayProps = {
   onClose: () => void
 }
 
-type Section = 'profile' | 'account' | 'security'
+type Section = 'profile' | 'account'
 
 /** Sentinel preset id: the user explicitly chose plain initials over any photo. */
 const INITIALS_PRESET = 'initials'
@@ -280,6 +281,10 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const isPasswordReady =
     currentPassword.length > 0 && newPassword.length >= 6 && confirmPassword.length > 0
 
+  // Set-password flow (Google-only accounts) needs no current password —
+  // there isn't one yet.
+  const isSetPasswordReady = newPassword.length >= 6 && confirmPassword.length > 0
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !isProfileDirty) return
@@ -430,6 +435,53 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     }
   }
 
+  // Google-only accounts have no password yet — this links one via Firebase's
+  // EmailAuthProvider credential so the same email can then be used to sign in
+  // directly, alongside Google. Linking a credential is a sensitive operation
+  // and can demand a recent login; if so, re-auth through the Google popup
+  // (their only existing provider) and retry the link once.
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user || !user.email || !isSetPasswordReady) return
+    if (newPassword !== confirmPassword) {
+      showPasswordMsg('Passwords do not match', false)
+      return
+    }
+    setPasswordSaving(true)
+    try {
+      const credential = EmailAuthProvider.credential(user.email, newPassword)
+      try {
+        await linkWithCredential(user, credential)
+      } catch (linkErr) {
+        const linkMsg = linkErr instanceof Error ? linkErr.message : ''
+        if (!linkMsg.includes('auth/requires-recent-login')) throw linkErr
+        const provider = new GoogleAuthProvider()
+        await reauthenticateWithPopup(user, provider)
+        await linkWithCredential(user, credential)
+      }
+      await user.reload()
+      setUser(auth.currentUser)
+      setNewPassword('')
+      setConfirmPassword('')
+      showPasswordMsg('Password set — you can now sign in with email too', true)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.includes('auth/popup-closed-by-user') || msg.includes('auth/cancelled-popup-request')) {
+        // User backed out of the re-auth popup — no error needed.
+      } else if (msg.includes('auth/email-already-in-use') || msg.includes('auth/credential-already-in-use')) {
+        showPasswordMsg('That email already has a password on another account', false)
+      } else if (msg.includes('auth/weak-password')) {
+        showPasswordMsg('Choose a stronger password (at least 6 characters)', false)
+      } else if (msg.includes('auth/too-many-requests')) {
+        showPasswordMsg('Too many attempts, try again shortly', false)
+      } else {
+        showPasswordMsg('Could not set password', false)
+      }
+    } finally {
+      setPasswordSaving(false)
+    }
+  }
+
   const handleSignOut = async () => {
     setShowSignOutModal(false)
     await signOut(auth)
@@ -439,11 +491,16 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   }
 
   const emailProvider = user ? isEmailProvider(user) : false
+  const googleProvider = user ? user.providerData.some((p) => p.providerId === 'google.com') : false
+  const signInLabel = emailProvider && googleProvider
+    ? 'Google + Password'
+    : emailProvider
+    ? 'Email & Password'
+    : 'Google'
 
   const NAV_ITEMS: Array<{ id: Section; label: string; icon: string }> = [
     { id: 'profile', label: 'Profile', icon: 'person' },
     { id: 'account', label: 'Account', icon: 'mail' },
-    ...(emailProvider ? [{ id: 'security' as Section, label: 'Security', icon: 'lock' }] : []),
   ]
 
   // Avatar resolution, in priority order:
@@ -845,60 +902,72 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                         <span className="material-symbols-outlined text-[#3D5A35]" style={{ fontSize: 16 }}>
                           {emailProvider ? 'key' : 'account_circle'}
                         </span>
-                        {emailProvider ? 'Email & Password' : 'Google'}
+                        {signInLabel}
                       </p>
                     </div>
                   </div>
-                </div>
-              ) : null}
 
-              {section === 'security' && emailProvider ? (
-                <div className="ccx-section" key="security">
-                  <p className={`${sectionTitleClass} mb-4`} style={serifStyle}>
-                    Security
-                  </p>
-                  <form onSubmit={handleChangePassword} className="space-y-3">
-                    <div>
-                      <label className={labelClass}>Current Password</label>
-                      <input
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="Enter current password"
-                        autoComplete="current-password"
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>New Password</label>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="At least 6 characters"
-                        autoComplete="new-password"
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Confirm New Password</label>
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Repeat new password"
-                        autoComplete="new-password"
-                        className={fieldClass}
-                      />
-                    </div>
+                  <div className="mt-6 border-t border-[#5c4033]/12 pt-4">
+                    <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-[#3D5A35]">
+                      {emailProvider ? 'Change Password' : 'Set Password'}
+                    </p>
+                    {!emailProvider ? (
+                      <p className="mb-3 text-[12px] leading-relaxed text-[#5c4033]/65">
+                        Add a password so you can also sign in with {user.email} directly, without Google.
+                      </p>
+                    ) : null}
+                    <form
+                      onSubmit={emailProvider ? handleChangePassword : handleSetPassword}
+                      className="space-y-3"
+                    >
+                      {emailProvider ? (
+                        <div>
+                          <label className={labelClass}>Current Password</label>
+                          <input
+                            type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="Enter current password"
+                            autoComplete="current-password"
+                            className={fieldClass}
+                          />
+                        </div>
+                      ) : null}
+                      <div>
+                        <label className={labelClass}>New Password</label>
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="At least 6 characters"
+                          autoComplete="new-password"
+                          className={fieldClass}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Confirm New Password</label>
+                        <input
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Repeat new password"
+                          autoComplete="new-password"
+                          className={fieldClass}
+                        />
+                      </div>
 
-                    <div className="flex items-center gap-3 pt-1">
-                      <SubmitButton disabled={!isPasswordReady || passwordSaving}>
-                        {passwordSaving ? 'Updating...' : 'Update Password'}
-                      </SubmitButton>
-                      <InlineStatus status={passwordMsg} />
-                    </div>
-                  </form>
+                      <div className="flex items-center gap-3 pt-1">
+                        <SubmitButton
+                          disabled={(emailProvider ? !isPasswordReady : !isSetPasswordReady) || passwordSaving}
+                        >
+                          {passwordSaving
+                            ? emailProvider ? 'Updating...' : 'Setting...'
+                            : emailProvider ? 'Update Password' : 'Set Password'}
+                        </SubmitButton>
+                        <InlineStatus status={passwordMsg} />
+                      </div>
+                    </form>
+                  </div>
                 </div>
               ) : null}
             </div>
