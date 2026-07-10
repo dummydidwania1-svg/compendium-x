@@ -571,63 +571,6 @@ function layoutDesktop(
     })
   }
 
-  // ── Final overlap-resolution pass ─────────────────────────────────────────
-  // Safety net for wide, deeply-expanded trees: after horizontal packing (and
-  // any stackChildren transform), two subtrees under DIFFERENT parents can
-  // still end up on the same depth row with overlapping boxes (per-parent
-  // packing can't see across parents). Walk each depth row left→right and, if
-  // two neighbours are closer than their true rendered half-widths + a small
-  // gap, push the right neighbour's whole subtree rightward. Uses the true
-  // label width (never the compressed effW floor) so spacing matches what
-  // actually renders; the outer chartScale then uniformly shrinks everything to
-  // fit, so widening here never causes clipping. Idempotent for already-spaced
-  // trees (no neighbour is too close ⇒ no shift), so non-overflowing charts and
-  // charts without stacking are unaffected.
-  {
-    const shiftSubtreeX = (id: string, dx: number) => {
-      if (!dx) return
-      const p = pos.get(id)
-      if (p) pos.set(id, { x: p.x + dx, y: p.y })
-      ;(NODES[id]?.children ?? [])
-        .filter(childId => vis.has(childId))
-        .forEach(childId => shiftSubtreeX(childId, dx))
-    }
-    // True on-screen width = max(compressed effW, text-fit estNodeW) + chevron
-    // allowance for parents. Guarantees spacing reflects the real box, not the
-    // 116/132 min-width floor that caused neighbours to overlap under scaling.
-    const trueW = (id: string) =>
-      Math.max(effW.get(id) ?? 0, estNodeW(id)) +
-      ((NODES[id]?.children?.length ?? 0) > 0 ? 24 : 0)
-    const MIN_GAP = 18
-    // Group visible ids by depth row.
-    const rows = new Map<number, string[]>()
-    ids.forEach(id => {
-      const d = nodeDepth(id)
-      const arr = rows.get(d) ?? []
-      arr.push(id)
-      rows.set(d, arr)
-    })
-    // A few passes so a shift that creates a new overlap downstream settles.
-    for (let iter = 0; iter < 8; iter++) {
-      let moved = false
-      rows.forEach(row => {
-        const sorted = [...row].sort((a, b) => (pos.get(a)?.x ?? 0) - (pos.get(b)?.x ?? 0))
-        for (let i = 1; i < sorted.length; i++) {
-          const a = sorted[i - 1], b = sorted[i]
-          const pa = pos.get(a), pb = pos.get(b)
-          if (!pa || !pb) continue
-          const need = trueW(a) / 2 + trueW(b) / 2 + MIN_GAP
-          const gap = pb.x - pa.x
-          if (gap < need - 0.5) {
-            shiftSubtreeX(b, need - gap)
-            moved = true
-          }
-        }
-      })
-      if (!moved) break
-    }
-  }
-
   return { positions: pos, nodeWidths: effW }
 }
 
