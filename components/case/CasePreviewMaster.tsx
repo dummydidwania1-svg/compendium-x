@@ -33,6 +33,13 @@ export type FrameworkNode = {
   label: string
   tone: 'root' | 'branch' | 'support' | 'leaf'
   children: readonly string[]
+  // When true, this node's visible children are laid out in a single VERTICAL
+  // column directly beneath the node (one below the other) instead of the
+  // default horizontal row. Use for narrow branches with a couple of children
+  // that would otherwise widen the chart (e.g. Operational Feasibility / Risks
+  // in 'The Sun Won't Set On Us'). Purely a layout hint — the tree structure,
+  // expand/collapse, and edges are unchanged. Scoped per-node, per-case.
+  stackChildren?: boolean
 }
 
 export type FrameworkTree = {
@@ -518,6 +525,52 @@ function layoutDesktop(
     }
   }
 
+  // ── Vertical child-stacking (per-node opt-in via stackChildren) ────────────
+  // For any visible node flagged stackChildren, re-arrange its visible children
+  // into a single vertical column directly beneath the node instead of the
+  // default horizontal row. The first child keeps (roughly) its slot; each
+  // subsequent child is placed one row below, aligned to the same x, and its
+  // entire visible subtree is shifted with it. Runs after all horizontal
+  // positioning so it only overrides the flagged branches; every other node is
+  // untouched. No-op when no node in the tree sets the flag.
+  const stackParents = ids.filter(id => NODES[id]?.stackChildren && vis.has(id))
+  if (stackParents.length) {
+    const shiftSubtreeXY = (id: string, dx: number, dy: number) => {
+      if (!dx && !dy) return
+      const p = pos.get(id)
+      if (p) pos.set(id, { x: p.x + dx, y: p.y + dy })
+      ;(NODES[id]?.children ?? [])
+        .filter(childId => vis.has(childId))
+        .forEach(childId => shiftSubtreeXY(childId, dx, dy))
+    }
+    // Deepest-first so a stacked parent that itself sits under another stacked
+    // parent is positioned before its ancestor moves it.
+    stackParents.sort((a, b) => nodeDepth(b) - nodeDepth(a))
+    stackParents.forEach(parentId => {
+      const children = (NODES[parentId]?.children ?? []).filter(c => vis.has(c))
+      if (children.length < 2) return
+      const parentPoint = pos.get(parentId)
+      if (!parentPoint) return
+      // Column x: center children under the parent.
+      const colX = parentPoint.x
+      // Row height for the stack: tallest child + breathing room.
+      const rowGap = children.reduce((mx, c) => {
+        const lines = estNodeLines(c)
+        const h = 40 + Math.max(0, lines - 1) * 22
+        return Math.max(mx, h)
+      }, 0) + 22
+      // First stacked row sits a comfortable distance below the parent.
+      const firstY = parentPoint.y + rowGap
+      children.forEach((childId, i) => {
+        const cur = pos.get(childId)
+        if (!cur) return
+        const targetX = colX
+        const targetY = firstY + i * rowGap
+        shiftSubtreeXY(childId, targetX - cur.x, targetY - cur.y)
+      })
+    })
+  }
+
   return { positions: pos, nodeWidths: effW }
 }
 
@@ -734,6 +787,11 @@ function walkthroughSpacingClass(block: WalkthroughBlock, previous?: Walkthrough
  */
 
 function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview', multiActive = false): boolean {
+  // If the tree opts into per-node vertical child-stacking (stackChildren), it
+  // manages its own width in the normal top-down layout, so never fall back to
+  // the left-to-right vertical layout (which requires horizontal scrolling).
+  if (Object.values(NODES).some(n => n?.stackChildren)) return false
+
   // fullExpand trees keep many branches open simultaneously, so a horizontal
   // row overflows far sooner than in single-path mode. Use a lower row threshold
   // (and a total-node safety net below) when multiActive so wide full-expand
@@ -1257,6 +1315,22 @@ function DesktopChart({
     })
   }, [visibleIds, positions])
 
+  // Actual rendered height: with vertical child-stacking, some nodes sit BELOW
+  // the last depth row, so the fixed depth-based metrics.h can clip them. Take
+  // the lowest node bottom edge and grow the canvas to fit (never shrink below
+  // metrics.h). No effect on non-stacked charts (their lowest node is the last
+  // depth row, already within metrics.h).
+  const effectiveHeight = useMemo(() => {
+    let maxBottom = 0
+    visibleIds.forEach(id => {
+      const p = positions.get(id)
+      if (!p) return
+      const halfH = 27 + Math.max(0, estNodeLines(id) - 2) * 9
+      maxBottom = Math.max(maxBottom, p.y + halfH)
+    })
+    return Math.max(metrics.h, Math.ceil(maxBottom) + metrics.bp)
+  }, [visibleIds, positions, metrics])
+
   const depthStagger = useMemo(() => {
     const map = new Map<string, number>()
     const counter = new Map<number, number>()
@@ -1272,9 +1346,9 @@ function DesktopChart({
   return (
     <div ref={outerRef} className="relative w-full transition-all duration-700"
       style={{ opacity: (started && cWReady) ? 1 : 0, transform: (started && cWReady) ? 'translateY(0)' : 'translateY(24px)', filter: (started && cWReady) ? 'blur(0)' : 'blur(8px)' }}>
-      <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${metrics.h}px`, transform: `scale(${chartScale})`, transformOrigin: 'top center' }}>
+      <div className="relative overflow-visible pb-4 pl-4 pr-2 pt-4" style={{ minHeight: `${effectiveHeight}px`, transform: `scale(${chartScale})`, transformOrigin: 'top center' }}>
 
-        <svg className="absolute inset-0 h-full w-full overflow-visible z-10" viewBox={`0 0 ${cW} ${metrics.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <svg className="absolute inset-0 h-full w-full overflow-visible z-10" viewBox={`0 0 ${cW} ${effectiveHeight}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           {(() => {
             // Group edges by parent → one <path> per parent (trunk + bus + stubs in single element)
             const byParent = new Map<string, NonNullable<typeof edgeRenderData[0]>[]>()

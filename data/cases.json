@@ -8269,7 +8269,8 @@
           "children": [
             "barriers-to-entry",
             "setting-up-value-chain"
-          ]
+          ],
+          "stackChildren": true
         },
         "risks": {
           "id": "risks",
@@ -8278,7 +8279,8 @@
           "children": [
             "economic",
             "legal"
-          ]
+          ],
+          "stackChildren": true
         },
         "barriers-to-entry": {
           "id": "barriers-to-entry",
