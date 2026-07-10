@@ -8413,7 +8413,12 @@
         "market-entry",
         "market-attractiveness",
         "operational-feasibility",
-        "risks"
+        "risks",
+        "revenue",
+        "revenue-from-sales",
+        "recurring-revenue",
+        "market-size",
+        "demand-enablers"
       ],
       "defaultFocusedId": "demand-enablers",
       "notes": [
