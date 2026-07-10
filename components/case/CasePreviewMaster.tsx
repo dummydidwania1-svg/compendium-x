@@ -571,6 +571,65 @@ function layoutDesktop(
     })
   }
 
+  // ── Final overlap-resolution pass (Y-band aware) ──────────────────────────
+  // Safety net for wide, deeply-expanded and/or stacked trees. Two nodes can
+  // end up with overlapping boxes even under different parents; and because the
+  // stackChildren transform above moves children DOWN off their depth row, a
+  // depth-row-only check misses them (e.g. a stacked "Setting Up Value Chain"
+  // colliding with a "Price per Unit" that belongs to another branch). So we
+  // test ACTUAL bounding boxes (x half-width + y half-height + small gap) and,
+  // for any overlapping pair, push the right-hand node's whole subtree right.
+  // Widths use the true rendered label width (never the compressed effW floor);
+  // the outer chartScale then uniformly shrinks the widened tree to fit, so
+  // this never clips. Idempotent: a tree with no overlaps gets no shift, so
+  // non-stacked / non-overflowing cases are untouched.
+  {
+    const shiftSubtreeX = (id: string, dx: number) => {
+      if (!dx) return
+      const p = pos.get(id)
+      if (p) pos.set(id, { x: p.x + dx, y: p.y })
+      ;(NODES[id]?.children ?? [])
+        .filter(childId => vis.has(childId))
+        .forEach(childId => shiftSubtreeX(childId, dx))
+    }
+    const trueW = (id: string) =>
+      Math.max(effW.get(id) ?? 0, estNodeW(id)) +
+      ((NODES[id]?.children?.length ?? 0) > 0 ? 24 : 0)
+    const trueH = (id: string) => 40 + Math.max(0, estNodeLines(id) - 1) * 22
+    const GAP_X = 16 // required clear horizontal space between neighbouring boxes
+    const GAP_Y = 14 // y-band tolerance so only truly same-level boxes count
+    const overlaps = (a: string, b: string) => {
+      const pa = pos.get(a), pb = pos.get(b)
+      if (!pa || !pb) return false
+      const axHalf = trueW(a) / 2, bxHalf = trueW(b) / 2
+      const ayHalf = trueH(a) / 2, byHalf = trueH(b) / 2
+      const dx = Math.abs(pa.x - pb.x), dy = Math.abs(pa.y - pb.y)
+      return dx < axHalf + bxHalf + GAP_X && dy < ayHalf + byHalf + GAP_Y
+    }
+    for (let iter = 0; iter < 12; iter++) {
+      let moved = false
+      for (let i = 0; i < ids.length; i++) {
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = ids[i], b = ids[j]
+          if (!overlaps(a, b)) continue
+          const pa = pos.get(a), pb = pos.get(b)
+          if (!pa || !pb) continue
+          // Push the right-hand node (larger x) rightward by the deficit.
+          const [L, R] = pa.x <= pb.x ? [a, b] : [b, a]
+          const pL = pos.get(L), pR = pos.get(R)
+          if (!pL || !pR) continue
+          const need = trueW(L) / 2 + trueW(R) / 2 + GAP_X
+          const gap = pR.x - pL.x
+          if (gap < need - 0.5) {
+            shiftSubtreeX(R, need - gap)
+            moved = true
+          }
+        }
+      }
+      if (!moved) break
+    }
+  }
+
   return { positions: pos, nodeWidths: effW }
 }
 
