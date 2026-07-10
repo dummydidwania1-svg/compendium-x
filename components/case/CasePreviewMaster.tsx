@@ -319,7 +319,12 @@ function layoutDesktop(
   const nw = new Map<string, number>()
   const vis = new Set(ids)
   const maxD = Math.max(...ids.map(nodeDepth), 0)
-  const vStep = maxD === 0 ? 0 : (height - topPad - bottomPad) / maxD
+  // Row spacing = available height / depth, but CAPPED so shallow trees don't get
+  // absurdly long connectors on a tall canvas (e.g. a 3-level tree stretched to
+  // full viewport height left huge vertical gaps). 150px keeps the parent→child
+  // connector short and readable while still leaving room for 2-line labels.
+  const V_STEP_MAX = 150
+  const vStep = maxD === 0 ? 0 : Math.min((height - topPad - bottomPad) / maxD, V_STEP_MAX)
   const hPad = Math.min(20, width * 0.02)
   const sub = new Map<string, number>()
   const gapFor = (childCount: number, depth: number) => {
@@ -1328,7 +1333,12 @@ function DesktopChart({
       const halfH = 27 + Math.max(0, estNodeLines(id) - 2) * 9
       maxBottom = Math.max(maxBottom, p.y + halfH)
     })
-    return Math.max(metrics.h, Math.ceil(maxBottom) + metrics.bp)
+    // Fit the canvas to the ACTUAL tree bottom (plus bottom padding) rather than
+    // flooring at the full metrics.h. With the capped vStep the tree packs
+    // tighter, so flooring at metrics.h would leave a large empty gap below and
+    // make the whole chart shrink to fit that phantom height. Use a small floor
+    // so single-row trees still get a sensible minimum canvas.
+    return Math.max(metrics.tp + 120, Math.ceil(maxBottom) + metrics.bp)
   }, [visibleIds, positions, metrics])
 
   const depthStagger = useMemo(() => {
