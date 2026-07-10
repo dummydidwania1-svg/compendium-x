@@ -1279,9 +1279,14 @@ function DesktopChart({
     const halfSpan = Math.max(maxRight - centre, centre - minLeft) * PRESENTATION_SCALE
     const available = cW / 2 - margin
     if (halfSpan <= available) return PRESENTATION_SCALE
-    // Shrink below the presentation zoom until the widest layer fits. Lower floor
-    // (0.55) so 7-8 node layers stay on one row instead of clipping; still legible.
-    return Math.max(0.55, PRESENTATION_SCALE * (available / halfSpan))
+    // Shrink below the presentation zoom until the widest layer fits. The chart
+    // MUST always fit its container, otherwise it renders large and clips on
+    // narrower viewports / higher browser-zoom / smaller windows (the same tree
+    // then looks huge on one account and correctly-sized on another). A low
+    // floor (0.3) guarantees fit-to-width on any reasonable container while
+    // staying legible; the exact scale is driven purely by the measured cW so
+    // the result is deterministic across accounts at the same zoom.
+    return Math.max(0.3, PRESENTATION_SCALE * (available / halfSpan))
   }, [positions, nodeWidths, visibleIds, cW])
 
   const labelFs = 12.25
