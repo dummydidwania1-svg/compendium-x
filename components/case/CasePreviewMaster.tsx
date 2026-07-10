@@ -440,7 +440,44 @@ function layoutDesktop(
   }, { minX: Infinity, maxX: -Infinity })
 
   if (isFinite(bounds.minX)) {
-    const effectiveFootprint = (id: string) => (effW.get(id) ?? estNodeW(id)) + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
+    // Horizontal footprint used by the sibling-repacking below.
+    //
+    // The original footprint counted only a node's own box (+chevron). That is
+    // correct for a plain horizontal tree, but breaks once a branch uses vertical
+    // child-stacking: a stacked node draws its whole subtree as one narrow column
+    // straight down from its centre, while a NON-stacked sibling parent (e.g.
+    // "Existing Business", whose subtree fans out into two side-by-side columns)
+    // occupies far more horizontal space than its own box. Packing both by box
+    // width alone let the stacked branch land on top of the wide sibling's
+    // descendants (New Business column overlapping the Demand / Price columns).
+    //
+    // Fix: when the visible tree uses stacking anywhere, measure each node's real
+    // visible-subtree horizontal extent (from the already-assigned positions) and
+    // pack siblings by that. This runs shallow-first, so a node's descendants are
+    // still in their assign() layout when its extent is measured. Trees without
+    // any stacked node keep the exact original box-footprint packing (no-op), so
+    // every existing case is byte-for-byte unchanged.
+    const treeUsesStacking = ids.some((id) => NODES[id]?.stackChildren && vis.has(id))
+    const subtreeExtent = (id: string): number => {
+      let minL = Infinity
+      let maxR = -Infinity
+      const walk = (n: string) => {
+        const p = pos.get(n)
+        if (p) {
+          const w = effW.get(n) ?? estNodeW(n)
+          const hasCh = (NODES[n]?.children?.length ?? 0) > 0
+          minL = Math.min(minL, p.x - w / 2)
+          maxR = Math.max(maxR, p.x + w / 2 + (hasCh ? 20 : 0))
+        }
+        ;(NODES[n]?.children ?? []).filter((c) => vis.has(c)).forEach(walk)
+      }
+      walk(id)
+      return isFinite(minL) ? maxR - minL : (effW.get(id) ?? estNodeW(id))
+    }
+    const effectiveFootprint = (id: string) =>
+      treeUsesStacking
+        ? subtreeExtent(id)
+        : (effW.get(id) ?? estNodeW(id)) + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
 
     const shiftVisibleSubtree = (id: string, delta: number) => {
       if (!delta) return
