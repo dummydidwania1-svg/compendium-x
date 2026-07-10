@@ -733,14 +733,23 @@ function walkthroughSpacingClass(block: WalkthroughBlock, previous?: Walkthrough
  *     drill-down state causes overlap in horizontal layout.
  */
 
-function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview'): boolean {
+function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview', multiActive = false): boolean {
   const threshold = 9
 
-  // Build the DEFAULT-VISIBLE set: green path expanded, inactive subtrees collapsed
-  const defaultPath = Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID))
-  const defaultExpanded = new Set(
-    Array.from(DEFAULT_EXPANDED).filter(id => defaultPath.includes(id))
-  )
+  // Build the DEFAULT-VISIBLE set.
+  // - Normal mode: only the green focus path is expanded, inactive subtrees collapsed.
+  // - fullExpand (multiActive) mode: every branch in DEFAULT_EXPANDED is open at once,
+  //   so the visible set is much wider — feed the full DEFAULT_EXPANDED set through
+  //   collectVisible so the width/overlap check reflects what actually renders.
+  let defaultExpanded: Set<string>
+  if (multiActive) {
+    defaultExpanded = new Set(DEFAULT_EXPANDED)
+  } else {
+    const defaultPath = Array.from(focusPathSet(DEFAULT_FOCUSED_IDS, DEFAULT_FOCUSED_ID))
+    defaultExpanded = new Set(
+      Array.from(DEFAULT_EXPANDED).filter(id => defaultPath.includes(id))
+    )
+  }
   const visible = new Set<string>()
   collectVisible(ROOT_ID, defaultExpanded, visible)
 
@@ -3095,7 +3104,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     while (cur) { cur = localParents[cur]; if (cur) depth++ }
     return depth
   }), 0) : 0
-  const useVerticalLayout = forceVertical || shouldUseVerticalLayout('preview')
+  const useVerticalLayout = forceVertical || shouldUseVerticalLayout('preview', multiActive)
 
   const localFocusPath = useMemo(() => {
     const ids = (tree.defaultFocusedIds?.length ? tree.defaultFocusedIds : tree.defaultFocusedId ? [tree.defaultFocusedId] : [])
@@ -3583,7 +3592,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
 
   // Computed once — tree structure is static, no need to recompute per render
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout('preview') }, [])
+  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout('preview', multiActive) }, [multiActive])
 
   const [, startChartTransition] = useTransition()
 
@@ -4910,7 +4919,7 @@ export function CaseInterviewerMaster({
   const chartMaxDepth = useMemo(() => { loadTree(tree); return Math.max(...visibleIds.map(nodeDepth), 0) }, [visibleIds, tree])
   const isChartFullyExpanded = useMemo(() => { loadTree(tree); return [...DEFAULT_EXPANDED].every(id => expandedIds.has(id)) }, [expandedIds, tree])
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout('interviewer') }, [])
+  const useVerticalLayout = useMemo(() => { loadTree(tree); return shouldUseVerticalLayout('interviewer', multiActive) }, [multiActive])
   const recommendations = parsedFramework.recommendations
   const promptDisplayLines = useMemo<TranscriptDisplayLine[]>(
     () => promptLines.map(text => ({ text, speaker: 'interviewer' as const })),
