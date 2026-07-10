@@ -197,6 +197,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordMsg, setPasswordMsg] = useState<{ text: string; ok: boolean } | null>(null)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
 
   // Sign out
   const [showSignOutModal, setShowSignOutModal] = useState(false)
@@ -405,6 +406,13 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
     }
   }
 
+  const closePasswordForm = () => {
+    setShowPasswordForm(false)
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+  }
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !user.email || !isPasswordReady) return
@@ -420,6 +428,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+      setShowPasswordForm(false)
       showPasswordMsg('Password updated', true)
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
@@ -463,6 +472,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       setUser(auth.currentUser)
       setNewPassword('')
       setConfirmPassword('')
+      setShowPasswordForm(false)
       showPasswordMsg('Password set — you can now sign in with email too', true)
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
@@ -908,65 +918,93 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
                   </div>
 
                   <div className="mt-6 border-t border-[#5c4033]/12 pt-4">
-                    <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-[#3D5A35]">
-                      {emailProvider ? 'Change Password' : 'Set Password'}
-                    </p>
-                    {!emailProvider ? (
-                      <p className="mb-3 text-[12px] leading-relaxed text-[#5c4033]/65">
-                        Add a password so you can also sign in with {user.email} directly, without Google.
-                      </p>
-                    ) : null}
-                    <form
-                      onSubmit={emailProvider ? handleChangePassword : handleSetPassword}
-                      className="space-y-3"
+                    <button
+                      type="button"
+                      onClick={() => (showPasswordForm ? closePasswordForm() : setShowPasswordForm(true))}
+                      className="group flex w-full items-center justify-between gap-3 py-0.5 text-left transition-opacity hover:opacity-75"
                     >
-                      {emailProvider ? (
-                        <div>
-                          <label className={labelClass}>Current Password</label>
-                          <input
-                            type="password"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            placeholder="Enter current password"
-                            autoComplete="current-password"
-                            className={fieldClass}
-                          />
-                        </div>
-                      ) : null}
-                      <div>
-                        <label className={labelClass}>New Password</label>
-                        <input
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="At least 6 characters"
-                          autoComplete="new-password"
-                          className={fieldClass}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>Confirm New Password</label>
-                        <input
-                          type="password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Repeat new password"
-                          autoComplete="new-password"
-                          className={fieldClass}
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-3 pt-1">
-                        <SubmitButton
-                          disabled={(emailProvider ? !isPasswordReady : !isSetPasswordReady) || passwordSaving}
-                        >
-                          {passwordSaving
-                            ? emailProvider ? 'Updating...' : 'Setting...'
-                            : emailProvider ? 'Update Password' : 'Set Password'}
-                        </SubmitButton>
+                      <span className="flex items-center gap-2.5">
+                        <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#3D5A35]">
+                          {emailProvider ? 'Change Password' : 'Set Password'}
+                        </span>
                         <InlineStatus status={passwordMsg} />
+                      </span>
+                      <span
+                        className="material-symbols-outlined shrink-0 text-[#8a7c6a] transition-transform duration-200"
+                        style={{ fontSize: 18, transform: showPasswordForm ? 'rotate(180deg)' : 'none' }}
+                      >
+                        expand_more
+                      </span>
+                    </button>
+
+                    {showPasswordForm ? (
+                      <div className="ccx-picker mt-3">
+                        {!emailProvider ? (
+                          <p className="mb-3 text-[12px] leading-relaxed text-[#5c4033]/65">
+                            Add a password so you can also sign in with {user.email} directly, without Google.
+                          </p>
+                        ) : null}
+                        <form
+                          onSubmit={emailProvider ? handleChangePassword : handleSetPassword}
+                          className="space-y-3"
+                        >
+                          {emailProvider ? (
+                            <div>
+                              <label className={labelClass}>Current Password</label>
+                              <input
+                                type="password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                placeholder="Enter current password"
+                                autoComplete="current-password"
+                                autoFocus
+                                className={fieldClass}
+                              />
+                            </div>
+                          ) : null}
+                          <div>
+                            <label className={labelClass}>New Password</label>
+                            <input
+                              type="password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="At least 6 characters"
+                              autoComplete="new-password"
+                              autoFocus={!emailProvider}
+                              className={fieldClass}
+                            />
+                          </div>
+                          <div>
+                            <label className={labelClass}>Confirm New Password</label>
+                            <input
+                              type="password"
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              placeholder="Repeat new password"
+                              autoComplete="new-password"
+                              className={fieldClass}
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-3 pt-1">
+                            <SubmitButton
+                              disabled={(emailProvider ? !isPasswordReady : !isSetPasswordReady) || passwordSaving}
+                            >
+                              {passwordSaving
+                                ? emailProvider ? 'Updating...' : 'Setting...'
+                                : emailProvider ? 'Update Password' : 'Set Password'}
+                            </SubmitButton>
+                            <button
+                              type="button"
+                              onClick={closePasswordForm}
+                              className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5c4033]/55 hover:text-[#5c4033]"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
                       </div>
-                    </form>
+                    ) : null}
                   </div>
                 </div>
               ) : null}
