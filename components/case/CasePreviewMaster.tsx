@@ -65,6 +65,17 @@ export type FrameworkTree = {
   // over 'inorganic-growth'); all other nodes then render in the light tone.
   // When omitted, the default isActive logic is unchanged (backward compatible).
   highlightIds?: string[]
+  // Allow multiple sibling branches to stay expanded at once WITHOUT switching
+  // to fullExpand's force-everything-in-chart / no-overlay behavior. With
+  // fullExpand=false the single-path model collapses a sibling when you expand
+  // another (only one branch open at a time) AND off-path nodes open as deep-dive
+  // overlays. Some cases (e.g. When Chai Met Toast) want several on-path branches
+  // open simultaneously (Supply AND Demand AND New Business children) while STILL
+  // getting overlays for their collapsed grandchildren. Set multiExpand=true for
+  // that: siblings no longer auto-collapse, but overlay/drill behavior is
+  // unchanged (still keyed off fullExpand/multiActive). Ignored when fullExpand
+  // is true (fullExpand already keeps everything open).
+  multiExpand?: boolean
 }
 
 export type VisFormula = {
@@ -349,6 +360,16 @@ function layoutDesktop(
     const footprint = estNodeFootprint(id)
     const vc = (NODES[id]?.children ?? []).filter(c => vis.has(c))
     if (!vc.length) { sub.set(id, footprint); return footprint }
+    // stackChildren nodes render their children as a single vertical COLUMN, not
+    // a horizontal row, so their horizontal footprint is just the widest child
+    // subtree (max), NOT the sum. Measuring the sum here would massively inflate
+    // the tree width and push far-right sibling branches off-screen / into an
+    // overlap once chartScale hits its floor. Still measure every child (side
+    // effects populate sub/nw for the stacking pass).
+    if (NODES[id]?.stackChildren) {
+      const widest = vc.reduce((mx, c) => Math.max(mx, measure(c)), 0)
+      const tw = Math.max(footprint, widest); sub.set(id, tw); return tw
+    }
     const localGap = gapFor(vc.length, nodeDepth(id))
     const cw = vc.reduce((s, c, i) => s + measure(c) + (i > 0 ? localGap : 0), 0)
     const tw = Math.max(footprint, cw); sub.set(id, tw); return tw
@@ -359,6 +380,17 @@ function layoutDesktop(
     const vc = (NODES[id]?.children ?? []).filter(c => vis.has(c))
     const y = topPad + vStep * d
     if (!vc.length) { pos.set(id, { x: (sx + ex) / 2, y }); return }
+    // stackChildren: children become a vertical column, so lay them all out in
+    // the SAME narrow horizontal slot (each gets the parent's band). The later
+    // stacking pass sets their real column x/y; here we just avoid a wide
+    // horizontal spread that would reintroduce the width the measure() max fix
+    // removed.
+    if (NODES[id]?.stackChildren) {
+      const cx0 = (sx + ex) / 2
+      vc.forEach(c => assign(c, sx, ex))
+      pos.set(id, { x: cx0, y })
+      return
+    }
     const localGap = gapFor(vc.length, d)
     const cw = vc.reduce((s, c, i) => s + (sub.get(c) ?? estNodeW(c)) + (i > 0 ? localGap : 0), 0)
     const tw = Math.max(ex - sx, cw)
@@ -3232,6 +3264,9 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tree]
   )
+  // Keep sibling branches open together without disabling overlays (see
+  // FrameworkTree.multiExpand). fullExpand (multiActive) implies it.
+  const allowMultiExpand = multiActive || !!tree.multiExpand
 
   const maxTreeDepth = localRootId ? Math.max(...Object.keys(localNodes).map(id => {
     let depth = 0; let cur: string | undefined = id
@@ -3367,7 +3402,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
           if (focusedId && localPathTo(focusedId).includes(id)) setFocusedId(id)
         } else {
           next.add(id)
-          if (!multiActive) {
+          if (!allowMultiExpand) {
             const parent = localParents[id]
             if (parent) (localNodes[parent]?.children ?? []).forEach(sib => {
               if (sib !== id) { next.delete(sib); localDescendants(sib).forEach(d => next.delete(d)) }
@@ -3400,7 +3435,7 @@ export function AdditionalFrameworkPanel({ tree, label, multiActive = false, hid
         if (localPathTo(mobileFocId).includes(id)) setMobileFocId(id)
       } else {
         next.add(id)
-        if (!multiActive) {
+        if (!allowMultiExpand) {
           const parent = localParents[id]
           if (parent) (localNodes[parent]?.children ?? []).forEach(sib => {
             if (sib !== id) { next.delete(sib); localDescendants(sib).forEach(d => next.delete(d)) }
@@ -3488,6 +3523,9 @@ export default function CasePreviewMaster({
   // the chart drops the single-active-path model so multiple sibling branches can
   // stay expanded at once (see FrameworkTree.fullExpand).
   const multiActive = !!tree.fullExpand
+  // Keep sibling branches open together without disabling overlays (see
+  // FrameworkTree.multiExpand). fullExpand implies it.
+  const allowMultiExpand = multiActive || !!tree.multiExpand
   // Capture primary-tree values into locals so that AdditionalFrameworkPanel's
   // loadTree() calls (which mutate the module-level globals) cannot corrupt the
   // values this component's JSX closes over. React concurrent mode can interleave
@@ -3770,7 +3808,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
         } else {
           next.add(id)
           // Single-path model collapses siblings; fullExpand keeps them open.
-          if (!multiActive) {
+          if (!allowMultiExpand) {
             const parent = PARENTS[id]
             if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
               if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
@@ -3806,7 +3844,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
         if (pathTo(mobileFocId).includes(id)) setMobileFocId(id)
       } else {
         next.add(id)
-        if (!multiActive) {
+        if (!allowMultiExpand) {
           const parent = PARENTS[id]
           if (parent) (NODES[parent]?.children ?? []).forEach(sib => {
             if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) }
@@ -4679,6 +4717,9 @@ export function CaseInterviewerMaster({
   // Book-style parallel tree opt-in (see FrameworkTree.fullExpand): drop the
   // single-active-path model so multiple sibling branches stay expanded at once.
   const multiActive = !!tree.fullExpand
+  // Keep sibling branches open together without disabling overlays (see
+  // FrameworkTree.multiExpand). fullExpand implies it.
+  const allowMultiExpand = multiActive || !!tree.multiExpand
   // Capture primary-tree values before any child AdditionalFrameworkPanel can corrupt globals.
   const primaryNotes = tree.notes
   const primaryRootId = ROOT_ID
@@ -5146,7 +5187,7 @@ export function CaseInterviewerMaster({
         const next = new Set(prev)
         loadTree(tree)
         if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)) }
-        else { next.add(id); if (!multiActive) { const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) } }
+        else { next.add(id); if (!allowMultiExpand) { const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) } }
         return next
       })
       setEdgeAnimKey(k => k + 1)
@@ -5160,7 +5201,7 @@ export function CaseInterviewerMaster({
       const next = new Set(prev)
       loadTree(tree)
       if (next.has(id)) { next.delete(id); descendants(id).forEach(d => next.delete(d)); if (pathTo(mobileFocId).includes(id)) setMobileFocId(id) }
-      else { next.add(id); if (!multiActive) { const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) } }
+      else { next.add(id); if (!allowMultiExpand) { const parent = PARENTS[id]; if (parent) (NODES[parent]?.children ?? []).forEach(sib => { if (sib !== id) { next.delete(sib); descendants(sib).forEach(d => next.delete(d)) } }) } }
       return next
     })
   }
