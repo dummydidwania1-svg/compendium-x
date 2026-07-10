@@ -10603,7 +10603,8 @@
             "quality",
             "marketing",
             "channel"
-          ]
+          ],
+          "stackChildren": true
         },
         "revenue-customer": {
           "id": "revenue-customer",
@@ -10612,7 +10613,8 @@
           "children": [
             "price-customer",
             "volume-customer"
-          ]
+          ],
+          "stackChildren": true
         },
         "time": {
           "id": "time",
