@@ -734,7 +734,11 @@ function walkthroughSpacingClass(block: WalkthroughBlock, previous?: Walkthrough
  */
 
 function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview', multiActive = false): boolean {
-  const threshold = 9
+  // fullExpand trees keep many branches open simultaneously, so a horizontal
+  // row overflows far sooner than in single-path mode. Use a lower row threshold
+  // (and a total-node safety net below) when multiActive so wide full-expand
+  // layouts reliably fall back to the non-overlapping vertical layout.
+  const threshold = multiActive ? 5 : 9
 
   // Build the DEFAULT-VISIBLE set.
   // - Normal mode: only the green focus path is expanded, inactive subtrees collapsed.
@@ -759,7 +763,18 @@ function shouldUseVerticalLayout(mode: 'preview' | 'interviewer' = 'preview', mu
     const d = pathTo(id).length - 1
     byDepth[d] = (byDepth[d] ?? 0) + 1
   })
-  return Object.values(byDepth).some(count => count >= threshold)
+  if (Object.values(byDepth).some(count => count >= threshold)) return true
+
+  // Check 2 (multiActive safety net): a full-expand tree with many total visible
+  // nodes, or more than one multi-child branch open, won't fit horizontally even
+  // if no single row hits the threshold. Force vertical in that case.
+  if (multiActive) {
+    if (visible.size >= 8) return true
+    const wideBranches = Object.values(byDepth).filter(count => count >= 3).length
+    if (wideBranches >= 2) return true
+  }
+
+  return false
 }
 
 const V_GAP_V = 16     // vertical gap between leaf rows
