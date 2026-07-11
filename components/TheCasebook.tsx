@@ -129,22 +129,55 @@ const PAGE_CSS = `
   .cb-body { font-size: 15px; line-height: 1.9; color: #5a4f43; max-width: 760px; }
 
   /* Preview / Archival letter */
-  .cb-letter { max-width: 640px; margin: 0 auto; text-align: left; }
-  .cb-letter-p1 {
-    font-family: 'Newsreader', serif; font-weight: 300;
-    font-size: clamp(19px, 2.2vw, 23px); line-height: 1.75; color: #453a2a;
-    margin-bottom: 34px;
+  .cb-letter { max-width: 720px; margin: 0 auto; text-align: left; }
+
+  /* Archival plate (section header) */
+  .cb-plate { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 48px; }
+  .cb-plate-lbl {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .3em; color: rgba(92,64,51,.55); white-space: nowrap; padding-left: .3em;
   }
-  .cb-letter-p {
-    font-size: 15px; line-height: 2.0; color: #5a4f43; margin-bottom: 34px;
+  .cb-plate-line { flex: 0 0 clamp(56px, 10vw, 110px); height: 1px; }
+  .cb-plate-line.left  { background: linear-gradient(to left,  rgba(92,64,51,.28), transparent); }
+  .cb-plate-line.right { background: linear-gradient(to right, rgba(92,64,51,.28), transparent); }
+  .cb-plate-diamond { width: 4px; height: 4px; background: #5C4033; opacity: .5; transform: rotate(45deg); flex-shrink: 0; }
+
+  /* Letter frame — corner brackets */
+  .cb-letterframe { position: relative; padding: 46px 44px 56px; }
+  @media (max-width: 560px) { .cb-letterframe { padding: 38px 24px 46px; } }
+  .cb-corner { position: absolute; width: 28px; height: 28px; border: 0 solid rgba(92,64,51,.18); pointer-events: none; }
+  .cb-corner.tl { top: 0; left: 0; border-top-width: 1px; border-left-width: 1px; }
+  .cb-corner.tr { top: 0; right: 0; border-top-width: 1px; border-right-width: 1px; }
+  .cb-corner.bl { bottom: 0; left: 0; border-bottom-width: 1px; border-left-width: 1px; }
+  .cb-corner.br { bottom: 0; right: 0; border-bottom-width: 1px; border-right-width: 1px; }
+
+  /* Scholar Green breathing aura — the only green on this page */
+  .cb-aura {
+    position: absolute; left: 50%; bottom: -70px; transform: translateX(-50%);
+    width: 120%; height: 240px; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse at center, rgba(61,90,53,.09) 0%, transparent 65%);
+    animation: cbAura 7s ease-in-out infinite;
   }
+  @keyframes cbAura {
+    0%, 100% { opacity: .55; transform: translateX(-50%) scale(1); }
+    50%      { opacity: 1;   transform: translateX(-50%) scale(1.06); }
+  }
+  @media (prefers-reduced-motion: reduce) { .cb-aura { animation: none; } }
+
+  .cb-para {
+    position: relative; z-index: 1;
+    font-family: 'Newsreader', serif; font-weight: 400;
+    font-size: 17px; line-height: 1.9; color: #4a3f30; margin-bottom: 32px;
+  }
+  .cb-para:last-of-type { margin-bottom: 0; }
   .cb-letter-em {
-    font-family: 'Newsreader', serif; font-style: italic; font-weight: 500;
-    font-size: 1.06em; color: #3b2f2f;
+    font-style: italic; font-weight: 500;
+    font-size: 1.02em; color: #3b2f2f;
   }
   .cb-letter-fleuron {
+    position: relative; z-index: 1;
     width: 5px; height: 5px; background: #5C4033; opacity: .55;
-    transform: rotate(45deg); margin: 56px auto 0;
+    transform: rotate(45deg); margin: 52px auto 0;
   }
 
   /* Guide rules */
@@ -299,34 +332,48 @@ export default function TheCasebook() {
         {/* Section 1: Preview — The Archival Letter */}
         <section id="preview" className="cb-section">
           <div className="cb-wrap">
-            <span className="cb-section-ey cb-reveal" data-delay="0">Preview</span>
-
             <div className="cb-letter">
-              <p className="cb-letter-p1 cb-reveal" data-delay="0">
-                As third-year students, passing out of Shri Ram College of Commerce, after a rigorous placement season, our team wanted to pass on the knowledge that we gathered throughout this year, to aspirants stepping into our shoes in the coming years.
-              </p>
+              <div className="cb-plate cb-reveal" data-delay="0">
+                <span className="cb-plate-line left" />
+                <span className="cb-plate-diamond" />
+                <span className="cb-plate-lbl">Preview</span>
+                <span className="cb-plate-diamond" />
+                <span className="cb-plate-line right" />
+              </div>
 
-              <p className="cb-letter-p cb-reveal" data-delay="90">
-                After extensively preparing for consulting companies in the last two years and cracking interviews of multiple corporate giants including the likes of Kearney, Accenture Strategy, ZS Associates & Zomato, we decided to go ahead with the preparation for consulting companies as our main subject.
-              </p>
+              <div className="cb-letterframe">
+                <span className="cb-corner tl" />
+                <span className="cb-corner tr" />
+                <span className="cb-corner bl" />
+                <span className="cb-corner br" />
+                <div className="cb-aura" />
 
-              <p className="cb-letter-p cb-reveal" data-delay="180">
-                This book happens to be <span className="cb-letter-em">University of Delhi's first Consulting Case Book</span>, having details pertaining to the case interviews of the big shots in the space. We have gathered resources from our experience and from our fellow candidates placed at McKinsey & Co., Kearney, BCG, Dalberg, L. E. K. Consulting, Kepler Cannon, Accenture Strategy, Zomato, Bain & Company, etc. This book contains end-to-end transcripts from the case interviews mentioned above, frameworks related to different case types, and all other details for a candidate to secure a job in the consulting space.
-              </p>
+                <p className="cb-para cb-reveal" data-delay="0">
+                  As third-year students, passing out of Shri Ram College of Commerce, after a rigorous placement season, our team wanted to pass on the knowledge that we gathered throughout this year, to aspirants stepping into our shoes in the coming years.
+                </p>
 
-              <p className="cb-letter-p cb-reveal" data-delay="270">
-                We put our heart and soul into our journeys of preparing for these interviews because of how much we aspired to achieve our goals. Naturally, we also faced roadblocks at every step. We felt the need to come up with this case book because one of the major roadblocks was that there were next to <span className="cb-letter-em">no case books</span> at the <span className="cb-letter-em">undergraduate level</span>, as most of the case books are by post-graduate students for their college placements only. We had to look for interviews online and contact seniors to know about their interviews. We decided that we wouldn't want our juniors to spend time and energy in collating these resources before they started their actual preparation.
-              </p>
+                <p className="cb-para cb-reveal" data-delay="90">
+                  After extensively preparing for consulting companies in the last two years and cracking interviews of multiple corporate giants including the likes of Kearney, Accenture Strategy, ZS Associates & Zomato, we decided to go ahead with the preparation for consulting companies as our main subject.
+                </p>
 
-              <p className="cb-letter-p cb-reveal" data-delay="360">
-                With our aim to reach out to every student, regardless of their background, we will make our book available free of cost so that it is just a click away for anyone who needs it.
-              </p>
+                <p className="cb-para cb-reveal" data-delay="180">
+                  This book happens to be <span className="cb-letter-em">University of Delhi's first Consulting Case Book</span>, having details pertaining to the case interviews of the big shots in the space. We have gathered resources from our experience and from our fellow candidates placed at McKinsey & Co., Kearney, BCG, Dalberg, L. E. K. Consulting, Kepler Cannon, Accenture Strategy, Zomato, Bain & Company, etc. This book contains end-to-end transcripts from the case interviews mentioned above, frameworks related to different case types, and all other details for a candidate to secure a job in the consulting space.
+                </p>
 
-              <p className="cb-letter-p cb-reveal" data-delay="450" style={{ marginBottom: 0 }}>
-                Lastly, we would also like to recommend other resources that we used for our preparation - we found Case Interviews Cracked and IIM-A's case books to be useful references.
-              </p>
+                <p className="cb-para cb-reveal" data-delay="270">
+                  We put our heart and soul into our journeys of preparing for these interviews because of how much we aspired to achieve our goals. Naturally, we also faced roadblocks at every step. We felt the need to come up with this case book because one of the major roadblocks was that there were next to <span className="cb-letter-em">no case books</span> at the <span className="cb-letter-em">undergraduate level</span>, as most of the case books are by post-graduate students for their college placements only. We had to look for interviews online and contact seniors to know about their interviews. We decided that we wouldn't want our juniors to spend time and energy in collating these resources before they started their actual preparation.
+                </p>
 
-              <div className="cb-letter-fleuron cb-reveal" data-delay="500" />
+                <p className="cb-para cb-reveal" data-delay="360">
+                  With our aim to reach out to every student, regardless of their background, we will make our book available free of cost so that it is just a click away for anyone who needs it.
+                </p>
+
+                <p className="cb-para cb-reveal" data-delay="450">
+                  Lastly, we would also like to recommend other resources that we used for our preparation - we found Case Interviews Cracked and IIM-A's case books to be useful references.
+                </p>
+
+                <div className="cb-letter-fleuron cb-reveal" data-delay="500" />
+              </div>
             </div>
           </div>
         </section>
