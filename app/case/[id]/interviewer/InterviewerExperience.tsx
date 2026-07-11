@@ -5,10 +5,11 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getDoc, onSnapshot } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { auth, storage, waitForAuthUser } from '@/lib/firebase/config'
+import { auth, signInAnonymouslyIfNeeded, storage, waitForAuthUser } from '@/lib/firebase/config'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { caseDoc, sessionDoc } from '@/lib/firebase/collections'
-import { apiPost } from '@/lib/api/client'
+import { apiGet, apiPost } from '@/lib/api/client'
+import SessionEndedScreen from '@/components/session/SessionEndedScreen'
 import { CaseForumSection } from '@/components/forum/CaseForumSection'
 import CasePreviewView from '@/components/case/CasePreviewView'
 import { CaseInterviewerMaster } from '@/components/case/CasePreviewMaster'
@@ -807,6 +808,19 @@ export function InterviewerPageInner({
 	const lobbyId = searchParams.get('lobby')
 
 	const [currentView, setCurrentView] = useState<'case' | 'feedback' | 'success'>('case')
+
+	// Dead-link guard: was this session ALREADY completed/abandoned before this
+	// page was opened (a stale/bookmarked interviewer link)? The live session
+	// monitor below only runs in remote mode (it early-returns on !isRemoteMode),
+	// so local sessions had no protection at all — a completed local link just
+	// loaded the interactive case. This mount-time check covers both modes.
+	// It does NOT interfere with the in-session "candidate ended → evaluate"
+	// overlay flow, which happens on an already-mounted page (status was
+	// in_progress at mount, so this passes) rather than a fresh load.
+	const [sessionAlreadyEnded, setSessionAlreadyEnded] = useState(false)
+	const [checkingSessionEnded, setCheckingSessionEnded] = useState(
+		Boolean(lobbyId) && !previewMode,
+	)
 
 	const [scores, setScores] = useState<ScoreState>({
 		structure: 0,
@@ -1951,6 +1965,43 @@ export function InterviewerPageInner({
 		fetchData()
 	}, [lobbyId, params, previewMode, reloadTick, router])
 
+	// Mount-time dead-link guard. Reads the session status server-side (Admin
+	// SDK) so it works for any caller — including the anonymous per-browser
+	// interviewer whose UID isn't on the doc — and covers LOCAL sessions, which
+	// the remote-only live monitor above never touches. A session that's
+	// already completed/abandoned/fallback_unrated when the page loads is a
+	// stale link: show the ended screen instead of the interactive case.
+	useEffect(() => {
+		if (!lobbyId || previewMode) {
+			setCheckingSessionEnded(false)
+			return
+		}
+		let cancelled = false
+		;(async () => {
+			try {
+				await signInAnonymouslyIfNeeded()
+				if (cancelled) return
+				const remote = await apiGet<{ exists: boolean; status: string | null }>(
+					`/api/sessions/${encodeURIComponent(lobbyId)}/status`,
+				)
+				if (cancelled) return
+				if (
+					remote.status === 'completed' ||
+					remote.status === 'abandoned' ||
+					remote.status === 'fallback_unrated'
+				) {
+					setSessionAlreadyEnded(true)
+				}
+			} catch {
+				// Endpoint unreachable — fall through to the normal flow rather than
+				// blocking a legitimate active session.
+			} finally {
+				if (!cancelled) setCheckingSessionEnded(false)
+			}
+		})()
+		return () => { cancelled = true }
+	}, [lobbyId, previewMode])
+
 	// Signal to the candidate workspace that the interviewer case window is open
 	// (or closed). The workspace tab picks these up via 'storage' events.
 	// Only relevant for local (same-device) sessions where both tabs share localStorage.
@@ -2424,7 +2475,11 @@ useEffect(() => {
 		setSubmitting(false)
 	}
 
-	if (loading) return <PlatformLoader message="Getting your case ready" />
+	if (loading || checkingSessionEnded) return <PlatformLoader message="Getting your case ready" />
+
+	if (sessionAlreadyEnded) {
+		return <SessionEndedScreen />
+	}
 
 	if (loadError) {
 		return (
