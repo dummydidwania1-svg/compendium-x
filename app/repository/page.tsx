@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Suspense, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
-import { X } from 'lucide-react'
+import { X, NotebookPen } from 'lucide-react'
 import Footer from '@/components/dashboard/Footer'
 import Navbar from '@/components/dashboard/Navbar'
 import { db, signInAnonymouslyIfNeeded } from '@/lib/firebase/config'
@@ -1515,6 +1515,37 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
         <Navbar currentPage="repository" />
       )}
 
+      {/* Do your own case — persistent secondary utility, pinned just below the
+          fixed 70px navbar at the top-right. Rendered outside <main> so no
+          short/overflow parent can clip it. z-[90] keeps it beneath the nav
+          (z-[100]) and its mobile drawer. Tooltip shows on hover AND keyboard
+          focus (focus-within), never on click, and never blocks the button. */}
+      <div
+        className="fixed z-[90] top-[calc(70px+0.75rem)] right-[max(1rem,env(safe-area-inset-right))] md:right-[max(2rem,env(safe-area-inset-right))]"
+      >
+        <div className="group relative">
+          <button
+            type="button"
+            onClick={handleStartOwnCase}
+            disabled={!!pendingCaseId}
+            aria-label="Do your own case"
+            aria-describedby="own-case-tip"
+            className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-[#3D5A35]/30 bg-[#fff8f0]/95 px-3.5 py-2 text-[12px] font-medium text-[#3D5A35] shadow-[0_1px_2px_rgba(69,58,42,0.06),0_6px_16px_-8px_rgba(61,90,53,0.28)] backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,transform] duration-200 hover:border-[#3D5A35]/55 hover:bg-[#fbf3e6] hover:shadow-[0_2px_4px_rgba(69,58,42,0.08),0_10px_22px_-8px_rgba(61,90,53,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3D5A35]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdf6ec] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none sm:px-4"
+          >
+            <NotebookPen aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#3D5A35]/80" strokeWidth={1.75} />
+            <span className="hidden sm:inline">{pendingCaseId === OWN_CASE_ID ? 'Starting…' : 'Do your own case'}</span>
+            <span className="sm:hidden">{pendingCaseId === OWN_CASE_ID ? 'Starting…' : 'Own case'}</span>
+          </button>
+          <span
+            id="own-case-tip"
+            role="tooltip"
+            className="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-[91] w-[240px] max-w-[calc(100vw-2rem)] translate-y-1 rounded-lg border border-[#3D5A35]/15 bg-[#fffaf3] px-3 py-2 text-left text-[11px] leading-snug text-[#5c4033] opacity-0 shadow-[0_10px_28px_-12px_rgba(61,90,53,0.4)] transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:transition-none"
+          >
+            Practise a case from your own casebook with the same recording, transcript and evaluation tools.
+          </span>
+        </div>
+      </div>
+
       {/* pt-[90px] clears the fixed 70px navbar + breathing room */}
       <main
         className={`min-h-[88vh] px-4 md:px-8 ${
@@ -1526,8 +1557,8 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
         <section data-stuck={stuck ? 'true' : undefined} data-mode={selectionMode ? 'select' : undefined} className="mx-auto w-full max-w-[1320px] pb-16">
 
           {/* Header */}
-          <div className="mb-12 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-            <div className="max-w-[760px]">
+          <div className="mb-12 max-w-[760px]">
+            <div>
               <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 pl-[2px]">
                 <span className="text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">
                   Repository
@@ -1557,20 +1588,6 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
                   : 'Browse available cases, search and filter by type or level, and preview before practicing.'}
               </p>
             </div>
-
-            {/* Do your own case — compact secondary action. Inline on the right
-                of the header on desktop; stacks left-aligned beneath the title on
-                narrow screens. Reuses the full session flow with no curated case. */}
-            <button
-              type="button"
-              onClick={handleStartOwnCase}
-              disabled={!!pendingCaseId}
-              aria-label="Do your own case"
-              className="group inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-[#3D5A35]/25 bg-[#fff8f0] px-4 py-2 text-[12px] font-medium text-[#3D5A35] transition-colors duration-200 hover:border-[#3D5A35]/45 hover:bg-[#3D5A35]/8 disabled:cursor-not-allowed disabled:opacity-60 md:mt-1"
-            >
-              {pendingCaseId === OWN_CASE_ID ? 'Starting…' : 'Do your own case'}
-              <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
-            </button>
           </div>
 
           {/* Framework chips - standalone, above the case table container */}
