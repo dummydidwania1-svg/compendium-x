@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Navbar from '@/components/dashboard/Navbar'
 import Footer from '@/components/dashboard/Footer'
 
@@ -528,10 +528,131 @@ animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
   #ccx-main-title { font-size: clamp(32px, 11vw, 44px) !important; }
   header.ccx-hero .hero-inner { padding: 0 18px !important; }
 }
+
+/* ─── HOW TO USE LINK ─── */
+.ccx-how-to-use {
+  display: inline-block;
+  margin-top: 20px;
+  font-family: 'Newsreader', serif;
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(69, 58, 42, 0.55);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(69, 58, 42, 0.3);
+  transition: color 0.25s ease, text-decoration-color 0.25s ease;
+}
+.ccx-how-to-use:hover {
+  color: rgba(69, 58, 42, 0.85);
+  text-decoration-color: rgba(69, 58, 42, 0.6);
+}
+
+/* ─── VIDEO OVERLAY ─── */
+.ccx-video-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: rgba(30, 27, 21, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.ccx-video-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.ccx-video-modal {
+  position: relative;
+  width: min(860px, 92vw);
+  background: var(--parchment);
+  box-shadow: 0 40px 100px rgba(0,0,0,0.35), 0 12px 32px rgba(0,0,0,0.18);
+  transform: translateY(16px) scale(0.97);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ccx-video-overlay.open .ccx-video-modal {
+  transform: translateY(0) scale(1);
+}
+.ccx-video-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 16px;
+  border-bottom: 1px solid rgba(69, 58, 42, 0.1);
+}
+.ccx-video-modal__title {
+  font-family: 'Newsreader', serif;
+  font-style: italic;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text-heading);
+  margin: 0;
+}
+.ccx-video-modal__close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid rgba(69, 58, 42, 0.15);
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  transition: background 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+.ccx-video-modal__close:hover {
+  background: rgba(69, 58, 42, 0.08);
+  color: var(--text-heading);
+}
+.ccx-video-modal__body {
+  padding: 24px;
+}
+.ccx-video-placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, var(--toasty) 0%, #e8e0d4 100%);
+  border: 1px solid rgba(69, 58, 42, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.ccx-video-placeholder__icon {
+  width: 64px;
+  height: 64px;
+  border: 1.5px solid rgba(69, 58, 42, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(69, 58, 42, 0.35);
+}
+.ccx-video-placeholder__label {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(69, 58, 42, 0.4);
+}
 `
 
 
 export default function LandingPage() {
+  const [showVideoOverlay, setShowVideoOverlay] = useState(false)
+
   useEffect(() => {
     const cleanups: Array<() => void> = []
 
@@ -765,11 +886,44 @@ const tRemove = setTimeout(() => {
                 DO A CASE
               </a>
             </div>
+            <button className="ccx-how-to-use" onClick={() => setShowVideoOverlay(true)}>
+              How to use
+            </button>
           </div>
         </header>
       </main>
 
       <Footer />
+
+      {/* Video overlay */}
+      <div
+        className={`ccx-video-overlay${showVideoOverlay ? ' open' : ''}`}
+        onClick={(e) => { if (e.target === e.currentTarget) setShowVideoOverlay(false) }}
+        onKeyDown={(e) => { if (e.key === 'Escape') setShowVideoOverlay(false) }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="How to use"
+        tabIndex={-1}
+      >
+        <div className="ccx-video-modal">
+          <div className="ccx-video-modal__header">
+            <p className="ccx-video-modal__title">How to use</p>
+            <button className="ccx-video-modal__close" onClick={() => setShowVideoOverlay(false)} aria-label="Close">
+              ✕
+            </button>
+          </div>
+          <div className="ccx-video-modal__body">
+            <div className="ccx-video-placeholder">
+              <div className="ccx-video-placeholder__icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+              <span className="ccx-video-placeholder__label">Video coming soon</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
