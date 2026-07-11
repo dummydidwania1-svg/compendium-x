@@ -538,6 +538,18 @@ export default function MarketingAuthPanel({
         try {
           const result = await signInWithEmailAndPassword(auth, normalizedEmail, password)
 
+          // Refresh from the server before reading emailVerified. Right after a
+          // user clicks the verification link, the value cached on the User can
+          // be stale in EITHER direction — reload() makes it authoritative, so
+          // we don't (a) block a just-verified user, or (b) fire the onboarding
+          // email while the backend still considers them unverified (which
+          // makes the onboarding callable no-op on its server-side check).
+          try {
+            await result.user.reload()
+          } catch {
+            // Non-fatal — fall back to whatever the sign-in token carried.
+          }
+
           // Accounts with Google already linked are inherently verified —
           // Google vouched for the email before the password was ever added
           // (e.g. via "Set Password" in Account). Never re-gate those on
