@@ -201,7 +201,7 @@ export function buildOnboardingEmailHtml(firstName: string): string {
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td style="background-color:#3d5a35;">
-                      <a class="cta-link" href="https://www.casecompendiumx.in/repository" style="display:inline-block;padding:15px 25px;font-family:Arial,sans-serif;font-size:14px;line-height:18px;font-weight:bold;letter-spacing:.2px;color:#fff8f0;text-decoration:none;">
+                      <a class="cta-link" href="https://www.casecompendiumx.in/practice" style="display:inline-block;padding:15px 25px;font-family:Arial,sans-serif;font-size:14px;line-height:18px;font-weight:bold;letter-spacing:.2px;color:#fff8f0;text-decoration:none;">
                         Do your first case <span style="font-size:18px;line-height:14px;vertical-align:-1px;">&nbsp;&rsaquo;</span>
                       </a>
                     </td>
