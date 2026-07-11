@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Info } from 'lucide-react'
 import Navbar from '@/components/dashboard/Navbar'
+import HowToUseOverlay from '@/components/HowToUseOverlay'
 import { waitForAuthUser } from '@/lib/firebase/config'
 import PlatformLoader from '@/components/PlatformLoader'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
@@ -32,6 +34,9 @@ export default function PracticeModeSelection() {
   // Safari only grants one live mic stream per browser process, so Remote
   // mode is blocked outright there rather than failing confusingly mid-call.
   const [safariRemoteBlocked, setSafariRemoteBlocked] = useState(false)
+  // Which mode card's "How to use" overlay is open (null = closed). Locks the
+  // shared overlay to that card's mode (no switcher, no cross-mode nudge).
+  const [howTo, setHowTo] = useState<null | 'local' | 'remote'>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -448,9 +453,20 @@ export default function PracticeModeSelection() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#3D5A35]/6">
                 <div>
                   <span className="text-[9px] uppercase tracking-[0.25em] text-[#3D5A35]/50 font-semibold">01 / Remote</span>
-                  <h2 style={{ fontFamily: "'Newsreader', serif" }} className="text-2xl text-[#3D5A35] leading-tight mt-0.5">
-                    Remote Partner
-                  </h2>
+                  <div className="flex items-center gap-1">
+                    <h2 style={{ fontFamily: "'Newsreader', serif" }} className="text-2xl text-[#3D5A35] leading-tight mt-0.5">
+                      Remote Partner
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setHowTo('remote') }}
+                      aria-label="How to use — Remote Partner"
+                      title="How to use"
+                      className="mt-0.5 p-1 rounded-full text-[#5C4033]/25 hover:text-[#5C4033]/55 hover:bg-[#D9D0C4]/40 transition-all duration-200"
+                    >
+                      <Info className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
                 <div className="practice-mode-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -487,9 +503,20 @@ export default function PracticeModeSelection() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#3D5A35]/6">
                 <div>
                   <span className="text-[9px] uppercase tracking-[0.25em] text-[#3D5A35]/50 font-semibold">02 / Local</span>
-                  <h2 style={{ fontFamily: "'Newsreader', serif" }} className="text-2xl text-[#3D5A35] leading-tight mt-0.5">
-                    Same Device
-                  </h2>
+                  <div className="flex items-center gap-1">
+                    <h2 style={{ fontFamily: "'Newsreader', serif" }} className="text-2xl text-[#3D5A35] leading-tight mt-0.5">
+                      Same Device
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setHowTo('local') }}
+                      aria-label="How to use — Same Device"
+                      title="How to use"
+                      className="mt-0.5 p-1 rounded-full text-[#5C4033]/25 hover:text-[#5C4033]/55 hover:bg-[#D9D0C4]/40 transition-all duration-200"
+                    >
+                      <Info className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
                 <div className="practice-mode-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3D5A35" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -611,6 +638,12 @@ export default function PracticeModeSelection() {
           </div>
         </div>
       </footer>
+
+      <HowToUseOverlay
+        open={howTo !== null}
+        lockedMode={howTo ?? undefined}
+        onClose={() => setHowTo(null)}
+      />
     </div>
   )
 }

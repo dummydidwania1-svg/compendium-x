@@ -189,7 +189,6 @@ const HomePage = () => {
   const [activeTab, setActiveTab] = useState<TabId>('ai-models');
   const [featureProgress, setFeatureProgress] = useState(0);
   const [showDemoModal, setShowDemoModal] = useState(false);
-  const [showHowToUseModal, setShowHowToUseModal] = useState(false);
 
   const sectionRef = useRef<HTMLElement>(null);
   const tabProgressRef = useRef<Record<TabId, number>>({ 'ai-models': 0, dashboard: 0, repository: 0 });
@@ -1577,7 +1576,7 @@ const HomePage = () => {
           <p className="font-body text-lg text-[#6d6151] max-w-2xl mx-auto mb-10 leading-relaxed">
             The case book a million readers grew up on. Now built to coach you.
           </p>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-4">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <Link
               href="/repository"
               className="inline-flex min-w-[220px] items-center justify-center whitespace-nowrap bg-[#3D5A35] px-8 py-4 text-xs uppercase tracking-[0.2em] text-white transition-all hover:bg-[#3D5A35]/90"
@@ -1591,18 +1590,10 @@ const HomePage = () => {
               Do A Case
             </Link>
           </div>
-          <div className="flex justify-center mb-6">
-            <button
-              onClick={() => setShowHowToUseModal(true)}
-              className="font-headline italic text-sm text-[#434840]/60 hover:text-[#434840] transition-colors"
-            >
-              How to use
-            </button>
-          </div>
         </div>
       </header>
 
-      <section className="pt-6 pb-24 px-4 md:px-8 overflow-hidden">
+      <section className="pt-12 pb-24 px-4 md:px-8 overflow-hidden">
         <div className="max-w-7xl mx-auto text-center mb-12">
           <h2 className="font-headline font-light text-[#453a2a] tracking-tight text-balance" style={{ fontSize: 'clamp(2rem, 5vw, 3.75rem)' }}>Contributors</h2>
         </div>
@@ -1639,8 +1630,7 @@ const HomePage = () => {
       <section ref={sectionRef} id="features-section" style={{ height: '220vh' }}>
         <div id="features-pinned" style={{ position: 'sticky', top: '70px', height: 'calc(100vh - 70px)', overflow: 'hidden', background: '#fff8f0', zIndex: 10 }}>
           <div id="features-header-inner">
-            <h2 className="font-headline font-light text-[#453a2a] tracking-tight mb-3 text-balance" style={{ fontSize: 'clamp(2rem, 6vw, 4.5rem)' }}>Our Features</h2>
-            <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#5C4033]/40 font-semibold mb-6" style={{ visibility: activeTab === 'ai-models' ? 'visible' : 'hidden' }}>Early Preview</p>
+            <h2 className="font-headline font-light text-[#453a2a] tracking-tight mb-8 text-balance" style={{ fontSize: 'clamp(2rem, 6vw, 4.5rem)' }}>Our Features</h2>
             <div className="flex justify-center gap-2" id="tab-buttons">
               {(['ai-models', 'dashboard', 'repository'] as TabId[]).map((tab) => (
                 <button
@@ -2086,34 +2076,6 @@ const HomePage = () => {
 
       <Footer currentPage="home" />
       {showDemoModal && <AIDemoModal onClose={() => setShowDemoModal(false)} />}
-
-      {showHowToUseModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-          onClick={() => setShowHowToUseModal(false)}
-        >
-          <div
-            className="relative w-full max-w-3xl mx-4 aspect-video bg-black rounded-sm overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* TODO: replace src with actual video URL */}
-            <video
-              src=""
-              controls
-              autoPlay
-              className="w-full h-full object-contain"
-              playsInline
-            />
-            <button
-              onClick={() => setShowHowToUseModal(false)}
-              className="absolute top-3 right-3 text-white/70 hover:text-white transition-colors"
-              aria-label="Close"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>close</span>
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
