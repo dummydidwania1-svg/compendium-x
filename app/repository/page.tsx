@@ -1526,8 +1526,8 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
         <section data-stuck={stuck ? 'true' : undefined} data-mode={selectionMode ? 'select' : undefined} className="mx-auto w-full max-w-[1320px] pb-16">
 
           {/* Header */}
-          <div className="mb-12 max-w-[760px]">
-            <div>
+          <div className="mb-12 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+            <div className="max-w-[760px]">
               <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 pl-[2px]">
                 <span className="text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">
                   Repository
@@ -1557,41 +1557,21 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
                   : 'Browse available cases, search and filter by type or level, and preview before practicing.'}
               </p>
             </div>
-          </div>
 
-          {/* Do your own case — prominent entry at the top of the repository.
-              Reuses the full session flow; the interviewer brings their own
-              material instead of a curated case. */}
-          <button
-            type="button"
-            onClick={handleStartOwnCase}
-            disabled={!!pendingCaseId}
-            aria-label="Do your own case"
-            className="group mb-8 flex w-full items-center justify-between gap-5 rounded-[22px] border border-[#3D5A35]/25 bg-[linear-gradient(120deg,rgba(61,90,53,0.08),rgba(196,168,130,0.06))] px-6 py-5 text-left transition-colors duration-200 hover:border-[#3D5A35]/45 hover:bg-[linear-gradient(120deg,rgba(61,90,53,0.12),rgba(196,168,130,0.09))] disabled:cursor-not-allowed disabled:opacity-60 md:px-8 md:py-6"
-          >
-            <div className="min-w-0">
-              <span className="mb-2 inline-block text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">
-                Bring your own material
-              </span>
-              <h2
-                style={{ fontFamily: "'Newsreader', serif" }}
-                className="text-2xl font-light leading-tight tracking-tight text-[#453a2a] md:text-3xl"
-              >
-                Do your own case
-              </h2>
-              <p className="mt-2 max-w-[560px] text-[13px] leading-relaxed text-[#5c4033]/62">
-                {selectionMode
-                  ? 'Run a full interview with a case you bring yourself — same recording, transcript, and scoring as any repository case.'
-                  : 'Start a session and lead the interview with your own case — same recording, transcript, and scoring as any repository case.'}
-              </p>
-            </div>
-            <span
-              aria-hidden
-              className="shrink-0 rounded-full border border-[#3D5A35]/35 bg-[#fff8f0] px-4 py-2 text-[12px] font-medium text-[#3D5A35] transition-colors duration-200 group-hover:border-[#3D5A35]/55 group-hover:bg-[#3D5A35]/8"
+            {/* Do your own case — compact secondary action. Inline on the right
+                of the header on desktop; stacks left-aligned beneath the title on
+                narrow screens. Reuses the full session flow with no curated case. */}
+            <button
+              type="button"
+              onClick={handleStartOwnCase}
+              disabled={!!pendingCaseId}
+              aria-label="Do your own case"
+              className="group inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-[#3D5A35]/25 bg-[#fff8f0] px-4 py-2 text-[12px] font-medium text-[#3D5A35] transition-colors duration-200 hover:border-[#3D5A35]/45 hover:bg-[#3D5A35]/8 disabled:cursor-not-allowed disabled:opacity-60 md:mt-1"
             >
-              {pendingCaseId === OWN_CASE_ID ? 'Starting…' : selectionMode ? 'Start →' : 'Begin →'}
-            </span>
-          </button>
+              {pendingCaseId === OWN_CASE_ID ? 'Starting…' : 'Do your own case'}
+              <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+            </button>
+          </div>
 
           {/* Framework chips - standalone, above the case table container */}
           {!selectionMode && !loading && (
