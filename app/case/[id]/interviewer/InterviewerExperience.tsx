@@ -2475,11 +2475,14 @@ useEffect(() => {
 		setSubmitting(false)
 	}
 
-	if (loading || checkingSessionEnded) return <PlatformLoader message="Getting your case ready" />
-
+	// Ended takes priority over the case-load gate: once the status check
+	// confirms the session is over, show the ended screen immediately rather
+	// than waiting on the (now irrelevant) case fetch to finish.
 	if (sessionAlreadyEnded) {
 		return <SessionEndedScreen />
 	}
+
+	if (loading || checkingSessionEnded) return <PlatformLoader message="Getting your case ready" />
 
 	if (loadError) {
 		return (
