@@ -401,12 +401,26 @@ export function buildVerificationEmailHtml(firstName: string, verificationLink: 
 /* -------------------------------------------------------------------------- */
 /* Raw MIME + Gmail send (service-account, contact@casecompendiumx.in)        */
 /* -------------------------------------------------------------------------- */
+
+// RFC 2047 encoded-word for a header value containing non-ASCII characters
+// (e.g. an emoji in the subject). Pure-ASCII values pass through unchanged so
+// ordinary subjects stay human-readable in the raw message.
+function encodeHeaderValue(value: string): string {
+  // Non-ASCII if any code unit is above 0x7F -> RFC 2047 encoded-word.
+  for (let i = 0; i < value.length; i += 1) {
+    if (value.charCodeAt(i) > 0x7f) {
+      return `=?UTF-8?B?${Buffer.from(value, 'utf-8').toString('base64')}?=`
+    }
+  }
+  return value
+}
+
 function buildRawEmail(opts: { from: string; to: string; subject: string; html: string }): string {
   const boundary = `boundary_${randomUUID().replace(/-/g, '')}`
   const message = [
     `From: ${opts.from}`,
     `To: ${opts.to}`,
-    `Subject: ${opts.subject}`,
+    `Subject: ${encodeHeaderValue(opts.subject)}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
     '',

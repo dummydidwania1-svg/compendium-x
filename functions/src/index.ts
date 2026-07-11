@@ -2191,7 +2191,7 @@ async function resolveFirstName(uid: string, displayName: string | null | undefi
   return firstNameFrom(null)
 }
 
-const ONBOARDING_SUBJECT = 'Your first case starts here'
+const ONBOARDING_SUBJECT = 'Your first case is 3 minutes away 🚀'
 const VERIFICATION_SUBJECT = 'Verify your email for Case CompendiumX'
 
 // Claims the one-time onboarding-email slot for a uid. Returns true only for
