@@ -16,7 +16,7 @@ import SessionEndedScreen from '@/components/session/SessionEndedScreen'
 import { isSafariBrowser } from '@/lib/browser'
 import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
-import { apiPost } from '@/lib/api/client'
+import { apiGet, apiPost } from '@/lib/api/client'
 import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, CANDIDATE_HEARTBEAT_MS, isCandidateBeatStale, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession, interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
@@ -1082,14 +1082,38 @@ if (!isCandidateBeatStale(beat)) {
       try {
         // Interviewers arrive via shared links and are often not authenticated
         // yet — a sibling effect below fires signInAnonymouslyIfNeeded(), but
-        // it's unawaited there, so this read can race ahead of it and fail
-        // with permission-denied on the Firestore rules. That failure used to
-        // fall into the catch below and silently show the normal welcome
-        // flow (mic gate, "Welcome, Interviewer") for a session that had
-        // actually already ended. Await auth here directly so this read is
-        // never racing against it.
+        // it's unawaited there, so a Firestore read can race ahead of it. Await
+        // auth here directly so nothing below races against it.
         await signInAnonymouslyIfNeeded()
         if (cancelled) return
+
+        // Authoritative dead-link check via the server (Admin SDK), done BEFORE
+        // the client getDoc below. The interviewer is an anonymous per-browser
+        // user whose UID is only ever on the session doc in the ORIGINAL
+        // browser; from any other browser a fresh anonymous UID matches neither
+        // candidateId nor interviewerId, so the Firestore rules reject the
+        // client read outright (permission-denied) — which used to fall through
+        // to the live welcome flow and make an already-ended session look
+        // active. The status endpoint reads server-side and works for anyone.
+        try {
+          const remoteStatus = await apiGet<{ exists: boolean; status: string | null }>(
+            `/api/sessions/${encodeURIComponent(lobbyId)}/status`,
+          )
+          if (cancelled) return
+          if (
+            remoteStatus.status === 'completed' ||
+            remoteStatus.status === 'abandoned' ||
+            remoteStatus.status === 'fallback_unrated'
+          ) {
+            setSessionAlreadyEnded(true)
+            setCheckingResume(false)
+            return
+          }
+        } catch {
+          // Status endpoint unreachable — fall through to the client-doc path,
+          // which still resolves the participant (same-browser) cases below.
+        }
+
         const snap = await getDoc(sessionDoc(lobbyId))
         if (cancelled) return
         if (!snap.exists()) {
