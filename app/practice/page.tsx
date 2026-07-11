@@ -10,7 +10,8 @@ import { waitForAuthUser } from '@/lib/firebase/config'
 import PlatformLoader from '@/components/PlatformLoader'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import SafariRemoteBlockModal from '@/components/permissions/SafariRemoteBlockModal'
-import { isSafariBrowser } from '@/lib/browser'
+import MobileBlockModal from '@/components/permissions/MobileBlockModal'
+import { isMobileDevice, isSafariBrowser } from '@/lib/browser'
 import { interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
 import { startPrimedRecording, pickSupportedMimeType, micDebug } from '@/lib/session/primedMic'
 
@@ -37,9 +38,19 @@ export default function PracticeModeSelection() {
   // Which mode card's "How to use" overlay is open (null = closed). Locks the
   // shared overlay to that card's mode (no switcher, no cross-mode nudge).
   const [howTo, setHowTo] = useState<null | 'local' | 'remote'>(null)
+  // Neither mode works on a phone (Same Device needs a split-screen popup,
+  // Remote needs a dense multi-panel workspace) — checked before the auth
+  // redirect below, since there's no point forcing a sign-in just to show
+  // this message.
+  const [mobileBlocked, setMobileBlocked] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
+    if (isMobileDevice()) {
+      setMobileBlocked(true)
+      setLoading(false)
+      return
+    }
     const checkUser = async () => {
       const user = await waitForAuthUser()
       // Anonymous users (silently provisioned for guest interviewers on
@@ -190,6 +201,14 @@ export default function PracticeModeSelection() {
   }
 
   if (loading) return <PlatformLoader message="Getting things ready" />
+
+  if (mobileBlocked) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#fff8f0' }}>
+        <MobileBlockModal onDismiss={() => router.push('/')} />
+      </div>
+    )
+  }
 
   return (
     <div

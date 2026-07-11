@@ -11,9 +11,10 @@ import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { InterviewerMicRecovery } from '@/components/permissions/InterviewerMicRecovery'
 import { InterviewerMicGate } from '@/components/permissions/InterviewerMicGate'
 import SafariRemoteBlockModal from '@/components/permissions/SafariRemoteBlockModal'
+import MobileBlockModal from '@/components/permissions/MobileBlockModal'
 import PlatformLoader from '@/components/PlatformLoader'
 import SessionEndedScreen from '@/components/session/SessionEndedScreen'
-import { isSafariBrowser } from '@/lib/browser'
+import { isMobileDevice, isSafariBrowser } from '@/lib/browser'
 import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
 import { apiGet, apiPost } from '@/lib/api/client'
@@ -1611,10 +1612,23 @@ export default function LobbyPage() {
   const [safariRemoteBlockDismissed, setSafariRemoteBlockDismissed] = useState(false)
   const [safariCheckReady, setSafariCheckReady] = useState(false)
   const [safariRemoteBlocked, setSafariRemoteBlocked] = useState(false)
+
+  // Neither mode works on a phone (Same Device needs a split-screen popup,
+  // Remote needs a dense multi-panel workspace) — applies regardless of role
+  // or mode, unlike the Safari check above which is remote-only. Same
+  // hydration-safety pattern: mobileCheckReady stays false until after mount.
+  const [mobileBlockDismissed, setMobileBlockDismissed] = useState(false)
+  const [mobileCheckReady, setMobileCheckReady] = useState(false)
+  const [mobileBlocked, setMobileBlocked] = useState(false)
   useEffect(() => {
     setSafariRemoteBlocked(requestedSessionMode === 'remote' && isSafariBrowser())
     setSafariCheckReady(true)
   }, [requestedSessionMode])
+
+  useEffect(() => {
+    setMobileBlocked(isMobileDevice())
+    setMobileCheckReady(true)
+  }, [])
 
   // Safari only: write a localStorage signal on mount so the candidate tab
   // can detect this window even when window.opener is null (happens when
@@ -2173,12 +2187,28 @@ let interviewerStaleStreak = 0
   // Hard stop before any mic prompt or session-join logic — no lobby UI
   // renders underneath, since the raw shared link has no surrounding "Do a
   // Case" page to speak of for whoever opened it. Also covers the brief
-  // window before safariCheckReady flips true, so Safari never gets a
-  // single frame of the real (unblocked) lobby before the block kicks in.
-  if (requestedSessionMode === 'remote' && (!safariCheckReady || safariRemoteBlocked)) {
+  // window before the mobile/Safari checks flip ready, so neither ever gets
+  // a single frame of the real (unblocked) lobby before the block kicks in.
+  // Mobile takes priority when both apply (e.g. an iPhone) since it's the
+  // broader block — it also covers Same Device, which the Safari check
+  // (remote-only) does not.
+  const mobileGateActive = !mobileCheckReady || mobileBlocked
+  const safariGateActive = requestedSessionMode === 'remote' && (!safariCheckReady || safariRemoteBlocked)
+
+  if (mobileGateActive || safariGateActive) {
+    const showMobileModal = mobileCheckReady && mobileBlocked && !mobileBlockDismissed
+    const showSafariModal =
+      !mobileBlocked && safariCheckReady && safariRemoteBlocked && !safariRemoteBlockDismissed
+
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#fff8f0' }}>
-        {safariCheckReady && !safariRemoteBlockDismissed && (
+        {showMobileModal && (
+          <MobileBlockModal
+            closeTabOnDismiss
+            onDismiss={() => setMobileBlockDismissed(true)}
+          />
+        )}
+        {showSafariModal && (
           <SafariRemoteBlockModal
             closeTabOnDismiss
             onDismiss={() => setSafariRemoteBlockDismissed(true)}
