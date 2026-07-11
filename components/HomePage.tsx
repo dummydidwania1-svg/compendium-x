@@ -189,6 +189,7 @@ const HomePage = () => {
   const [activeTab, setActiveTab] = useState<TabId>('ai-models');
   const [featureProgress, setFeatureProgress] = useState(0);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [showHowToUseModal, setShowHowToUseModal] = useState(false);
 
   const sectionRef = useRef<HTMLElement>(null);
   const tabProgressRef = useRef<Record<TabId, number>>({ 'ai-models': 0, dashboard: 0, repository: 0 });
@@ -1576,7 +1577,7 @@ const HomePage = () => {
           <p className="font-body text-lg text-[#6d6151] max-w-2xl mx-auto mb-10 leading-relaxed">
             The case book a million readers grew up on. Now built to coach you.
           </p>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-4">
             <Link
               href="/repository"
               className="inline-flex min-w-[220px] items-center justify-center whitespace-nowrap bg-[#3D5A35] px-8 py-4 text-xs uppercase tracking-[0.2em] text-white transition-all hover:bg-[#3D5A35]/90"
@@ -1589,6 +1590,14 @@ const HomePage = () => {
             >
               Do A Case
             </Link>
+          </div>
+          <div className="flex justify-center mb-6">
+            <button
+              onClick={() => setShowHowToUseModal(true)}
+              className="font-headline italic text-sm text-[#434840]/60 hover:text-[#434840] transition-colors"
+            >
+              How to use
+            </button>
           </div>
         </div>
       </header>
@@ -2077,6 +2086,34 @@ const HomePage = () => {
 
       <Footer currentPage="home" />
       {showDemoModal && <AIDemoModal onClose={() => setShowDemoModal(false)} />}
+
+      {showHowToUseModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={() => setShowHowToUseModal(false)}
+        >
+          <div
+            className="relative w-full max-w-3xl mx-4 aspect-video bg-black rounded-sm overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* TODO: replace src with actual video URL */}
+            <video
+              src=""
+              controls
+              autoPlay
+              className="w-full h-full object-contain"
+              playsInline
+            />
+            <button
+              onClick={() => setShowHowToUseModal(false)}
+              className="absolute top-3 right-3 text-white/70 hover:text-white transition-colors"
+              aria-label="Close"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>close</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
