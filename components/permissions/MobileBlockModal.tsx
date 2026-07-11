@@ -84,7 +84,7 @@ export default function MobileBlockModal({
               </p>
               <p style={{ fontSize: '12px', color: 'rgba(92,64,51,0.68)', lineHeight: 1.55 }}>
                 Case sessions run a split-screen interviewer view, live transcript,
-                and recording controls side by side — none of that fits on a phone.
+                and recording controls side by side. None of that fits on a phone.
                 Grab a laptop or desktop and you&apos;ll be good to go.
               </p>
             </div>
