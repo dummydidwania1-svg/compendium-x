@@ -151,21 +151,7 @@ const PAGE_CSS = `
   .cb-corner.bl { bottom: 0; left: 0; border-bottom-width: 1px; border-left-width: 1px; }
   .cb-corner.br { bottom: 0; right: 0; border-bottom-width: 1px; border-right-width: 1px; }
 
-  /* Scholar Green breathing aura — the only green on this page */
-  .cb-aura {
-    position: absolute; left: 50%; bottom: -70px; transform: translateX(-50%);
-    width: 120%; height: 240px; pointer-events: none; z-index: 0;
-    background: radial-gradient(ellipse at center, rgba(61,90,53,.09) 0%, transparent 65%);
-    animation: cbAura 7s ease-in-out infinite;
-  }
-  @keyframes cbAura {
-    0%, 100% { opacity: .55; transform: translateX(-50%) scale(1); }
-    50%      { opacity: 1;   transform: translateX(-50%) scale(1.06); }
-  }
-  @media (prefers-reduced-motion: reduce) { .cb-aura { animation: none; } }
-
   .cb-para {
-    position: relative; z-index: 1;
     font-family: 'Newsreader', serif; font-weight: 400;
     font-size: 17px; line-height: 1.9; color: #4a3f30; margin-bottom: 32px;
   }
@@ -175,7 +161,6 @@ const PAGE_CSS = `
     font-size: 1.02em; color: #3b2f2f;
   }
   .cb-letter-fleuron {
-    position: relative; z-index: 1;
     width: 5px; height: 5px; background: #5C4033; opacity: .55;
     transform: rotate(45deg); margin: 52px auto 0;
   }
@@ -346,7 +331,6 @@ export default function TheCasebook() {
                 <span className="cb-corner tr" />
                 <span className="cb-corner bl" />
                 <span className="cb-corner br" />
-                <div className="cb-aura" />
 
                 <p className="cb-para cb-reveal" data-delay="0">
                   As third-year students, passing out of Shri Ram College of Commerce, after a rigorous placement season, our team wanted to pass on the knowledge that we gathered throughout this year, to aspirants stepping into our shoes in the coming years.
