@@ -10,7 +10,7 @@ import { auth } from '@/lib/firebase/config';
 import { useIsPreview } from './DashboardContext';
 
 interface NavbarProps {
-  currentPage: 'home' | 'dashboard' | 'about' | 'about-ccx' | 'repository' | 'practice' | 'privacy' | 'collaborators';
+  currentPage: 'home' | 'dashboard' | 'about' | 'about-ccx' | 'repository' | 'practice' | 'privacy' | 'collaborators' | 'the-casebook';
 }
 
 const Navbar = ({ currentPage }: NavbarProps) => {
@@ -120,7 +120,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
               <span
                 style={{ fontFamily: "'Work Sans', sans-serif" }}
                 className={`nav-link nav-dropdown-trigger text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${
-                  currentPage === 'about' || currentPage === 'about-ccx' || currentPage === 'collaborators' ? 'active' : ''
+                  currentPage === 'about' || currentPage === 'about-ccx' || currentPage === 'collaborators' || currentPage === 'the-casebook' ? 'active' : ''
                 }`}
                 tabIndex={0}
               >
@@ -128,6 +128,11 @@ const Navbar = ({ currentPage }: NavbarProps) => {
                 <span className="material-symbols-outlined chevron">expand_more</span>
               </span>
               <div className="nav-dropdown-menu" role="menu">
+                <Link href="/the-casebook" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
+                  <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
+                    The Casebook
+                  </span>
+                </Link>
                 <Link href="/about-ccx" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
                   <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
                     The Platform
@@ -260,6 +265,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
               { href: '/repository', label: 'REPOSITORY', page: 'repository' },
               { href: '/practice', label: 'PRACTICE', page: 'practice' },
               { href: '/dashboard', label: 'DASHBOARD', page: 'dashboard' },
+              { href: '/the-casebook', label: 'THE CASEBOOK', page: 'the-casebook' },
               { href: '/about-ccx', label: 'THE PLATFORM', page: 'about-ccx' },
               { href: '/our-story', label: 'THE TEAM', page: 'about' },
               { href: '/collaborators', label: 'ACKNOWLEDGEMENTS', page: 'collaborators' },
