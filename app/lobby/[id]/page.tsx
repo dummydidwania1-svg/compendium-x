@@ -1875,11 +1875,16 @@ let interviewerStaleStreak = 0
         setTimeout(() => router.replace(workspaceRoute(data.caseId!, data.sessionMode)), 600)
         return
       }
-      if (data.status === 'completed' || data.status === 'abandoned' || data.status === 'fallback_unrated') {
+      // LIVE transition to completed while the candidate is present in the
+      // lobby (they finished the case just now). This is not a dead link —
+      // reopened/already-ended sessions are caught by the pre-checks in
+      // setupCandidateSession before this subscription is ever created — so
+      // preserve the original behavior of sending them to their dashboard to
+      // see results, rather than the "session ended, go home" screen.
+      if (data.status === 'completed') {
         disarmWaitingNudge()
         setInterviewerRemoteWindowClosed(false)
-        stopPolling()
-        setSessionAlreadyEnded(true)
+        router.replace('/dashboard')
         return
       }
       if (data.status === 'waiting') {
