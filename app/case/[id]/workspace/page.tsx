@@ -9,15 +9,17 @@ import { getDocs, getDoc, onSnapshot, query, where } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
 import { auth, storage, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc, evaluationsCol } from '@/lib/firebase/collections'
-import { apiPost } from '@/lib/api/client'
+import { apiGet, apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { releaseDisplayMedia } from '@/lib/permissions/displayMedia'
 import { writeCandidateBeat } from '@/lib/session/candidateTab'
 import { consumePrimedRecording, clearPrimedMic, micDebug } from '@/lib/session/primedMic'
+import SessionEndedScreen from '@/components/session/SessionEndedScreen'
+import PlatformLoader from '@/components/PlatformLoader'
 
 type SessionState = {
-  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
+  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing' | 'fallback_unrated'
   caseId?: string
   caseName?: string
   completedBy?: string
@@ -172,6 +174,18 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [resolvedCaseId, setResolvedCaseId] = useState('')
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [sessionIssue, setSessionIssue] = useState('')
+  // True when this lobby's session was ALREADY completed/abandoned before this
+  // page ever mounted (a stale link, browser back, or old bookmark) — as
+  // opposed to a session that completes WHILE this tab is open, which the
+  // existing onSnapshot handling below already covers separately.
+  const [sessionAlreadyEnded, setSessionAlreadyEnded] = useState(false)
+  // Gates ALL rendering (including the interactive workspace) until the
+  // one-shot session-status pre-check below resolves. Without this, the
+  // interactive case UI paints immediately on mount — before we know the
+  // session already ended — and the ended-screen only replaces it a beat
+  // later, which reads as a popup flashing over a live case. This must
+  // resolve to false before anything interactive is ever shown.
+  const [checkingSessionStatus, setCheckingSessionStatus] = useState(true)
   const [recordingMode, setRecordingMode] = useState<RecordingMode>(requestedMode)
   const [preferredRecordingMode, setPreferredRecordingMode] = useState<RecordingMode>(requestedMode)
   const [recordingState, setRecordingState] = useState<RecordingState>('idle')
@@ -1302,6 +1316,56 @@ const interviewerStaleStreakRef = useRef(0)
       }
       setCurrentUser(user)
 
+      // One-shot pre-check, before subscribing to anything: was this session
+      // already completed/abandoned before this page ever mounted (stale
+      // link, browser back, old bookmark)? If so, stop here — never start
+      // polling, never subscribe to onSnapshot, never touch the mic.
+      //
+      // Uses the server status endpoint (Admin SDK) as the authoritative
+      // source rather than a client getDoc: in local mode the candidate is
+      // often anonymous (a per-browser UID), so a client read from any other
+      // browser is rejected by the Firestore rules (permission-denied) and
+      // would fall through here to render the live case. The endpoint reads
+      // server-side and works for any authenticated caller.
+      if (sessionRef) {
+        try {
+          const remoteStatus = await apiGet<{ exists: boolean; status: string | null }>(
+            `/api/sessions/${encodeURIComponent(lobbyId!)}/status`,
+          )
+          if (
+            remoteStatus.status === 'completed' ||
+            remoteStatus.status === 'abandoned' ||
+            remoteStatus.status === 'fallback_unrated'
+          ) {
+            setSessionAlreadyEnded(true)
+            setCheckingSessionStatus(false)
+            return
+          }
+        } catch {
+          // Endpoint unreachable — fall back to a client getDoc so the
+          // participant (same-browser) case is still covered.
+          try {
+            const preCheckSnapshot = await getDoc(sessionRef)
+            if (preCheckSnapshot.exists()) {
+              const preCheckData = preCheckSnapshot.data() as SessionState
+              if (
+                preCheckData.status === 'completed' ||
+                preCheckData.status === 'abandoned' ||
+                preCheckData.status === 'fallback_unrated'
+              ) {
+                setSessionAlreadyEnded(true)
+                setCheckingSessionStatus(false)
+                return
+              }
+            }
+          } catch {
+            // Both checks failed — fall through to the normal flow rather than
+            // blocking a legitimate active session.
+          }
+        }
+      }
+      setCheckingSessionStatus(false)
+
       parseAndHandleEnded(localStorage.getItem('compendium-session-ended'))
 
       if (sessionRef) {
@@ -1470,6 +1534,13 @@ const interviewerStaleStreakRef = useRef(0)
       canStart: canStartRecording, declined: recordingConsentDeclined, mic: microphonePermissionState,
     })
     if (autoStartAttemptedRef.current) return
+    // checkingSessionStatus: the one-shot pre-check above hasn't resolved yet,
+    // so we don't know if this session is already over — currentUser can
+    // already be set at this point (it's assigned before the pre-check
+    // await resolves), so gate on this explicitly rather than relying on
+    // sessionAlreadyEnded alone, which only flips true AFTER the check.
+    if (checkingSessionStatus) return
+    if (sessionAlreadyEnded) return
     if (!lobbyId || !resolvedCaseId || !currentUser) return
     if (!canStartRecording) return
     // Candidate chose to run the case without recording — never auto-start.
@@ -1498,7 +1569,7 @@ const interviewerStaleStreakRef = useRef(0)
         : 'Auto-starting microphone recording...'
     )
     void startCaptureFlow(preferredRecordingMode)
-  }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, recordingConsentDeclined, resolvedCaseId, startCaptureFlow])
+  }, [canStartRecording, checkingSessionStatus, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, recordingConsentDeclined, resolvedCaseId, sessionAlreadyEnded, startCaptureFlow])
 
   // Reload guard — intercepts reload triggers while recording is active.
   // Two separate sessionStorage keys:
@@ -2223,6 +2294,14 @@ interrupted: true,
               : isWaitingForUserStart
                 ? `When you press the button below, ${BROWSER === 'safari' ? 'Safari' : BROWSER === 'edge' ? 'Edge' : BROWSER === 'firefox' ? 'Firefox' : 'Chrome'} will ask for microphone access.`
                 : recoverableCaptureMessage || 'Use the Allow Recording button below to try again.'
+
+  if (checkingSessionStatus) {
+    return <PlatformLoader message="Getting your case ready" />
+  }
+
+  if (sessionAlreadyEnded) {
+    return <SessionEndedScreen />
+  }
 
   return (
     <div

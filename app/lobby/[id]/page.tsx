@@ -12,17 +12,18 @@ import { InterviewerMicRecovery } from '@/components/permissions/InterviewerMicR
 import { InterviewerMicGate } from '@/components/permissions/InterviewerMicGate'
 import SafariRemoteBlockModal from '@/components/permissions/SafariRemoteBlockModal'
 import PlatformLoader from '@/components/PlatformLoader'
+import SessionEndedScreen from '@/components/session/SessionEndedScreen'
 import { isSafariBrowser } from '@/lib/browser'
 import { auth, signInAnonymouslyIfNeeded, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc } from '@/lib/firebase/collections'
-import { apiPost } from '@/lib/api/client'
+import { apiGet, apiPost } from '@/lib/api/client'
 import { writeCandidateBeat, readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, CANDIDATE_HEARTBEAT_MS, isCandidateBeatStale, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession, interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 type SessionState = {
   caseId?: string
   caseName?: string
-  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
+  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing' | 'fallback_unrated'
   sessionMode?: 'remote' | 'local'
   expiresAt?: { toDate: () => Date } | Date
   interviewerBrowsing?: boolean
@@ -1000,6 +1001,7 @@ function InterviewerLobby({
   // wherever they left off, instead of always showing the generic welcome
   // screen. Checked once on mount, before the welcome UI renders.
   const [checkingResume, setCheckingResume] = useState(true)
+  const [sessionAlreadyEnded, setSessionAlreadyEnded] = useState(false)
   // Remote mode: show the full-screen mic gate before the welcome lobby.
   // Gate is skipped if mic was already granted on this device or the session
   // key indicates it was already shown and resolved.
@@ -1078,6 +1080,40 @@ if (!isCandidateBeatStale(beat)) {
     let cancelled = false
     const resume = async () => {
       try {
+        // Interviewers arrive via shared links and are often not authenticated
+        // yet — a sibling effect below fires signInAnonymouslyIfNeeded(), but
+        // it's unawaited there, so a Firestore read can race ahead of it. Await
+        // auth here directly so nothing below races against it.
+        await signInAnonymouslyIfNeeded()
+        if (cancelled) return
+
+        // Authoritative dead-link check via the server (Admin SDK), done BEFORE
+        // the client getDoc below. The interviewer is an anonymous per-browser
+        // user whose UID is only ever on the session doc in the ORIGINAL
+        // browser; from any other browser a fresh anonymous UID matches neither
+        // candidateId nor interviewerId, so the Firestore rules reject the
+        // client read outright (permission-denied) — which used to fall through
+        // to the live welcome flow and make an already-ended session look
+        // active. The status endpoint reads server-side and works for anyone.
+        try {
+          const remoteStatus = await apiGet<{ exists: boolean; status: string | null }>(
+            `/api/sessions/${encodeURIComponent(lobbyId)}/status`,
+          )
+          if (cancelled) return
+          if (
+            remoteStatus.status === 'completed' ||
+            remoteStatus.status === 'abandoned' ||
+            remoteStatus.status === 'fallback_unrated'
+          ) {
+            setSessionAlreadyEnded(true)
+            setCheckingResume(false)
+            return
+          }
+        } catch {
+          // Status endpoint unreachable — fall through to the client-doc path,
+          // which still resolves the participant (same-browser) cases below.
+        }
+
         const snap = await getDoc(sessionDoc(lobbyId))
         if (cancelled) return
         if (!snap.exists()) {
@@ -1087,8 +1123,9 @@ if (!isCandidateBeatStale(beat)) {
         const data = snap.data() as SessionState
         const mode = data.sessionMode === 'local' ? 'local' : 'remote'
 
-        if (data.status === 'completed' || data.status === 'abandoned') {
-          router.replace('/')
+        if (data.status === 'completed' || data.status === 'abandoned' || data.status === 'fallback_unrated') {
+          setSessionAlreadyEnded(true)
+          setCheckingResume(false)
           return
         }
         if (data.status === 'in_progress' && data.caseId) {
@@ -1177,6 +1214,10 @@ if (!isCandidateBeatStale(beat)) {
 
   if (checkingResume) {
     return <PlatformLoader message="Getting your space ready" />
+  }
+
+  if (sessionAlreadyEnded) {
+    return <SessionEndedScreen />
   }
 
   return (
@@ -1588,6 +1629,7 @@ export default function LobbyPage() {
   }, [isInterviewer, requestedSessionMode, lobbyId])
 
   const [checkingCandidate, setCheckingCandidate] = useState(!isInterviewer)
+  const [sessionAlreadyEnded, setSessionAlreadyEnded] = useState(false)
   const [sessionIssue, setSessionIssue] = useState('')
   const [candidateActionStatus, setCandidateActionStatus] = useState('')
   // After ~5 min in 'waiting' status (interviewer hasn't joined yet) we show
@@ -1833,6 +1875,12 @@ let interviewerStaleStreak = 0
         setTimeout(() => router.replace(workspaceRoute(data.caseId!, data.sessionMode)), 600)
         return
       }
+      // LIVE transition to completed while the candidate is present in the
+      // lobby (they finished the case just now). This is not a dead link —
+      // reopened/already-ended sessions are caught by the pre-checks in
+      // setupCandidateSession before this subscription is ever created — so
+      // preserve the original behavior of sending them to their dashboard to
+      // see results, rather than the "session ended, go home" screen.
       if (data.status === 'completed') {
         disarmWaitingNudge()
         setInterviewerRemoteWindowClosed(false)
@@ -1920,6 +1968,28 @@ let interviewerStaleStreak = 0
           return
         }
 
+        // Authoritative dead-link check via the server (Admin SDK), before the
+        // client getDoc below. In local mode the candidate is often anonymous
+        // (a per-browser UID), so from any browser other than the original the
+        // Firestore rules reject the client read and the setup would fall
+        // through to the live flow. The status endpoint works for any caller.
+        try {
+          const remoteStatus = await apiGet<{ exists: boolean; status: string | null }>(
+            `/api/sessions/${encodeURIComponent(lobbyId)}/status`,
+          )
+          if (
+            remoteStatus.status === 'completed' ||
+            remoteStatus.status === 'abandoned' ||
+            remoteStatus.status === 'fallback_unrated'
+          ) {
+            setSessionAlreadyEnded(true)
+            setCheckingCandidate(false)
+            return
+          }
+        } catch {
+          // Status endpoint unreachable — fall through to the client-doc path.
+        }
+
         const existingSession = await getDoc(sessionRef)
         if (existingSession.exists()) {
           const existingData = existingSession.data() as SessionState
@@ -1927,8 +1997,13 @@ let interviewerStaleStreak = 0
             router.replace(workspaceRoute(existingData.caseId, existingData.sessionMode))
             return
           }
-          if (existingData.status === 'completed') {
-            router.replace('/dashboard')
+          if (
+            existingData.status === 'completed' ||
+            existingData.status === 'abandoned' ||
+            existingData.status === 'fallback_unrated'
+          ) {
+            setSessionAlreadyEnded(true)
+            setCheckingCandidate(false)
             return
           }
           // Check 24h expiry on waiting sessions — if expired, block and
@@ -2115,6 +2190,10 @@ let interviewerStaleStreak = 0
 
   if (!isInterviewer && checkingCandidate) {
     return <PlatformLoader message="Getting your space ready" />
+  }
+
+  if (!isInterviewer && sessionAlreadyEnded) {
+    return <SessionEndedScreen />
   }
 
   if (isInterviewer) {

@@ -537,7 +537,14 @@ export default function MarketingAuthPanel({
         try {
           const result = await signInWithEmailAndPassword(auth, normalizedEmail, password)
 
-          if (!result.user.emailVerified) {
+          // Accounts with Google already linked are inherently verified —
+          // Google vouched for the email before the password was ever added
+          // (e.g. via "Set Password" in Account). Never re-gate those on
+          // emailVerified, which can also read stale immediately after a
+          // linkWithCredential() call due to backend replication lag.
+          const hasGoogleProvider = result.user.providerData.some((p) => p.providerId === 'google.com')
+
+          if (!result.user.emailVerified && !hasGoogleProvider) {
             // Resend verification and block sign-in
             await sendEmailVerification(result.user)
             await signOut(auth)

@@ -440,7 +440,63 @@ function layoutDesktop(
   }, { minX: Infinity, maxX: -Infinity })
 
   if (isFinite(bounds.minX)) {
-    const effectiveFootprint = (id: string) => (effW.get(id) ?? estNodeW(id)) + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
+    // Horizontal footprint used by the sibling-repacking below.
+    //
+    // The original footprint counted only a node's own box (+chevron). That is
+    // correct for a plain horizontal tree, but breaks once a branch uses vertical
+    // child-stacking: a stacked node draws its whole subtree as one narrow column
+    // straight down from its centre, while a NON-stacked sibling parent (e.g.
+    // "Existing Business", whose subtree fans out into two side-by-side columns)
+    // occupies far more horizontal space than its own box. Packing both by box
+    // width alone let the stacked branch land on top of the wide sibling's
+    // descendants (New Business column overlapping the Demand / Price columns).
+    //
+    // Fix: when the visible tree uses stacking anywhere, measure each node's real
+    // visible-subtree horizontal extent (from the already-assigned positions) and
+    // pack siblings by that. This runs shallow-first, so a node's descendants are
+    // still in their assign() layout when its extent is measured. Trees without
+    // any stacked node keep the exact original box-footprint packing (no-op), so
+    // every existing case is byte-for-byte unchanged.
+    const treeUsesStacking = ids.some((id) => NODES[id]?.stackChildren && vis.has(id))
+    // Bounding box of a node's entire visible subtree at its current positions.
+    // Used only when the tree employs vertical child-stacking; the repack passes
+    // run shallow-first, so a node's descendants are still in their assign()
+    // layout when this is measured.
+    const subtreeBoundsX = (id: string): { minL: number; maxR: number } => {
+      let minL = Infinity
+      let maxR = -Infinity
+      const walk = (n: string) => {
+        const p = pos.get(n)
+        if (p) {
+          const w = effW.get(n) ?? estNodeW(n)
+          const hasCh = (NODES[n]?.children?.length ?? 0) > 0
+          minL = Math.min(minL, p.x - w / 2)
+          maxR = Math.max(maxR, p.x + w / 2 + (hasCh ? 20 : 0))
+        }
+        ;(NODES[n]?.children ?? []).filter((c) => vis.has(c)).forEach(walk)
+      }
+      walk(id)
+      return { minL, maxR }
+    }
+    const effectiveFootprint = (id: string) => {
+      if (treeUsesStacking) {
+        const b = subtreeBoundsX(id)
+        if (isFinite(b.minL)) return b.maxR - b.minL
+      }
+      return (effW.get(id) ?? estNodeW(id)) + ((NODES[id]?.children?.length ?? 0) > 0 ? 34 : 0)
+    }
+    // Slide a whole visible subtree so its left edge lands at `left`. Falls back
+    // to the plain box-centre placement for non-stacking trees (identical to the
+    // original behaviour), so only stacked layouts change.
+    const packSubtreeAtLeft = (id: string, left: number, footprint: number) => {
+      const current = pos.get(id)
+      if (!current) return
+      if (treeUsesStacking) {
+        const b = subtreeBoundsX(id)
+        if (isFinite(b.minL)) { shiftVisibleSubtree(id, left - b.minL); return }
+      }
+      shiftVisibleSubtree(id, (left + footprint / 2) - current.x)
+    }
 
     const shiftVisibleSubtree = (id: string, delta: number) => {
       if (!delta) return
@@ -482,15 +538,27 @@ function layoutDesktop(
       let cursor = desiredLeft
       children.forEach((childId) => {
         const footprint = effectiveFootprint(childId)
-        const currentPoint = pos.get(childId)
-        if (!currentPoint) return
-        const targetX = cursor + footprint / 2
-        shiftVisibleSubtree(childId, targetX - currentPoint.x)
+        if (!pos.get(childId)) return
+        packSubtreeAtLeft(childId, cursor, footprint)
         cursor += footprint + packedGap
       })
     })
 
-    bounds = ids.reduce((b, id) => {
+    // Recompute the tree's horizontal bounds for the final centre-shift. For a
+    // stacked tree the box-footprint underestimates true width (columns hang
+    // below their parent and can extend past the box edges), which used to leave
+    // the whole tree shoved to one side and overflowing. Measure the real span
+    // (min box-left .. max box-right incl. chevrons) so the tree is centred and
+    // sized correctly. Non-stacking trees keep the original box-footprint bounds.
+    bounds = treeUsesStacking
+      ? ids.reduce((b, id) => {
+          const p = pos.get(id)
+          if (!p) return b
+          const labelW = effW.get(id) ?? estNodeW(id)
+          const hasCh = (NODES[id]?.children?.length ?? 0) > 0
+          return { minX: Math.min(b.minX, p.x - labelW / 2), maxX: Math.max(b.maxX, p.x + labelW / 2 + (hasCh ? 20 : 0)) }
+        }, { minX: Infinity, maxX: -Infinity })
+      : ids.reduce((b, id) => {
       const p = pos.get(id)
       const labelW = effW.get(id) ?? estNodeW(id)
       if (!p) return b
@@ -530,7 +598,14 @@ function layoutDesktop(
         return Math.min(acc, childPoint.x - childWidth / 2)
       }, Infinity)
 
-      if (isFinite(currentRootLeft)) {
+      // Re-spreading the root's children edge-to-edge across the full lane is
+      // meant to fill a plain horizontal tree, but for a stacked tree the sibling
+      // repack above already placed each branch's column correctly; re-running it
+      // here with the (correctly large) subtree extents only pushes the branches
+      // right until the tree overflows and gets shrunk. Skip it for stacked trees
+      // and let the centre-shift stand; the root node itself is still recentred
+      // over its children below.
+      if (isFinite(currentRootLeft) && !treeUsesStacking) {
         const footprintSum = visibleRootChildren.reduce((sum, childId) => sum + effectiveFootprint(childId), 0)
         const targetRight = aR - targetSideGap
         const availableWidth = Math.max(targetRight - currentRootLeft, footprintSum)
@@ -542,10 +617,8 @@ function layoutDesktop(
         let cursor = currentRootLeft
         visibleRootChildren.forEach((childId) => {
           const footprint = effectiveFootprint(childId)
-          const currentPoint = pos.get(childId)
-          if (!currentPoint) return
-          const targetX = cursor + footprint / 2
-          shiftVisibleSubtree(childId, targetX - currentPoint.x)
+          if (!pos.get(childId)) return
+          packSubtreeAtLeft(childId, cursor, footprint)
           cursor += footprint + rootGap
         })
       }
@@ -634,6 +707,99 @@ function layoutDesktop(
         cursorY = bottom + rowGap
       })
     })
+  }
+
+  // Final cross-branch de-overlap (stacked trees only). The horizontal repack
+  // and the vertical stacking run in different orders, so a node's true subtree
+  // extent is not fully known until everything is placed; occasionally two boxes
+  // from different parents (e.g. one branch's deep child and a neighbouring
+  // branch's node) still overlap. This pass scans left-to-right and, whenever a
+  // later node's box overlaps an earlier node from a different parent at the
+  // same vertical band, slides the later node's whole visible subtree right just
+  // enough to clear it. Root's direct children are treated as branch anchors so
+  // an entire branch shifts as a unit. No-op for non-stacking trees.
+  if (stackParents.length) {
+    const shiftXY = (id: string, dx: number) => {
+      if (!dx) return
+      const p = pos.get(id)
+      if (p) pos.set(id, { x: p.x + dx, y: p.y })
+      ;(NODES[id]?.children ?? []).filter(c => vis.has(c)).forEach(c => shiftXY(c, dx))
+    }
+    const boxOf = (id: string) => {
+      const p = pos.get(id)!
+      const w = effW.get(id) ?? estNodeW(id)
+      const lines = estNodeLines(id)
+      const halfH = 27 + Math.max(0, lines - 2) * 9
+      return { l: p.x - w / 2, r: p.x + w / 2, t: p.y - halfH, b: p.y + halfH }
+    }
+    const ancestors = (id: string): string[] => {
+      const chain: string[] = []
+      let cur: string | undefined = id
+      while (cur) { chain.push(cur); cur = PARENTS[cur] }
+      return chain
+    }
+    // Given two overlapping nodes, return the ancestor of B that is a direct
+    // child of the lowest common ancestor of A and B. Shifting that node's
+    // whole subtree moves exactly the sub-branch that diverges from A's branch,
+    // so cousins are separated without tearing either branch apart. Returns null
+    // when one is an ancestor of the other (never shift within one lineage).
+    const separatingChild = (a: string, b: string): string | null => {
+      const ca = ancestors(a)
+      const setA = new Set(ca)
+      let prev = b
+      let cur: string | undefined = b
+      while (cur) {
+        if (setA.has(cur)) return prev === cur ? null : prev
+        prev = cur
+        cur = PARENTS[cur]
+      }
+      return prev
+    }
+    const GAP = 24
+    for (let pass = 0; pass < 6; pass++) {
+      let moved = false
+      const order = ids.filter(id => pos.has(id) && id !== ROOT_ID)
+        .sort((a, b) => pos.get(a)!.x - pos.get(b)!.x)
+      for (let i = 0; i < order.length; i++) {
+        for (let j = i + 1; j < order.length; j++) {
+          const A = order[i], B = order[j]
+          if (PARENTS[A] === PARENTS[B]) continue
+          const a = boxOf(A), b = boxOf(B)
+          const oy = Math.min(a.b, b.b) - Math.max(a.t, b.t)
+          if (oy <= 2) continue
+          const ox = a.r + GAP - b.l
+          if (ox <= 0) continue
+          const mover = separatingChild(A, B)
+          if (mover) { shiftXY(mover, ox); moved = true }
+        }
+      }
+      if (!moved) break
+    }
+
+    // The de-overlap shifts only push branches rightward, which can leave the
+    // whole tree off-centre. Re-centre the entire tree within the usable lane
+    // (the same [contentLeft, contentRight] band the initial centring used) by
+    // measuring the true span and sliding everything so the free space is split
+    // evenly. Clamped so nothing crosses the lane edges.
+    let dminX = Infinity, dmaxX = -Infinity
+    ids.forEach(id => {
+      const p = pos.get(id); if (!p) return
+      const w = effW.get(id) ?? estNodeW(id)
+      const hasCh = (NODES[id]?.children?.length ?? 0) > 0
+      dminX = Math.min(dminX, p.x - w / 2)
+      dmaxX = Math.max(dmaxX, p.x + w / 2 + (hasCh ? 20 : 0))
+    })
+    if (isFinite(dminX) && isFinite(dmaxX)) {
+      const laneLeft = aL
+      const laneRight = aR
+      const treeW = dmaxX - dminX
+      const laneW = Math.max(laneRight - laneLeft, 1)
+      const target = treeW < laneW ? laneLeft + (laneW - treeW) / 2 : laneLeft
+      let d = target - dminX
+      if (dmaxX + d > laneRight) d += laneRight - (dmaxX + d)
+      if (dminX + d < laneLeft) d += laneLeft - (dminX + d)
+      if (d) ids.forEach(id => { const p = pos.get(id); if (p) pos.set(id, { x: p.x + d, y: p.y }) })
+    }
   }
 
   return { positions: pos, nodeWidths: effW }
