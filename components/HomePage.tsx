@@ -110,13 +110,6 @@ const REPOSITORY_LAYERS = {
 
 const REPOSITORY_RENDER_ORDER = [2, 1, 0];
 
-const DEMO_STEPS = [
-  { id: 1, label: 'Repository',  icon: 'library_books',     src: '/demo/step1.mp4' },
-  { id: 2, label: 'Modes',       icon: 'splitscreen',        src: '/demo/step2.mp4' },
-  { id: 3, label: 'Live Case',   icon: 'record_voice_over',  src: '/demo/step3.mp4' },
-  { id: 4, label: 'Feedback',    icon: 'rate_review',        src: '/demo/step4.mp4' },
-  { id: 5, label: 'Dashboard',   icon: 'dashboard',          src: '/demo/step5.mp4' },
-];
 
 const HUMAN_ONLY_POINTS = [
   'Authentic pressure and interpersonal dynamics',
@@ -203,15 +196,6 @@ const HomePage = () => {
   const activeTabRef = useRef<TabId>('ai-models');
   activeTabRef.current = activeTab;
 
-const videoRefs = useRef<(HTMLVideoElement | null)[]>(new Array(DEMO_STEPS.length).fill(null));
-const videoContainerRef = useRef<HTMLDivElement>(null);
-const [currentStep, setCurrentStep] = useState(0);
-const [stepProgress, setStepProgress] = useState(0);
-const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-const [videoReady, setVideoReady] = useState(false);
-const [hasStarted, setHasStarted] = useState(false);
-const [isMuted, setIsMuted] = useState(false);
-const [isCompleted, setIsCompleted] = useState(false);
 
   const getProgress = useCallback(() => {
     const section = sectionRef.current;
@@ -281,105 +265,6 @@ const [isCompleted, setIsCompleted] = useState(false);
     return () => observer.disconnect();
   }, []);
 
-// Eagerly preload all videos on page mount (no autoplay)
-useEffect(() => {
-  DEMO_STEPS.forEach((step, i) => {
-    const v = videoRefs.current[i];
-    if (v) {
-      v.src = step.src;
-      v.load();
-    }
-  });
-}, []);
-
-// Fade in video container once first video can display a frame
-useEffect(() => {
-  const firstVideo = videoRefs.current[0];
-  if (!firstVideo) return;
-
-  const reveal = () => setVideoReady(true);
-
-  // If already has enough data, reveal immediately
-  if (firstVideo.readyState >= 2) {
-    reveal();
-    return;
-  }
-
-  firstVideo.addEventListener('canplay', reveal, { once: true });
-
-  // Fallback: fade in after 2s no matter what
-  const fallbackTimer = setTimeout(reveal, 2000);
-
-  return () => {
-    firstVideo.removeEventListener('canplay', reveal);
-    clearTimeout(fallbackTimer);
-  };
-}, []);
-
-// Pause video when user scrolls away
-useEffect(() => {
-  const container = videoContainerRef.current;
-  if (!container) return;
-
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      if (!entry.isIntersecting && isVideoPlaying) {
-        const video = videoRefs.current[currentStep];
-        if (video) {
-          video.pause();
-          setIsVideoPlaying(false);
-        }
-      }
-    },
-    { threshold: 0.3 }
-  );
-
-  observer.observe(container);
-  return () => observer.disconnect();
-}, [currentStep, isVideoPlaying]);
-
-// Track progress + auto-advance on video end
-useEffect(() => {
-  const video = videoRefs.current[currentStep];
-  if (!video) return;
-
-  const onTimeUpdate = () => {
-    const d = video.duration;
-    if (!d || !isFinite(d)) return;
-    setStepProgress(video.currentTime / d);
-  };
-
-const onEnded = () => {
-  video.pause();
-
-  // Last step — show replay overlay instead of looping
-  if (currentStep === DEMO_STEPS.length - 1) {
-    setIsVideoPlaying(false);
-    setStepProgress(1);
-    setIsCompleted(true);
-    return;
-  }
-
-  // Not last step — advance to next
-  const next = currentStep + 1;
-  setCurrentStep(next);
-  setStepProgress(0);
-  const nextVideo = videoRefs.current[next];
-  if (nextVideo) {
-    nextVideo.currentTime = 0;
-    nextVideo.muted = false;
-    nextVideo.play().catch(() => {});
-    setIsVideoPlaying(true);
-  }
-};
-
-  video.addEventListener('timeupdate', onTimeUpdate);
-  video.addEventListener('ended', onEnded);
-  return () => {
-    video.removeEventListener('timeupdate', onTimeUpdate);
-    video.removeEventListener('ended', onEnded);
-  };
-}, [currentStep]);
 
   const handleTabSwitch = (tab: TabId) => {
     const targetProgress = tabVisitedRef.current[tab] ? tabProgressRef.current[tab] : 0;
@@ -393,84 +278,9 @@ const onEnded = () => {
     });
   };
 
-const handleStepClick = (stepIndex: number) => {
-  if (isCompleted) setIsCompleted(false);
-  if (stepIndex === currentStep && !isCompleted) return;
-  const currentVideo = videoRefs.current[currentStep];
-  if (currentVideo) currentVideo.pause();
-
-  setCurrentStep(stepIndex);
-  setStepProgress(0);
-
-  const nextVideo = videoRefs.current[stepIndex];
-  if (nextVideo) {
-    nextVideo.currentTime = 0;
-    if (hasStarted) {
-      // Only auto-play next step if user has already started watching
-      nextVideo.muted = false;
-      nextVideo.play().catch(() => {});
-      setIsVideoPlaying(true);
-    }
-  }
-};
-
-const handleVideoToggle = () => {
-  const video = videoRefs.current[currentStep];
-  if (!video) return;
-
-  if (!hasStarted) {
-    // First play — start from beginning, unmuted
-    video.currentTime = 0;
-    video.muted = false;
-    setIsMuted(false);
-    video.play().catch(() => {});
-    setHasStarted(true);
-    setIsVideoPlaying(true);
-    return;
-  }
-
-  if (isVideoPlaying) {
-    video.pause();
-    setIsVideoPlaying(false);
-  } else {
-    video.play().catch(() => {});
-    setIsVideoPlaying(true);
-  }
-};
-
-const handleMuteToggle = (e: React.MouseEvent) => {
-  e.stopPropagation(); // Don't trigger play/pause
-  const video = videoRefs.current[currentStep];
-  if (!video) return;
-  video.muted = !video.muted;
-  setIsMuted(video.muted);
-};
-
-  const handleReplay = () => {
-  setIsCompleted(false);
-  setCurrentStep(0);
-  setStepProgress(0);
-
-  // Pause current video (last step) just in case
-  const lastVideo = videoRefs.current[DEMO_STEPS.length - 1];
-  if (lastVideo) lastVideo.pause();
-
-  // Start from step 1
-  const firstVideo = videoRefs.current[0];
-  if (firstVideo) {
-    firstVideo.currentTime = 0;
-    firstVideo.muted = isMuted;
-    firstVideo.play().catch(() => {});
-    setIsVideoPlaying(true);
-  }
-
-  videoContainerRef.current?.focus();
-};
 
   const aiCard1Visible = activeTab === 'ai-models' && featureProgress > 0.15;
   const aiCard2Visible = activeTab === 'ai-models' && featureProgress > 0.4;
-  const aiDemoVisible = activeTab === 'ai-models' && featureProgress > 0.55;
-  const dashboardCtaVisible = activeTab === 'dashboard' && featureProgress >= 0.65;
   const repositoryCtaVisible = activeTab === 'repository' && featureProgress >= 0.5;
 
   const isDashboardZoneVisible = (index: number) =>
@@ -1752,7 +1562,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
 
       `}</style>
 
-      <header className="relative min-h-screen flex flex-col items-center justify-start overflow-hidden pt-40 pb-6">
+      <header className="relative min-h-screen flex flex-col items-center justify-start overflow-hidden pt-40 pb-3">
         <div className="relative z-10 max-w-5xl px-8 text-center flex flex-col items-center">
           <h1 className="font-headline text-[#453a2a] leading-[1.05] tracking-tight mb-8" style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)' }}>
             Where case prep gets
@@ -1764,7 +1574,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
             </span>
           </h1>
           <p className="font-body text-lg text-[#6d6151] max-w-2xl mx-auto mb-10 leading-relaxed">
-            AI-powered case practice, structured frameworks, and performance analytics: everything you need to crack your next case interview.
+            The case book a million readers grew up on. Now built to coach you.
           </p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
             <Link
@@ -1780,157 +1590,6 @@ const handleMuteToggle = (e: React.MouseEvent) => {
               Do A Case
             </Link>
           </div>
-<div className="demo-sticky-wrapper w-full">
-  <div className="demo-sticky-inner">
-    <div className="max-w-5xl w-full px-4 md:px-0">
-      <div ref={videoContainerRef} className="demo-video-section" tabIndex={-1}>
-    {/* Video container */}
-   <div className={`demo-video-wrap demo-section-reveal ${videoReady ? 'loaded' : ''}`}>
-  {DEMO_STEPS.map((step, index) => (
-    <video
-      key={step.id}
-      ref={(el) => { videoRefs.current[index] = el; }}
-      className="demo-video"
-      muted
-      playsInline
-      preload="auto"
-      style={{
-        opacity: index === currentStep ? 1 : 0,
-        zIndex: index === currentStep ? 1 : 0,
-        pointerEvents: index === currentStep ? 'auto' : 'none',
-        transition: 'opacity 0.12s ease',}}
-      
-    />
-  ))}
-  <div className={`demo-ambient-glow ${isVideoPlaying ? 'playing' : ''}`} />
-
-  {/* Play overlay — shown before user starts */}
-  {!hasStarted && (
-    <div className="demo-overlay" onClick={handleVideoToggle}>
-      <div className="demo-overlay-glass" />
-      <div className="demo-overlay-btn">
-        <span
-          className="material-symbols-outlined"
-          style= {{fontSize: '32px', fontVariationSettings: "'FILL' 1, 'wght' 400" }}
-        >
-          play_arrow
-        </span>
-      </div>
-      <span className="demo-overlay-label">Click to play</span>
-    </div>
-  )}
-
-  {/* Pause overlay — shown when video is paused after first play */}
-  {hasStarted && !isVideoPlaying && (
-    <div className="demo-overlay demo-overlay-pause" onClick={handleVideoToggle}>
-      <div className="demo-overlay-glass" />
-      <div className="demo-overlay-btn">
-        <span
-          className="material-symbols-outlined"
-          style= {{fontSize: '28px', fontVariationSettings: "'FILL' 1, 'wght' 400" }}
-        >
-          play_arrow
-        </span>
-      </div>
-      <span className="demo-overlay-label">Resume</span>
-    </div>
-  )}
-
-  {/* Click-to-pause zone — invisible, covers video while playing */}
-  {hasStarted && isVideoPlaying && (
-    <div
-      className="absolute inset-0 z-5 cursor-pointer"
-      onClick={handleVideoToggle}
-    />
-  )}
-
-     {/* Replay overlay — shown when all steps have finished */}
-{isCompleted && (
-  <div className="demo-overlay demo-overlay-replay" onClick={handleReplay}>
-    <div className="demo-overlay-bg" />
-    <div className="demo-overlay-glass" />
-    <div className="demo-overlay-ring" />
-    <div className="demo-overlay-btn">
-      <span
-        className="material-symbols-outlined"
-        style= {{fontSize: '32px', fontVariationSettings: "'FILL' 1, 'wght' 400" }}
-      >
-        replay
-      </span>
-    </div>
-    <span className="demo-overlay-label">Click to Replay</span>
-  </div>
-)}
-
-  {/* Sound indicator — bottom right, barely visible */}
-{hasStarted && (
-  <button
-    className={`demo-sound-indicator ${isVideoPlaying ? 'active' : ''} ${isMuted ? 'muted' : ''}`}
-    onClick={handleMuteToggle}
-    title={isMuted ? 'Unmute' : 'Mute'}
-  >
-    <div className="demo-eq-bar" />
-    <div className="demo-eq-bar" />
-    <div className="demo-eq-bar" />
-  </button>
-)}
-</div>
-
-    {/* Step Timeline Bar */}
-<div className="demo-timeline demo-timeline-reveal">
-  <div className="demo-steps">
-    {DEMO_STEPS.map((step, index) => {
-      const isActive = index === currentStep;
-      const isCompleted = index < currentStep;
-      const stepProg = isActive ? stepProgress : (isCompleted ? 1 : 0);
-
-      return (
-        <React.Fragment key={step.id}>
-          {index > 0 && (
-            <div className={`demo-connector ${index <= currentStep ? 'demo-connector-done' : ''}`}>
-              <div className="demo-connector-line">
-                <div className="demo-connector-fill" />
-              </div>
-            </div>
-          )}
-          <button
-            className={`demo-step ${
-              isActive ? 'demo-step-active' : isCompleted ? 'demo-step-done' : 'demo-step-upcoming'
-            }`}
-            onClick={() => handleStepClick(index)}
-          >
-            <div className={`demo-step-dot ${isActive ? 'pulse-ring-demo' : ''}`}>
-              <span
-                className="material-symbols-outlined"
-                style={{
-                  fontSize: '16px',
-                  fontVariationSettings: isActive
-                    ? "'FILL' 1, 'wght' 400"
-                    : "'FILL' 0, 'wght' 300",}}
-                
-              >
-                {isCompleted ? 'check_circle' : step.icon}
-              </span>
-            </div>
-            <span className="demo-step-label">{step.label}</span>
-            {isActive && (
-              <div className="demo-step-micro">
-                <div
-                  className="demo-step-micro-fill"
-                  style={{ width: `${stepProg * 100}%` }}
-                />
-              </div>
-            )}
-          </button>
-        </React.Fragment>
-      );
-    })}
-  </div>
-</div>
-        </div> {/* end demo-video-section */}
-    </div> {/* end max-w-5xl */}
-  </div> {/* end demo-sticky-inner */}
-</div> {/* end demo-sticky-wrapper */}
         </div>
       </header>
 
@@ -1972,7 +1631,7 @@ const handleMuteToggle = (e: React.MouseEvent) => {
         <div id="features-pinned" style={{ position: 'sticky', top: '70px', height: 'calc(100vh - 70px)', overflow: 'hidden', background: '#fff8f0', zIndex: 10 }}>
           <div id="features-header-inner">
             <h2 className="font-headline font-light text-[#453a2a] tracking-tight mb-3 text-balance" style={{ fontSize: 'clamp(2rem, 6vw, 4.5rem)' }}>Our Features</h2>
-            <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#5C4033]/40 font-semibold mb-6">Early Preview · Feature demos with sample data</p>
+            <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#5C4033]/40 font-semibold mb-6" style={{ visibility: activeTab === 'ai-models' ? 'visible' : 'hidden' }}>Early Preview</p>
             <div className="flex justify-center gap-2" id="tab-buttons">
               {(['ai-models', 'dashboard', 'repository'] as TabId[]).map((tab) => (
                 <button
@@ -2042,29 +1701,6 @@ const handleMuteToggle = (e: React.MouseEvent) => {
             </div>
           </div>
 
-          <div
-            className="text-center"
-            id="ai-demo-cta"
-            style={{
-              position: 'absolute',
-              bottom: '24px',
-              left: 0,
-              right: 0,
-              zIndex: 10,
-              display: activeTab === 'ai-models' ? '' : 'none',
-              opacity: aiDemoVisible ? 1 : 0,
-              transform: aiDemoVisible ? 'translateY(0)' : 'translateY(8px)',
-              transition: 'all 0.5s ease 0.4s',
-            }}
-          >
-            <button
-              onClick={() => setShowDemoModal(true)}
-              className="inline-flex items-center gap-2 bg-transparent border border-[#3D5A35] text-[#3D5A35] px-8 py-3 text-[10px] uppercase tracking-[0.2em] hover:bg-[#3D5A35] hover:text-white transition-all"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>play_circle</span>
-              View Demo
-            </button>
-          </div>
 
           <div className="dash-container" id="dashboard-area" style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
             <div className="dash-wireframe">
@@ -2231,14 +1867,6 @@ const handleMuteToggle = (e: React.MouseEvent) => {
                 </div>
               </div>
 
-              <div className={`dash-cta-wrap ${dashboardCtaVisible ? 'visible' : ''}`} id="dash-cta">
-                <Link
-                  href="/dashboard"
-                  className="inline-block bg-[#3D5A35] text-white px-10 py-4 text-[10px] uppercase tracking-widest hover:bg-[#3D5A35]/90 transition-all shadow-lg"
-                >
-                  Open Demo Dashboard
-                </Link>
-              </div>
             </div>
           </div>
 
@@ -2289,8 +1917,6 @@ const handleMuteToggle = (e: React.MouseEvent) => {
           <div className="text-center mb-20">
             <h2 className="font-headline font-light text-[#453a2a] tracking-tight mb-4 text-balance" style={{ fontSize: 'clamp(2rem, 6vw, 4.5rem)' }}>What Makes Us Different</h2>
             <p className="font-body text-lg text-[#434840] max-w-2xl mx-auto leading-relaxed">
-              Our AI doesn&apos;t replace the interview. It transforms what comes out of it.
-              <br />
               Voice LLMs, multi-dimensional analysis, and predictive readiness mapping, all fuelled by authentic human data no chatbot can generate.
             </p>
           </div>
