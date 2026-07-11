@@ -23,7 +23,7 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 type SessionState = {
   caseId?: string
   caseName?: string
-  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
+  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing' | 'fallback_unrated'
   sessionMode?: 'remote' | 'local'
   expiresAt?: { toDate: () => Date } | Date
   interviewerBrowsing?: boolean
@@ -1089,7 +1089,7 @@ if (!isCandidateBeatStale(beat)) {
         const data = snap.data() as SessionState
         const mode = data.sessionMode === 'local' ? 'local' : 'remote'
 
-        if (data.status === 'completed' || data.status === 'abandoned') {
+        if (data.status === 'completed' || data.status === 'abandoned' || data.status === 'fallback_unrated') {
           setSessionAlreadyEnded(true)
           setCheckingResume(false)
           return
@@ -1841,7 +1841,7 @@ let interviewerStaleStreak = 0
         setTimeout(() => router.replace(workspaceRoute(data.caseId!, data.sessionMode)), 600)
         return
       }
-      if (data.status === 'completed' || data.status === 'abandoned') {
+      if (data.status === 'completed' || data.status === 'abandoned' || data.status === 'fallback_unrated') {
         disarmWaitingNudge()
         setInterviewerRemoteWindowClosed(false)
         stopPolling()
@@ -1936,7 +1936,11 @@ let interviewerStaleStreak = 0
             router.replace(workspaceRoute(existingData.caseId, existingData.sessionMode))
             return
           }
-          if (existingData.status === 'completed' || existingData.status === 'abandoned') {
+          if (
+            existingData.status === 'completed' ||
+            existingData.status === 'abandoned' ||
+            existingData.status === 'fallback_unrated'
+          ) {
             setSessionAlreadyEnded(true)
             setCheckingCandidate(false)
             return
