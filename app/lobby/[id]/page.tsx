@@ -1963,6 +1963,28 @@ let interviewerStaleStreak = 0
           return
         }
 
+        // Authoritative dead-link check via the server (Admin SDK), before the
+        // client getDoc below. In local mode the candidate is often anonymous
+        // (a per-browser UID), so from any browser other than the original the
+        // Firestore rules reject the client read and the setup would fall
+        // through to the live flow. The status endpoint works for any caller.
+        try {
+          const remoteStatus = await apiGet<{ exists: boolean; status: string | null }>(
+            `/api/sessions/${encodeURIComponent(lobbyId)}/status`,
+          )
+          if (
+            remoteStatus.status === 'completed' ||
+            remoteStatus.status === 'abandoned' ||
+            remoteStatus.status === 'fallback_unrated'
+          ) {
+            setSessionAlreadyEnded(true)
+            setCheckingCandidate(false)
+            return
+          }
+        } catch {
+          // Status endpoint unreachable — fall through to the client-doc path.
+        }
+
         const existingSession = await getDoc(sessionRef)
         if (existingSession.exists()) {
           const existingData = existingSession.data() as SessionState

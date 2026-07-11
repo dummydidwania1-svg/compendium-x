@@ -9,7 +9,7 @@ import { getDocs, getDoc, onSnapshot, query, where } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
 import { auth, storage, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc, evaluationsCol } from '@/lib/firebase/collections'
-import { apiPost } from '@/lib/api/client'
+import { apiGet, apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { releaseDisplayMedia } from '@/lib/permissions/displayMedia'
@@ -1320,24 +1320,48 @@ const interviewerStaleStreakRef = useRef(0)
       // already completed/abandoned before this page ever mounted (stale
       // link, browser back, old bookmark)? If so, stop here — never start
       // polling, never subscribe to onSnapshot, never touch the mic.
+      //
+      // Uses the server status endpoint (Admin SDK) as the authoritative
+      // source rather than a client getDoc: in local mode the candidate is
+      // often anonymous (a per-browser UID), so a client read from any other
+      // browser is rejected by the Firestore rules (permission-denied) and
+      // would fall through here to render the live case. The endpoint reads
+      // server-side and works for any authenticated caller.
       if (sessionRef) {
         try {
-          const preCheckSnapshot = await getDoc(sessionRef)
-          if (preCheckSnapshot.exists()) {
-            const preCheckData = preCheckSnapshot.data() as SessionState
-            if (
-              preCheckData.status === 'completed' ||
-              preCheckData.status === 'abandoned' ||
-              preCheckData.status === 'fallback_unrated'
-            ) {
-              setSessionAlreadyEnded(true)
-              setCheckingSessionStatus(false)
-              return
-            }
+          const remoteStatus = await apiGet<{ exists: boolean; status: string | null }>(
+            `/api/sessions/${encodeURIComponent(lobbyId!)}/status`,
+          )
+          if (
+            remoteStatus.status === 'completed' ||
+            remoteStatus.status === 'abandoned' ||
+            remoteStatus.status === 'fallback_unrated'
+          ) {
+            setSessionAlreadyEnded(true)
+            setCheckingSessionStatus(false)
+            return
           }
         } catch {
-          // Best-effort — if this check fails, fall through to the normal
-          // flow rather than blocking a legitimate active session.
+          // Endpoint unreachable — fall back to a client getDoc so the
+          // participant (same-browser) case is still covered.
+          try {
+            const preCheckSnapshot = await getDoc(sessionRef)
+            if (preCheckSnapshot.exists()) {
+              const preCheckData = preCheckSnapshot.data() as SessionState
+              if (
+                preCheckData.status === 'completed' ||
+                preCheckData.status === 'abandoned' ||
+                preCheckData.status === 'fallback_unrated'
+              ) {
+                setSessionAlreadyEnded(true)
+                setCheckingSessionStatus(false)
+                return
+              }
+            }
+          } catch {
+            // Both checks failed — fall through to the normal flow rather than
+            // blocking a legitimate active session.
+          }
         }
       }
       setCheckingSessionStatus(false)
