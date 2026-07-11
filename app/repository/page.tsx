@@ -9,7 +9,7 @@ import { X } from 'lucide-react'
 import Footer from '@/components/dashboard/Footer'
 import Navbar from '@/components/dashboard/Navbar'
 import { db, signInAnonymouslyIfNeeded } from '@/lib/firebase/config'
-import { FILTER_LEVELS } from '@/lib/constants'
+import { FILTER_LEVELS, OWN_CASE_ID, CUSTOM_CASE_TITLE } from '@/lib/constants'
 import RepoFilterDropdown from '@/components/ui/RepoFilterDropdown'
 import { apiPost } from '@/lib/api/client'
 import { slugifyCase } from '@/lib/slug'
@@ -517,6 +517,7 @@ const clearAllFilters = () => {
         caseId: prevCaseId,
         sessionMode,
         caseName: prevCaseName,
+        caseSource: prevCaseId === OWN_CASE_ID ? 'custom' : 'repository',
       })
       localStorage.setItem('compendium-session-start', JSON.stringify({
         lobbyId, caseId: prevCaseId, caseName: prevCaseName, mode: sessionMode,
@@ -870,7 +871,11 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
   }
 }, [selectionMode, lobbyId, sessionMode, router])
 
-  const handleSelectCase = async (caseId: string, caseTitle?: string) => {
+  const handleSelectCase = async (
+    caseId: string,
+    caseTitle?: string,
+    caseSource: 'repository' | 'custom' = 'repository',
+  ) => {
     if (pendingCaseId) return // ignore double-clicks while one is in flight
     setActionError('')
     setFailedCase(null)
@@ -897,6 +902,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
       apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/select-case`, {
         caseId,
         sessionMode,
+        caseSource,
         ...(caseTitle ? { caseName: caseTitle } : {}),
       }).catch((error) => {
         // API failed — clear the marker so the interviewer page's grace
@@ -942,6 +948,18 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
     }
     void handleSelectCase(caseItem.id, caseItem.title)
   }, [handleSelectCase, setComingSoonBody, setComingSoonVisible])
+
+  // "Do your own case": launch a session with no curated case. In selection
+  // mode this starts the interview immediately (reusing the exact same flow as
+  // a repository case, just with the custom sentinel + source). In browse mode
+  // there's no lobby yet, so send the user to the pre-session flow to create one.
+  const handleStartOwnCase = useCallback(() => {
+    if (selectionMode && lobbyId) {
+      void handleSelectCase(OWN_CASE_ID, CUSTOM_CASE_TITLE, 'custom')
+    } else {
+      router.push('/practice')
+    }
+  }, [selectionMode, lobbyId, handleSelectCase, router])
 
   const resultsLabel = loading
     ? 'Loading...'
@@ -1540,6 +1558,40 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
               </p>
             </div>
           </div>
+
+          {/* Do your own case — prominent entry at the top of the repository.
+              Reuses the full session flow; the interviewer brings their own
+              material instead of a curated case. */}
+          <button
+            type="button"
+            onClick={handleStartOwnCase}
+            disabled={!!pendingCaseId}
+            aria-label="Do your own case"
+            className="group mb-8 flex w-full items-center justify-between gap-5 rounded-[22px] border border-[#3D5A35]/25 bg-[linear-gradient(120deg,rgba(61,90,53,0.08),rgba(196,168,130,0.06))] px-6 py-5 text-left transition-colors duration-200 hover:border-[#3D5A35]/45 hover:bg-[linear-gradient(120deg,rgba(61,90,53,0.12),rgba(196,168,130,0.09))] disabled:cursor-not-allowed disabled:opacity-60 md:px-8 md:py-6"
+          >
+            <div className="min-w-0">
+              <span className="mb-2 inline-block text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">
+                Bring your own material
+              </span>
+              <h2
+                style={{ fontFamily: "'Newsreader', serif" }}
+                className="text-2xl font-light leading-tight tracking-tight text-[#453a2a] md:text-3xl"
+              >
+                Do your own case
+              </h2>
+              <p className="mt-2 max-w-[560px] text-[13px] leading-relaxed text-[#5c4033]/62">
+                {selectionMode
+                  ? 'Run a full interview with a case you bring yourself — same recording, transcript, and scoring as any repository case.'
+                  : 'Start a session and lead the interview with your own case — same recording, transcript, and scoring as any repository case.'}
+              </p>
+            </div>
+            <span
+              aria-hidden
+              className="shrink-0 rounded-full border border-[#3D5A35]/35 bg-[#fff8f0] px-4 py-2 text-[12px] font-medium text-[#3D5A35] transition-colors duration-200 group-hover:border-[#3D5A35]/55 group-hover:bg-[#3D5A35]/8"
+            >
+              {pendingCaseId === OWN_CASE_ID ? 'Starting…' : selectionMode ? 'Start →' : 'Begin →'}
+            </span>
+          </button>
 
           {/* Framework chips - standalone, above the case table container */}
           {!selectionMode && !loading && (

@@ -21,6 +21,7 @@ import { MandatoryOverlay } from '@/components/lobby/MandatoryOverlay'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { useMicPermission } from '@/lib/permissions/microphone'
+import { OWN_CASE_ID, CUSTOM_CASE_TITLE, FILTER_TYPES } from '@/lib/constants'
 
 
 /* ── Error boundary — catches client-side crashes, auto-reloads ── */
@@ -802,6 +803,11 @@ export function InterviewerPageInner({
 	const [notFound, setNotFound] = useState(false)
 	const [reloadTick, setReloadTick] = useState(0)
 	const [resolvedCaseId, setResolvedCaseId] = useState<string | null>(null)
+	// "Do your own case": the interviewer brings external material, so there is
+	// no curated case document. We synthesize a neutral caseData and swap the
+	// left content panel for a neutral workspace + case-type selector.
+	const customMode = resolvedCaseId === OWN_CASE_ID
+	const [customCaseType, setCustomCaseType] = useState<string | null>(null)
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const previewMode = forcePreview || searchParams.get('preview') === '1'
@@ -1911,6 +1917,17 @@ export function InterviewerPageInner({
 				const resolvedParams = await params
 				const caseId = resolvedParams.id
 				setResolvedCaseId(caseId)
+
+				// Custom ("do your own case") session: no `cases` document exists.
+				// Synthesize neutral case data and skip the Firestore lookup so the
+				// interviewer never sees curated content or a "not found" screen.
+				if (caseId === OWN_CASE_ID) {
+					setCaseData({ title: CUSTOM_CASE_TITLE })
+					setNotFound(false)
+					setLoading(false)
+					return
+				}
+
 				const cacheKey = `compendium-case-v9-${caseId}`
 				const cachedValue = localStorage.getItem(cacheKey)
 				let hasValidCache = false
@@ -1964,6 +1981,33 @@ export function InterviewerPageInner({
 		}
 		fetchData()
 	}, [lobbyId, params, previewMode, reloadTick, router])
+
+	// Custom mode: hydrate the previously autosaved case type so a reload /
+	// tab-reopen mid-session restores the interviewer's selection.
+	useEffect(() => {
+		if (!customMode || !lobbyId || previewMode) return
+		let cancelled = false
+		getDoc(sessionDoc(lobbyId))
+			.then((snap) => {
+				if (cancelled) return
+				const saved = snap.data()?.customCaseType
+				if (typeof saved === 'string' && saved.trim().length > 0) {
+					setCustomCaseType(saved.trim())
+				}
+			})
+			.catch(() => { /* best-effort hydration */ })
+		return () => { cancelled = true }
+	}, [customMode, lobbyId, previewMode])
+
+	// Custom mode: autosave the interviewer's case-type selection onto the
+	// session doc. Fire-and-forget — never blocks or disrupts recording.
+	const handleSelectCustomCaseType = useCallback((next: string | null) => {
+		setCustomCaseType(next)
+		if (!lobbyId || previewMode) return
+		apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/case-type`, { caseType: next }).catch(() => {
+			/* best-effort autosave — dashboard falls back to General weights */
+		})
+	}, [lobbyId, previewMode])
 
 	// Mount-time dead-link guard. Reads the session status server-side (Admin
 	// SDK) so it works for any caller — including the anonymous per-browser
@@ -2573,6 +2617,10 @@ if (previewMode && !forcePreview) {
 					onEndCase={() => { setShowEvalOverlay(true); setEditingOverlay(false) }}
 					onReplaceCase={lobbyId && !previewMode ? () => setShowReplaceCaseConfirm(true) : undefined}
 					onCancelSession={lobbyId && !previewMode ? () => setShowCancelConfirm(true) : undefined}
+					customMode={customMode}
+					customCaseTypeOptions={FILTER_TYPES}
+					customCaseType={customCaseType}
+					onSelectCustomCaseType={handleSelectCustomCaseType}
 				/>
 
 				{/* Back-button guard toast (top-right LobbyOverlay) */}

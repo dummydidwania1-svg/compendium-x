@@ -10,6 +10,7 @@ import { db, storage, waitForAuthUser } from '@/lib/firebase/config'
 import { mapEvaluationDoc } from '@/lib/dashboard/mappers'
 import type { EvaluationRecord } from '@/lib/dashboard/types'
 import { apiPost } from '@/lib/api/client'
+import { OWN_CASE_ID } from '@/lib/constants'
 
 function scoreLabel(value: number | null) {
   return typeof value === 'number' ? `${value} / 5` : 'N/A'
@@ -340,7 +341,7 @@ export default function EvaluationDetailPage() {
           <Link href="/dashboard" className="text-sm text-slate-300 hover:text-white transition">
             ← Back to Dashboard
           </Link>
-          {record?.caseId && (
+          {record?.caseId && record.caseId !== OWN_CASE_ID && (
             <Link
               href={`/case/${record.caseId}/interviewer?preview=1`}
               className="rounded-md border border-cyan-400/50 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-100 hover:border-cyan-300/80 hover:bg-cyan-300/20 transition"
