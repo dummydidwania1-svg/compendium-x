@@ -1080,6 +1080,16 @@ if (!isCandidateBeatStale(beat)) {
     let cancelled = false
     const resume = async () => {
       try {
+        // Interviewers arrive via shared links and are often not authenticated
+        // yet — a sibling effect below fires signInAnonymouslyIfNeeded(), but
+        // it's unawaited there, so this read can race ahead of it and fail
+        // with permission-denied on the Firestore rules. That failure used to
+        // fall into the catch below and silently show the normal welcome
+        // flow (mic gate, "Welcome, Interviewer") for a session that had
+        // actually already ended. Await auth here directly so this read is
+        // never racing against it.
+        await signInAnonymouslyIfNeeded()
+        if (cancelled) return
         const snap = await getDoc(sessionDoc(lobbyId))
         if (cancelled) return
         if (!snap.exists()) {
