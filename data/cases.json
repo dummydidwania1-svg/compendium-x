@@ -8456,7 +8456,13 @@
         "setting-up-value-chain",
         "economic",
         "legal"
-      ]
+      ],
+      "highlightIds": [
+        "market-attractiveness",
+        "operational-feasibility",
+        "risks"
+      ],
+      "multiExpand": true
     },
     "tables": [
       {
