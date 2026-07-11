@@ -67,7 +67,7 @@ export default function SessionEndedScreen({ destination = '/' }: { destination?
           style={{ fontFamily: "'Work Sans', sans-serif", color: '#3D5A35' }}
           className="text-[11px] font-semibold uppercase tracking-[0.16em] underline underline-offset-2 transition-opacity hover:opacity-70"
         >
-          Go now
+          Home
         </button>
       </div>
     </div>
