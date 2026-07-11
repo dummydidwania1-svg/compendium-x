@@ -16,7 +16,7 @@ export const runtime = 'nodejs'
 export const POST = authenticatedRoute<{ lobbyId: string }>(
   '/api/sessions/[lobbyId]/select-case',
   async (request, caller, { lobbyId }) => {
-    const { caseId, sessionMode, caseName } = await parseBody(request, selectCaseInput)
+    const { caseId, sessionMode, caseName, caseSource } = await parseBody(request, selectCaseInput)
 
     const ref = adminDb.collection('sessions').doc(lobbyId)
 
@@ -45,6 +45,7 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         {
           caseId,
           ...(caseName ? { caseName } : {}),
+          caseSource: caseSource ?? 'repository',
           status: 'in_progress',
           sessionMode,
           interviewerId: caller.uid,
