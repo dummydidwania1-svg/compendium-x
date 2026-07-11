@@ -1562,7 +1562,7 @@ const HomePage = () => {
 
       `}</style>
 
-      <header className="relative min-h-screen flex flex-col items-center justify-start overflow-hidden pt-40 pb-3">
+      <header className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-3">
         <div className="relative z-10 max-w-5xl px-8 text-center flex flex-col items-center">
           <h1 className="font-headline text-[#453a2a] leading-[1.05] tracking-tight mb-8" style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)' }}>
             Where case prep gets
