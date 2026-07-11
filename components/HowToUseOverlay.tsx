@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
    MP4 URLs (Firebase Storage or /public) — the only follow-up left. The player
    renders the poster beacon and never crashes while these are empty. */
 const HOW_TO_USE_VIDEOS: Record<'local' | 'remote', string> = {
-  local: '', // TODO_SAME_DEVICE_MP4_URL — "Same Device" demo
+  local: 'https://storage.googleapis.com/compendium-x.firebasestorage.app/how-to-use/same-device.mp4', // "Same Device" demo
   remote: '', // TODO_REMOTE_PARTNER_MP4_URL — "Remote Partner" demo
 }
 
