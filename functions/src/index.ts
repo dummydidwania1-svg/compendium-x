@@ -35,13 +35,18 @@ import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { defineSecret } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/v2'
 import * as functionsV1 from 'firebase-functions/v1'
-import { google } from 'googleapis'
 import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
+import {
+  buildOnboardingEmailHtml,
+  buildVerificationEmailHtml,
+  firstNameFrom,
+  sendGmail,
+} from './emails.js'
 
 if (getApps().length === 0) initializeApp()
 const db = getFirestore()
@@ -2164,204 +2169,148 @@ const mergedStatus = data.mergedTranscriptStatus as string | undefined
 export type _TimestampShape = Timestamp
 
 /* -------------------------------------------------------------------------- */
-/* sendWelcomeEmail — fires on every new user, sends custom HTML email        */
+/* Account emails — onboarding + verification (templates live in emails.ts)   */
 /* -------------------------------------------------------------------------- */
 
-function buildWelcomeEmailHtml(displayName: string | null, verificationLink: string | null): string {
-  const firstName = displayName ? displayName.split(' ')[0] : 'there'
-  const verificationBlock = verificationLink
-    ? `
-      <tr>
-        <td style="padding:0 0 28px 0;">
-          <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4a4a4a;">
-            Before you get started, please verify your email address so we know it's really you.
-          </p>
-          <table border="0" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="border-radius:6px;background:#2d5a27;">
-                <a href="${verificationLink}"
-                   style="display:inline-block;padding:14px 32px;font-family:Georgia,serif;font-size:15px;color:#faf3e9;text-decoration:none;font-weight:bold;border-radius:6px;">
-                  Verify my email
-                </a>
-              </td>
-            </tr>
-          </table>
-          <p style="margin:20px 0 0 0;font-size:13px;color:#888;line-height:1.5;">
-            This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.
-          </p>
-        </td>
-      </tr>`
-    : ''
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f0e9de;font-family:Georgia,serif;">
-  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background:#f0e9de;padding:40px 16px;">
-    <tr>
-      <td align="center">
-        <table width="560" border="0" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
-          <!-- Header -->
-          <tr>
-            <td style="background:#2d5a27;border-radius:10px 10px 0 0;padding:32px 40px;text-align:center;">
-              <p style="margin:0;font-size:22px;font-weight:bold;color:#faf3e9;letter-spacing:0.5px;">
-                Compendium X
-              </p>
-              <p style="margin:6px 0 0 0;font-size:12px;color:#b8d4b5;letter-spacing:1.5px;text-transform:uppercase;">
-                Case Interview Platform
-              </p>
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="background:#faf3e9;padding:40px 40px 8px 40px;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:0 0 24px 0;">
-                    <h1 style="margin:0;font-size:24px;color:#1a2e18;font-weight:normal;">
-                      Welcome, ${firstName}!
-                    </h1>
-                  </td>
-                </tr>
-                ${verificationBlock}
-                <tr>
-                  <td style="padding:0 0 20px 0;border-top:1px solid #e8ddd0;">
-                    <p style="margin:20px 0 12px 0;font-size:15px;line-height:1.6;color:#4a4a4a;">
-                      You now have access to everything on Compendium X:
-                    </p>
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                      <tr>
-                        <td style="padding:8px 0;font-size:14px;color:#4a4a4a;">
-                          <span style="color:#2d5a27;font-size:16px;margin-right:10px;">&#10003;</span>
-                          Practice with real-world case studies
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding:8px 0;font-size:14px;color:#4a4a4a;">
-                          <span style="color:#2d5a27;font-size:16px;margin-right:10px;">&#10003;</span>
-                          Live mock interviews with AI-powered feedback
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding:8px 0;font-size:14px;color:#4a4a4a;">
-                          <span style="color:#2d5a27;font-size:16px;margin-right:10px;">&#10003;</span>
-                          Track your progress and session history
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:20px 0 32px 0;text-align:center;">
-                    <a href="https://www.casecompendiumx.in"
-                       style="display:inline-block;padding:13px 28px;background:#faf3e9;border:2px solid #2d5a27;border-radius:6px;font-family:Georgia,serif;font-size:14px;color:#2d5a27;text-decoration:none;font-weight:bold;">
-                      Go to Compendium X
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <!-- Footer -->
-          <tr>
-            <td style="background:#e8ddd0;border-radius:0 0 10px 10px;padding:20px 40px;text-align:center;">
-              <p style="margin:0;font-size:12px;color:#888;line-height:1.5;">
-                You're receiving this because you signed up at
-                <a href="https://www.casecompendiumx.in" style="color:#2d5a27;text-decoration:none;">casecompendiumx.in</a>.<br>
-                &copy; ${new Date().getFullYear()} Compendium X. All rights reserved.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
+// Best-effort first name for an account: Auth displayName, else the fullName
+// on the profile doc (the signup client writes it right after account
+// creation, so on the onCreate path it may not have landed yet — one short
+// retry covers the common race).
+async function resolveFirstName(uid: string, displayName: string | null | undefined): Promise<string> {
+  if (displayName && displayName.trim()) return firstNameFrom(displayName)
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const snap = await db.collection('profiles').doc(uid).get()
+      const fullName = snap.exists ? (snap.data()?.fullName as string | undefined) : undefined
+      if (typeof fullName === 'string' && fullName.trim()) return firstNameFrom(fullName)
+    } catch {
+      /* ignore — fall through to the default */
+    }
+    if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 1500))
+  }
+  return firstNameFrom(null)
 }
 
-function buildRawEmail(opts: {
-  from: string
-  to: string
-  subject: string
-  html: string
-}): string {
-  const boundary = `boundary_${randomUUID().replace(/-/g, '')}`
-  const message = [
-    `From: ${opts.from}`,
-    `To: ${opts.to}`,
-    `Subject: ${opts.subject}`,
-    'MIME-Version: 1.0',
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    '',
-    `--${boundary}`,
-    'Content-Type: text/plain; charset=UTF-8',
-    '',
-    opts.html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
-    '',
-    `--${boundary}`,
-    'Content-Type: text/html; charset=UTF-8',
-    '',
-    opts.html,
-    '',
-    `--${boundary}--`,
-  ].join('\r\n')
+const ONBOARDING_SUBJECT = 'Your first case starts here'
+const VERIFICATION_SUBJECT = 'Verify your email for Case CompendiumX'
 
-  return Buffer.from(message).toString('base64url')
+// Claims the one-time onboarding-email slot for a uid. Returns true only for
+// the first caller; every later call returns false, so the onboarding email is
+// sent exactly once across the onCreate (Google) and post-verification
+// (email/password) paths.
+async function claimOnboardingSend(uid: string): Promise<boolean> {
+  const flagRef = db.collection('mailFlags').doc(uid)
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(flagRef)
+    if (snap.exists && snap.data()?.onboardingSent === true) return false
+    tx.set(flagRef, { onboardingSent: true, onboardingSentAt: FieldValue.serverTimestamp() }, { merge: true })
+    return true
+  })
 }
 
+async function releaseOnboardingClaim(uid: string): Promise<void> {
+  try {
+    await db.collection('mailFlags').doc(uid).set(
+      { onboardingSent: false, onboardingSentAt: FieldValue.delete() },
+      { merge: true },
+    )
+  } catch {
+    /* best-effort rollback */
+  }
+}
+
+/**
+ * sendWelcomeEmail — auth onCreate.
+ *   - Google / pre-verified accounts  -> onboarding email immediately.
+ *   - Email + password accounts       -> verification email; the onboarding
+ *     email follows only after they verify (sendOnboardingEmail callable).
+ */
 export const sendWelcomeEmail = functionsV1
   .runWith({ secrets: ['GMAIL_SA_KEY'], timeoutSeconds: 60, memory: '256MB' })
   .auth.user()
   .onCreate(async (user) => {
     if (!user.email) return
-
-    const saKeyJson = process.env.GMAIL_SA_KEY
-    if (!saKeyJson) {
+    if (!process.env.GMAIL_SA_KEY) {
       console.error('[sendWelcomeEmail] GMAIL_SA_KEY secret missing')
       return
     }
 
     try {
-      console.log('[sendWelcomeEmail] parsing SA key...')
-      const saKey = JSON.parse(saKeyJson) as {
-        client_email: string
-        private_key: string
+      const firstName = await resolveFirstName(user.uid, user.displayName)
+
+      if (user.emailVerified) {
+        // Google (or otherwise already-verified) -> onboarding now, once.
+        const claimed = await claimOnboardingSend(user.uid)
+        if (!claimed) return
+        try {
+          await sendGmail({ to: user.email, subject: ONBOARDING_SUBJECT, html: buildOnboardingEmailHtml(firstName) })
+          console.log('[sendWelcomeEmail] onboarding sent to', user.email)
+        } catch (err) {
+          await releaseOnboardingClaim(user.uid)
+          throw err
+        }
+        return
       }
-      console.log('[sendWelcomeEmail] SA key parsed, client_email:', saKey.client_email)
 
-      const jwtClient = new google.auth.JWT({
-        email: saKey.client_email,
-        key: saKey.private_key,
-        scopes: ['https://www.googleapis.com/auth/gmail.send'],
-        subject: 'contact@casecompendiumx.in',
-      })
-      console.log('[sendWelcomeEmail] JWT client created, authorizing...')
-      await jwtClient.authorize()
-      console.log('[sendWelcomeEmail] authorized, generating verification link...')
-
-      const gmail = google.gmail({ version: 'v1', auth: jwtClient })
-
-      const verificationLink = user.emailVerified
-        ? null
-        : await getAuth().generateEmailVerificationLink(user.email).catch((e) => {
-            console.error('[sendWelcomeEmail] generateEmailVerificationLink failed:', String(e))
-            return null
-          })
-      console.log('[sendWelcomeEmail] verification link generated, sending email...')
-
-      const html = buildWelcomeEmailHtml(user.displayName ?? null, verificationLink)
-
-      const raw = buildRawEmail({
-        from: 'Compendium X <contact@casecompendiumx.in>',
-        to: user.email,
-        subject: 'Welcome to Compendium X',
-        html,
-      })
-
-      await gmail.users.messages.send({ userId: 'me', requestBody: { raw } })
-      console.log('[sendWelcomeEmail] email sent to', user.email)
+      // Email + password -> verification only. Onboarding is sent post-verify.
+      const verificationLink = await getAuth()
+        .generateEmailVerificationLink(user.email)
+        .catch((e) => {
+          console.error('[sendWelcomeEmail] generateEmailVerificationLink failed:', String(e))
+          return null
+        })
+      if (!verificationLink) return
+      await sendGmail({ to: user.email, subject: VERIFICATION_SUBJECT, html: buildVerificationEmailHtml(firstName, verificationLink) })
+      console.log('[sendWelcomeEmail] verification sent to', user.email)
     } catch (err) {
       console.error('[sendWelcomeEmail] FAILED uid=' + user.uid, err instanceof Error ? err.message : String(err), err instanceof Error ? err.stack : '')
     }
+  })
+
+/**
+ * sendVerificationEmail — callable. Sends (or resends) the custom verification
+ * email to the signed-in caller. No-ops if the account is already verified.
+ */
+export const sendVerificationEmail = functionsV1
+  .runWith({ secrets: ['GMAIL_SA_KEY'], timeoutSeconds: 60, memory: '256MB' })
+  .https.onCall(async (_data, context) => {
+    const uid = context.auth?.uid
+    if (!uid) throw new functionsV1.https.HttpsError('unauthenticated', 'Sign in to continue.')
+
+    const user = await getAuth().getUser(uid)
+    if (!user.email) throw new functionsV1.https.HttpsError('failed-precondition', 'This account has no email.')
+    if (user.emailVerified) return { ok: true, alreadyVerified: true }
+
+    const firstName = await resolveFirstName(uid, user.displayName)
+    const verificationLink = await getAuth().generateEmailVerificationLink(user.email)
+    await sendGmail({ to: user.email, subject: VERIFICATION_SUBJECT, html: buildVerificationEmailHtml(firstName, verificationLink) })
+    return { ok: true }
+  })
+
+/**
+ * sendOnboardingEmail — callable. Sends the onboarding email once, after an
+ * email/password account has verified. Idempotent via the mailFlags claim, so
+ * the client can safely call it on every verified sign-in.
+ */
+export const sendOnboardingEmail = functionsV1
+  .runWith({ secrets: ['GMAIL_SA_KEY'], timeoutSeconds: 60, memory: '256MB' })
+  .https.onCall(async (_data, context) => {
+    const uid = context.auth?.uid
+    if (!uid) throw new functionsV1.https.HttpsError('unauthenticated', 'Sign in to continue.')
+
+    const user = await getAuth().getUser(uid)
+    if (!user.email) throw new functionsV1.https.HttpsError('failed-precondition', 'This account has no email.')
+    if (!user.emailVerified) return { ok: false, reason: 'not-verified' }
+
+    const claimed = await claimOnboardingSend(uid)
+    if (!claimed) return { ok: true, alreadySent: true }
+
+    try {
+      const firstName = await resolveFirstName(uid, user.displayName)
+      await sendGmail({ to: user.email, subject: ONBOARDING_SUBJECT, html: buildOnboardingEmailHtml(firstName) })
+    } catch (err) {
+      await releaseOnboardingClaim(uid)
+      throw err
+    }
+    return { ok: true }
   })

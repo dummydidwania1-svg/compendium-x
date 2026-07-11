@@ -16,6 +16,7 @@ import { auth, db, missingFirebaseClientConfig } from '@/lib/firebase/config'
 import { getPostAuthRoute } from '@/lib/auth/postAuth'
 import { authenticateWithPasswordFallback } from '@/lib/auth/passwordFallback'
 import { requestPasswordResetFallback } from '@/lib/auth/passwordResetFallback'
+import { triggerOnboardingEmail, triggerVerificationEmail } from '@/lib/auth/accountEmails'
 
 export type AuthMode = 'signin' | 'signup'
 
@@ -545,8 +546,15 @@ export default function MarketingAuthPanel({
           const hasGoogleProvider = result.user.providerData.some((p) => p.providerId === 'google.com')
 
           if (!result.user.emailVerified && !hasGoogleProvider) {
-            // Resend verification and block sign-in
-            await sendEmailVerification(result.user)
+            // Resend verification and block sign-in. Prefer the custom-template
+            // email (via the callable, using the now-signed-in user's token);
+            // fall back to Firebase's default email if the callable fails, so
+            // the user is never left without a way to verify.
+            try {
+              await triggerVerificationEmail()
+            } catch {
+              await sendEmailVerification(result.user)
+            }
             await signOut(auth)
             setVerificationEmail(normalizedEmail)
             setVerificationSent(true)
@@ -554,6 +562,12 @@ export default function MarketingAuthPanel({
           }
 
           setPreferFallback(false)
+          // Verified email/password sign-in — send the onboarding email once
+          // (post-verification). Idempotent server-side, and skipped for
+          // Google-linked accounts, which already got onboarding at signup.
+          if (!hasGoogleProvider) {
+            void triggerOnboardingEmail().catch(() => {})
+          }
           await finishAuth(result.user.uid)
           return
         } catch (error) {

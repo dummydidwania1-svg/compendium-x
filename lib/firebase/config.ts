@@ -17,6 +17,7 @@ import {
   initializeFirestore,
 } from 'firebase/firestore'
 import { connectStorageEmulator, getStorage } from 'firebase/storage'
+import { connectFunctionsEmulator, getFunctions } from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -48,6 +49,9 @@ export const auth = (() => {
   }
 })()
 export const storage = getStorage(app)
+// Callable Cloud Functions live in us-central1 (the v1 default region used by
+// the account-email functions). Pin it so httpsCallable targets the right host.
+export const functions = getFunctions(app, 'us-central1')
 
 // Network-hardening for unstable ISP/proxy paths:
 // auto-detect long polling when streaming transport is unreliable.
@@ -75,8 +79,9 @@ if (
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
   connectFirestoreEmulator(db, '127.0.0.1', 8080)
   connectStorageEmulator(storage, '127.0.0.1', 9199)
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001)
 
-  console.info('[firebase] connected to local emulators (auth:9099, firestore:8080, storage:9199)')
+  console.info('[firebase] connected to local emulators (auth:9099, firestore:8080, storage:9199, functions:5001)')
 }
 
 export function waitForAuthUser(): Promise<User | null> {
