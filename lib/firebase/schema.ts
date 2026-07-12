@@ -106,6 +106,17 @@ export type SessionStatus = z.infer<typeof sessionStatus>
 export const sessionMode = z.enum(['remote', 'local'])
 export type SessionMode = z.infer<typeof sessionMode>
 
+/**
+ * Where the case content comes from.
+ *   - 'repository' (default): a curated case document in the `cases` collection.
+ *   - 'custom': "do your own case" — the interviewer brings external material,
+ *     so there is no `cases` document and `caseId` is the reserved sentinel
+ *     (see OWN_CASE_ID in lib/constants.ts).
+ * Absent/undefined is treated as 'repository' for backward compatibility.
+ */
+export const caseSource = z.enum(['repository', 'custom'])
+export type CaseSource = z.infer<typeof caseSource>
+
 export const recordingStatus = z.enum(['recording', 'uploaded', 'upload_failed'])
 export type RecordingStatus = z.infer<typeof recordingStatus>
 
@@ -204,6 +215,19 @@ export const sessionSchema = z
     status: sessionStatus,
     sessionMode: sessionMode,
     caseId: optionalString,
+    /**
+     * Source of the case content. Absent = 'repository' (curated case doc).
+     * 'custom' = "do your own case": no `cases` document, `caseId` is the
+     * OWN_CASE_ID sentinel and the interviewer supplies external material.
+     */
+    caseSource: caseSource.optional(),
+    /**
+     * Interviewer-selected case type for a custom session (from FILTER_TYPES),
+     * autosaved mid-session. Null/absent = General (equal-weight) fallback.
+     * Denormalized onto the evaluation so dashboard analytics treat a custom
+     * session's scores exactly like a repository case's.
+     */
+    customCaseType: optionalString,
     /**
      * The case that was in progress right before a "replace" was started.
      * Set by /replace, cleared by /select-case once a new case is confirmed.

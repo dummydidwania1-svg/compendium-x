@@ -13,6 +13,7 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase/admin'
 import { TransitionError, jsonOk, parseBody } from '@/lib/api/responses'
 import { authenticatedRoute } from '@/lib/api/route'
+import { OWN_CASE_ID, CUSTOM_CASE_TITLE } from '@/lib/constants'
 import { z } from 'zod'
 
 export const runtime = 'nodejs'
@@ -58,22 +59,33 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
       return jsonOk({ ok: true, evaluationId: existing.docs[0].id })
     }
 
-    const caseSnap = await adminDb.collection('cases').doc(caseId).get()
-    const caseData = caseSnap.exists ? (caseSnap.data() ?? {}) : {}
-    const caseTitle =
-      typeof caseData.title === 'string' && caseData.title.trim().length > 0
-        ? caseData.title.trim()
-        : 'Untitled case'
-    const caseType =
-      typeof caseData.caseType === 'string'
-        ? caseData.caseType
-        : typeof caseData.case_type === 'string'
-          ? caseData.case_type
-          : null
-    const industry =
-      typeof caseData.industry === 'string' && caseData.industry.length > 0
-        ? caseData.industry
+    // Custom ("do your own case") sessions have no `cases` document: use neutral
+    // metadata and the interviewer's autosaved case type from the session.
+    const isCustom = sessionData.caseSource === 'custom' || caseId === OWN_CASE_ID
+    let caseTitle = CUSTOM_CASE_TITLE
+    let caseType: string | null =
+      typeof sessionData.customCaseType === 'string' && sessionData.customCaseType.trim().length > 0
+        ? sessionData.customCaseType.trim()
         : null
+    let industry: string | null = null
+    if (!isCustom) {
+      const caseSnap = await adminDb.collection('cases').doc(caseId).get()
+      const caseData = caseSnap.exists ? (caseSnap.data() ?? {}) : {}
+      caseTitle =
+        typeof caseData.title === 'string' && caseData.title.trim().length > 0
+          ? caseData.title.trim()
+          : 'Untitled case'
+      caseType =
+        typeof caseData.caseType === 'string'
+          ? caseData.caseType
+          : typeof caseData.case_type === 'string'
+            ? caseData.case_type
+            : null
+      industry =
+        typeof caseData.industry === 'string' && caseData.industry.length > 0
+          ? caseData.industry
+          : null
+    }
 
     const candidateId = sessionData.candidateId as string
     const candidateEmail =

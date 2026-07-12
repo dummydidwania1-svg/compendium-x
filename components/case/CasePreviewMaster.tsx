@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Navbar from '@/components/dashboard/Navbar'
 import { createPortal } from 'react-dom'
 import NewCaseBadge from '@/components/case/NewCaseBadge'
+import { CUSTOM_CASE_TITLE } from '@/lib/constants'
 
 /* ═══════════════════════════════════════════════════════════
    Types
@@ -2552,6 +2553,16 @@ export type CaseInterviewerMasterProps = Omit<CasePreviewMasterProps, 'previewMo
   onEndCase: () => void
   onReplaceCase?: () => void
   onCancelSession?: () => void
+  /**
+   * "Do your own case" mode: hide every curated-case content surface (prompt,
+   * framework tree, exhibits, solution) and render a neutral workspace plus an
+   * optional case-type selector. Session controls and the eval panel are
+   * unchanged.
+   */
+  customMode?: boolean
+  customCaseTypeOptions?: string[]
+  customCaseType?: string | null
+  onSelectCustomCaseType?: (value: string | null) => void
 }
 
 const EVAL_CRITERIA: Array<{ id: keyof ScoreState; label: string }> = [
@@ -4876,6 +4887,7 @@ export function CaseInterviewerMaster({
   companyLabel, roundLabel, frameworkTree, additionalFrameworkTrees,
   visualisations, recommendationsTable, abbreviations,
   notes, setNotes, scores, setScores, onEndCase, onReplaceCase, onCancelSession,
+  customMode = false, customCaseTypeOptions = [], customCaseType = null, onSelectCustomCaseType,
 }: CaseInterviewerMasterProps) {
   // ─── Sync tree data (same as preview) ────────────────
   const tree = frameworkTree ?? BANKING_ON_YOU_TREE
@@ -5489,6 +5501,64 @@ export function CaseInterviewerMaster({
               <div className="absolute right-[8%] top-[20%] h-[240px] w-[240px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(196,168,130,0.1) 0%, rgba(196,168,130,0.04) 28%, transparent 68%)', animation: 'cpm-glow 16s ease-in-out infinite reverse' }} />
             </div>
 
+            {customMode ? (
+              /* ── "Do your own case": neutral workspace, no curated content ── */
+              <section className="relative z-10 pt-2">
+                <span className="text-[10px] uppercase tracking-[0.28em] text-[#3D5A35]">
+                  Your Session
+                </span>
+                <h1 className="-ml-[2px] mt-3 font-light leading-[1.02] tracking-tight text-[#453a2a]"
+                  style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '4.2rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
+                  {CUSTOM_CASE_TITLE}
+                </h1>
+                <p className="mt-3 max-w-[560px] text-[14px] leading-relaxed text-[#5C4033]/62"
+                  style={{ animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.18s both' }}>
+                  Lead the interview with the case you brought. Recording, transcript,
+                  and scoring all work exactly as they do for a repository case — use
+                  the notes and rating panel on the right when you&rsquo;re ready.
+                </p>
+
+                {/* Optional case-type selector — autosaved, safe General fallback */}
+                <div className="mt-9 max-w-[560px] rounded-2xl border border-[#5C4033]/12 bg-[rgba(255,248,240,0.8)] px-6 py-5 shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]"
+                  style={{ animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.3s both' }}>
+                  <p className="text-[13px] font-medium text-[#453a2a]">Case type</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-[#5C4033]/55">
+                    Optional. Tags this session for your dashboard analytics. Leave
+                    unset to score with balanced weights.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {customCaseTypeOptions.map((type) => {
+                      const active = customCaseType === type
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => onSelectCustomCaseType?.(active ? null : type)}
+                          aria-pressed={active}
+                          className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-colors duration-200 ${
+                            active
+                              ? 'border-[#3D5A35]/55 bg-[#3D5A35]/10 text-[#3D5A35]'
+                              : 'border-[#5C4033]/18 text-[#5C4033]/60 hover:border-[#3D5A35]/35 hover:text-[#3D5A35]'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {customCaseType && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectCustomCaseType?.(null)}
+                      className="mt-3 text-[11px] font-medium text-[#5C4033]/45 transition-colors hover:text-[#3D5A35]"
+                    >
+                      Clear selection
+                    </button>
+                  )}
+                </div>
+              </section>
+            ) : (
+            <>
             {/* Hero */}
             <section className="relative z-10 pb-4 pt-2">
               <h1 className="-ml-[2px] font-light leading-[1.02] tracking-tight text-[#453a2a]"
@@ -5815,6 +5885,8 @@ export function CaseInterviewerMaster({
 
               </div>
             </section>
+            </>
+            )}
           </main>
 
           {/* ── Right panel: notes + ratings + end case ── */}

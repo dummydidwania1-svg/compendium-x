@@ -17,6 +17,13 @@ import { z } from 'zod'
 // then raise this minimum to 16.
 const lobbyId = z.string().min(4).max(128)
 const caseId = z.string().min(1).max(128)
+const caseSource = z.enum(['repository', 'custom'])
+// Interviewer-chosen case type for a custom session. Must be one of the
+// existing taxonomy values (FILTER_TYPES) so dashboard weighting keeps working;
+// null clears it back to the General fallback.
+const customCaseType = z
+  .enum(['Profitability', 'Market Entry', 'Pricing', 'Growth', 'Unconventional', 'Guesstimate'])
+  .nullable()
 const sessionMode = z.enum(['remote', 'local'])
 const stopReason = z.string().min(1).max(64)
 const score = z.number().min(0.5).max(5)
@@ -40,8 +47,19 @@ export const selectCaseInput = z.object({
   caseId,
   sessionMode,
   caseName: z.string().max(256).optional(),
+  /** 'custom' for "do your own case"; omitted/'repository' for curated cases. */
+  caseSource: caseSource.optional(),
 })
 export type SelectCaseInput = z.infer<typeof selectCaseInput>
+
+/* -------------------------------------------------------------------------- */
+/* POST /api/sessions/[lobbyId]/case-type — interviewer autosaves custom type  */
+/* -------------------------------------------------------------------------- */
+
+export const setCaseTypeInput = z.object({
+  caseType: customCaseType,
+})
+export type SetCaseTypeInput = z.infer<typeof setCaseTypeInput>
 
 /* -------------------------------------------------------------------------- */
 /* POST /api/sessions/[lobbyId]/recording                                     */

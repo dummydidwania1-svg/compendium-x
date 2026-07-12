@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { Suspense, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
-import { X } from 'lucide-react'
+import { X, NotebookPen } from 'lucide-react'
 import Footer from '@/components/dashboard/Footer'
 import Navbar from '@/components/dashboard/Navbar'
 import { db, signInAnonymouslyIfNeeded } from '@/lib/firebase/config'
-import { FILTER_LEVELS } from '@/lib/constants'
+import { FILTER_LEVELS, OWN_CASE_ID, CUSTOM_CASE_TITLE } from '@/lib/constants'
 import RepoFilterDropdown from '@/components/ui/RepoFilterDropdown'
 import { apiPost } from '@/lib/api/client'
 import { slugifyCase } from '@/lib/slug'
@@ -517,6 +517,7 @@ const clearAllFilters = () => {
         caseId: prevCaseId,
         sessionMode,
         caseName: prevCaseName,
+        caseSource: prevCaseId === OWN_CASE_ID ? 'custom' : 'repository',
       })
       localStorage.setItem('compendium-session-start', JSON.stringify({
         lobbyId, caseId: prevCaseId, caseName: prevCaseName, mode: sessionMode,
@@ -870,7 +871,11 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
   }
 }, [selectionMode, lobbyId, sessionMode, router])
 
-  const handleSelectCase = async (caseId: string, caseTitle?: string) => {
+  const handleSelectCase = async (
+    caseId: string,
+    caseTitle?: string,
+    caseSource: 'repository' | 'custom' = 'repository',
+  ) => {
     if (pendingCaseId) return // ignore double-clicks while one is in flight
     setActionError('')
     setFailedCase(null)
@@ -897,6 +902,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
       apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/select-case`, {
         caseId,
         sessionMode,
+        caseSource,
         ...(caseTitle ? { caseName: caseTitle } : {}),
       }).catch((error) => {
         // API failed — clear the marker so the interviewer page's grace
@@ -942,6 +948,18 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
     }
     void handleSelectCase(caseItem.id, caseItem.title)
   }, [handleSelectCase, setComingSoonBody, setComingSoonVisible])
+
+  // "Do your own case": launch a session with no curated case. In selection
+  // mode this starts the interview immediately (reusing the exact same flow as
+  // a repository case, just with the custom sentinel + source). In browse mode
+  // there's no lobby yet, so send the user to the pre-session flow to create one.
+  const handleStartOwnCase = useCallback(() => {
+    if (selectionMode && lobbyId) {
+      void handleSelectCase(OWN_CASE_ID, CUSTOM_CASE_TITLE, 'custom')
+    } else {
+      router.push('/practice')
+    }
+  }, [selectionMode, lobbyId, handleSelectCase, router])
 
   const resultsLabel = loading
     ? 'Loading...'
@@ -1496,6 +1514,37 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
       ) : (
         <Navbar currentPage="repository" />
       )}
+
+      {/* Do your own case — persistent secondary utility, pinned just below the
+          fixed 70px navbar at the top-right. Rendered outside <main> so no
+          short/overflow parent can clip it. z-[90] keeps it beneath the nav
+          (z-[100]) and its mobile drawer. Tooltip shows on hover AND keyboard
+          focus (focus-within), never on click, and never blocks the button. */}
+      <div
+        className="fixed z-[90] top-[calc(70px+0.75rem)] right-[max(1rem,env(safe-area-inset-right))] md:right-[max(2rem,env(safe-area-inset-right))]"
+      >
+        <div className="group relative">
+          <button
+            type="button"
+            onClick={handleStartOwnCase}
+            disabled={!!pendingCaseId}
+            aria-label="Do your own case"
+            aria-describedby="own-case-tip"
+            className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-[#3D5A35]/30 bg-[#fff8f0]/95 px-3.5 py-2 text-[12px] font-medium text-[#3D5A35] shadow-[0_1px_2px_rgba(69,58,42,0.06),0_6px_16px_-8px_rgba(61,90,53,0.28)] backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,transform] duration-200 hover:border-[#3D5A35]/55 hover:bg-[#fbf3e6] hover:shadow-[0_2px_4px_rgba(69,58,42,0.08),0_10px_22px_-8px_rgba(61,90,53,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3D5A35]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdf6ec] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none sm:px-4"
+          >
+            <NotebookPen aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#3D5A35]/80" strokeWidth={1.75} />
+            <span className="hidden sm:inline">{pendingCaseId === OWN_CASE_ID ? 'Starting…' : 'Do your own case'}</span>
+            <span className="sm:hidden">{pendingCaseId === OWN_CASE_ID ? 'Starting…' : 'Own case'}</span>
+          </button>
+          <span
+            id="own-case-tip"
+            role="tooltip"
+            className="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-[91] w-[240px] max-w-[calc(100vw-2rem)] translate-y-1 rounded-lg border border-[#3D5A35]/15 bg-[#fffaf3] px-3 py-2 text-left text-[11px] leading-snug text-[#5c4033] opacity-0 shadow-[0_10px_28px_-12px_rgba(61,90,53,0.4)] transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:transition-none"
+          >
+            Practise a case from your own casebook with the same recording, transcript and evaluation tools.
+          </span>
+        </div>
+      </div>
 
       {/* pt-[90px] clears the fixed 70px navbar + breathing room */}
       <main

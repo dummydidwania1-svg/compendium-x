@@ -16,32 +16,43 @@ import { adminDb } from '@/lib/firebase/admin'
 import { TransitionError, jsonOk, parseBody } from '@/lib/api/responses'
 import { authenticatedRoute } from '@/lib/api/route'
 import { submitEvaluationInput } from '@/lib/firebase/inputs'
+import { OWN_CASE_ID, CUSTOM_CASE_TITLE } from '@/lib/constants'
 
 export const runtime = 'nodejs'
 
 export const POST = authenticatedRoute('/api/evaluations', async (request, caller) => {
   const input = await parseBody(request, submitEvaluationInput)
 
-  // 1) Pull case metadata from the source of truth.
-  const caseSnap = await adminDb.collection('cases').doc(input.caseId).get()
-  if (!caseSnap.exists) {
-    throw new TransitionError(404, 'case_not_found', 'Case does not exist.')
-  }
-  const caseData = caseSnap.data() ?? {}
-  const caseTitle =
-    typeof caseData.title === 'string' && caseData.title.trim().length > 0
-      ? caseData.title.trim()
-      : 'Untitled case'
-  const caseType =
-    typeof caseData.caseType === 'string'
-      ? caseData.caseType
-      : typeof caseData.case_type === 'string'
-        ? caseData.case_type
+  // "Do your own case" sessions have no curated `cases` document. Their caseId
+  // is the reserved sentinel, so skip the lookup and use neutral metadata; the
+  // case type is resolved from the session's autosaved `customCaseType` below.
+  const isCustom = input.caseId === OWN_CASE_ID
+
+  // 1) Pull case metadata from the source of truth (repository cases only).
+  let caseTitle = CUSTOM_CASE_TITLE
+  let caseType: string | null = null
+  let industry: string | null = null
+  if (!isCustom) {
+    const caseSnap = await adminDb.collection('cases').doc(input.caseId).get()
+    if (!caseSnap.exists) {
+      throw new TransitionError(404, 'case_not_found', 'Case does not exist.')
+    }
+    const caseData = caseSnap.data() ?? {}
+    caseTitle =
+      typeof caseData.title === 'string' && caseData.title.trim().length > 0
+        ? caseData.title.trim()
+        : 'Untitled case'
+    caseType =
+      typeof caseData.caseType === 'string'
+        ? caseData.caseType
+        : typeof caseData.case_type === 'string'
+          ? caseData.case_type
+          : null
+    industry =
+      typeof caseData.industry === 'string' && caseData.industry.length > 0
+        ? caseData.industry
         : null
-  const industry =
-    typeof caseData.industry === 'string' && caseData.industry.length > 0
-      ? caseData.industry
-      : null
+  }
 
   // 2) Resolve candidate identity from session (or fall back to caller).
   let candidateId: string
@@ -75,6 +86,12 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
     candidateId = sessionData.candidateId
     candidateEmail =
       typeof sessionData.candidateEmail === 'string' ? sessionData.candidateEmail : null
+
+    // Custom sessions denormalize the interviewer's autosaved case type onto
+    // the evaluation so dashboard analytics weight the scores like any case.
+    if (isCustom && typeof sessionData.customCaseType === 'string' && sessionData.customCaseType.trim().length > 0) {
+      caseType = sessionData.customCaseType.trim()
+    }
   } else {
     candidateId = caller.uid
     candidateEmail = caller.email

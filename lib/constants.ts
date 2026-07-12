@@ -6,6 +6,21 @@ subtle: '#D9D0C4',
 accent: '#3D5A35',
 };
 
+/**
+ * Custom ("do your own case") mode.
+ *
+ * A session whose `caseSource` is `'custom'` carries no curated case document.
+ * Instead of a repository `caseId`, it uses this reserved sentinel so every
+ * existing code path that keys off `caseId` (routing, storage paths, eval
+ * writes) keeps working without a parallel pipeline. The sentinel is
+ * deliberately not a valid Firestore `cases` document id, so custom sessions
+ * can never be mistaken for a repository case.
+ */
+export const OWN_CASE_ID = 'own-case'
+
+/** Neutral, brand-consistent title shown wherever a repository case title would appear. */
+export const CUSTOM_CASE_TITLE = 'Your Own Case'
+
 export const FILTER_TYPES = [
 'Profitability',
 'Market Entry',
