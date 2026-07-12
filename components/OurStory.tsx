@@ -31,6 +31,7 @@ const EDITION_DETAILS: Record<EditionEra, { chapter: string; title: string; body
 type Contributor = {
   name: string;
   role: string;
+  title?: string;
   bio: string;
   school?: string;
   linkedin?: string;
@@ -91,7 +92,7 @@ const EDITIONS: Edition[] = [
       { name: 'Saksham Didwania', role: 'Kearney', school: 'SRCC • Class of 2026', x: 78, y: 56,
         linkedin: 'https://in.linkedin.com/in/sakshamd26', photoSrc: '/team/saksham-didwania.jpg',
         bio: 'Saksham earned a pre-placement offer from Accenture Strategy before charting his path to Kearney. A stint in private equity at Samara Capital was one of several across very different industries, including real estate and venture capital. At SRCC, he led The Placement Cell as Secretary General, bringing six top consulting firms to campus for the first time in its placement history. A national-level Abacus and Chess player, he was a State Topper in his ISC board exams and a 100%iler with AIR 3 in CUET.' },
-      { name: 'Tanvi Bansal', role: 'Goldman Sachs • Intern', school: 'SRCC • Class of 2027', x: 99.5, y: 59,
+      { name: 'Tanvi Bansal', role: 'Goldman Sachs • Intern', title: 'Collaborator', school: 'SRCC • Class of 2027', x: 99.5, y: 59,
         linkedin: 'https://in.linkedin.com/in/tanvi-bansal-298786233/', photoSrc: '/team/tanvi-bansal.jpg', objectPosition: 'center 46%', zoom: 1.15, zoomOrigin: '38% 46%',
         bio: 'Interned at Grant Thornton & Michael Page. A global semifinalist at Wharton & Bharatnatyam graduate, she served as Corporate Communications Head at the Placement Cell, SRCC.' },
     ],
@@ -318,7 +319,7 @@ s.style.setProperty('--gy', `${e.clientY}px`);
 
   <div className="text-center mt-32 reveal">
     <span className="font-label text-[10px] uppercase tracking-[0.3em] text-[#3D5A35]/50 font-semibold block mb-3">The Team Behind Case Compendium</span>
-    <h2 className="font-headline text-4xl md:text-6xl font-light text-[#453a2a] tracking-tight">Meet the Founders</h2>
+    <h2 className="font-headline text-4xl md:text-6xl font-light text-[#453a2a] tracking-tight">Meet the Team</h2>
   </div>
 
   <button
@@ -434,6 +435,7 @@ onMouseLeave={() => setFocus(null)}
                       <span className="cst-label">
                         <span className="cst-label-name">{person.name}</span>
                         <span className="cst-label-role">{person.role}</span>
+                        {person.title && <span className="cst-label-title">{person.title}</span>}
                       </span>
                     </button>
                   );
@@ -469,6 +471,7 @@ onMouseLeave={() => setFocus(null)}
                 <p className="cst-dossier-edition">{active.edition.chapter} · {active.edition.year}</p>
                 <h3 className="cst-dossier-name">{active.person.name}</h3>
                 <span className="cst-dossier-role">{active.person.role}</span>
+                {active.person.title && <span className="cst-dossier-title">{active.person.title}</span>}
               </div>
             </div>
             <p className="cst-dossier-bio">{active.person.bio}</p>
