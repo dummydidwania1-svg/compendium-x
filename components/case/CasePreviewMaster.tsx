@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Navbar from '@/components/dashboard/Navbar'
 import { createPortal } from 'react-dom'
 import NewCaseBadge from '@/components/case/NewCaseBadge'
+import { isMobileDevice } from '@/lib/browser'
 
 /* ═══════════════════════════════════════════════════════════
    Types
@@ -3415,6 +3416,30 @@ function computeTreeLocals(tree: FrameworkTree) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   AdditionalFrameworkUnavailableOnMobile — replaces an
+   AdditionalFrameworkPanel on real mobile devices, where its
+   chart layout doesn't reflow to fit the screen.
+   ═══════════════════════════════════════════════════════════ */
+
+function AdditionalFrameworkUnavailableOnMobile({ label }: { label?: string }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px]">
+      {label && (
+        <div className="bg-[#D9D0C4]/50 px-4 py-2.5">
+          <span className="block text-center text-[10px] font-bold uppercase tracking-[0.2em] text-[#5C4033]">{label}</span>
+        </div>
+      )}
+      <div className="px-5 py-6 text-center">
+        <p className="text-[13px] leading-relaxed text-[#5C4033]/80">
+          This framework diagram won&apos;t render properly at this screen size.
+          Switch to a laptop or desktop for the full view.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    AdditionalFrameworkPanel — a standalone interactive chart
    for a secondary FrameworkTree. Renders below the primary one
    with the same design: desktop/vertical chart + mobile tree +
@@ -3716,6 +3741,14 @@ export default function CasePreviewMaster({
     const sync = () => setIsDesktop(mq.matches)
     sync(); mq.addEventListener('change', sync)
     return () => mq.removeEventListener('change', sync)
+  }, [])
+
+  // Real phone (UA-based), independent of viewport width — additional
+  // framework diagrams don't reflow to fit a phone screen, so this page
+  // shows a note instead of the chart there. Case preview only.
+  const [isRealMobileDevice, setIsRealMobileDevice] = useState(false)
+  useEffect(() => {
+    setIsRealMobileDevice(isMobileDevice())
   }, [])
 
   // ─── Mini step nav on scroll + auto-hide on inactivity ──────────────────
@@ -4463,7 +4496,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
 
                       {/* ── Additional framework trees (desktop — inside same column) ── */}
                       {additionalFrameworkTrees?.map((addTree, idx) => (
-                        <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+                        isRealMobileDevice ? (
+                          <AdditionalFrameworkUnavailableOnMobile key={idx} label={addTree.label ?? `Framework ${idx + 2}`} />
+                        ) : (
+                          <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+                        )
                       ))}
 
                       {/* Drilldown table visualizations */}
@@ -4602,7 +4639,11 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
               </Reveal>
               {/* ── Additional framework trees (mobile) ── */}
               {additionalFrameworkTrees?.map((addTree, idx) => (
-                <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+                isRealMobileDevice ? (
+                  <AdditionalFrameworkUnavailableOnMobile key={idx} label={addTree.label ?? `Framework ${idx + 2}`} />
+                ) : (
+                  <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
+                )
               ))}
               {/* Mobile drilldown table */}
               {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
