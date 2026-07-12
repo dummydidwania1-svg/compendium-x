@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-/* "How to use" demo videos. Replace these TODO placeholders with the real
-   MP4 URLs (Firebase Storage or /public) — the only follow-up left. The player
-   renders the poster beacon and never crashes while these are empty. */
+/* "How to use" demo videos, served from Firebase Storage. The player renders
+   the poster beacon and never crashes if either URL is ever empty again. */
 const HOW_TO_USE_VIDEOS: Record<'local' | 'remote', string> = {
   local: 'https://storage.googleapis.com/compendium-x.firebasestorage.app/how-to-use/same-device.mp4', // "Same Device" demo
-  remote: '', // TODO_REMOTE_PARTNER_MP4_URL — "Remote Partner" demo
+  remote: 'https://storage.googleapis.com/compendium-x.firebasestorage.app/how-to-use/remote-partner.mp4', // "Remote Partner" demo
 }
 
 const PR_SPEEDS = [1, 1.25, 1.5, 2] as const
