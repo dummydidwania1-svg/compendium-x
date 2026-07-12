@@ -5,7 +5,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 /* "How to use" demo videos, served from Firebase Storage. The player renders
    the poster beacon and never crashes if either URL is ever empty again. */
 const HOW_TO_USE_VIDEOS: Record<'local' | 'remote', string> = {
-  local: 'https://storage.googleapis.com/compendium-x.firebasestorage.app/how-to-use/same-device.mp4', // "Same Device" demo
+  // Filename versioned (v2, not an overwrite of same-device.mp4): that object
+  // was served with a 1-year immutable Cache-Control, so browsers that had
+  // already loaded it would never re-fetch a same-URL replacement.
+  local: 'https://storage.googleapis.com/compendium-x.firebasestorage.app/how-to-use/same-device-v2.mp4', // "Same Device" demo
   remote: 'https://storage.googleapis.com/compendium-x.firebasestorage.app/how-to-use/remote-partner.mp4', // "Remote Partner" demo
 }
 
