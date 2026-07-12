@@ -17,6 +17,8 @@ import { writeCandidateBeat } from '@/lib/session/candidateTab'
 import { consumePrimedRecording, clearPrimedMic, micDebug } from '@/lib/session/primedMic'
 import SessionEndedScreen from '@/components/session/SessionEndedScreen'
 import PlatformLoader from '@/components/PlatformLoader'
+import MobileBlockModal from '@/components/permissions/MobileBlockModal'
+import { isMobileDevice } from '@/lib/browser'
 
 type SessionState = {
   status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing' | 'fallback_unrated'
@@ -186,6 +188,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   // later, which reads as a popup flashing over a live case. This must
   // resolve to false before anything interactive is ever shown.
   const [checkingSessionStatus, setCheckingSessionStatus] = useState(true)
+  // Hard block for a live session opened directly on a phone (bypassing the
+  // lobby's own mobile block via a deep link straight into the workspace).
+  const [mobileBlocked, setMobileBlocked] = useState(false)
+  const [mobileBlockDismissed, setMobileBlockDismissed] = useState(false)
   const [recordingMode, setRecordingMode] = useState<RecordingMode>(requestedMode)
   const [preferredRecordingMode, setPreferredRecordingMode] = useState<RecordingMode>(requestedMode)
   const [recordingState, setRecordingState] = useState<RecordingState>('idle')
@@ -1308,6 +1314,15 @@ const interviewerStaleStreakRef = useRef(0)
       caseIdRef.current = resolved.id
       setResolvedCaseId(resolved.id)
 
+      // Checked before auth: no point forcing sign-in just to show this
+      // message. The live workspace (split-screen recording/transcript UI)
+      // doesn't work on a phone regardless of mode or role.
+      if (isMobileDevice()) {
+        setMobileBlocked(true)
+        setCheckingSessionStatus(false)
+        return
+      }
+
       const user = await waitForAuthUser()
       if (!user) {
         const redirectPath = `/case/${resolved.id}/workspace${lobbyId ? `?lobby=${encodeURIComponent(lobbyId)}&mode=${encodeURIComponent(requestedMode)}` : ''}`
@@ -2294,6 +2309,19 @@ interrupted: true,
               : isWaitingForUserStart
                 ? `When you press the button below, ${BROWSER === 'safari' ? 'Safari' : BROWSER === 'edge' ? 'Edge' : BROWSER === 'firefox' ? 'Firefox' : 'Chrome'} will ask for microphone access.`
                 : recoverableCaptureMessage || 'Use the Allow Recording button below to try again.'
+
+  if (mobileBlocked) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#fff8f0' }}>
+        {!mobileBlockDismissed && (
+          <MobileBlockModal
+            closeTabOnDismiss
+            onDismiss={() => setMobileBlockDismissed(true)}
+          />
+        )}
+      </div>
+    )
+  }
 
   if (checkingSessionStatus) {
     return <PlatformLoader message="Getting your case ready" />

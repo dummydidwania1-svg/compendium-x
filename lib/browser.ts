@@ -22,3 +22,11 @@ export function isMobileDevice(): boolean {
   const isAndroidPhone = /Android/i.test(ua) && /Mobile/i.test(ua)
   return isAndroidPhone || /iPhone|iPod|Windows Phone|BlackBerry|IEMobile|Opera Mini/i.test(ua)
 }
+
+// Shared sessionStorage key for the soft "try a laptop for the best
+// experience" notice shown on mobile for pages that are still usable there
+// (landing, case preview) — as opposed to MobileBlockModal, which hard-blocks
+// pages that genuinely don't work on a phone (Do a Case, live sessions). One
+// shared key across every page that shows this notice, so a visitor sees it
+// once per browser session rather than once per page they happen to land on.
+export const MOBILE_NOTICE_SEEN_KEY = 'compendium-mobile-notice-seen'

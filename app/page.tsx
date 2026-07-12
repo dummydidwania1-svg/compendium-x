@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import Navbar from '@/components/dashboard/Navbar'
 import Footer from '@/components/dashboard/Footer'
 import HowToUseOverlay from '@/components/HowToUseOverlay'
+import MobileSoftNotice from '@/components/permissions/MobileSoftNotice'
+import { isMobileDevice, MOBILE_NOTICE_SEEN_KEY } from '@/lib/browser'
 
 
 const PAGE_CSS = `
@@ -559,6 +561,15 @@ export default function LandingPage() {
   /* ── "How to use" overlay (Projection Room) trigger state ── */
   const [howToOpen, setHowToOpen] = useState(false)
 
+  /* ── Soft "try a laptop" notice for mobile visitors (dismissible, non-blocking) ── */
+  const [showMobileNotice, setShowMobileNotice] = useState(false)
+
+  useEffect(() => {
+    if (isMobileDevice() && !sessionStorage.getItem(MOBILE_NOTICE_SEEN_KEY)) {
+      setShowMobileNotice(true)
+    }
+  }, [])
+
   useEffect(() => {
     const cleanups: Array<() => void> = []
 
@@ -807,6 +818,15 @@ const tRemove = setTimeout(() => {
         Rendered as a sibling of .ccx-page so the page-wide
         `border-radius: 0 !important` reset never clips its pills. ══ */}
     <HowToUseOverlay open={howToOpen} onClose={() => setHowToOpen(false)} />
+
+    {showMobileNotice && (
+      <MobileSoftNotice
+        onDismiss={() => {
+          sessionStorage.setItem(MOBILE_NOTICE_SEEN_KEY, '1')
+          setShowMobileNotice(false)
+        }}
+      />
+    )}
     </>
   )
 }

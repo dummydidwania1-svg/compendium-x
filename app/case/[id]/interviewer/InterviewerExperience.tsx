@@ -20,7 +20,10 @@ import { MandatoryTimedOverlay } from '@/components/lobby/MandatoryTimedOverlay'
 import { MandatoryOverlay } from '@/components/lobby/MandatoryOverlay'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
+import MobileBlockModal from '@/components/permissions/MobileBlockModal'
+import MobileSoftNotice from '@/components/permissions/MobileSoftNotice'
 import { useMicPermission } from '@/lib/permissions/microphone'
+import { isMobileDevice, MOBILE_NOTICE_SEEN_KEY } from '@/lib/browser'
 
 
 /* ── Error boundary — catches client-side crashes, auto-reloads ── */
@@ -821,6 +824,21 @@ export function InterviewerPageInner({
 	const [checkingSessionEnded, setCheckingSessionEnded] = useState(
 		Boolean(lobbyId) && !previewMode,
 	)
+
+	// Hard block: a live session (lobbyId present, not just a preview) opened on
+	// a phone. Checked alongside the dead-link guard below.
+	const [mobileBlocked, setMobileBlocked] = useState(false)
+	const [mobileBlockDismissed, setMobileBlockDismissed] = useState(false)
+
+	// Soft, dismissible notice for a case opened directly via a shared preview
+	// link on a phone — the preview itself is readable on mobile, so this never
+	// blocks, unlike mobileBlocked above.
+	const [showMobileNotice, setShowMobileNotice] = useState(false)
+	useEffect(() => {
+		if (previewMode && isMobileDevice() && !sessionStorage.getItem(MOBILE_NOTICE_SEEN_KEY)) {
+			setShowMobileNotice(true)
+		}
+	}, [previewMode])
 
 	const [scores, setScores] = useState<ScoreState>({
 		structure: 0,
@@ -1976,6 +1994,15 @@ export function InterviewerPageInner({
 			setCheckingSessionEnded(false)
 			return
 		}
+		// Live sessions (Same Device and Remote alike) need a split-screen popup
+		// or a dense multi-panel workspace — neither works on a phone. Checked
+		// before the network round-trip below so a mobile visitor never
+		// briefly sees the real session flash in.
+		if (isMobileDevice()) {
+			setMobileBlocked(true)
+			setCheckingSessionEnded(false)
+			return
+		}
 		let cancelled = false
 		;(async () => {
 			try {
@@ -2475,6 +2502,21 @@ useEffect(() => {
 		setSubmitting(false)
 	}
 
+	// Mobile block takes priority over everything else: a live session on a
+	// phone is unusable regardless of whether it's also stale.
+	if (mobileBlocked) {
+		return (
+			<div style={{ position: 'fixed', inset: 0, background: '#fff8f0' }}>
+				{!mobileBlockDismissed && (
+					<MobileBlockModal
+						closeTabOnDismiss
+						onDismiss={() => setMobileBlockDismissed(true)}
+					/>
+				)}
+			</div>
+		)
+	}
+
 	// Ended takes priority over the case-load gate: once the status check
 	// confirms the session is over, show the ended screen immediately rather
 	// than waiting on the (now irrelevant) case fetch to finish.
@@ -2520,25 +2562,35 @@ useEffect(() => {
 	if (currentView === 'case') {
 		if (previewMode) {
 			return (
-				<CasePreviewView
-					caseData={caseData}
-					previewMode={previewMode}
-					transcriptDisplayLines={transcriptDisplayLines}
-					parsedFramework={parsedFramework}
-					promptLines={promptLines}
-					caseTypeLabel={caseTypeLabel}
-					industryLabel={industryLabel}
-					difficultyLabel={difficultyLabel}
-					companyLabel={companyLabel}
-					roundLabel={roundLabel}
-					isBankingOnYou={isBankingOnYou}
-					frameworkTree={caseData.frameworkTree}
-					additionalFrameworkTrees={caseData.additionalFrameworkTrees}
-					visualisations={caseData.visualisations}
-					recommendationsTable={caseData.recommendationsTable}
-					abbreviations={caseData?.abbreviations}
-					ForumSection={resolvedCaseId ? <CaseForumSection caseId={resolvedCaseId} caseTitle={caseData!.title} /> : undefined}
-				/>
+				<>
+					<CasePreviewView
+						caseData={caseData}
+						previewMode={previewMode}
+						transcriptDisplayLines={transcriptDisplayLines}
+						parsedFramework={parsedFramework}
+						promptLines={promptLines}
+						caseTypeLabel={caseTypeLabel}
+						industryLabel={industryLabel}
+						difficultyLabel={difficultyLabel}
+						companyLabel={companyLabel}
+						roundLabel={roundLabel}
+						isBankingOnYou={isBankingOnYou}
+						frameworkTree={caseData.frameworkTree}
+						additionalFrameworkTrees={caseData.additionalFrameworkTrees}
+						visualisations={caseData.visualisations}
+						recommendationsTable={caseData.recommendationsTable}
+						abbreviations={caseData?.abbreviations}
+						ForumSection={resolvedCaseId ? <CaseForumSection caseId={resolvedCaseId} caseTitle={caseData!.title} /> : undefined}
+					/>
+					{showMobileNotice && (
+						<MobileSoftNotice
+							onDismiss={() => {
+								sessionStorage.setItem(MOBILE_NOTICE_SEEN_KEY, '1')
+								setShowMobileNotice(false)
+							}}
+						/>
+					)}
+				</>
 			)
 		}
 
