@@ -226,9 +226,9 @@ export default function MarketingAuthPanel({
     if (!(error instanceof Error)) return fallback
     if (error.message.includes('auth/network-request-failed')) {
       if (missingFirebaseClientConfig.length > 0) {
-        return 'Firebase web config is missing in this client build. Restart the dev server after updating .env.local and try again.'
+        return "We're having trouble connecting right now. Please try again in a moment."
       }
-      return 'Direct Firebase auth is being blocked in this browser. A fallback path should have been attempted automatically. If this message still appears, restart the dev server and retry.'
+      return 'Sign-in was blocked, possibly by an ad blocker or privacy extension. Try disabling it for this site, or use a different browser, then try again.'
     }
     if (error.message.includes('auth/invalid-credential')) return 'Invalid email or password.'
     if (error.message.includes('auth/invalid-email')) return 'Enter a valid email.'
@@ -288,7 +288,7 @@ export default function MarketingAuthPanel({
   const handleGoogleSignIn = async () => {
     if (missingFirebaseClientConfig.length > 0) {
       setMessage(
-        'Firebase web config is missing in this client build. Restart the dev server after updating .env.local and try again.'
+        "We're having trouble connecting right now. Please try again in a moment."
       )
       setMessageTone('error')
       return
@@ -401,7 +401,7 @@ export default function MarketingAuthPanel({
 
     if (missingFirebaseClientConfig.length > 0) {
       setResetError(
-        'Firebase web config is missing in this client build. Restart the dev server after updating .env.local and try again.'
+        "We're having trouble connecting right now. Please try again in a moment."
       )
       return
     }
@@ -449,7 +449,7 @@ export default function MarketingAuthPanel({
 
     if (missingFirebaseClientConfig.length > 0) {
       setMessage(
-        'Firebase web config is missing in this client build. Restart the dev server after updating .env.local and try again.'
+        "We're having trouble connecting right now. Please try again in a moment."
       )
       setMessageTone('error')
       return
