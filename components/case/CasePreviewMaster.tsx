@@ -698,14 +698,30 @@ function layoutDesktop(
       }
       // Running Y cursor: place each child at cursorY, then advance past the
       // true bottom of its inline subtree plus breathing room.
+      //
+      // The parent->first-child offset keeps the full rowGap so the first child
+      // clears the parent box and its connector reads cleanly. Between siblings
+      // we advance to (previous subtree bottom) + a fixed breathing gap + the
+      // NEXT child's own half-height, so the empty run between two boxes is just
+      // the breathing gap rather than the whole tallest-child height. This
+      // shortens the long connectors seen on shallow stacked columns (single-
+      // line children under a node whose column also has a 2-3 line sibling)
+      // without touching vStep, the horizontal packing, or the rowGap formula
+      // other cases rely on for their parent->first-child clearance.
+      const STACK_BREATHING = 34
       let cursorY = parentPoint.y + rowGap
-      children.forEach((childId) => {
+      children.forEach((childId, i) => {
         const cur = pos.get(childId)
         if (!cur) return
+        if (i > 0) {
+          const lines = estNodeLines(childId)
+          const halfH = 20 + Math.max(0, lines - 1) * 11
+          cursorY = cursorY + STACK_BREATHING + halfH
+        }
         shiftSubtreeXY(childId, colX - cur.x, cursorY - cur.y)
-        // Next row starts a rowGap below this child's subtree bottom.
-        const bottom = subtreeBottom(childId)
-        cursorY = bottom + rowGap
+        // Advance the cursor to this child's true inline-subtree bottom so the
+        // next sibling (or the +halfH step above) clears it.
+        cursorY = subtreeBottom(childId)
       })
     })
   }
