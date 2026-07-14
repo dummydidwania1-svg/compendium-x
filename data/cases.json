@@ -11111,7 +11111,8 @@
             "devices",
             "internet-network",
             "interest-inclination"
-          ]
+          ],
+          "stackChildren": true
         },
         "our-share": {
           "id": "our-share",
@@ -11147,7 +11148,8 @@
           "children": [
             "regional-languages",
             "individual-uploads"
-          ]
+          ],
+          "stackChildren": true
         },
         "new-verticals": {
           "id": "new-verticals",
@@ -11178,7 +11180,8 @@
             "podcasts",
             "music",
             "television"
-          ]
+          ],
+          "stackChildren": true
         },
         "non-content": {
           "id": "non-content",
@@ -11187,7 +11190,8 @@
           "children": [
             "merchandise",
             "nc-devices"
-          ]
+          ],
+          "stackChildren": true
         },
         "podcasts": {
           "id": "podcasts",
@@ -11262,7 +11266,8 @@
           "children": [
             "thematic",
             "pay-per-view"
-          ]
+          ],
+          "stackChildren": true
         },
         "thematic": {
           "id": "thematic",
@@ -11281,10 +11286,14 @@
         "growth",
         "organic",
         "customers",
+        "market-as-a-whole",
         "our-share",
+        "current-verticals",
         "new-verticals",
         "content",
-        "television"
+        "non-content",
+        "arpu",
+        "alternatives"
       ],
       "defaultFocusedId": "television",
       "notes": [
