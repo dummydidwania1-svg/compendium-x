@@ -14620,7 +14620,8 @@
             "acceptability",
             "incentives",
             "utility"
-          ]
+          ],
+          "stackChildren": true
         },
         "acceptability": {
           "id": "acceptability",
@@ -14644,7 +14645,9 @@
       "defaultExpanded": [
         "digital-transactions",
         "people-transacting-digitally",
-        "awareness"
+        "awareness",
+        "experience",
+        "transactions-per-person"
       ],
       "defaultFocusedId": "awareness",
       "notes": [
@@ -14669,6 +14672,26 @@
             "Adding utility via bill splitting and expense management"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "need",
+        "accessibility",
+        "affordability",
+        "advertisements",
+        "presence",
+        "security",
+        "seamless-experience",
+        "acceptability",
+        "incentives",
+        "utility"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "digital-transactions",
+        "people-transacting-digitally",
+        "awareness",
+        "experience",
+        "transactions-per-person"
       ]
     },
     "abbreviations": [
