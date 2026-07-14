@@ -11815,8 +11815,7 @@
             "before-purchase",
             "after-purchase",
             "price-sensitivity"
-          ],
-          "stackChildren": true
+          ]
         },
         "before-purchase": {
           "id": "before-purchase",
@@ -11825,7 +11824,8 @@
           "children": [
             "mandatory-fitments",
             "optional-addons"
-          ]
+          ],
+          "stackChildren": true
         },
         "mandatory-fitments": {
           "id": "mandatory-fitments",
@@ -11845,7 +11845,8 @@
           "tone": "branch",
           "children": [
             "free-service"
-          ]
+          ],
+          "stackChildren": true
         },
         "free-service": {
           "id": "free-service",
@@ -11859,7 +11860,8 @@
           "tone": "branch",
           "children": [
             "emi-bundling"
-          ]
+          ],
+          "stackChildren": true
         },
         "emi-bundling": {
           "id": "emi-bundling",
