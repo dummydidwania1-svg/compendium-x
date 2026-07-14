@@ -11334,7 +11334,18 @@
         "thematic",
         "pay-per-view"
       ],
-      "multiExpand": true
+      "multiExpand": true,
+      "highlightIds": [
+        "growth",
+        "organic",
+        "customers",
+        "arpu",
+        "market-as-a-whole",
+        "our-share",
+        "alternatives",
+        "current-verticals",
+        "new-verticals"
+      ]
     },
     "additionalFrameworkTrees": [
       {
