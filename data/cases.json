@@ -14380,7 +14380,8 @@
             "counters-per-centre",
             "amenities",
             "anonymity"
-          ]
+          ],
+          "stackChildren": true
         },
         "awareness": {
           "id": "awareness",
@@ -14422,7 +14423,8 @@
             "disability-friendly",
             "incentives",
             "day-care"
-          ]
+          ],
+          "stackChildren": true
         },
         "timings": {
           "id": "timings",
@@ -14457,7 +14459,8 @@
       },
       "defaultExpanded": [
         "number-of-people-who-vote",
-        "want-to-vote"
+        "want-to-vote",
+        "able-to-vote"
       ],
       "defaultFocusedId": "want-to-vote",
       "notes": [
@@ -14482,7 +14485,21 @@
             "Ruling out eligibility given the timeline"
           ]
         }
-      ]
+      ],
+      "defaultFocusedIds": [
+        "eligible-population",
+        "awareness",
+        "voting-centres",
+        "counters-per-centre",
+        "amenities",
+        "anonymity",
+        "timings",
+        "day-chosen",
+        "disability-friendly",
+        "incentives",
+        "day-care"
+      ],
+      "multiExpand": true
     },
     "visualisations": [
       {
