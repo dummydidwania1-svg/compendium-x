@@ -14743,7 +14743,8 @@
             "equipment",
             "support-staff",
             "athletes"
-          ]
+          ],
+          "stackChildren": true
         },
         "infrastructure": {
           "id": "infrastructure",
@@ -14771,7 +14772,8 @@
             "by-whom",
             "how-many",
             "by-when"
-          ]
+          ],
+          "stackChildren": true
         },
         "by-whom": {
           "id": "by-whom",
@@ -14798,7 +14800,8 @@
           "children": [
             "direct-efforts",
             "indirect-efforts"
-          ]
+          ],
+          "stackChildren": true
         },
         "direct-efforts": {
           "id": "direct-efforts",
@@ -14809,7 +14812,8 @@
             "coordination",
             "chemistry",
             "familiarity"
-          ]
+          ],
+          "stackChildren": true
         },
         "training": {
           "id": "training",
@@ -14842,7 +14846,8 @@
           "children": [
             "opponent-research",
             "internal-motivation"
-          ]
+          ],
+          "stackChildren": true
         },
         "opponent-research": {
           "id": "opponent-research",
@@ -14863,7 +14868,8 @@
           "children": [
             "opponent-strategy",
             "motivation"
-          ]
+          ],
+          "stackChildren": true
         },
         "opponent-strategy": {
           "id": "opponent-strategy",
@@ -14871,7 +14877,8 @@
           "tone": "branch",
           "children": [
             "lobbying"
-          ]
+          ],
+          "stackChildren": true
         },
         "lobbying": {
           "id": "lobbying",
@@ -14887,7 +14894,8 @@
             "game-day",
             "media",
             "stadium-crowd"
-          ]
+          ],
+          "stackChildren": true
         },
         "game-day": {
           "id": "game-day",
@@ -14915,7 +14923,8 @@
             "recognition",
             "monetary-incentives",
             "rest-next-olympics"
-          ]
+          ],
+          "stackChildren": true
         },
         "recognition": {
           "id": "recognition",
@@ -14948,7 +14957,14 @@
         "increase-tally",
         "pre",
         "resources",
-        "athletes"
+        "athletes",
+        "implementation",
+        "direct-efforts",
+        "indirect-efforts",
+        "during",
+        "opponent-strategy",
+        "motivation",
+        "post"
       ],
       "defaultFocusedId": "by-when",
       "notes": [
@@ -14973,7 +14989,28 @@
             "Planning ahead for the next Olympics too."
           ]
         }
-      ]
+      ],
+      "defaultFocusedIds": [
+        "infrastructure",
+        "equipment",
+        "support-staff",
+        "by-whom",
+        "how-many",
+        "by-when",
+        "training",
+        "coordination",
+        "chemistry",
+        "familiarity",
+        "opponent-research",
+        "internal-motivation",
+        "lobbying",
+        "game-day",
+        "media",
+        "stadium-crowd",
+        "monetary-incentives",
+        "rest-next-olympics"
+      ],
+      "multiExpand": true
     },
     "framework": "Candidate: Interesting. I would like to understand the problem a little better. What do we mean by improving performance? How many gold medals does the ministry want to raise its tally to? And what is the time horizon to achieve this?\n\nInterviewer: Sure. Improving performance basically means increasing the gold medal tally. Let us say the number it wants to reach is five gold medals, and it would like to get there by the 2026 Olympics.\n\nCandidate: Forgive me, but isn't the Olympics scheduled for 2024 and then 2028?\n\nInterviewer: Good catch. Let us proceed with the 2028 Olympics.\n\nCandidate: Great. So that gives us about seven years to work with. Lastly, are there any constraints I should keep in mind?\n\nInterviewer: No, there are none. Go ahead with your approach.\n\nCandidate: I see roughly three phases of work here: a preparatory phase, a during the event phase, and a post event phase. The preparatory phase is the most important, so I will start there. I would split it into two parts, resources and implementation.\n\nUnder resources, I would look at the quality of the athletes, the infrastructure, the equipment, and the support staff. For the athletes in particular, I would think about by whom they are selected, how many we need, and by when this selection has to be done.\n\nInterviewer: Go ahead. What would you do once those resources are in place?\n\nCandidate: Under implementation, I want to make the best use of these resources, so I would separate it into direct efforts and indirect efforts. Direct efforts act on the athletes themselves: structured training programmes, team coordination, building chemistry within the squad, and familiarity with the playing conditions. One important step here is acclimatising the athletes to the host country by arranging a trip about a year before the event. Indirect efforts happen around the athletes: research and analysis of the other teams, and internal motivational schemes to keep the squad driven.\n\nInterviewer: Got it. What about during and after the event?\n\nCandidate: In the during the event phase, I would look at two things, opponent strategy and motivation. Under opponent strategy, I would analyse the individual teams and athletes we are up against and build a specific game day plan for each of them. This also includes lobbying, where the ministry can request that the schedule and travel for the Indian athletes are not made too strenuous.\n\nUnder motivation, I would start with game day readiness, such as proper hydration and rest before each event. I would also use the media and the home crowd. We can subsidise and encourage Indians, both from home and those already living in the host country, to attend the events. A full stadium means constant cheering and a real lift for our athletes.\n\nInterviewer: That covers it. And after the event?\n\nCandidate: The post event phase is about the incentives that exist once athletes bring home medals. I would look at recognition, such as national level sports awards, and monetary incentives, such as cash bonuses. We can also name stadiums and grounds after the athletes as a lasting honour. Finally, I would make sure they get enough rest before we begin preparing them for the next Olympics.\n\nInterviewer: Solid. I like that you also thought about preparing for the Olympics beyond the one in question. We can end the case here.\n\nGOLD DIGGER FRAMEWORK & RECOMMENDATIONS\n\nINCREASE THE GOLD MEDAL TALLY TO 5\n\nClarifying Questions: What does improving performance mean? How many gold medals are we targeting? What is the time horizon? Are there any constraints?\n\nBrownie Points: Catching the trick question on the Olympics year. Planning ahead for the next Olympics too.\n\nKeep In Mind: Phase the problem into pre, during, and post. Open-ended cases need at least three layers."
   },
