@@ -673,17 +673,12 @@ function layoutDesktop(
       if (!parentPoint) return
       // Column x: center children under the parent.
       const colX = parentPoint.x
-      // Row height for the stack: tallest child + breathing room. Kept tight
-      // so stacked columns stay compact vertically (short connector lines);
-      // long connectors previously forced the whole chart to scroll. The base
-      // is 36 (single-line box) and each extra estimated wrap-line adds only a
-      // small amount so a couple of borderline 2-line labels don't blow the
-      // gap for the whole column.
+      // Row height for the stack: tallest child + breathing room.
       const rowGap = children.reduce((mx, c) => {
         const lines = estNodeLines(c)
-        const h = 36 + Math.max(0, lines - 1) * 12
+        const h = 40 + Math.max(0, lines - 1) * 22
         return Math.max(mx, h)
-      }, 0) + 4
+      }, 0) + 22
       // True rendered bottom edge (y + half box height) of a node's entire
       // visible inline subtree. Used so a stacked child that expands its own
       // children inline (e.g. Working Hours -> Extended Morning Hours, a tall
