@@ -30,7 +30,7 @@ const FIRMS: Firm[] = [
     { name: 'Krtin Tandon',    linkedin: 'https://www.linkedin.com/in/krtin-tandon/' },
     { name: 'Manav Mahajan',   linkedin: 'https://www.linkedin.com/in/manav-mahajan-120653221/' },
     { name: 'Rishabh Bafna',   linkedin: 'https://www.linkedin.com/in/rishabh-bafna/' },
-    { name: 'V Saikalayan',    linkedin: 'https://www.linkedin.com/in/v-saikalyan-626a6b257/' },
+    { name: 'V Saikalyan',    linkedin: 'https://www.linkedin.com/in/v-saikalyan-626a6b257/' },
     { name: 'Yash Ajmera',     linkedin: 'https://www.linkedin.com/in/yash-ajmera-731416185/' },
   ]},
   { name: 'Dalberg', people: [
