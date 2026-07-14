@@ -11318,7 +11318,23 @@
             "Government channels for new customers"
           ]
         }
-      ]
+      ],
+      "defaultFocusedIds": [
+        "devices",
+        "internet-network",
+        "interest-inclination",
+        "regional-languages",
+        "individual-uploads",
+        "podcasts",
+        "music",
+        "television",
+        "merchandise",
+        "nc-devices",
+        "current-unlimited",
+        "thematic",
+        "pay-per-view"
+      ],
+      "multiExpand": true
     },
     "additionalFrameworkTrees": [
       {
