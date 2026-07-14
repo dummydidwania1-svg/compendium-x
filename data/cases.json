@@ -15055,7 +15055,8 @@
             "diversity",
             "years",
             "outside"
-          ]
+          ],
+          "stackChildren": true
         },
         "movie-count": {
           "id": "movie-count",
@@ -15125,7 +15126,8 @@
           "children": [
             "charity-conduct",
             "other-ventures"
-          ]
+          ],
+          "stackChildren": true
         },
         "charity-conduct": {
           "id": "charity-conduct",
@@ -15142,7 +15144,11 @@
       },
       "defaultExpanded": [
         "rating",
-        "movies"
+        "movies",
+        "recognition",
+        "awards",
+        "popularity",
+        "personality"
       ],
       "defaultFocusedId": "movies",
       "notes": [
@@ -15168,6 +15174,21 @@
             "Highlighting the importance of social endeavours"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "movie-count",
+        "diversity",
+        "years",
+        "outside",
+        "award-shows",
+        "social-reach",
+        "charity-conduct",
+        "other-ventures"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "rating",
+        "movies"
       ]
     },
     "framework": "Candidate: May I know the purpose behind rating these actors and actresses? This will help me come up with the relevant parameters to include in the approach.\nInterviewer: The portal will be for the general public who follow the industry. Think of it as an IMDb for actors and actresses.\nCandidate: Got it. Should we also look at how the portal will be set up, whether it will be an app or a website, and what permissions we will need to obtain?\nInterviewer: That will not be necessary. We are only interested in the rating approach.\nCandidate: Okay. My approach would be to first list the relevant parameters that the artists will be judged on. Next, we can assign weights to each of these parameters to complete the structure. If time permits, we can try rating a famous actor or actress using this scale and see if it makes sense. Shall I go ahead with this?\nInterviewer: Sure, go ahead.\nCandidate: I would like to divide the parameters into three buckets: Movies, Recognition, and Personality.\nUnder Movies, we should look at the number and quality of movies done by the artist. This shows how much the artist is in demand, which is usually an indicator of skill and popularity. Movies that perform better can be assigned bonus points. Next, we can look at the diversity of roles played by the artist. Actors like Amitabh Bachchan have played diverse roles, which shows their versatility. Third, the number of years the artist has been in the industry is a testament to their experience and continuing relevance in a cut-throat industry. Lastly, we can look at the artist's presence outside Bollywood. For example, Priyanka Chopra has worked alongside names like Zac Efron and enjoys a fan following across the globe.\nMoving on to Recognition, we can look at two things: Awards and Popularity. Their performance in award shows like Filmfare and IIFA provides an objective source to judge their performance. This will also lend credibility to our rating. Popularity can be judged by their fan following on social media platforms, the number of times their names appear in Google searches, surveys, and so on.\nIn today's world, personality is of increasing importance. People look up to artists not just for the work they do but also for their public image. Actors like Sonu Sood have led the way with their social endeavours. While positive activities like charity events can bring points to the artist, negative activities such as hit-and-run cases can lead to a deduction in points. Additionally, many actors and actresses have a well-rounded personality. In addition to acting, some have even ventured into production, singing, and more. We can keep this in mind as well.\nIs there anything else we should include in the approach?\nInterviewer: It seems very comprehensive. I like your point about including personality. Not many would have thought of that. You can briefly discuss how you will assign weights to the parameters. Then we can end the case.\nCandidate: Sure. First, we can make a list of all the parameters in decreasing order of importance. For example, \"diversity of roles\" will certainly be prioritized over \"number of charity events done by the artist\". Accordingly, we will assign a higher weight to the parameter higher up in the list. While we make the list, we can also keep in mind the reliability of the parameter. For example, the \"number of awards won\" can be given a higher weight, as it is a more objective parameter compared to \"presence outside Bollywood\".\nInterviewer: Great.\n\nRating Neil, Nitin and Mukesh Framework & Recommendations\nDEVELOPING AN ONLINE PORTAL FOR RATING ACTORS IN BOLLYWOOD\nClarifying Questions: Purpose behind the ratings? Who will use the portal? An app or a website? What permissions are required?\nBrownie Points: Accounting for the artist's personality. Highlighting the importance of social endeavours.\nKeep In Mind: Weight parameters by objectivity, not just importance. Bucket criteria first, then score and weight."
