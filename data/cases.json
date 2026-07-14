@@ -14499,7 +14499,12 @@
         "incentives",
         "day-care"
       ],
-      "multiExpand": true
+      "multiExpand": true,
+      "highlightIds": [
+        "number-of-people-who-vote",
+        "want-to-vote",
+        "able-to-vote"
+      ]
     },
     "visualisations": [
       {
