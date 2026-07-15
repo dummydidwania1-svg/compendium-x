@@ -15652,7 +15652,8 @@
           "children": [
             "site-selection",
             "permits"
-          ]
+          ],
+          "stackChildren": true
         },
         "site-selection": {
           "id": "site-selection",
@@ -15695,7 +15696,8 @@
           "children": [
             "tech-choices",
             "system-design"
-          ]
+          ],
+          "stackChildren": true
         },
         "tech-choices": {
           "id": "tech-choices",
@@ -15754,7 +15756,8 @@
             "supplier",
             "component-cost",
             "incentives"
-          ]
+          ],
+          "stackChildren": true
         },
         "supplier": {
           "id": "supplier",
@@ -15812,7 +15815,8 @@
             "waste",
             "machinery",
             "prefab"
-          ]
+          ],
+          "stackChildren": true
         },
         "lean": {
           "id": "lean",
@@ -15844,7 +15848,8 @@
           "tone": "branch",
           "children": [
             "ppp"
-          ]
+          ],
+          "stackChildren": true
         },
         "ppp": {
           "id": "ppp",
@@ -15871,17 +15876,12 @@
       "defaultExpanded": [
         "reduce-capex",
         "pre-dev",
-        "site-selection",
         "design-eng",
-        "tech-choices",
-        "system-design",
         "procurement",
-        "component-cost",
         "construction",
-        "financing",
-        "ppp"
+        "financing"
       ],
-      "defaultFocusedId": "component-cost",
+      "defaultFocusedId": "procurement",
       "notes": [
         {
           "title": "Questions",
@@ -15906,6 +15906,22 @@
             "Flagging CAPEX as a capital structure driver, not a financing cost"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "pre-dev",
+        "design-eng",
+        "procurement",
+        "construction",
+        "financing"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "reduce-capex",
+        "pre-dev",
+        "design-eng",
+        "procurement",
+        "construction",
+        "financing"
       ]
     },
     "framework": "Candidate: I'd like to understand the client a bit better before structuring my approach. Firstly, what are their core business activities?\nInterviewer: They install solar panels by leasing large plots of land. They supply electricity through power grids and earn revenue on a tariff basis.\nCandidate: Understood. Secondly, what is the client's current installed capacity?\nInterviewer: 5 gigawatts.\nCandidate: Is there any specific objective or timeline behind this CAPEX reduction?\nInterviewer: Yes. The client wants to improve its internal rate of return (IRR) by reducing CAPEX. They would like to see results within the next 4 to 5 projects.\nCandidate: Do we have information about the geographical spread of projects or competitor practices?\nInterviewer: That won't be necessary for this case. Let's move ahead.\nCandidate: May I take a moment to structure my thoughts?\nInterviewer: Sure.\nCandidate: I'll break the problem down by looking at the key stages in the value chain of a solar and wind developer. Broadly, I would divide this into five stages:\n- Pre-development\n- Design and engineering\n- Procurement\n- Construction\n- Financing\nDoes this sound comprehensive?\nInterviewer: Yes, that works. Let's go through each stage. What factors would you consider under pre-development?\nCandidate: Under pre-development, I would focus on two broad areas: site selection, and permits and regulatory approvals. Within site selection specifically, I would examine:\n- Land acquisition costs.\n- Terrain-related factors, as they influence exploration and construction costs.\n- Potential construction delays arising from site constraints.\nInterviewer: That makes sense. Let's move to design and engineering.\nCandidate: I would divide this into two buckets:\n- Technology choices, including the type of modules used, integration costs, and the extent of standardization of components.\n- System design, particularly layout optimization and engineering efficiency.\nInterviewer: Sounds good. What about procurement?\nCandidate: Under procurement, I would focus on how we source raw material components. Specifically:\n- Supplier relationships.\n- Cost of individual components.\n- Availability of government incentives such as production linked incentive (PLI) schemes.\nInterviewer: Good. Let's move to construction.\nCandidate: Since the objective is CAPEX reduction, I would explore:\n- Lean project management techniques to ensure on-time performance.\n- Minimizing material waste during construction.\n- Optimizing machinery utilization for efficiency.\n- Using pre-fabricated mounting structures to reduce construction time and costs.\nInterviewer: Good suggestions. Let's now discuss financing. What would you consider there?\nCandidate: Given that solar and wind projects are capital intensive, financing structures are critical. I would consider public-private partnership (PPP) models, which are increasingly used. They can help offload the CAPEX burden and improve the cost of capital.\nInterviewer: Makes sense. Let's go back to procurement. You mentioned the cost of components. How exactly would you reduce CAPEX there?\nCandidate: We could:\n- Enter into long-term supplier agreements to lock in prices.\n- Leverage bulk sourcing and volume discounts.\n- Explore transfer of technology through strategic partnerships.\n- Consider backward integration, where we manufacture key components in-house.\nInterviewer: That's good. Coming back to financing, you mentioned PPP models. What types of partnership structures would you consider?\nCandidate: Two approaches come to mind:\n- Build, Own, Operate (BOO).\n- Build, Own, Transfer (BOT).\nIn such models, ownership may initially be retained while planning and investment responsibilities are outsourced. After a defined leasing or concession period, ownership may be transferred depending on the structure.\nInterviewer: Fair enough. One final question: is CAPEX part of the financing cost?\nCandidate: No, CAPEX itself is not a financing cost. However, it directly influences the capital structure of the firm. A larger CAPEX reduces the free cash flows to the firm and can increase the financial burden, thereby impacting overall financing requirements and IRR.\nInterviewer: That makes sense. We can wrap up the case here.\nCandidate: Thank you.\n\nPanel Discussion Framework & Recommendations\nREDUCING CAPEX ACROSS THE SOLAR VALUE CHAIN\nClarifying Questions: What are the client's core business activities? What is the current installed capacity? What is the objective and timeline behind the CAPEX cut? Any data on geography or competitor practices?\nBrownie Points: Structuring the full solar value chain before diving in Deepening component-cost cuts via bulk sourcing, technology transfer, and backward integration Separating CAPEX from financing cost while linking it to IRR\nKeep In Mind: The goal is improving IRR, so judge every lever by its cost impact CAPEX is not a financing cost, but it shapes capital structure and IRR Backward integration and PLI schemes can structurally lower component costs"
@@ -15949,7 +15965,8 @@
             "managing-demand",
             "alternate-attractions",
             "number-of-hours"
-          ]
+          ],
+          "stackChildren": true
         },
         "managing-demand": {
           "id": "managing-demand",
@@ -16029,7 +16046,8 @@
             "ride-time",
             "de-boarding",
             "idle-time"
-          ]
+          ],
+          "stackChildren": true
         },
         "boarding": {
           "id": "boarding",
@@ -16129,7 +16147,8 @@
           "children": [
             "capacity",
             "occupancy"
-          ]
+          ],
+          "stackChildren": true
         },
         "capacity": {
           "id": "capacity",
@@ -16152,7 +16171,8 @@
             "token-system",
             "representative-queueing",
             "in-queue-attractions"
-          ]
+          ],
+          "stackChildren": true
         },
         "digital-queueing": {
           "id": "digital-queueing",
@@ -16182,10 +16202,12 @@
       "defaultExpanded": [
         "waiting-period",
         "waiting-time",
+        "waiting-experience",
+        "number-of-people",
         "time-per-ride",
-        "boarding"
+        "number-of-seats"
       ],
-      "defaultFocusedId": "boarding",
+      "defaultFocusedId": "waiting-time",
       "notes": [
         {
           "title": "Questions",
@@ -16208,6 +16230,18 @@
             "Making the wait time enjoyable"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "number-of-people",
+        "time-per-ride",
+        "number-of-seats",
+        "waiting-experience"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "waiting-period",
+        "waiting-time",
+        "waiting-experience"
       ]
     },
     "visualisations": [
@@ -16481,7 +16515,8 @@
             "investments",
             "encouragement",
             "externalities"
-          ]
+          ],
+          "stackChildren": true
         },
         "awareness": {
           "id": "awareness",
@@ -16531,7 +16566,8 @@
           "children": [
             "earlyDiagnosis",
             "affordability"
-          ]
+          ],
+          "stackChildren": true
         },
         "earlyDiagnosis": {
           "id": "earlyDiagnosis",
@@ -16567,7 +16603,8 @@
           "children": [
             "paperwork",
             "beds"
-          ]
+          ],
+          "stackChildren": true
         },
         "paperwork": {
           "id": "paperwork",
@@ -16589,7 +16626,8 @@
             "doctors",
             "qualityTreatment",
             "sanitation"
-          ]
+          ],
+          "stackChildren": true
         },
         "doctors": {
           "id": "doctors",
@@ -16616,7 +16654,8 @@
           "children": [
             "followUps",
             "medication"
-          ]
+          ],
+          "stackChildren": true
         },
         "followUps": {
           "id": "followUps",
@@ -16633,11 +16672,14 @@
       },
       "defaultExpanded": [
         "root",
+        "preventive",
         "curative",
         "diagnostic",
-        "affordability"
+        "admitting",
+        "treatment",
+        "postTreatment"
       ],
-      "defaultFocusedId": "affordability",
+      "defaultFocusedId": "curative",
       "notes": [
         {
           "title": "Questions",
@@ -16661,6 +16703,24 @@
             "Tying externalities like pollution and water to disease."
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "preventive",
+        "curative",
+        "diagnostic",
+        "admitting",
+        "treatment",
+        "postTreatment"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "root",
+        "preventive",
+        "curative",
+        "diagnostic",
+        "admitting",
+        "treatment",
+        "postTreatment"
       ]
     },
     "framework": "Candidate: Quite an interesting problem. Before I begin, I would like to understand a few things. What is the objective our client wants to achieve, and by when do we need to meet it? Are there any budgetary constraints?\n\nInterviewer: Good questions. The objective is to improve the general well-being of the citizens. The plan can be both short term and long term, and there are no such constraints.\n\nCandidate: Understood. Do we have any particular region or regions in mind?\n\nInterviewer: You can look at improving well-being across the country.\n\nCandidate: Great, I think I can begin now. I would approach this by focusing on two broad sets of measures. First, preventive measures that stop people from falling ill in the first place. Second, curative measures that help people recover once they fall ill.\n\nInterviewer: Sounds reasonable. Walk me through the preventive side first.\n\nCandidate: Sure. Under preventive measures, I see five government led levers:\n1. Awareness. We need to spread knowledge about various diseases. This can be done through television and radio advertisements. A good example is the Amitabh Bachchan advertisements on tuberculosis.\n2. Incentives. The government should formulate policies that encourage employers to provide medical insurance to their employees.\n3. Investments. The government must invest in building hospitals, setting up labs, funding medicinal research, running vaccination drives, improving the accessibility of medicines and vaccines, and improving the state of cleanliness and hygiene.\n4. Encouragement. Individuals should be encouraged to improve their lifestyle, get vaccinated, and get regular health check ups done.\n5. Externalities. Bringing pollution under control and ensuring safe drinking water can reduce the incidence and severity of diseases.\n\nInterviewer: That covers prevention well. Now take me through the curative side.\n\nCandidate: On the curative side, I would walk through the patient journey in four stages.\n\nFirst, diagnostic. Two things matter here:\n1. Early diagnosis. We should encourage people to visit clinics or hospitals as soon as they experience any symptoms.\n2. Affordability. We can put a cap on consulting fees and subsidise consultations in rural areas so that cost is not a barrier.\n\nSecond, admitting. Here I would focus on two points:\n1. Reducing the paperwork required for admission.\n2. Ensuring the availability of beds and staff.\n\nThird, treatment. I see three priorities:\n1. Ensuring an adequate availability of doctors by setting up medical institutes across the country.\n2. Ensuring quality treatment by making the best medical devices available and setting performance standards for doctors and nurses.\n3. Ensuring that the hospital is sanitised and there is limited spread of diseases within the premises.\n\nFourth, post treatment. Two measures stand out:\n1. Regular follow ups should be scheduled to monitor recovery.\n2. Medication. We must ensure the availability of both general and specialised medicines, along with measures to ensure the patient is actually taking the prescribed medicines.\n\nInterviewer: This approach seems great, we can close the case now."
@@ -16695,7 +16755,8 @@
           "children": [
             "new-admits",
             "already-enrolled"
-          ]
+          ],
+          "stackChildren": true
         },
         "new-admits": {
           "id": "new-admits",
@@ -16718,7 +16779,8 @@
             "teachers",
             "course",
             "motivation"
-          ]
+          ],
+          "stackChildren": true
         },
         "infrastructure": {
           "id": "infrastructure",
@@ -16875,7 +16937,8 @@
             "multiple-languages",
             "disability-accommodations",
             "exam-centres"
-          ]
+          ],
+          "stackChildren": true
         },
         "multiple-languages": {
           "id": "multiple-languages",
@@ -16902,7 +16965,8 @@
           "children": [
             "revaluation",
             "examiner-accountability"
-          ]
+          ],
+          "stackChildren": true
         },
         "revaluation": {
           "id": "revaluation",
@@ -16919,10 +16983,12 @@
       },
       "defaultExpanded": [
         "board-exam-results",
+        "eligibility",
         "preparation",
-        "course"
+        "examination",
+        "evaluation"
       ],
-      "defaultFocusedId": "course",
+      "defaultFocusedId": "preparation",
       "notes": [
         {
           "title": "Questions",
@@ -16947,6 +17013,20 @@
             "Offering the exam in more languages"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "eligibility",
+        "preparation",
+        "examination",
+        "evaluation"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "board-exam-results",
+        "eligibility",
+        "preparation",
+        "examination",
+        "evaluation"
       ]
     },
     "abbreviations": [
@@ -17715,10 +17795,24 @@
         "defaultExpanded": [
           "willingness-to-attend",
           "before",
-          "social-reasons"
+          "social-reasons",
+          "during",
+          "after"
         ],
-        "defaultFocusedId": "social-reasons",
-        "notes": []
+        "defaultFocusedId": "before",
+        "notes": [],
+        "defaultFocusedIds": [
+          "social-reasons",
+          "during",
+          "after"
+        ],
+        "multiExpand": true,
+        "highlightIds": [
+          "willingness-to-attend",
+          "before",
+          "during",
+          "after"
+        ]
       }
     ],
     "visualisations": [
@@ -17895,9 +17989,13 @@
       "defaultExpanded": [
         "potential-cash",
         "non-business-activities",
-        "investments-financial-assets"
+        "business-activities",
+        "investments-financial-assets",
+        "returning-money",
+        "capacity-expansion",
+        "strategic-investments"
       ],
-      "defaultFocusedId": "investments-financial-assets",
+      "defaultFocusedId": "non-business-activities",
       "notes": [
         {
           "title": "Questions",
@@ -17921,6 +18019,18 @@
             "Looking at multiple macro trends for capacity expansion"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "investments-financial-assets",
+        "returning-money",
+        "capacity-expansion",
+        "strategic-investments"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "potential-cash",
+        "non-business-activities",
+        "business-activities"
       ]
     },
     "framework": "Candidate: Can you tell me a little more about the company? What is its desired objective?\n\nInterviewer: Sure. The client is based in India and supplies steel across the country to other businesses. The objective is to use the cash in a way that benefits the company in the long run.\n\nCandidate: What kind of steel does the client manufacture?\n\nInterviewer: The client manufactures low-carbon steel, which is the most widely used type across multiple sectors. It is a standardised product with no variants.\n\nCandidate: Do we have any information on the competitors?\n\nInterviewer: Yes. The market is dominated by three main players within the closed geography of India. Other players exist but are insignificant.\n\nCandidate: Got it. For clarity, how exactly is excess cash defined here? Do we have a specific figure?\n\nInterviewer: You can think of excess cash as the cash available over and above what is needed to run the company. We do not have a specific figure, but it is more than industry standards.\n\nCandidate: Understood. I would like to split the potential cash spending into two parts: non-business activities and business activities. Non-business activities would mean putting the cash into things outside the main business, while business activities would mean retaining the cash to further our business prospects.\n\nUnder non-business activities, I would look at investments in financial asset classes, as well as the option of returning money to investors. Under business activities, I would look at capacity expansion in the current business, both domestic and global, and strategic investments through mergers and acquisitions. I would like to start with non-business activities.\n\nInterviewer: Sure. Go ahead.\n\nCandidate: Are we open to investing in specific asset classes? These could include financial derivatives, real estate, venture capital and the like.\n\nInterviewer: The client is not very keen on making such investments. How else can the cash be used to return money to investors?\n\nCandidate: We can issue dividends to our investors. Depending on the type of company, we can also consider a share buyback, provided we have enough liquidity and are confident it will create the most value over the long term.\n\nInterviewer: Those are interesting ideas, but I would like you to now discuss some ways of using this cash for business purposes.\n\nCandidate: Sure. As I mentioned, capacity expansion and strategic investments can add long-term value from a business perspective. We can either expand or acquire within the existing value chain, or diversify across it.\n\nInterviewer: How would you decide whether capacity expansion is a good idea?\n\nCandidate: I would look at our existing capacity and check whether there is enough demand for it in the market. If we are already operating at a full hundred percent utilisation rate and there is still unmet demand, we can consider scaling up. We should also judge future demand before deciding whether producing more makes sense. Do we have any data on our current production capability?\n\nInterviewer: Yes. The client produces 10 million tonnes of steel, which is currently at par with all three leading competitors. How would you judge future demand?\n\nCandidate: I would analyse the growth rate of the main industries where low-carbon steel is used. That gives a fair idea of how demand will develop.\n\nInterviewer: Good approach. Can you identify a few such industries and suggest how you would ballpark their growth rates?\n\nCandidate: Some of the industries where low-carbon steel is used are construction, white goods such as home appliances and refrigerators, capital goods, and automobiles. I would judge the potential of each using factors like the business cycle, the impact of inflation, and a comparison with GDP growth. If an industry is growing faster than a benchmark, say India's GDP growth rate, that supports investing in capacity expansion.\n\nInterviewer: That makes sense. Can we quickly go over strategic investments as well?\n\nCandidate: Sure. These would be any activity that furthers the business. Strategic investments can be made in two ways: within the same business, such as moving into other qualities of steel, or in adjacent industries, such as cement, which is also used in construction like steel. Under both, we can look at forward linkages, such as building our own distributor and retailer network, as well as backward linkages, such as sourcing key raw material inputs, to build dominance across the value chain.\n\nInterviewer: Those are some really good ideas. We can close the case here.\n\nCASH ME IF YOU CAN FRAMEWORK & RECOMMENDATIONS\n\nDEALING WITH THE EXCESS CASH ON THE BALANCE SHEET\n\nClarifying Questions: What is the specific objective? How is excess cash defined? What type of steel is manufactured? Who are the main competitors?\n\nBrownie Points: Identifying special steel use-cases like white goods. Looking at multiple macro trends for capacity expansion.\n\nKeep In Mind: Split cash uses into business and non-business."
@@ -17959,7 +18069,8 @@
             "demo-family",
             "demo-income",
             "demo-culture"
-          ]
+          ],
+          "stackChildren": true
         },
         "demo-gender": {
           "id": "demo-gender",
@@ -18005,7 +18116,8 @@
             "union-structure",
             "union-demands",
             "union-translation"
-          ]
+          ],
+          "stackChildren": true
         },
         "union-structure": {
           "id": "union-structure",
@@ -18032,7 +18144,8 @@
           "children": [
             "job-intensity",
             "job-hours-comp"
-          ]
+          ],
+          "stackChildren": true
         },
         "job-intensity": {
           "id": "job-intensity",
@@ -18053,7 +18166,8 @@
           "children": [
             "ext-superior",
             "ext-peer"
-          ]
+          ],
+          "stackChildren": true
         },
         "ext-superior": {
           "id": "ext-superior",
@@ -18070,7 +18184,10 @@
       },
       "defaultExpanded": [
         "diagnosis",
-        "demographic"
+        "demographic",
+        "union",
+        "job",
+        "externalities"
       ],
       "defaultFocusedId": "demographic",
       "notes": [
@@ -18097,6 +18214,20 @@
             "Flagging raw-versus-net on retention"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "demographic",
+        "union",
+        "job",
+        "externalities"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "diagnosis",
+        "demographic",
+        "union",
+        "job",
+        "externalities"
       ]
     },
     "visualisations": [
@@ -19086,7 +19217,8 @@
           "children": [
             "timings",
             "frequency"
-          ]
+          ],
+          "stackChildren": true
         },
         "timings": {
           "id": "timings",
@@ -19107,7 +19239,8 @@
           "children": [
             "shelf-life",
             "need-for-refrigeration"
-          ]
+          ],
+          "stackChildren": true
         },
         "shelf-life": {
           "id": "shelf-life",
@@ -19128,7 +19261,8 @@
           "children": [
             "unattractive-packaging",
             "poor-shelf-visibility"
-          ]
+          ],
+          "stackChildren": true
         },
         "unattractive-packaging": {
           "id": "unattractive-packaging",
@@ -19233,9 +19367,11 @@
       "defaultExpanded": [
         "problem-identification",
         "distribution",
-        "storage"
+        "delivery",
+        "storage",
+        "selling"
       ],
-      "defaultFocusedId": "storage",
+      "defaultFocusedId": "distribution",
       "notes": [
         {
           "title": "Questions",
@@ -19259,6 +19395,16 @@
             "Highlighting the importance of in-store positioning and the value of shelf space"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "delivery",
+        "storage",
+        "selling"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "problem-identification",
+        "distribution"
       ]
     },
     "visualisations": [
@@ -19309,7 +19455,8 @@
             "online",
             "banners",
             "other-costs"
-          ]
+          ],
+          "stackChildren": true
         },
         "travel": {
           "id": "travel",
@@ -19349,7 +19496,8 @@
             "incumbent-half",
             "winnable-half",
             "improve-odds"
-          ]
+          ],
+          "stackChildren": true
         },
         "incumbent-half": {
           "id": "incumbent-half",
@@ -19408,7 +19556,8 @@
             "tender-cut",
             "grants",
             "bribery"
-          ]
+          ],
+          "stackChildren": true
         },
         "salary": {
           "id": "salary",
@@ -19439,8 +19588,6 @@
         "should-run",
         "pre-election",
         "during-election",
-        "winnable-half",
-        "improve-odds",
         "post-election"
       ],
       "defaultFocusedId": "pre-election",
@@ -19469,6 +19616,18 @@
             "Capping what he should pay to remove a rival at his win payoff"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "pre-election",
+        "during-election",
+        "post-election"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "should-run",
+        "pre-election",
+        "during-election",
+        "post-election"
       ]
     },
     "visualisations": [
@@ -19663,7 +19822,8 @@
             "primary",
             "secondary",
             "tertiary"
-          ]
+          ],
+          "stackChildren": true
         },
         "primary": {
           "id": "primary",
@@ -19691,7 +19851,8 @@
             "trends",
             "growth",
             "sustainability"
-          ]
+          ],
+          "stackChildren": true
         },
         "trends": {
           "id": "trends",
@@ -19728,7 +19889,8 @@
           "children": [
             "gdp-contribution",
             "gdp-growth"
-          ]
+          ],
+          "stackChildren": true
         },
         "gdp-contribution": {
           "id": "gdp-contribution",
@@ -19750,7 +19912,8 @@
             "inv-fdi",
             "inv-fii",
             "inv-startups"
-          ]
+          ],
+          "stackChildren": true
         },
         "inv-fdi": {
           "id": "inv-fdi",
@@ -19777,7 +19940,8 @@
           "children": [
             "emp-trends",
             "emp-risk"
-          ]
+          ],
+          "stackChildren": true
         },
         "emp-trends": {
           "id": "emp-trends",
@@ -19794,7 +19958,9 @@
       },
       "defaultExpanded": [
         "prioritisation",
-        "map-economy"
+        "map-economy",
+        "parameters",
+        "objectives"
       ],
       "defaultFocusedId": "map-economy",
       "notes": [
@@ -19820,6 +19986,18 @@
             "Choosing supply-side because exports matter on an island"
           ]
         }
+      ],
+      "defaultFocusedIds": [
+        "map-economy",
+        "parameters",
+        "objectives"
+      ],
+      "multiExpand": true,
+      "highlightIds": [
+        "prioritisation",
+        "map-economy",
+        "parameters",
+        "objectives"
       ]
     },
     "additionalFrameworkTrees": [
@@ -19887,10 +20065,21 @@
         },
         "defaultExpanded": [
           "grow-fisheries",
-          "increase-stock"
+          "increase-stock",
+          "increase-productivity"
         ],
         "defaultFocusedId": "increase-stock",
-        "notes": []
+        "notes": [],
+        "defaultFocusedIds": [
+          "increase-stock",
+          "increase-productivity"
+        ],
+        "multiExpand": true,
+        "highlightIds": [
+          "grow-fisheries",
+          "increase-stock",
+          "increase-productivity"
+        ]
       }
     ],
     "visualisations": [
