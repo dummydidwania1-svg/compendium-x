@@ -920,20 +920,3 @@ opacity: 0.52;
     transform: scale(1.1);
   }
 }
-
-/* ===== Walkthrough body indent (mobile-readability pass) =====
-   WalkthroughBlockView uses calc(var(--wt-step)) for per-level indent and
-   var(--wt-bpad) for bullet base padding. Defaults are the tighter mobile
-   values; at the lg breakpoint (>=1024px, matching Tailwind `lg:`) they widen
-   back to the original desktop 24px/20px so desktop is unchanged. Scoped to
-   .wt-body so nothing else on the page inherits these vars. */
-.wt-body {
-  --wt-step: 16px;
-  --wt-bpad: 16px;
-}
-@media (min-width: 1024px) {
-  .wt-body {
-    --wt-step: 24px;
-    --wt-bpad: 20px;
-  }
-}

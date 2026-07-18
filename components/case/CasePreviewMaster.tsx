@@ -957,14 +957,8 @@ function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
   if (block.kind === 'vis-inline') return null
 
   const lvl = ('level' in block && block.level) ? block.level : 0
-  // Per-level indent. On mobile a 16px step (vs desktop 24px) keeps nested lines
-  // readable on a ~390px screen. The step is driven by a CSS var so a single
-  // stylesheet rule (see WT_INDENT_CSS, injected once) can widen it back to 24px
-  // at the lg breakpoint — desktop is unchanged.
-  const indentStyle = lvl
-    ? ({ marginLeft: `calc(${lvl} * var(--wt-step))` } as React.CSSProperties)
-    : undefined
-  const bulletStyle = ({ marginLeft: `calc(var(--wt-bpad) + ${lvl} * var(--wt-step))` } as React.CSSProperties)
+  const indentStyle = lvl ? { marginLeft: `${lvl * 24}px` } : undefined
+  const bulletStyle = { marginLeft: `${20 + lvl * 24}px` }
   const dividerStyle = { background: 'linear-gradient(90deg, rgba(61,90,53,0.2), transparent)' }
 
   if (block.kind === 'heading') {
@@ -977,14 +971,14 @@ function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
   }
   if (block.kind === 'equation') {
     return (
-      <p className={`text-center text-[15px] leading-[1.62] tracking-[0.01em] lg:text-[16px] lg:leading-[1.5] ${walkthroughSpeakerTone(block.speaker)}`}>
+      <p className={`text-center text-[16px] leading-[1.5] tracking-[0.01em] ${walkthroughSpeakerTone(block.speaker)}`}>
         {renderInline(block.text)}
       </p>
     )
   }
   if (block.kind === 'indent') {
     return (
-      <p className={`pl-5 text-[15px] leading-[1.62] tracking-[0.01em] lg:pl-10 lg:text-[16px] lg:leading-[1.5] ${walkthroughSpeakerTone(block.speaker)}`} style={indentStyle}>
+      <p className={`pl-10 text-[16px] leading-[1.5] tracking-[0.01em] ${walkthroughSpeakerTone(block.speaker)}`} style={indentStyle}>
         {renderInline(block.text)}
       </p>
     )
@@ -992,15 +986,15 @@ function WalkthroughBlockView({ block }: { block: WalkthroughBlock }) {
   if (block.kind === 'bullet') {
     return (
       <div className={`flex gap-3 ${walkthroughSpeakerTone(block.speaker)}`} style={bulletStyle}>
-        <span className="min-w-[1.2rem] text-[15px] leading-[1.62] lg:text-[16px] lg:leading-[1.5]">{block.marker}</span>
-        <p className="text-[15px] leading-[1.62] lg:text-[16px] lg:leading-[1.5]">
+        <span className="min-w-[1.2rem] text-[16px] leading-[1.5]">{block.marker}</span>
+        <p className="text-[16px] leading-[1.5]">
           {renderInline(block.text)}
         </p>
       </div>
     )
   }
   return (
-    <p className={`text-[15px] leading-[1.62] lg:text-[16px] lg:leading-[1.5] ${walkthroughSpeakerTone(block.speaker)}`} style={indentStyle}>
+    <p className={`text-[16px] leading-[1.5] ${walkthroughSpeakerTone(block.speaker)}`} style={indentStyle}>
       {renderInline(block.text)}
     </p>
   )
@@ -2221,200 +2215,6 @@ function MobileTreeNode({
         </div>
       )}
     </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MobileFrameworkFlowchart — the phone replacement for the old
-   indented MobileTreeNode. Renders the REAL desktop flowchart
-   (DesktopChart) fully-expanded at a fixed desktop width, scaled
-   down to fit the phone width so the whole diagram reads in one
-   glance (nothing cut off), non-interactive. Tap opens a
-   fullscreen overlay with pinch-to-zoom + drag-to-pan for detail.
-   Reuses the existing chart engine, so it works per-case
-   automatically and stays in sync with the case data — no PNGs.
-   ═══════════════════════════════════════════════════════════ */
-
-// Fixed inner width the flowchart is laid out at (desktop-like), then CSS-scaled.
-const MOBILE_CHART_W = 900
-
-function MobileFrameworkFlowchart({ tree }: { tree: FrameworkTree }) {
-  // Fully-expanded view: every node visible, every parent expanded, so the
-  // static thumbnail shows the complete tree (the whole point on mobile).
-  const { visibleIds, expandedIds, chartH } = useMemo(() => {
-    const { nodes, rootId } = computeTreeLocals(tree)
-    const expanded = new Set<string>(
-      Object.keys(nodes).filter(id => (nodes[id]?.children.length ?? 0) > 0),
-    )
-    const vis = new Set<string>()
-    const collect = (id: string) => {
-      vis.add(id)
-      const node = nodes[id]
-      if (!node) return
-      for (const ch of node.children) collect(ch)
-    }
-    if (rootId) collect(rootId)
-    // Rough height estimate for the scaled thumbnail box (mirrors DesktopChart's
-    // depth→height metrics closely enough for a wrapper; the chart draws its own
-    // exact height inside).
-    const depthOf = (id: string) => { let d = 0; let cur: string | undefined = id; const p: Record<string,string> = {}; for (const [nid,n] of Object.entries(nodes)) for (const c of n.children) p[c]=nid; while (cur) { cur = p[cur]; if (cur) d++ } return d }
-    const maxD = Math.max(...[...vis].map(depthOf), 0)
-    const h = maxD <= 1 ? 220 : maxD <= 2 ? 300 : maxD <= 4 ? 420 : maxD <= 6 ? 520 : 42 + 74 * maxD + 36
-    return { visibleIds: [...vis], expandedIds: expanded, chartH: h }
-  }, [tree])
-
-  const noop = useCallback(() => {}, [])
-
-  const thumbRef = useRef<HTMLDivElement>(null)
-  const [thumbScale, setThumbScale] = useState(0.4)
-  useEffect(() => {
-    const el = thumbRef.current; if (!el) return
-    const measure = () => setThumbScale(Math.min(1, (el.clientWidth || MOBILE_CHART_W) / MOBILE_CHART_W))
-    measure()
-    const ro = new ResizeObserver(measure); ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
-  const [fullscreen, setFullscreen] = useState(false)
-
-  // Lock body scroll while the fullscreen overlay is open.
-  useEffect(() => {
-    if (!fullscreen) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
-  }, [fullscreen])
-
-  const chart = (
-    <div style={{ width: MOBILE_CHART_W }}>
-      <DesktopChart visibleIds={visibleIds} expandedIds={expandedIds} focusedId={null}
-        onSelect={noop} onToggle={noop} revealDepth={99} edgeAnimKey={0} multiActive tree={tree} />
-    </div>
-  )
-
-  return (
-    <>
-      {/* Inline scaled-to-fit thumbnail — tap to expand */}
-      <button
-        type="button"
-        onClick={() => setFullscreen(true)}
-        aria-label="Expand framework diagram"
-        className="group relative block w-full overflow-hidden rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] text-left shadow-[0_4px_12px_rgba(59,47,47,0.04)]"
-      >
-        <div ref={thumbRef} className="w-full overflow-hidden" style={{ height: chartH * thumbScale }}>
-          <div style={{ transform: `scale(${thumbScale})`, transformOrigin: 'top left', width: MOBILE_CHART_W, pointerEvents: 'none' }}>
-            {chart}
-          </div>
-        </div>
-        {/* Expand affordance */}
-        <span className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-[#5C4033]/12 bg-[rgba(255,248,240,0.92)] px-3 py-1.5 text-[11px] font-medium text-[#5C4033]/70 shadow-[0_2px_8px_rgba(59,47,47,0.08)] backdrop-blur-sm">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
-          Tap to zoom
-        </span>
-      </button>
-      {/* Concise laptop note */}
-      <p className="mt-2.5 px-1 text-[12px] leading-relaxed text-[#5C4033]/55">
-        Tap the diagram to zoom. For the interactive drill-down, open on a laptop.
-      </p>
-
-      {fullscreen && <MobileFlowchartFullscreen chartH={chartH} onClose={() => setFullscreen(false)}>{chart}</MobileFlowchartFullscreen>}
-    </>
-  )
-}
-
-/* Fullscreen pinch-zoom + drag-pan overlay for the mobile flowchart. */
-function MobileFlowchartFullscreen({ chartH, onClose, children }: { chartH: number; onClose: () => void; children: React.ReactNode }) {
-  const viewportRef = useRef<HTMLDivElement>(null)
-  // Fit-scale so the whole tree is visible on open; that's the min zoom too.
-  const [fitScale, setFitScale] = useState(0.4)
-  const [scale, setScale] = useState(0.4)
-  const [tx, setTx] = useState(0)
-  const [ty, setTy] = useState(0)
-
-  useEffect(() => {
-    const el = viewportRef.current; if (!el) return
-    const fit = Math.min((el.clientWidth || 360) / MOBILE_CHART_W, (el.clientHeight || 600) / chartH)
-    const s = Math.max(0.2, Math.min(1, fit))
-    setFitScale(s); setScale(s)
-    // Centre horizontally.
-    setTx(Math.max(0, (el.clientWidth - MOBILE_CHART_W * s) / 2)); setTy(12)
-  }, [chartH])
-
-  // Pointer-based pan + pinch. Two active pointers → pinch-zoom about midpoint;
-  // one pointer → pan.
-  const pts = useRef<Map<number, { x: number; y: number }>>(new Map())
-  const pinchRef = useRef<{ dist: number; scale: number; cx: number; cy: number; tx: number; ty: number } | null>(null)
-  const MIN = fitScale
-  const MAX = Math.max(fitScale * 3, 2.5)
-  const clamp = (v: number) => Math.max(MIN, Math.min(MAX, v))
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId)
-    pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-  }
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!pts.current.has(e.pointerId)) return
-    const prev = pts.current.get(e.pointerId)!
-    pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    const all = [...pts.current.values()]
-    if (all.length >= 2) {
-      const [a, b] = all
-      const dist = Math.hypot(a.x - b.x, a.y - b.y)
-      if (!pinchRef.current) {
-        pinchRef.current = { dist, scale, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, tx, ty }
-      } else {
-        const p = pinchRef.current
-        const next = clamp(p.scale * (dist / p.dist))
-        // Zoom about the pinch midpoint so it feels anchored.
-        const k = next / p.scale
-        setScale(next)
-        setTx(p.cx - (p.cx - p.tx) * k)
-        setTy(p.cy - (p.cy - p.ty) * k)
-      }
-    } else {
-      // Single-pointer pan.
-      setTx(v => v + (e.clientX - prev.x))
-      setTy(v => v + (e.clientY - prev.y))
-    }
-  }
-  const onPointerUp = (e: React.PointerEvent) => {
-    pts.current.delete(e.pointerId)
-    if (pts.current.size < 2) pinchRef.current = null
-  }
-
-  const zoomBy = (factor: number) => setScale(s => clamp(s * factor))
-
-  if (typeof document === 'undefined') return null
-  return createPortal(
-    <div className="fixed inset-0 z-[99998] flex flex-col" style={{ background: 'rgba(28,24,18,0.72)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[rgba(255,248,240,0.7)]">Framework</span>
-        <button type="button" onClick={onClose} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(255,248,240,0.12)] text-[#fff8f0]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-        </button>
-      </div>
-      {/* Zoom canvas */}
-      <div
-        ref={viewportRef}
-        className="relative flex-1 overflow-hidden"
-        style={{ touchAction: 'none' }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-      >
-        <div style={{ position: 'absolute', top: 0, left: 0, width: MOBILE_CHART_W, transform: `translate(${tx}px, ${ty}px) scale(${scale})`, transformOrigin: 'top left' }}>
-          {children}
-        </div>
-      </div>
-      {/* Zoom controls */}
-      <div className="flex items-center justify-center gap-3 py-4">
-        <button type="button" onClick={() => zoomBy(1 / 1.3)} aria-label="Zoom out" className="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(255,248,240,0.14)] text-[#fff8f0] text-xl">−</button>
-        <button type="button" onClick={() => zoomBy(1.3)} aria-label="Zoom in" className="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(255,248,240,0.14)] text-[#fff8f0] text-xl">+</button>
-      </div>
-    </div>,
-    document.body,
   )
 }
 
@@ -3647,7 +3447,8 @@ function AdditionalFrameworkUnavailableOnMobile({ label }: { label?: string }) {
       )}
       <div className="px-5 py-6 text-center">
         <p className="text-[13px] leading-relaxed text-[#5C4033]/80">
-          For the interactive drill-down of this framework, open on a laptop.
+          This framework diagram won&apos;t render properly at this screen size.
+          Switch to a laptop or desktop for the full view.
         </p>
       </div>
     </div>
@@ -4473,17 +4274,21 @@ html::-webkit-scrollbar {
           <div className={forumOpen ? 'min-w-0 flex-1' : ''}>
           <section ref={walkthroughRef} className="relative z-10 pt-6">
 
-            {/* Mobile metadata byline — mirrors the interviewer-mode inline line
-                (subtle text under the title) instead of the old pill chips. */}
-            <p className="mb-6 text-[12px] text-[#5C4033]/55 tracking-wide lg:hidden">
+            {/* Mobile meta tags (pills) */}
+            <div className="mb-6 flex flex-wrap gap-2.5 lg:hidden">
               {[
-                caseTypeLabel,
-                `${industryLabel} Industry`,
-                difficultyLabel,
-                ...(companyLabel !== 'Client Not Specified' ? [companyLabel] : []),
-                ...(roundLabel !== 'Round Not Specified' ? [roundLabel] : []),
-              ].join('  •  ')}
-            </p>
+                { label: 'Type', value: caseTypeLabel },
+                { label: 'Industry', value: industryLabel },
+                { label: 'Level', value: difficultyLabel },
+                ...(companyLabel !== 'Client Not Specified' ? [{ label: 'Company', value: companyLabel }] : []),
+                ...(roundLabel !== 'Round Not Specified' ? [{ label: 'Round', value: roundLabel }] : []),
+              ].map(t => (
+                <div key={t.label} className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#5C4033]/50">{t.label}</span>
+                  <span className="rounded-md border border-[#5C4033]/12 bg-[#D9D0C4]/25 px-2.5 py-[3px] text-[10px] font-medium text-[#5C4033]/70">{t.value}</span>
+                </div>
+              ))}
+            </div>
 
             {/* Containment frame — walkthrough */}
             <div className="hidden rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] lg:block">
@@ -4579,7 +4384,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
   }}
 />
 
-                    <div className="wt-body">
+                    <div>
                       {blocks.map((block, index) => (
                         <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                           <Reveal>
@@ -4598,7 +4403,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
 
             {/* Mobile fallback — no containment frame */}
             <div className="lg:hidden">
-              <div className="wt-body">
+              <div>
                 {blocks.map((block, index) => (
                   <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                     <Reveal>
@@ -4843,8 +4648,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                 </Reveal>
               </>)}
               <Reveal>
-                <div>
-                  <MobileFrameworkFlowchart tree={tree} />
+                <div className="space-y-3">
+                  <MobileTreeNode nodeId={primaryRootId} focusedId={mobileFocId} expandedIds={mobileExpIds}
+                    onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                 </div>
               </Reveal>
               {/* ── Additional framework trees (mobile) ── */}
@@ -5786,7 +5592,7 @@ export function CaseInterviewerMaster({
               <div className="hidden rounded-2xl border border-[#5C4033]/10 bg-[rgba(255,248,240,0.8)] shadow-[0_4px_12px_rgba(59,47,47,0.04)] backdrop-blur-[16px] lg:block">
                 <div className="custom-scrollbar relative px-7 py-6">
                   <div className="pointer-events-none z-20" style={{ position: 'sticky', top: 'calc(100vh - 120px)', height: '120px', marginBottom: '-120px', background: 'linear-gradient(to top, rgba(255,248,240,1) 0%, rgba(255,248,240,0.92) 50%, rgba(255,248,240,0) 100%)', WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent)', maskImage: 'linear-gradient(to top, black 20%, transparent)' }} />
-                  <div className="wt-body">
+                  <div>
                     {blocks.map((block, index) => (
                       <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                         <Reveal>
@@ -5801,7 +5607,7 @@ export function CaseInterviewerMaster({
               </div>
 
               {/* Mobile */}
-              <div className="lg:hidden wt-body">
+              <div className="lg:hidden">
                 {blocks.map((block, index) => (
                   <div key={block.key} className={walkthroughSpacingClass(block, index > 0 ? blocks[index - 1] : undefined)}>
                     <Reveal>
@@ -5988,8 +5794,8 @@ export function CaseInterviewerMaster({
                   </Reveal>
                 </>)}
                 <Reveal>
-                  <div>
-                    <MobileFrameworkFlowchart tree={tree} />
+                  <div className="space-y-3">
+                    <MobileTreeNode nodeId={primaryRootId} focusedId={mobileFocId} expandedIds={mobileExpIds} onSelect={handleMobileSelect} onToggle={handleMobileToggle} />
                   </div>
                 </Reveal>
                 {/* ── Additional framework trees (interviewer mobile) ── */}
