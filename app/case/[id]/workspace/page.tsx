@@ -9,19 +9,17 @@ import { getDocs, getDoc, onSnapshot, query, where } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
 import { auth, storage, waitForAuthUser } from '@/lib/firebase/config'
 import { sessionDoc, evaluationsCol } from '@/lib/firebase/collections'
-import { apiGet, apiPost } from '@/lib/api/client'
+import { apiPost } from '@/lib/api/client'
 import { useMicPermission } from '@/lib/permissions/microphone'
 import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { releaseDisplayMedia } from '@/lib/permissions/displayMedia'
 import { writeCandidateBeat } from '@/lib/session/candidateTab'
 import { consumePrimedRecording, clearPrimedMic, micDebug } from '@/lib/session/primedMic'
-import SessionEndedScreen from '@/components/session/SessionEndedScreen'
-import PlatformLoader from '@/components/PlatformLoader'
 import MobileBlockModal from '@/components/permissions/MobileBlockModal'
 import { isMobileDevice } from '@/lib/browser'
 
 type SessionState = {
-  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing' | 'fallback_unrated'
+  status?: 'waiting' | 'in_progress' | 'completed' | 'abandoned' | 'replacing'
   caseId?: string
   caseName?: string
   completedBy?: string
@@ -176,18 +174,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [resolvedCaseId, setResolvedCaseId] = useState('')
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [sessionIssue, setSessionIssue] = useState('')
-  // True when this lobby's session was ALREADY completed/abandoned before this
-  // page ever mounted (a stale link, browser back, or old bookmark) — as
-  // opposed to a session that completes WHILE this tab is open, which the
-  // existing onSnapshot handling below already covers separately.
-  const [sessionAlreadyEnded, setSessionAlreadyEnded] = useState(false)
-  // Gates ALL rendering (including the interactive workspace) until the
-  // one-shot session-status pre-check below resolves. Without this, the
-  // interactive case UI paints immediately on mount — before we know the
-  // session already ended — and the ended-screen only replaces it a beat
-  // later, which reads as a popup flashing over a live case. This must
-  // resolve to false before anything interactive is ever shown.
-  const [checkingSessionStatus, setCheckingSessionStatus] = useState(true)
   // Hard block for a live session opened directly on a phone (bypassing the
   // lobby's own mobile block via a deep link straight into the workspace).
   const [mobileBlocked, setMobileBlocked] = useState(false)
@@ -1319,7 +1305,6 @@ const interviewerStaleStreakRef = useRef(0)
       // doesn't work on a phone regardless of mode or role.
       if (isMobileDevice()) {
         setMobileBlocked(true)
-        setCheckingSessionStatus(false)
         return
       }
 
@@ -1342,45 +1327,6 @@ const interviewerStaleStreakRef = useRef(0)
       // browser is rejected by the Firestore rules (permission-denied) and
       // would fall through here to render the live case. The endpoint reads
       // server-side and works for any authenticated caller.
-      if (sessionRef) {
-        try {
-          const remoteStatus = await apiGet<{ exists: boolean; status: string | null }>(
-            `/api/sessions/${encodeURIComponent(lobbyId!)}/status`,
-          )
-          if (
-            remoteStatus.status === 'completed' ||
-            remoteStatus.status === 'abandoned' ||
-            remoteStatus.status === 'fallback_unrated'
-          ) {
-            setSessionAlreadyEnded(true)
-            setCheckingSessionStatus(false)
-            return
-          }
-        } catch {
-          // Endpoint unreachable — fall back to a client getDoc so the
-          // participant (same-browser) case is still covered.
-          try {
-            const preCheckSnapshot = await getDoc(sessionRef)
-            if (preCheckSnapshot.exists()) {
-              const preCheckData = preCheckSnapshot.data() as SessionState
-              if (
-                preCheckData.status === 'completed' ||
-                preCheckData.status === 'abandoned' ||
-                preCheckData.status === 'fallback_unrated'
-              ) {
-                setSessionAlreadyEnded(true)
-                setCheckingSessionStatus(false)
-                return
-              }
-            }
-          } catch {
-            // Both checks failed — fall through to the normal flow rather than
-            // blocking a legitimate active session.
-          }
-        }
-      }
-      setCheckingSessionStatus(false)
-
       parseAndHandleEnded(localStorage.getItem('compendium-session-ended'))
 
       if (sessionRef) {
@@ -1584,7 +1530,7 @@ const interviewerStaleStreakRef = useRef(0)
         : 'Auto-starting microphone recording...'
     )
     void startCaptureFlow(preferredRecordingMode)
-  }, [canStartRecording, checkingSessionStatus, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, recordingConsentDeclined, resolvedCaseId, sessionAlreadyEnded, startCaptureFlow])
+  }, [canStartRecording, currentUser, lobbyId, microphonePermissionState, preferredRecordingMode, recordingConsentDeclined, resolvedCaseId, startCaptureFlow])
 
   // Reload guard — intercepts reload triggers while recording is active.
   // Two separate sessionStorage keys:
