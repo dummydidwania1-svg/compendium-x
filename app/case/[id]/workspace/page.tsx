@@ -1495,13 +1495,6 @@ const interviewerStaleStreakRef = useRef(0)
       canStart: canStartRecording, declined: recordingConsentDeclined, mic: microphonePermissionState,
     })
     if (autoStartAttemptedRef.current) return
-    // checkingSessionStatus: the one-shot pre-check above hasn't resolved yet,
-    // so we don't know if this session is already over — currentUser can
-    // already be set at this point (it's assigned before the pre-check
-    // await resolves), so gate on this explicitly rather than relying on
-    // sessionAlreadyEnded alone, which only flips true AFTER the check.
-    if (checkingSessionStatus) return
-    if (sessionAlreadyEnded) return
     if (!lobbyId || !resolvedCaseId || !currentUser) return
     if (!canStartRecording) return
     // Candidate chose to run the case without recording — never auto-start.
@@ -2269,13 +2262,6 @@ interrupted: true,
     )
   }
 
-  if (checkingSessionStatus) {
-    return <PlatformLoader message="Getting your case ready" />
-  }
-
-  if (sessionAlreadyEnded) {
-    return <SessionEndedScreen />
-  }
 
   return (
     <div
