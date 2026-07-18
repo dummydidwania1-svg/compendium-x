@@ -127,6 +127,31 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
         // best-effort — don't fail the evaluation submission if this errors
       }
 
+      // Same-device (local) recovery for the EMBEDDED session.recording map —
+      // same rationale as the fresh-create path below: local sessions keep their
+      // single-mic capture on the session doc, not a subcollection, so promote a
+      // still-'recording' embedded transcriptStatus to 'pending' here so the
+      // transcribeRecording Cloud Function fires. Idempotent (guarded on the
+      // 'recording' state) and scoped to local mode only.
+      if (sessionData.sessionMode === 'local') {
+        try {
+          const embedded = sessionData.recording as
+            | { transcriptStatus?: string; audioUrl?: string }
+            | undefined
+          if (embedded?.transcriptStatus === 'recording' && embedded?.audioUrl) {
+            await adminDb.collection('sessions').doc(input.lobbyId).set(
+              {
+                recording: { transcriptStatus: 'pending' },
+                updatedAt: FieldValue.serverTimestamp(),
+              },
+              { merge: true },
+            )
+          }
+        } catch {
+          // best-effort — don't fail the evaluation submission if this errors
+        }
+      }
+
       // Mirror-image recovery for the candidate's own track — remote mode only.
       // Same-device sessions also write recordings/candidate (single-mic capture
       // of both voices), but must never get these flags: their existing
@@ -233,6 +258,35 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
       }
     } catch {
       // best-effort — don't fail the evaluation submission if this errors
+    }
+
+    // Same-device (local) recovery: local sessions store the single-mic capture
+    // in the EMBEDDED session.recording map (not a recordings/ subcollection).
+    // If the candidate's tab navigated to the dashboard the moment the session
+    // completed, only periodic flushes ever landed (stopReason 'periodic_flush')
+    // and the embedded recording.transcriptStatus is still 'recording', so the
+    // transcribeRecording Cloud Function (which fires on the 'recording'→'pending'
+    // transition of session.recording.transcriptStatus) never ran and the
+    // transcript never appears. Promote it to 'pending' here so transcription
+    // fires. Only touches the embedded map for local sessions with real flushed
+    // audio; remote mode and the subcollection paths below are unaffected.
+    if (sessionData.sessionMode === 'local') {
+      try {
+        const embedded = sessionData.recording as
+          | { transcriptStatus?: string; audioUrl?: string }
+          | undefined
+        if (embedded?.transcriptStatus === 'recording' && embedded?.audioUrl) {
+          await sessionRef.set(
+            {
+              recording: { transcriptStatus: 'pending' },
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          )
+        }
+      } catch {
+        // best-effort — don't fail the evaluation submission if this errors
+      }
     }
 
     // Mirror-image recovery for the candidate's own track — remote mode only.
