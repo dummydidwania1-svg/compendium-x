@@ -2314,3 +2314,169 @@ export const sendOnboardingEmail = functionsV1
     }
     return { ok: true }
   })
+
+/* -------------------------------------------------------------------------- */
+/* sessionMaintenanceSweep — scheduled janitor for stuck / dead sessions      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Runs every 30 minutes and performs three age-gated cleanups. Everything here
+ * is a safety net for the rare cases the inline flows miss (tab crash, network
+ * drop mid-upload, someone walking away). All three act only on state that has
+ * been stuck LONG ENOUGH to be certainly dead, so a live session is never
+ * touched.
+ *
+ *  A. Rescue stuck transcripts — a session that is OVER (completed /
+ *     fallback_unrated / abandoned) but whose audio never got promoted from
+ *     'recording' to 'pending' (so transcription never fired). Local sessions
+ *     store this on the embedded `recording` map; remote sessions on the
+ *     `recordings/{role}` subcollection. Promote to 'pending' → the existing
+ *     transcribe Cloud Functions fire. Gated: session updated > 25 min ago.
+ *
+ *  B. Mark dead in_progress sessions abandoned — a session left 'in_progress'
+ *     with no heartbeat from EITHER participant for > 3 hours. Marking it
+ *     'abandoned' (with abandonedAt) lets the existing hourly
+ *     promoteAbandonedSessions sweep carry it to 'fallback_unrated' after 24h,
+ *     so it shows up on the candidate's dashboard instead of hanging forever.
+ *
+ *  C. Delete empty lobbies — a 'waiting' session that never ran a case (no
+ *     caseId, no audio anywhere, no evaluation, no recordings subcollection)
+ *     and has sat untouched for > 24h. Pure noise; safe to remove. Confirmed
+ *     with the product that lobbies are always created and used in the same
+ *     session, so a day-old empty 'waiting' lobby is always dead.
+ */
+export const sessionMaintenanceSweep = onSchedule(
+  {
+    schedule: 'every 30 minutes',
+    region: 'us-central1',
+    timeoutSeconds: 300,
+    memory: '512MiB',
+  },
+  async () => {
+    const now = Date.now()
+    const STUCK_TRANSCRIPT_MS = 25 * 60 * 1000 // 25 min
+    const DEAD_IN_PROGRESS_MS = 3 * 60 * 60 * 1000 // 3 h
+    const EMPTY_LOBBY_MS = 24 * 60 * 60 * 1000 // 24 h
+
+    const stampMs = (data: FirebaseFirestore.DocumentData): number => {
+      const updated = data.updatedAt instanceof Timestamp ? data.updatedAt.toMillis() : 0
+      const created = data.createdAt instanceof Timestamp ? data.createdAt.toMillis() : 0
+      return Math.max(updated, created)
+    }
+    const presenceMs = (p: unknown): number =>
+      p && typeof p === 'object' && (p as { lastSeenAt?: unknown }).lastSeenAt instanceof Timestamp
+        ? ((p as { lastSeenAt: Timestamp }).lastSeenAt).toMillis()
+        : 0
+
+    let rescuedLocal = 0
+    let rescuedRemote = 0
+    let markedAbandoned = 0
+    let deletedEmpty = 0
+
+    // A single scan of recent-ish sessions covers all three sweeps. We can't
+    // cheaply query "updatedAt < cutoff" across mixed statuses without composite
+    // indexes, so read the collection and filter in memory (the collection is
+    // small — low thousands — and this runs only every 30 min).
+    const snapshot = await db.collection('sessions').get()
+
+    for (const sessionDoc of snapshot.docs) {
+      const data = sessionDoc.data()
+      const status = data.status as string | undefined
+      const age = now - stampMs(data)
+
+      try {
+        // ---- C. Delete empty 'waiting' lobbies (>24h, never ran a case) ----
+        if (
+          status === 'waiting' &&
+          age > EMPTY_LOBBY_MS &&
+          !data.caseId &&
+          !data.recording?.audioUrl &&
+          !data.candidateAudioUrl &&
+          !data.interviewerAudioUrl
+        ) {
+          const [evalSnap, recSnap] = await Promise.all([
+            db.collection('evaluations').where('lobbyId', '==', sessionDoc.id).limit(1).get(),
+            sessionDoc.ref.collection('recordings').limit(1).get(),
+          ])
+          if (evalSnap.empty && recSnap.empty) {
+            for (const r of recSnap.docs) await r.ref.delete() // (empty, but keep symmetric)
+            await sessionDoc.ref.delete()
+            deletedEmpty++
+            continue
+          }
+        }
+
+        // ---- B. Mark dead in_progress sessions abandoned (>3h no heartbeat) ----
+        if (status === 'in_progress') {
+          const lastSeen = Math.max(
+            presenceMs(data.candidatePresence),
+            presenceMs(data.interviewerPresence),
+            stampMs(data),
+          )
+          if (now - lastSeen > DEAD_IN_PROGRESS_MS) {
+            await sessionDoc.ref.set(
+              {
+                status: 'abandoned',
+                abandonedAt: FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
+              },
+              { merge: true },
+            )
+            markedAbandoned++
+            // fall through — a just-abandoned session with a stuck transcript
+            // can still be rescued in the same pass below.
+          }
+        }
+
+        // ---- A. Rescue stuck transcripts on ended sessions (>25 min) ----
+        const ended =
+          status === 'completed' ||
+          status === 'fallback_unrated' ||
+          status === 'abandoned'
+        if (ended && age > STUCK_TRANSCRIPT_MS) {
+          // Local (embedded) track
+          if (
+            data.sessionMode === 'local' &&
+            data.recording?.transcriptStatus === 'recording' &&
+            data.recording?.audioUrl
+          ) {
+            await sessionDoc.ref.set(
+              { recording: { transcriptStatus: 'pending' }, updatedAt: FieldValue.serverTimestamp() },
+              { merge: true },
+            )
+            rescuedLocal++
+          }
+          // Remote (subcollection) tracks
+          if (data.sessionMode === 'remote') {
+            const mergedStatus = data.mergedTranscriptStatus as string | undefined
+            if (mergedStatus !== 'completed' && mergedStatus !== 'failed') {
+              const recSnap = await sessionDoc.ref.collection('recordings').get()
+              for (const t of recSnap.docs) {
+                const td = t.data()
+                if (td.transcriptStatus === 'recording' && td.audioUrl) {
+                  await t.ref.set(
+                    { transcriptStatus: 'pending', updatedAt: FieldValue.serverTimestamp() },
+                    { merge: true },
+                  )
+                  rescuedRemote++
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn('session_maintenance: per-session error (skipped)', {
+          sessionId: sessionDoc.id,
+          message: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+
+    logger.info('session_maintenance: done', {
+      rescuedLocal,
+      rescuedRemote,
+      markedAbandoned,
+      deletedEmpty,
+    })
+  },
+)
