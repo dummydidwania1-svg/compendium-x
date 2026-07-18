@@ -1,14 +1,13 @@
 'use client'
 
-import { type CSSProperties, type FormEvent, useState } from 'react'
+import { type CSSProperties, type FormEvent, useEffect, useRef, useState } from 'react'
 import {
-  GoogleAuthProvider,
   createUserWithEmailAndPassword,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
-  signInWithPopup,
   signOut,
+  type User,
 } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
@@ -17,6 +16,7 @@ import { getPostAuthRoute } from '@/lib/auth/postAuth'
 import { authenticateWithPasswordFallback } from '@/lib/auth/passwordFallback'
 import { requestPasswordResetFallback } from '@/lib/auth/passwordResetFallback'
 import { triggerOnboardingEmail, triggerVerificationEmail } from '@/lib/auth/accountEmails'
+import { consumeGoogleRedirectResult, signInWithGoogle } from '@/lib/auth/googleSignIn'
 
 export type AuthMode = 'signin' | 'signup'
 
@@ -246,6 +246,9 @@ export default function MarketingAuthPanel({
     if (error.message.includes('auth/popup-blocked')) {
       return 'Pop-up blocked by your browser. Please allow pop-ups for this site and try again.'
     }
+    if (error.message.includes('auth/popup-timeout')) {
+      return "Google sign-in is taking too long in this browser. We've switched to a different method — please try again."
+    }
     return error.message
   }
 
@@ -285,6 +288,65 @@ export default function MarketingAuthPanel({
     router.refresh()
   }
 
+  // Shared by both the popup path (resolves inline) and the redirect
+  // fallback's return trip (resolves on the next mount, via the effect
+  // below) — same profile-prefill / college-check / finishAuth sequence
+  // either way, so a user who got bounced to the redirect flow because
+  // their browser was hostile to popups sees the exact same result.
+  const completeGoogleSignIn = async (user: User) => {
+    if (user.displayName) {
+      try {
+        await setDoc(
+          doc(db, 'profiles', user.uid),
+          { fullName: user.displayName, updatedAt: serverTimestamp() },
+          { merge: true }
+        )
+      } catch {
+        // profile prefill failure — onboarding will collect it
+      }
+    }
+
+    try {
+      const profileSnapshot = await getDoc(doc(db, 'profiles', user.uid))
+      const existingUniversity = profileSnapshot.exists() ? profileSnapshot.data()?.university : null
+      const hasUniversity =
+        typeof existingUniversity === 'string' && existingUniversity.trim().length > 0
+
+      if (!hasUniversity) {
+        setCollegeUid(user.uid)
+        setNeedsCollege(true)
+        setGoogleLoading(false)
+        return
+      }
+    } catch {
+      // If this check fails, finishAuth's own getPostAuthRoute call below
+      // still safely falls back to /onboarding if college is missing.
+    }
+
+    await finishAuth(user.uid, true)
+  }
+
+  // Catches the return trip when signInWithGoogle() fell back to a full-page
+  // redirect (popup blocked/timed out/cancelled) — that navigation interrupts
+  // handleGoogleSignIn below before it can finish, so the flow has to resume
+  // here on the next mount instead. No-ops on every normal page load where
+  // there's no pending redirect result.
+  const redirectCheckStarted = useRef(false)
+  useEffect(() => {
+    if (redirectCheckStarted.current) return
+    redirectCheckStarted.current = true
+    consumeGoogleRedirectResult().then((user) => {
+      if (!user) return
+      setGoogleLoading(true)
+      completeGoogleSignIn(user).catch((error) => {
+        setMessage(toFriendlyMessage(error, 'Unable to sign in with Google.'))
+        setMessageTone('error')
+        setGoogleLoading(false)
+      })
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleGoogleSignIn = async () => {
     if (missingFirebaseClientConfig.length > 0) {
       setMessage(
@@ -299,40 +361,8 @@ export default function MarketingAuthPanel({
     setMessageTone('error')
 
     try {
-      const provider = new GoogleAuthProvider()
-      const result = await signInWithPopup(auth, provider)
-      const user = result.user
-
-      if (user.displayName) {
-        try {
-          await setDoc(
-            doc(db, 'profiles', user.uid),
-            { fullName: user.displayName, updatedAt: serverTimestamp() },
-            { merge: true }
-          )
-        } catch {
-          // profile prefill failure — onboarding will collect it
-        }
-      }
-
-      try {
-        const profileSnapshot = await getDoc(doc(db, 'profiles', user.uid))
-        const existingUniversity = profileSnapshot.exists() ? profileSnapshot.data()?.university : null
-        const hasUniversity =
-          typeof existingUniversity === 'string' && existingUniversity.trim().length > 0
-
-        if (!hasUniversity) {
-          setCollegeUid(user.uid)
-          setNeedsCollege(true)
-          setGoogleLoading(false)
-          return
-        }
-      } catch {
-        // If this check fails, finishAuth's own getPostAuthRoute call below
-        // still safely falls back to /onboarding if college is missing.
-      }
-
-      await finishAuth(user.uid, true)
+      const user = await signInWithGoogle()
+      await completeGoogleSignIn(user)
     } catch (error) {
       // User dismissed the popup — no message needed
       if (error instanceof Error && error.message.includes('auth/popup-closed-by-user')) {
