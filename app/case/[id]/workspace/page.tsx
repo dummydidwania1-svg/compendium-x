@@ -677,6 +677,21 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
       }
 
       if (stoppedBlob.size === 0) {
+        // A zero-byte FINAL blob is the normal/expected case in remote (dual-mic)
+        // mode: the candidate track is already flushed to Storage continuously
+        // during the session, so recorder.stop() at the end legitimately yields
+        // nothing new. Treating that as a failure was what stranded remote
+        // candidates behind an "upload failed" overlay. So for remote, this is a
+        // clean completion — arm the same success overlay the upload path would.
+        // For local (same-device) mode the final blob IS the whole recording, so
+        // an empty one is a genuine capture failure and keeps the failure path.
+        if (preferredRecordingModeRef.current !== 'local') {
+          stopInProgressRef.current = false
+          if (routeAfterStop) {
+            setSessionCompleteOverlayVisible(true)
+          }
+          return
+        }
         setRecordingState('failed')
         setRecordingError('Recording stopped, but no audio was captured.')
         setCompletionPending(routeAfterStop)
@@ -1268,19 +1283,20 @@ const interviewerStaleStreakRef = useRef(0)
       if (raw.status === 'completed') {
         const stopReason = raw.completedBy === 'candidate' ? 'candidate_ended' : 'feedback_submitted'
         if (stopReason === 'feedback_submitted') {
-  setFeedbackSubmitted(true)
-  // FIX: deterministically arm the "window closes in 3.5s" overlay + route
-  // timer the instant the interviewer's Submit lands (status: completed).
-  // Previously this overlay was only armed as a side-effect at the tail of the
-  // stop+upload pipeline, so when the final recorder.stop() yielded an
-  // empty/null blob (common in remote mode — audio is already flushed
-  // periodically) or a concurrent finalize was running, it silently skipped
-  // arming and the candidate got stuck. This is a pure UI signal: it does NOT
-  // touch the audio upload / transcript / flush flow (handleSessionCompleted
-  // still runs unchanged below), it's idempotent (React no-ops the repeat
-  // state set), and the navigation stays one-shot via sessionCompleteRouteRef.
-  setSessionCompleteOverlayVisible(true)
-}
+          setFeedbackSubmitted(true)
+          // NOTE: we deliberately do NOT arm the "All done!" redirect overlay
+          // here. That overlay carries a fixed 3s auto-dismiss → router.replace,
+          // and arming it eagerly off the status flip (as a previous change did)
+          // started that navigation clock BEFORE the candidate's final audio
+          // upload had a chance to finish. In same-device (local) mode the final
+          // upload is the whole recording and routinely takes longer than 3s, so
+          // the redirect raced ahead and the tab navigated away before the final
+          // 'uploaded' write landed — leaving transcriptStatus stuck at
+          // 'recording' and transcription never triggering. Instead, the overlay
+          // is armed at the TAIL of handleSessionCompleted's stop+upload pipeline
+          // (on upload success, or on the expected empty-blob remote completion),
+          // so navigation only ever starts once the upload has actually settled.
+        }
         void handleSessionCompleted(stopReason)
       }
 
