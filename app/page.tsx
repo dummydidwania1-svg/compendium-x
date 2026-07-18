@@ -442,54 +442,59 @@ animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
    ═══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   header.ccx-hero {
-    min-height: calc(100vh - 70px);
-    min-height: calc(100svh - 70px);
+    min-height: 0;
     overflow: visible;
-    align-items: center;
-    padding: 32px 0 48px;
+    align-items: stretch;
+    padding: 0 0 40px;
+    display: block;
   }
 
-  /* Full-width college backdrop, dimmed a touch for contrast */
+  /* True split, stacked: photo becomes its own top panel (not a background
+     behind the text) — same two ingredients as the desktop split (image
+     block + cream text block), just rotated to top/bottom instead of
+     left/right, so mobile reads as the same design instead of a different one. */
   #ccx-split-left {
-    top: 0;
-    left: 0;
+    position: relative !important;
+    top: 0; left: 0;
     width: 100% !important;
-    height: 100% !important;
-    background-position: center center;
-    filter: saturate(1.15) brightness(0.92);
-    -webkit-mask-image: linear-gradient(to bottom,
-      rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%,
-      rgba(0,0,0,0.6) 82%, rgba(0,0,0,0) 100%);
-    mask-image: linear-gradient(to bottom,
-      rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%,
-      rgba(0,0,0,0.6) 82%, rgba(0,0,0,0) 100%);
-    -webkit-mask-composite: source-over;
-    mask-composite: add;
+    height: 42vh !important;
+    min-height: 260px;
+    max-height: 380px;
+    background-position: center 40%;
+    filter: saturate(1.08) brightness(0.98);
+    -webkit-mask-image: none;
+    mask-image: none;
+    -webkit-mask-composite: unset;
+    mask-composite: unset;
   }
+  /* Dissolve into the cream panel below instead of a hard cut — the photo's
+     bottom quarter fades to cream so it reads as one continuous surface. */
   #ccx-split-left::after {
     content: '';
     position: absolute;
     inset: 0;
     background: linear-gradient(180deg,
-      rgba(255,248,240,0.55) 0%,
-      rgba(255,248,240,0.68) 42%,
-      rgba(255,248,240,0.80) 68%,
-      rgba(255,248,240,0.95) 100%);
+      rgba(255,248,240,0) 62%,
+      rgba(255,248,240,0.55) 82%,
+      rgba(255,248,240,0.92) 94%,
+      var(--cream) 100%);
   }
 
-  /* Full-width text column (beats desktop calc() + the scroll script's inline padding) */
+  /* Cream text panel below the photo — mirrors desktop's right-hand panel */
   header.ccx-hero .hero-inner {
-    padding: 0 24px !important;
+    position: relative;
+    padding: 32px 24px 0 !important;
     max-width: 100%;
+    background: var(--cream);
   }
 
-  /* Cream halo crisps every line against the photo behind it */
+  /* No photo behind the text anymore — halo no longer needed */
   #ccx-edition,
   #ccx-main-title,
   #ccx-where-line,
   #ccx-animated-line,
   #ccx-animated-line .word-item {
-    text-shadow: 0 1px 10px rgba(255,248,240,0.9), 0 1px 2px rgba(255,248,240,0.75);
+    text-shadow: none;
   }
 
   #ccx-edition { font-size: 16px; gap: 10px; margin-bottom: 14px; }
@@ -522,14 +527,31 @@ animation: introLogoIn 0.58s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
   }
   header.ccx-hero .ctas a { text-align: center; padding: 16px 24px; font-size: 12px; min-width: 0; }
 
-  /* Hide hero grants on mobile — no space */
-  #ccx-hero-grants { display: none; }
+  /* Restore "Supported by" below the photo panel, echoing the desktop
+     credibility strip instead of disappearing on mobile. #ccx-hero-grants is
+     a sibling of .hero-inner (not nested inside it), so it needs its own
+     horizontal padding here to line up with the text column below — without
+     it, the leftover desktop right:48px offset has nothing to anchor to
+     and the text clips flush against the viewport edge. */
+  #ccx-hero-grants {
+    position: static;
+    top: auto; right: auto;
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 20px 24px 0;
+    margin-top: 0;
+  }
+  #ccx-hero-grants__label { font-size: 10px; }
+  #ccx-hero-grants__credits { font-size: 11px; white-space: normal; }
 }
 
 /* Extra squeeze for very small phones (SE / mini, older Androids) */
 @media (max-width: 380px) {
   #ccx-main-title { font-size: clamp(32px, 11vw, 44px) !important; }
-  header.ccx-hero .hero-inner { padding: 0 18px !important; }
+  header.ccx-hero .hero-inner { padding: 32px 18px 0 !important; }
+  #ccx-hero-grants { padding: 20px 18px 0; }
 }
 
 /* ─── HOW TO USE LINK ─── */
@@ -698,7 +720,14 @@ const tRemove = setTimeout(() => {
         rafId = null
       }
     }
+    // This scroll-fade (opacity + growing left padding) is built for the
+    // desktop left/right split. Below 768px the layout is a stacked photo
+    // panel + cream text panel instead, so the effect is skipped there —
+    // otherwise its inline styles would fight the mobile CSS and fade the
+    // photo panel out / shove the text panel over on scroll.
+    const isMobileHero = () => window.innerWidth <= 768
     const onScroll = () => {
+      if (isMobileHero()) return
       targetT = Math.min(1, window.scrollY / FADE_END)
       if (rafId === null) rafId = requestAnimationFrame(tick)
     }
