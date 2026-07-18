@@ -484,20 +484,31 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
       // the first attempt succeeds, instead of failing a few times and forcing
       // the candidate to click "Retry upload". Subsequent cases already have a
       // warm token, which is why the bug only showed on the first case.
-      try {
-        await auth.currentUser?.getIdToken(true)
-      } catch {
-        // Non-fatal — the retry loop below still covers a slow token.
-      }
-
       // Auto-retry the upload a few times with backoff before surfacing a
       // failure overlay, as a safety net for any remaining transient failure.
       // Each attempt uses a fresh storage path (timestamp) so a partially
       // written object from a failed attempt is never reused.
+      //
+      // The token is force-refreshed at the START OF EACH ATTEMPT (not just
+      // once up front). A transient auth/permission (403) failure at session-
+      // end is almost always a token that was momentarily rotated/contended —
+      // re-minting a clean token before the next attempt is exactly what a
+      // manual "Retry upload" click used to do by hand, so doing it inside the
+      // loop lets the upload self-heal automatically instead of exhausting all
+      // attempts and dumping the user on the failure overlay.
       const MAX_ATTEMPTS = 5
       let lastError: unknown = null
 
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        // Mint a fresh token for this attempt. First attempt warms a brand-new
+        // account's very first handshake; later attempts recover from a token
+        // that was rotated out from under a concurrent upload at session-end.
+        try {
+          await auth.currentUser?.getIdToken(true)
+        } catch {
+          // Non-fatal — the upload below may still succeed on a cached token.
+        }
+
         const storagePath = `session-recordings/${currentUser.uid}/${lobbyId}/${Date.now()}.${extension}`
         const recordingRef = storageRef(storage, storagePath)
         try {
@@ -559,9 +570,11 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
             recordingMode,
           })
           if (attempt < MAX_ATTEMPTS) {
-            // Backoff: 600ms, 1200ms, 1800ms. Gives the auth token / network /
-            // tab-focus state time to settle before the next attempt.
-            await new Promise((resolve) => setTimeout(resolve, attempt * 600))
+            // Backoff: 800ms, 1600ms, 2400ms, 3200ms. Gives the freshly-minted
+            // auth token time to fully propagate to the Storage credential /
+            // network / tab-focus state before the next attempt (a rotated
+            // token can take up to ~1-2s to be honored by uploadBytes).
+            await new Promise((resolve) => setTimeout(resolve, attempt * 800))
           }
         }
       }
@@ -596,6 +609,20 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
       if (candidateFlushTimerRef.current) {
         clearInterval(candidateFlushTimerRef.current)
         candidateFlushTimerRef.current = null
+      }
+
+      // Wait out any flush that's ALREADY in flight before the final upload
+      // touches the auth token. Clearing the timer above only stops FUTURE
+      // flushes — a 20s-boundary flush that was mid-upload when the session
+      // ended keeps running, and the final upload's getIdToken(true) force-
+      // refresh would rotate the anonymous user's token out from under that
+      // in-flight flush's uploadBytes/apiPost, producing a transient 403 that
+      // exhausted the retry loop and surfaced the "upload didn't go through"
+      // overlay (which a manual retry then cleared, once the flush had settled).
+      // Serializing them removes that contention so the first automatic upload
+      // succeeds on its own.
+      for (let i = 0; i < 60 && candidateFlushInFlightRef.current; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
       }
 
       const recorder = recorderRef.current
