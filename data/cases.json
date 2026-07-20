@@ -6744,8 +6744,9 @@
           },
           "structural-factors": {
             "id": "structural-factors",
-            "label": "Structural Factors",
+            "label": "Market Attractiveness",
             "tone": "branch",
+            "stackChildren": true,
             "children": [
               "demand",
               "growth-rate",
@@ -6802,7 +6803,7 @@
           },
           "bottom-up-demand": {
             "id": "bottom-up-demand",
-            "label": "Bottom-Up Demand",
+            "label": "Market Sizing",
             "tone": "branch",
             "children": [
               "consumption-gap",
@@ -6865,6 +6866,10 @@
           "demand-by-industry"
         ],
         "defaultFocusedId": "demand-by-industry",
+        "defaultFocusedIds": [
+          "demand-by-industry",
+          "structural-factors"
+        ],
         "notes": []
       }
     ],
@@ -8035,10 +8040,13 @@
         "grow-new-market",
         "market-selection",
         "europe",
-        "portfolio-selection",
-        "pediatric"
+        "portfolio-selection"
       ],
       "defaultFocusedId": "europe",
+      "defaultFocusedIds": [
+        "europe",
+        "portfolio-selection"
+      ],
       "notes": [
         {
           "title": "Questions",
@@ -8713,106 +8721,9 @@
     "company": "Kearney",
     "prompt": "Your client is a 5-star hotel considering opening a waterpark within one specific hotel property. Waterpark charges will be automatically included in the room booking, with usage optional. Should they enter this waterpark business?",
     "frameworkTree": {
-      "nodes": {
-        "enter-waterpark": {
-          "id": "enter-waterpark",
-          "label": "Enter the Waterpark?",
-          "tone": "root",
-          "children": [
-            "market-attractiveness",
-            "financial-viability",
-            "capabilities-ops",
-            "risks-mitigation"
-          ]
-        },
-        "market-attractiveness": {
-          "id": "market-attractiveness",
-          "label": "Market Attractiveness",
-          "tone": "support",
-          "children": []
-        },
-        "financial-viability": {
-          "id": "financial-viability",
-          "label": "Financial Viability",
-          "tone": "support",
-          "children": []
-        },
-        "capabilities-ops": {
-          "id": "capabilities-ops",
-          "label": "Capabilities & Operations",
-          "tone": "branch",
-          "children": [
-            "hospitality-cap",
-            "safety-cap",
-            "water-cap",
-            "usage-cap"
-          ]
-        },
-        "hospitality-cap": {
-          "id": "hospitality-cap",
-          "label": "Hospitality: Strong",
-          "tone": "leaf",
-          "children": []
-        },
-        "safety-cap": {
-          "id": "safety-cap",
-          "label": "Water Safety: Gap",
-          "tone": "leaf",
-          "children": []
-        },
-        "water-cap": {
-          "id": "water-cap",
-          "label": "Water Treatment: Gap",
-          "tone": "leaf",
-          "children": []
-        },
-        "usage-cap": {
-          "id": "usage-cap",
-          "label": "Usage Management: Gap",
-          "tone": "leaf",
-          "children": []
-        },
-        "risks-mitigation": {
-          "id": "risks-mitigation",
-          "label": "Risks & Mitigation",
-          "tone": "branch",
-          "children": [
-            "low-util",
-            "brand-dilution",
-            "focus-diversion",
-            "capital-risk"
-          ]
-        },
-        "low-util": {
-          "id": "low-util",
-          "label": "Low Utilisation Risk",
-          "tone": "leaf",
-          "children": []
-        },
-        "brand-dilution": {
-          "id": "brand-dilution",
-          "label": "Brand Dilution Risk",
-          "tone": "leaf",
-          "children": []
-        },
-        "focus-diversion": {
-          "id": "focus-diversion",
-          "label": "Focus Diversion Risk",
-          "tone": "leaf",
-          "children": []
-        },
-        "capital-risk": {
-          "id": "capital-risk",
-          "label": "High Capital Risk",
-          "tone": "leaf",
-          "children": []
-        }
-      },
-      "defaultExpanded": [
-        "enter-waterpark",
-        "capabilities-ops"
-      ],
-      "defaultFocusedId": "capabilities-ops",
+      "nodes": {},
+      "defaultExpanded": [],
+      "defaultFocusedId": "",
       "notes": [
         {
           "title": "Questions",
@@ -8838,6 +8749,51 @@
       ]
     },
     "visualisations": [
+      {
+        "id": "guest-funnel",
+        "type": "funnel",
+        "title": "Market Attractiveness",
+        "row": "attractiveness-ops",
+        "steps": [
+          "Total Hotel Guests",
+          "Leisure & Family Guests",
+          "₹5,000 Premium-Paying Guests"
+        ]
+      },
+      {
+        "id": "capability-gap",
+        "type": "table",
+        "title": "Capabilities & Operations",
+        "header": "Capabilities & Operations",
+        "noTitle": true,
+        "row": "attractiveness-ops",
+        "columns": [
+          "Capability",
+          "Existing Capability?"
+        ],
+        "columnWidths": [
+          "70%",
+          "30%"
+        ],
+        "rows": [
+          [
+            "Hospitality & Guest Service",
+            "✓"
+          ],
+          [
+            "Water Safety & Lifeguarding",
+            "✗"
+          ],
+          [
+            "Water Treatment & Maintenance",
+            "✗"
+          ],
+          [
+            "Usage & Crowd Management",
+            "✗"
+          ]
+        ]
+      },
       {
         "id": "payback-calc",
         "type": "table",
@@ -8923,6 +8879,29 @@
         "type": "formula",
         "lhs": "Payback (Room-Nights)",
         "rhs": "Fixed Cost ÷ Contribution per Booking"
+      },
+      {
+        "type": "decision",
+        "title": "Risks & Mitigation",
+        "rootId": "risks-mitigation",
+        "nodes": [
+          {
+            "id": "risks-mitigation",
+            "label": "Risks & Mitigation",
+            "kind": "rect",
+            "chosen": true,
+            "children": [
+              { "nodeId": "low-util" },
+              { "nodeId": "brand-dilution" },
+              { "nodeId": "focus-diversion" },
+              { "nodeId": "capital-risk" }
+            ]
+          },
+          { "id": "low-util", "label": "Low Utilisation Risk", "kind": "terminal", "chosen": false },
+          { "id": "brand-dilution", "label": "Brand Dilution Risk", "kind": "terminal", "chosen": false },
+          { "id": "focus-diversion", "label": "Focus Diversion Risk", "kind": "terminal", "chosen": false },
+          { "id": "capital-risk", "label": "High Capital Risk", "kind": "terminal", "chosen": false }
+        ]
       }
     ],
     "framework": "Candidate: That's an interesting problem. Before I structure my approach, may I ask a few clarifying questions?\nInterviewer: Please go ahead.\nCandidate: First, is this being considered for just one hotel, or across the chain?\nInterviewer: Just one, for now.\nCandidate: Understood. Can I assume a specific location to ground my thinking?\nInterviewer: Yes.\nCandidate: Then I'll assume a property in Gurgaon, since I'm familiar with that market. And are there any direct competitors already offering a similar in-hotel waterpark nearby?\nInterviewer: Assume none for now.\nCandidate: Great. Then I'll evaluate this as a market entry decision across four lenses. First, market attractiveness, to see whether there is real demand. Second, financial viability, to check whether the economics work. Third, capabilities and operations, to see whether the hotel can actually run a waterpark. And fourth, the key risks and how we might mitigate them. Does that structure sound reasonable?\nInterviewer: Yes, that works. Let's start with market attractiveness.\nCandidate: Sure. I'll begin with where the demand comes from. A waterpark appeals mainly to families and leisure travellers. But a 5-star hotel in a market like Gurgaon skews heavily towards business guests and wedding or event groups, who typically won't use a waterpark. So intuitively, the addressable segment is only a slice of the hotel's guests.\nInterviewer: That's a fair hypothesis. How would you pressure-test it?\nCandidate: I'd anchor on the room economics first. For a property like this, I'd estimate an average room rate of around ₹8,000 to ₹10,000 a night. Is that fair?\nInterviewer: That's a fair assumption.\nCandidate: And a typical stay of about 2 nights?\nInterviewer: Yes.\nCandidate: Now I need a sensible waterpark premium to test, since the charge is bundled into the room. If the room itself is ₹8,000 to ₹10,000, an add-on much larger than half the room rate would feel steep to most guests. So I'll assume a premium of about ₹5,000 per room-night, roughly 50% on top of the room.\nInterviewer: Yes, ₹5,000 works.\nCandidate: At ₹5,000, value perception becomes the deciding factor. A family may see ₹5,000 as fair for a full day of entertainment, but a business traveller is very unlikely to pay it for something they won't use. So demand is confined to a narrow niche rather than the majority of hotel traffic.\nInterviewer: Agreed, the demand side looks thin. Let's see whether the financials could still justify it.\nCandidate: I'll use a payback lens, comparing the upfront investment against the contribution each booking generates. On the cost side, fixed costs are land, construction, the slides and rides, and safety infrastructure; variable costs are staff, electricity, water, and maintenance.\nInterviewer: Let's put numbers to it. What would you assume for the fixed investment?\nCandidate: Since the land already exists within the property, I'd estimate the build-out, rides, and safety setup at roughly ₹5 crore. May I proceed with that?\nInterviewer: Yes, assume ₹5 crore.\nCandidate: For the contribution per booking, a meaningful share of the ₹5,000 premium is consumed by the cost of actually servicing a guest. Waterparks are utility-heavy: water treatment and heating, electricity for pumps and rides, extra staffing, and constant cleaning. So I'd assume variable costs run at about half the premium, roughly ₹2,500 per booking. That leaves a contribution margin of around ₹2,500 per premium room-night.\nInterviewer: Reasonable. So what does that imply for payback?\nCandidate: To recover the ₹5 crore fixed cost at ₹2,500 contribution per booking, I'd need ₹5,00,00,000 divided by ₹2,500, which is about 2,00,000 premium-paying room-nights.\nInterviewer: And how should I read that 2 lakh figure?\nCandidate: Let me put it in context. A single hotel might have around 200 to 300 rooms. Even at full occupancy every night, that is under 1,00,000 room-nights a year in total, and only the small leisure niche would actually pay the premium. The payback is simply too long and too uncertain to be attractive.\nInterviewer: That's a clear conclusion. Let's move on.\nCandidate: The third lens is whether the hotel is operationally equipped to run this, and here I see a real capability gap. The hotel is genuinely strong on hospitality and guest service, which helps, but the overlap largely ends there. Water safety and lifeguarding is a mandatory function the hotel has no existing muscle in. Specialised water treatment and maintenance is critical and again outside its expertise. And managing high-volume recreational usage, queueing, crowd safety, and continuous cleaning, is an entirely new discipline for a hotel. So there is very low operational synergy, which means a steep learning curve and meaningful additional management bandwidth.\nInterviewer: Understood. And the risks?\nCandidate: I'd flag four. First, low utilisation, since the business-traveller base won't value the park. Second, brand dilution, as a luxury business hotel repositioning around a recreational attraction could confuse its core clientele. Third, focus diversion, pulling management attention away from the core hospitality business. And fourth, the high capital risk we just saw, a large fixed outlay against slow, uncertain payback.\nInterviewer: So what's your final recommendation?\n_[Recommendations below]_\nInterviewer: Thank you, that's a well-structured answer.\n\nTesting the Waters Framework & Recommendations\nSHOULD A 5-STAR HOTEL ENTER THE WATERPARK BUSINESS?\nClarifying Questions: Is this for one hotel or the whole chain? Can I assume a specific location? Any direct competitors offering in-hotel waterparks nearby?\nBrownie Points: Justifying the ₹5,000 premium as roughly 50% of the room rate before using it Contextualizing 2 lakh room-nights against a 200 to 300 room hotel's capacity Offering optional ticketing and a pilot instead of a flat no\nKeep In Mind: Bundling the charge into the room makes value perception the deciding factor A single hotel has too few room-nights to recover a ₹5 crore fixed cost quickly Low operational synergy means a steep learning curve, not just extra cost\nRECOMMENDATIONS: Recommend against entering the waterpark segment in this property, at least in the bundled form proposed. If they still want to explore, test the concept with seasonal or temporary mini water features before committing full capital expenditure. Target family-tourism-heavy destinations rather than a business hub like Gurgaon. Offer the waterpark on separate, optional ticketing instead of mandatory bundling."

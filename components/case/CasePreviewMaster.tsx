@@ -87,7 +87,7 @@ export type VisFormula = {
   rhs?: string
   derivations?: { lhs: string; rhs: string }[]
 }
-export type VisTable = { type: 'table'; title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; noTitle?: boolean; summaryRows?: number[]; columnWidths?: string[]; insight?: string; header?: string; mergeRowPairs?: number; mergeFinalRowCols?: number }
+export type VisTable = { type: 'table'; title: string; columns: string[]; rows: string[][] | string; inlineOnly?: boolean; noTitle?: boolean; summaryRows?: number[]; columnWidths?: string[]; insight?: string; header?: string; mergeRowPairs?: number; mergeFinalRowCols?: number; row?: string }
 export type VisDecisionNode = {
   id: string
   label: string
@@ -106,7 +106,8 @@ export type VisCalcStep =
   | { eq: true; label: string; value: string; underline?: boolean; indent?: boolean; bold?: boolean; text?: never }
 export type VisCalcPanel = { title: string; steps: VisCalcStep[] }
 export type VisCalcPair = { type: 'calcpair'; header?: string; left: VisCalcPanel; right: VisCalcPanel }
-export type Visualisation = VisFormula | VisTable | VisDecision | VisCalcPair
+export type VisFunnel = { type: 'funnel'; title?: string; steps: string[]; row?: string }
+export type Visualisation = VisFormula | VisTable | VisDecision | VisCalcPair | VisFunnel
 
 export type RecommendationsTableB = { framework: string; columns: string[]; dimensionHeader?: string; rows: { dimension: string; shortTerm: string; longTerm: string }[] }
 export type RecommendationsTable  = RecommendationsTableB
@@ -3018,6 +3019,100 @@ textAlign: i  === 0 ? 'left' : 'center',   // th
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Visualization: Horizontal funnel (box → arrow → box)
+   ═══════════════════════════════════════════════════════════ */
+function VisFunnelBlock({ vis }: { vis: VisFunnel }) {
+  const BOX_BG = '#EAE2D5'
+  const BOX_BD = 'rgba(92,64,51,0.25)'
+  const BOX_TX = '#3B2F2F'
+  const ARROW = '#5C4033'
+  return (
+    <div className="pt-10">
+      {vis.title && <VisDivider label={vis.title} />}
+      <div className="flex w-full flex-col items-center gap-2 py-2">
+        {vis.steps.map((step, i) => (
+          <Fragment key={i}>
+            <div
+              className="flex w-full max-w-[320px] items-center justify-center rounded-[4px] border px-5 py-4 text-center"
+              style={{ background: BOX_BG, borderColor: BOX_BD, color: BOX_TX, fontFamily: "'Newsreader', serif", fontSize: '15px', lineHeight: 1.3, fontWeight: 500 }}
+            >
+              {step}
+            </div>
+            {i < vis.steps.length - 1 && (
+              <svg width="16" height="28" viewBox="0 0 16 28" className="shrink-0" aria-hidden="true">
+                <line x1="8" y1="2" x2="8" y2="20" stroke={ARROW} strokeWidth="2" />
+                <polygon points="3,20 13,20 8,26" fill={ARROW} />
+              </svg>
+            )}
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Visualization: render table/funnel blocks, grouping any that
+   share a `row` id into one side-by-side flex row.
+   ═══════════════════════════════════════════════════════════ */
+function renderTableAndFunnelBlocks(visualisations: Visualisation[] | undefined, keyPrefix: string): ReactNode[] {
+  const blocks = (visualisations ?? []).filter(
+    v => (v.type === 'table' && !(v as VisTable).inlineOnly) || v.type === 'funnel'
+  ) as (VisTable | VisFunnel)[]
+  const out: ReactNode[] = []
+  let i = 0
+  while (i < blocks.length) {
+    const v = blocks[i]
+    if (v.row) {
+      const group: (VisTable | VisFunnel)[] = [v]
+      let j = i + 1
+      while (j < blocks.length && blocks[j].row === v.row) { group.push(blocks[j]); j++ }
+      out.push(
+        <Reveal key={`${keyPrefix}-row-${i}`}>
+          <div className="flex flex-wrap items-start gap-8">
+            {group.map((g, gi) => (
+              <div key={gi} className="min-w-0 flex-1">
+                {g.type === 'table' ? <VisTableBlock vis={g as VisTable} /> : <VisFunnelBlock vis={g as VisFunnel} />}
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      )
+      i = j
+    } else {
+      out.push(
+        <Reveal key={`${keyPrefix}-${i}`}>
+          {v.type === 'table' ? <VisTableBlock vis={v as VisTable} /> : <VisFunnelBlock vis={v as VisFunnel} />}
+        </Reveal>
+      )
+      i++
+    }
+  }
+  return out
+}
+
+function renderDecisionBlocks(visualisations: Visualisation[] | undefined, keyPrefix: string): ReactNode {
+  const decisions = visualisations?.filter(v => v.type === 'decision') as VisDecision[] | undefined
+  if (!decisions?.length) return null
+  return (
+    <Fragment key={`${keyPrefix}-dec`}>
+      {decisions[0]?.title && (
+        <Reveal key={`${keyPrefix}-dec-title`}>
+          <div className="mt-10 mb-4 flex items-center gap-4">
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{decisions[0].title}</span>
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
+          </div>
+        </Reveal>
+      )}
+      <Reveal key={`${keyPrefix}-dec-body`}>{decisions.map((v, i) => (
+        <VisDecisionBlock key={i} vis={v} />
+      ))}</Reveal>
+    </Fragment>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    Visualization: Side-by-side calculation panels
    ═══════════════════════════════════════════════════════════ */
 function VisCalcPairBlock({ vis, className = 'mt-8' }: { vis: VisCalcPair; className?: string }) {
@@ -4519,10 +4614,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                         )
                       ))}
 
-                      {/* Drilldown table visualizations */}
-                      {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
-                        <Reveal key={`vis-tbl-d-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
-                      ))}
+                      {/* Drilldown table/funnel visualizations */}
+                      {renderTableAndFunnelBlocks(visualisations, 'd')}
+                      {renderDecisionBlocks(visualisations, 'd')}
 
                       {/* ── Formula visualizations ── */}
                       {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
@@ -4547,20 +4641,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                               </Reveal>
                             ))}
                           </ul>
-                          {visualisations?.some(v => v.type === 'decision') && (<>
-                            {(visualisations!.find(v => v.type === 'decision') as VisDecision)?.title && (
-                              <Reveal>
-                                <div className="mt-10 mb-4 flex items-center gap-4">
-                                  <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{(visualisations!.find(v => v.type === 'decision') as VisDecision).title}</span>
-                                  <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                                </div>
-                              </Reveal>
-                            )}
-                            <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
-                              <VisDecisionBlock key={i} vis={v as VisDecision} />
-                            ))}</Reveal>
-                          </>)}
                         </div>
                       )}
 
@@ -4661,10 +4741,9 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                   <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
                 )
               ))}
-              {/* Mobile drilldown table */}
-              {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
-                <Reveal key={`vis-tbl-m-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
-              ))}
+              {/* Mobile drilldown table/funnel */}
+              {renderTableAndFunnelBlocks(visualisations, 'm')}
+              {renderDecisionBlocks(visualisations, 'm')}
               {/* Formula — mobile */}
               {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
               {recommendations.length > 0 && (
@@ -4686,20 +4765,6 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                       </Reveal>
                     ))}
                   </ul>
-                  {visualisations?.some(v => v.type === 'decision') && (<>
-                    {(visualisations!.find(v => v.type === 'decision') as VisDecision)?.title && (
-                      <Reveal>
-                        <div className="mt-10 mb-4 flex items-center gap-4">
-                          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{(visualisations!.find(v => v.type === 'decision') as VisDecision).title}</span>
-                          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                        </div>
-                      </Reveal>
-                    )}
-                    <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
-                      <VisDecisionBlock key={i} vis={v as VisDecision} />
-                    ))}</Reveal>
-                  </>)}
                 </div>
               )}
 
@@ -5672,9 +5737,8 @@ export function CaseInterviewerMaster({
                           <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
                         ))}
                         {/* Drilldown table */}
-                        {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
-                          <Reveal key={`vis-tbl-id-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
-                        ))}
+                        {renderTableAndFunnelBlocks(visualisations, 'id')}
+                        {renderDecisionBlocks(visualisations, 'id')}
                         {/* Formula */}
                         {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
                         {recommendations.length > 0 && (
@@ -5696,20 +5760,6 @@ export function CaseInterviewerMaster({
                                 </Reveal>
                               ))}
                             </ul>
-                            {visualisations?.some(v => v.type === 'decision') && (<>
-                              {(visualisations!.find(v => v.type === 'decision') as VisDecision)?.title && (
-                                <Reveal>
-                                  <div className="mt-10 mb-4 flex items-center gap-4">
-                                    <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{(visualisations!.find(v => v.type === 'decision') as VisDecision).title}</span>
-                                    <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                                  </div>
-                                </Reveal>
-                              )}
-                              <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
-                                <VisDecisionBlock key={i} vis={v as VisDecision} />
-                              ))}</Reveal>
-                            </>)}
                           </div>
                         )}
 
@@ -5802,10 +5852,9 @@ export function CaseInterviewerMaster({
                 {additionalFrameworkTrees?.map((addTree, idx) => (
                   <AdditionalFrameworkPanel key={idx} tree={addTree} label={addTree.label ?? `Framework ${idx + 2}`} />
                 ))}
-                {/* Mobile interviewer: table before formula before recs */}
-                {visualisations?.filter(v => v.type === 'table' && !(v as VisTable).inlineOnly).map((v, i) => (
-                  <Reveal key={`vis-tbl-im-${i}`}><VisTableBlock vis={v as VisTable} /></Reveal>
-                ))}
+                {/* Mobile interviewer: table/funnel before formula before recs */}
+                {renderTableAndFunnelBlocks(visualisations, 'im')}
+                {renderDecisionBlocks(visualisations, 'im')}
                 {(() => { const fs = visualisations?.filter(v => v.type === 'formula') as VisFormula[] | undefined; return fs?.length ? <Reveal><VisFormulaBlock formulas={fs} /></Reveal> : null })()}
                 {recommendations.length > 0 && (
                   <div className="mt-12">
@@ -5826,20 +5875,6 @@ export function CaseInterviewerMaster({
                         </Reveal>
                       ))}
                     </ul>
-                    {visualisations?.some(v => v.type === 'decision') && (<>
-                      {(visualisations!.find(v => v.type === 'decision') as VisDecision)?.title && (
-                        <Reveal>
-                          <div className="mt-10 mb-4 flex items-center gap-4">
-                            <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,64,51,0.12))' }} />
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5C4033]/50 leading-none">{(visualisations!.find(v => v.type === 'decision') as VisDecision).title}</span>
-                            <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(92,64,51,0.12), transparent)' }} />
-                          </div>
-                        </Reveal>
-                      )}
-                      <Reveal>{visualisations!.filter(v => v.type === 'decision').map((v, i) => (
-                        <VisDecisionBlock key={i} vis={v as VisDecision} />
-                      ))}</Reveal>
-                    </>)}
                   </div>
                 )}
 
