@@ -2069,7 +2069,20 @@ export const finalizePendingMerges = onSchedule(
 // so they should never reach this sweep — skip defensively for stray data.
 if (data.sessionMode === 'local') continue
 const mergedStatus = data.mergedTranscriptStatus as string | undefined
-      if (mergedStatus === 'completed' || mergedStatus === 'processing') continue
+      // 'partial' and 'failed' are TERMINAL merge outcomes (candidate-only /
+      // both-sides-failed) — the merge is genuinely done and re-running it just
+      // re-writes the same result, bumping updatedAt and re-firing the
+      // sessions/{id} trigger on every 5-min sweep forever. A late track that
+      // arrives after a partial merge is re-merged by the realtime
+      // mergeTranscripts trigger (not this sweep), and evaluateAndMerge itself
+      // never blocks on 'partial', so skipping them here is safe and stops the
+      // runaway re-merge loop.
+      if (
+        mergedStatus === 'completed' ||
+        mergedStatus === 'processing' ||
+        mergedStatus === 'partial' ||
+        mergedStatus === 'failed'
+      ) continue
 
       const interviewerDeclined = data.interviewerAudioCaptured === false
       const completedAtMs = (
