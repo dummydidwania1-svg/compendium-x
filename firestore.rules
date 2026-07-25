@@ -32,6 +32,16 @@ service cloud.firestore {
         && !callerPendingDeletion();
     }
 
+    // Practice goal tracker: one config doc per user, fully private (owner-only
+    // read and write — deliberately NOT folded into `profiles`, whose read
+    // rule is intentionally broad for forum author-display purposes).
+    match /goals/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update, delete: if signedIn()
+        && request.auth.uid == userId
+        && !callerPendingDeletion();
+    }
+
     // Sessions: clients read scoped to participants. All writes go through
     // /api/sessions* routes which use the Admin SDK (and bypass these rules).
     // `resource == null` allows reads of non-existent docs (e.g. lobby page's

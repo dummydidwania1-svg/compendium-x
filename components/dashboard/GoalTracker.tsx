@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, Settings2, Target, Sparkles, LockKeyhole } from 'lucide-react';
+import { deleteDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import CalendarPicker from '@/components/ui/CalendarPicker';
+import { goalDoc } from '@/lib/firebase/collections';
+import type { GoalConfig } from '@/lib/firebase/schema';
 import { useDashboard } from './DashboardContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -18,30 +21,11 @@ type Phase =
   | 'welcome' | 'enterDate' | 'askRecurring' | 'enterRecurring'
   | 'askOverrideTotal' | 'enterTotal' | 'askPerType' | 'enterPerType' | 'done';
 
-export interface GoalConfig {
-  hasEndDate: boolean;
-  endDate: string;           // DD/MM/YYYY
-  hasRecurring: boolean;
-  recurringCount: number;
-  recurringEvery: number;
-  recurringUnit: 'days' | 'weeks' | 'months';
-  totalCases: number;
-  hasPerType: boolean;
-  perType: Partial<Record<CaseType, number>>;
-}
+export type { GoalConfig };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'caseCompass_goals_v1';
-
-function loadConfig(): GoalConfig | null {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null'); }
-  catch { return null; }
-}
-function saveConfig(cfg: GoalConfig) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
-}
 
 function parseDDMMYYYY(s: string): Date | null {
   const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -217,7 +201,7 @@ const GTF_VERBS = ['Calibrating', 'Mapping gaps', 'Analysing pace', 'Reading zon
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
-  const { entries: allEntries } = useDashboard();
+  const { user, entries: allEntries } = useDashboard();
   const entries = useMemo(() => allEntries.filter((e) => !e.isUnrated), [allEntries]);
   const [lockHovered, setLockHovered] = useState(false);
   const [phase, setPhase]         = useState<Phase>('welcome');
@@ -235,6 +219,9 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
   const [totalCases, setTotalCases]     = useState<number | ''>('');
   const [perType, setPerType]           = useState<Partial<Record<CaseType, number | ''>>>({});
   const [savedConfig, setSavedConfig]   = useState<GoalConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
+  const [saving, setSaving]             = useState(false);
+  const [saveError, setSaveError]       = useState('');
   const [insightReady, setInsightReady]             = useState(false);
   const [insightVerbIdx, setInsightVerbIdx]         = useState(0);
   const [insightVerbVisible, setInsightVerbVisible] = useState(true);
@@ -255,11 +242,31 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
     return tgr < 0.8 ? 'cruising' : tgr < 1.2 ? 'focused' : tgr < 1.5 ? 'high' : 'critical';
   })();
 
-  // Load saved goals
+  // Load saved goals — live Firestore subscription, scoped to the signed-in
+  // account (so a goal set on one device shows up on every other). Preview
+  // mode (no real user, e.g. a signed-out visitor) has nowhere to persist to,
+  // so it just skips straight to the empty wizard.
   useEffect(() => {
-    const cfg = loadConfig();
-    if (cfg) { setSavedConfig(cfg); setPhase('done'); }
-  }, []);
+    if (!user) {
+      setSavedConfig(null);
+      setConfigLoading(false);
+      return;
+    }
+    setConfigLoading(true);
+    const unsubscribe = onSnapshot(
+      goalDoc(user.uid),
+      (snapshot) => {
+        const cfg = snapshot.exists() ? snapshot.data() : null;
+        setSavedConfig(cfg);
+        setPhase((prev) => (cfg ? 'done' : prev === 'done' ? 'welcome' : prev));
+        setConfigLoading(false);
+      },
+      () => {
+        setConfigLoading(false);
+      },
+    );
+    return () => unsubscribe();
+  }, [user]);
 
   // ── Derived ──
   const endDateObj  = parseDDMMYYYY(endDate);
@@ -382,17 +389,25 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
     setIsEditing(false); setHistory([]);
     setDir('fwd'); setAnimKey(k => k + 1); setPhase('done');
   };
-  const reset = () => {
-    localStorage.removeItem(STORAGE_KEY); setSavedConfig(null);
+  const reset = async () => {
+    setSavedConfig(null);
     setHasEndDate(null); setEndDate(''); setHasRecurring(null);
     setRCount(''); setREvery(''); setRUnit('weeks');
     setTotalCases(''); setPerType({}); setHistory([]);
-    setIsEditing(false); setDir('fwd');
+    setIsEditing(false); setDir('fwd'); setSaveError('');
     setAnimKey(k => k + 1); setPhase('welcome');
+    if (!user) return;
+    try {
+      await deleteDoc(goalDoc(user.uid));
+    } catch {
+      // Local state is already cleared; the live subscription will resync
+      // truth from Firestore on the next successful read either way.
+    }
   };
 
   // ── Save ──
-  const finish = (withPerType: boolean) => {
+  const finish = async (withPerType: boolean) => {
+    if (saving) return;
     const cfg: GoalConfig = {
       hasEndDate:     !!hasEndDate,
       endDate,
@@ -406,13 +421,31 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
         ? (Object.fromEntries(
             Object.entries(perType)
               .filter(([, v]) => typeof v === 'number' && (v as number) > 0)
-          ) as Partial<Record<CaseType, number>>)
+          ) as Record<string, number>)
         : {},
     };
-    saveConfig(cfg);
-    setSavedConfig(cfg);
-    setIsEditing(false);
-    go('done');
+
+    if (!user) {
+      // Preview mode (signed-out visitor) — nothing to persist to, just
+      // reflect the choice locally so the demo dashboard still responds.
+      setSavedConfig(cfg);
+      setIsEditing(false);
+      go('done');
+      return;
+    }
+
+    setSaving(true);
+    setSaveError('');
+    try {
+      await setDoc(goalDoc(user.uid), { ...cfg, updatedAt: serverTimestamp() });
+      setSavedConfig(cfg);
+      setIsEditing(false);
+      go('done');
+    } catch {
+      setSaveError("Couldn't save your goal. Check your connection and try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ── Step content ──
@@ -624,8 +657,8 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
                 );
               })}
             </div>
-            <button onClick={() => finish(true)} disabled={isOver || allocated === 0} className="gt-cta mt-4">
-              Save Goals
+            <button onClick={() => finish(true)} disabled={isOver || allocated === 0 || saving} className="gt-cta mt-4">
+              {saving ? 'Saving…' : 'Save Goals'}
             </button>
           </div>
         );
@@ -872,9 +905,21 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
       )}
 
       {/* Step content with directional slide */}
-      <div key={animKey} className={dir === 'fwd' ? 'gt-fwd' : 'gt-bwd'}>
-        {renderStep()}
-      </div>
+      {configLoading ? (
+        <div className="flex flex-col gap-2.5 py-2 animate-pulse" aria-hidden>
+          <div className="h-3 w-2/3 rounded-full bg-[#5C4033]/8" />
+          <div className="h-8 w-full rounded-xl bg-[#5C4033]/6" />
+          <div className="h-8 w-full rounded-xl bg-[#5C4033]/6" />
+        </div>
+      ) : (
+        <div key={animKey} className={dir === 'fwd' ? 'gt-fwd' : 'gt-bwd'}>
+          {renderStep()}
+        </div>
+      )}
+
+      {saveError && (
+        <p className="mt-2 text-[10px] font-medium text-[#B85C5C]">{saveError}</p>
+      )}
 
       {/* Building trail — two-tone pills of confirmed decisions */}
       {buildingTrail.length > 0 && (

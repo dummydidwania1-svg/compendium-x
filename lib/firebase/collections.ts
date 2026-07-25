@@ -26,6 +26,7 @@ import {
   forumReplySchema,
   forumThreadSchema,
   forumVoteSchema,
+  goalConfigSchema,
   participantRecordingSchema,
   profileSchema,
   sessionSchema,
@@ -35,6 +36,7 @@ import {
   type ForumReply,
   type ForumThread,
   type ForumVote,
+  type GoalConfig,
   type ParticipantRecording,
   type ParticipantRole,
   type Profile,
@@ -79,6 +81,11 @@ export const profilesCol: CollectionReference<Profile> = collection(db, 'profile
   converter('profiles', profileSchema),
 )
 export const profileDoc = (uid: string): DocumentReference<Profile> => doc(profilesCol, uid)
+
+export const goalsCol: CollectionReference<GoalConfig> = collection(db, 'goals').withConverter(
+  converter('goals', goalConfigSchema),
+)
+export const goalDoc = (uid: string): DocumentReference<GoalConfig> => doc(goalsCol, uid)
 
 export const casesCol: CollectionReference<Case> = collection(db, 'cases').withConverter(
   converter('cases', caseSchema),

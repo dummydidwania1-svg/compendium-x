@@ -70,6 +70,31 @@ export const profileSchema = z
 export type Profile = z.infer<typeof profileSchema>
 
 /* -------------------------------------------------------------------------- */
+/* goals/{uid} — one practice-goal config per user (dashboard "Tracker" card) */
+/* -------------------------------------------------------------------------- */
+
+// Deliberately its own top-level collection rather than a field on `profiles`:
+// the profiles read rule is intentionally broad (any signed-in user, so forum
+// posts can resolve another author's display name/photo — see profileSchema
+// above), and a practice deadline/target isn't something every signed-in user
+// should be able to read. `goals` gets its own owner-only rule instead.
+export const goalConfigSchema = z
+  .object({
+    hasEndDate: z.boolean(),
+    endDate: z.string(), // DD/MM/YYYY, empty string when hasEndDate is false
+    hasRecurring: z.boolean(),
+    recurringCount: z.number(),
+    recurringEvery: z.number(),
+    recurringUnit: z.enum(['days', 'weeks', 'months']),
+    totalCases: z.number(),
+    hasPerType: z.boolean(),
+    perType: z.record(z.string(), z.number()),
+    updatedAt: timestamp.optional(),
+  })
+  .loose()
+export type GoalConfig = z.infer<typeof goalConfigSchema>
+
+/* -------------------------------------------------------------------------- */
 /* cases/{docId}                                                              */
 /* -------------------------------------------------------------------------- */
 
