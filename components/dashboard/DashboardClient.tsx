@@ -39,7 +39,7 @@ function DashboardContent() {
   const [filters, setFilters] = useState<DashboardFilters>(DEFAULT_FILTERS)
 
   const hasActiveFilters = filters.types.length > 0 || filters.levels.length > 0 || filters.time !== 'all'
-  const isGoalTrackerLocked = false
+  const isGoalTrackerLocked = true
 
   const clearAllFilters = () => {
     setFilters(DEFAULT_FILTERS)
