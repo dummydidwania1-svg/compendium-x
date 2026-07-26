@@ -303,8 +303,19 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
       setOriginalFullName(fullName.trim())
       setOriginalUniversity(university.trim())
       showProfileMsg('Saved', true)
-    } catch {
-      showProfileMsg('Could not save', false)
+    } catch (err) {
+      // Was a bare "Could not save" with the real cause discarded — same class
+      // of bug the HEIC upload handler above already had to fix once. Surface
+      // enough to actually diagnose a report instead of guessing blind.
+      console.error('Profile save failed', err)
+      const code = (err as { code?: string } | null)?.code ?? ''
+      if (code === 'permission-denied') {
+        showProfileMsg('Could not save — sign out and back in, then retry', false)
+      } else if (code === 'unavailable' || code === 'deadline-exceeded') {
+        showProfileMsg('Could not save — check your connection and retry', false)
+      } else {
+        showProfileMsg('Could not save', false)
+      }
     } finally {
       setProfileSaving(false)
     }
