@@ -27,6 +27,7 @@ import {
   forumThreadSchema,
   forumVoteSchema,
   goalConfigSchema,
+  goalHistoryEntrySchema,
   participantRecordingSchema,
   profileSchema,
   sessionSchema,
@@ -37,6 +38,7 @@ import {
   type ForumThread,
   type ForumVote,
   type GoalConfig,
+  type GoalHistoryEntry,
   type ParticipantRecording,
   type ParticipantRole,
   type Profile,
@@ -86,6 +88,18 @@ export const goalsCol: CollectionReference<GoalConfig> = collection(db, 'goals')
   converter('goals', goalConfigSchema),
 )
 export const goalDoc = (uid: string): DocumentReference<GoalConfig> => doc(goalsCol, uid)
+
+/* -------------------------------------------------------------------------- */
+/* goalHistory/{uid}/entries/{entryId} — frozen snapshots of closed goals     */
+/* -------------------------------------------------------------------------- */
+
+export const goalHistoryCol = (uid: string): CollectionReference<GoalHistoryEntry> =>
+  collection(db, 'goalHistory', uid, 'entries').withConverter(
+    converter('goalHistory.entries', goalHistoryEntrySchema),
+  )
+
+export const goalHistoryDoc = (uid: string, entryId: string): DocumentReference<GoalHistoryEntry> =>
+  doc(goalHistoryCol(uid), entryId)
 
 export const casesCol: CollectionReference<Case> = collection(db, 'cases').withConverter(
   converter('cases', caseSchema),

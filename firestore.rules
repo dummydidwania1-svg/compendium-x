@@ -42,6 +42,17 @@ service cloud.firestore {
         && !callerPendingDeletion();
     }
 
+    // Goal history: frozen snapshots of past/completed goals, written by the
+    // client whenever a goal is reset/replaced or reaches a terminal state.
+    // Same owner-only direct-write shape as `goals` above — these are still
+    // just user-owned config/outcome snapshots, not shared/graded data.
+    match /goalHistory/{userId}/entries/{entryId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update, delete: if signedIn()
+        && request.auth.uid == userId
+        && !callerPendingDeletion();
+    }
+
     // Sessions: clients read scoped to participants. All writes go through
     // /api/sessions* routes which use the Admin SDK (and bypass these rules).
     // `resource == null` allows reads of non-existent docs (e.g. lobby page's

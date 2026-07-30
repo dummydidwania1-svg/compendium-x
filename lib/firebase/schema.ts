@@ -89,10 +89,51 @@ export const goalConfigSchema = z
     totalCases: z.number(),
     hasPerType: z.boolean(),
     perType: z.record(z.string(), z.number()),
+
+    /** DD/MM/YYYY, immutable anchor set once at creation — never rewritten on edit. */
+    startDate: z.string(),
+    /** Set once in the create path, never rewritten on edit (distinct from `updatedAt`). */
+    createdAt: timestamp.optional(),
+    /** Whether cases completed before `startDate` pre-fill the progress bar. */
+    countPastCases: z.boolean(),
+    /** 'completed' = any finished session counts; 'rated' = requires a non-unrated evaluation too. */
+    countMode: z.enum(['completed', 'rated']).default('completed'),
+    /** Case types excluded from counting. Only meaningful for plain-total goals (hidden when hasPerType is true). */
+    excludedTypes: z.array(z.string()).default([]),
+    /** Individual completed-session doc IDs (lobbyId) excluded from counting. */
+    excludedSessionIds: z.array(z.string()).default([]),
+    /** Explicit goal shape — no longer inferred from hasRecurring/totalCases combinations. */
+    goalKind: z.enum(['flat', 'cadence']),
+
     updatedAt: timestamp.optional(),
   })
   .loose()
 export type GoalConfig = z.infer<typeof goalConfigSchema>
+
+/* -------------------------------------------------------------------------- */
+/* goalHistory/{uid}/entries/{entryId} — frozen snapshot of a closed goal      */
+/* (reset/replaced, completed, or fell short). Feeds the AI insight's         */
+/* cross-goal pattern axis; otherwise not read by the live dashboard.         */
+/* -------------------------------------------------------------------------- */
+
+export const goalHistoryEntrySchema = z
+  .object({
+    /** Frozen full snapshot of the goal config as it stood at closure. */
+    config: goalConfigSchema.omit({ updatedAt: true }),
+
+    completed: z.boolean(),
+    finalDone: z.number(),
+    finalStreak: z.number(),
+    bestStreak: z.number(),
+    /** Set only when completed === true. */
+    daysToComplete: z.number().optional(),
+    /** Set only when completed === false. */
+    fellShortBy: z.number().optional(),
+
+    closedAt: timestamp.optional(),
+  })
+  .loose()
+export type GoalHistoryEntry = z.infer<typeof goalHistoryEntrySchema>
 
 /* -------------------------------------------------------------------------- */
 /* cases/{docId}                                                              */

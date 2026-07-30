@@ -16,7 +16,8 @@
     "rules:deploy": "firebase deploy --only firestore:rules,storage",
     "indexes:deploy": "firebase deploy --only firestore:indexes",
     "rules:dump": "node scripts/dump-live-rules.mjs",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "firebase": "^12.10.0",
@@ -40,6 +41,7 @@
     "firebase-tools": "^15.18.0",
     "pdf-lib": "^1.17.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

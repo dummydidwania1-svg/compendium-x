@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, Settings2, Target, Sparkles, LockKeyhole } from 'lucide-react';
-import { deleteDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, Settings2, Target, LockKeyhole } from 'lucide-react';
+import { deleteDoc, onSnapshot, serverTimestamp, setDoc, addDoc } from 'firebase/firestore';
 import CalendarPicker from '@/components/ui/CalendarPicker';
-import { goalDoc } from '@/lib/firebase/collections';
+import { goalDoc, goalHistoryCol } from '@/lib/firebase/collections';
 import type { GoalConfig } from '@/lib/firebase/schema';
 import { useDashboard } from './DashboardContext';
+import { subscribeGoalCounts, type GoalCountResult } from '@/lib/goalTracker/sessionCounts';
+import { computeStreak, parseDMY, resolveFlow, startOfDay, type CadenceUnit, type GoalState } from '@/lib/goalTracker/engine';
+import FlowRenderer, { ExclusionsPanel, AskTrackerButton, FreshVsPastStep } from './goal-tracker';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -19,7 +22,7 @@ type CaseType = typeof CASE_TYPES[number];
 
 type Phase =
   | 'welcome' | 'enterDate' | 'askRecurring' | 'enterRecurring'
-  | 'askOverrideTotal' | 'enterTotal' | 'askPerType' | 'enterPerType' | 'done';
+  | 'askOverrideTotal' | 'enterTotal' | 'freshVsPast' | 'askPerType' | 'enterPerType' | 'done';
 
 export type { GoalConfig };
 
@@ -46,6 +49,11 @@ function calcAutoTotal(count: number, every: number, unit: 'days' | 'weeks' | 'm
   return period > 0 ? count * Math.floor(days / period) : 0;
 }
 
+function getTodayDMY(): string {
+  const t = new Date();
+  return `${String(t.getDate()).padStart(2, '0')}/${String(t.getMonth() + 1).padStart(2, '0')}/${t.getFullYear()}`;
+}
+
 function getTomorrowISO(): string {
   const t = new Date(); t.setDate(t.getDate() + 1);
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
@@ -53,8 +61,8 @@ function getTomorrowISO(): string {
 
 function stepProgress(p: Phase): number {
   return ({
-    welcome: 6, enterDate: 20, askRecurring: 34, enterRecurring: 50,
-    askOverrideTotal: 60, enterTotal: 65, askPerType: 78, enterPerType: 88, done: 100,
+    welcome: 6, enterDate: 18, askRecurring: 30, enterRecurring: 44,
+    askOverrideTotal: 54, enterTotal: 60, freshVsPast: 70, askPerType: 80, enterPerType: 90, done: 100,
   } as Record<Phase, number>)[p] ?? 0;
 }
 
@@ -62,7 +70,7 @@ function stepProgress(p: Phase): number {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-const OptionList = ({ options }: {
+export const OptionList = ({ options }: {
   options: { label: string; sub?: string; onClick: () => void }[];
 }) => (
   <div className="border border-[#5C4033]/10 rounded-xl overflow-hidden bg-[#D9D0C4]/10">
@@ -102,113 +110,17 @@ const IntInput = ({
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GTF Engine — rule-based, no API call needed
-// ─────────────────────────────────────────────────────────────────────────────
-function generateGTFInsight(
-  tgr: number | null,
-  totalDone: number,
-  config: GoalConfig,
-  doneByType: Record<string, number>
-): string {
-  if (totalDone === 0) {
-    return config.hasEndDate
-      ? `Log your first case to activate pacing. ${config.totalCases} cases to reach by ${config.endDate}.`
-      : `Log your first case to start tracking momentum.`;
-  }
-  if (!config.hasEndDate || tgr === null) {
-    const rem = config.totalCases - totalDone;
-    if (rem <= 0) return `You've hit your target of ${config.totalCases} cases. Consider raising the bar.`;
-    return `${rem} case${rem !== 1 ? 's' : ''} left toward your goal of ${config.totalCases}. Keep the momentum.`;
-  }
-  let starvingType: string | null = null, starvingPct = 1, saturatedType: string | null = null;
-  if (config.hasPerType) {
-    for (const [type, target] of Object.entries(config.perType as Record<string, number>)) {
-      const done = doneByType[type] || 0;
-      const pct = target > 0 ? done / target : 0;
-      if (pct < starvingPct) { starvingPct = pct; starvingType = type; }
-      if (pct >= 1 && !saturatedType) saturatedType = type;
-    }
-  }
-  if (tgr < 0.8) {
-    if (saturatedType && starvingType)
-      return `Well ahead of schedule. ${saturatedType} is done — pivot to ${starvingType} for framework diversity.`;
-    return `Ahead of pace. Use this buffer to explore edge cases and unconventional frameworks.`;
-  }
-  if (tgr < 1.2) {
-    if (starvingType && starvingPct < 0.2)
-      return `On track, but ${starvingType} is a blind spot. Rotate there next to balance your portfolio.`;
-    return `Prep pace is synced with your deadline. Stay consistent and rotate case types.`;
-  }
-  if (tgr < 1.5) {
-    if (starvingType)
-      return `Time is tightening. Prioritise ${starvingType} — it has the largest gap relative to your target.`;
-    return `Workload is building. Triage the most unfinished categories first.`;
-  }
-  if (starvingType)
-    return `Intensity is critical. Focus exclusively on ${starvingType} to ensure coverage by ${config.endDate}.`;
-  return `Critical gap. Focus on essential coverage only before ${config.endDate}.`;
-}
-
-// Zone metadata — used by header badge and done case
-const ZONE_META = {
-  cruising: { label: 'Cruising',       color: '#A5B9A0' },
-  focused:  { label: 'Focused',        color: '#C4A882' },
-  high:     { label: 'High Intensity', color: '#C47A6A' },
-  critical: { label: 'Critical',       color: '#B85C5C' },
-} as const;
-type Zone = keyof typeof ZONE_META;
-
-// TGR Gauge — SVG donut semicircle with needle
-const TGRGauge = ({ tgr, zone }: { tgr: number; zone: Zone }) => {
-  const CX = 100, CY = 88, RO = 66, RI = 50;
-  const pt = (t: number, r: number): [number, number] => {
-    const a = (Math.PI / 180) * 90 * (2 - Math.min(t, 2));
-    return [+(CX + r * Math.cos(a)).toFixed(2), +(CY - r * Math.sin(a)).toFixed(2)];
-  };
-  const seg = (t1: number, t2: number) => {
-    const [ox1, oy1] = pt(t1, RO), [ox2, oy2] = pt(t2, RO);
-    const [ix1, iy1] = pt(t2, RI), [ix2, iy2] = pt(t1, RI);
-    return `M ${ox1} ${oy1} A ${RO} ${RO} 0 0 0 ${ox2} ${oy2} L ${ix1} ${iy1} A ${RI} ${RI} 0 0 1 ${ix2} ${iy2} Z`;
-  };
-  const zones: { t1: number; t2: number; color: string; id: string }[] = [
-    { t1: 0, t2: 0.8, color: '#A5B9A0', id: 'cruising' },
-    { t1: 0.8, t2: 1.2, color: '#C4A882', id: 'focused' },
-    { t1: 1.2, t2: 1.5, color: '#C47A6A', id: 'high' },
-    { t1: 1.5, t2: 2, color: '#B85C5C', id: 'critical' },
-  ];
-  const capped = Math.min(tgr, 2);
-  const [nx, ny] = pt(capped, RO - 10);
-  return (
-    <svg viewBox="18 18 164 74" width="100%">
-      <path d={seg(0, 2)} fill="#5C4033" opacity={0.04} />
-      {zones.map(z => (
-        <path key={z.id} d={seg(z.t1, z.t2)} fill={z.color}
-          opacity={zone === z.id ? 0.72 : 0.22} />
-      ))}
-      {zones.map(z => zone === z.id &&
-        <path key={`h${z.id}`} d={seg(z.t1, z.t2)} fill="white" opacity={0.12} />
-      )}
-      <line x1={CX} y1={CY} x2={nx} y2={ny}
-        stroke="#3B2F2F" strokeWidth={1.6} strokeLinecap="round" opacity={0.5} />
-      <circle cx={CX} cy={CY} r={2.5} fill="#3B2F2F" opacity={0.38} />
-    </svg>
-  );
-};
-
-const GTF_VERBS = ['Calibrating', 'Mapping gaps', 'Analysing pace', 'Reading zones', 'Sizing up', 'Almost there'];
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
-  const { user, entries: allEntries } = useDashboard();
-  const entries = useMemo(() => allEntries.filter((e) => !e.isUnrated), [allEntries]);
+  const { user } = useDashboard();
   const [lockHovered, setLockHovered] = useState(false);
   const [phase, setPhase]         = useState<Phase>('welcome');
   const [history, setHistory]     = useState<Phase[]>([]);
   const [dir, setDir]             = useState<'fwd' | 'bwd'>('fwd');
   const [animKey, setAnimKey]     = useState(0);
   const [isEditing, setIsEditing] = useState(false);
+  const [showExclusions, setShowExclusions] = useState(false);
 
   const [hasEndDate, setHasEndDate]     = useState<boolean | null>(null);
   const [endDate, setEndDate]           = useState('');      // DD/MM/YYYY
@@ -217,30 +129,47 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
   const [rEvery, setREvery]             = useState<number | ''>('');
   const [rUnit, setRUnit]               = useState<'days' | 'weeks' | 'months'>('weeks');
   const [totalCases, setTotalCases]     = useState<number | ''>('');
+  const [countPastCases, setCountPastCases] = useState(false);
   const [perType, setPerType]           = useState<Partial<Record<CaseType, number | ''>>>({});
   const [savedConfig, setSavedConfig]   = useState<GoalConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
   const [saving, setSaving]             = useState(false);
   const [saveError, setSaveError]       = useState('');
-  const [insightReady, setInsightReady]             = useState(false);
-  const [insightVerbIdx, setInsightVerbIdx]         = useState(0);
-  const [insightVerbVisible, setInsightVerbVisible] = useState(true);
 
-  // Zone for header badge — derived from TGR logic (only when done + hasEndDate)
-  const gtfZone: Zone | null = (() => {
-    if (phase !== 'done' || !savedConfig?.hasEndDate || !savedConfig.endDate || savedConfig.totalCases <= 0) return null;
-    const endObj = parseDDMMYYYY(savedConfig.endDate);
-    if (!endObj || entries.length === 0) return null;
-    const totalDone = entries.length;
-    const earliest = entries.reduce((m: string, c: any) => c.date < m ? c.date : m, entries[0].date);
-    const startObj = new Date(earliest + 'T00:00:00');
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const totalDays = Math.max(1, Math.round((endObj.getTime() - startObj.getTime()) / 86400000));
-    const elapsed = Math.max(0, Math.round((today.getTime() - startObj.getTime()) / 86400000));
-    const goalPct = totalDone / savedConfig.totalCases;
-    const tgr = goalPct > 0 ? (elapsed / totalDays) / goalPct : 10;
-    return tgr < 0.8 ? 'cruising' : tgr < 1.2 ? 'focused' : tgr < 1.5 ? 'high' : 'critical';
-  })();
+  // Live session-based progress (replaces the old evaluation-based `entries`
+  // pipeline — count source is completed sessions, per §2 of the locked spec).
+  const [counts, setCounts] = useState<GoalCountResult>({ countedSessions: [], done: 0, doneByType: {} });
+  const [resolvedState, setResolvedState] = useState<GoalState>('zero');
+
+  useEffect(() => {
+    if (!user || !savedConfig) {
+      setCounts({ countedSessions: [], done: 0, doneByType: {} });
+      return;
+    }
+    const unsubscribe = subscribeGoalCounts(user.uid, savedConfig, setCounts);
+    return () => unsubscribe();
+  }, [user, savedConfig]);
+
+  // Rough pre-count of past sessions, for the freshVsPast wizard step's "N
+  // would count" preview — a lightweight one-shot subscription against the
+  // in-progress wizard fields rather than the saved config (which doesn't
+  // exist yet at this point in the flow).
+  const [pastCasesPreview, setPastCasesPreview] = useState(0);
+  useEffect(() => {
+    if (!user || phase !== 'freshVsPast') return;
+    const unsubscribe = subscribeGoalCounts(
+      user.uid,
+      {
+        startDate: '01/01/1970',
+        countPastCases: true,
+        countMode: 'completed',
+        excludedTypes: [],
+        excludedSessionIds: [],
+      },
+      (result) => setPastCasesPreview(result.done),
+    );
+    return () => unsubscribe();
+  }, [user, phase]);
 
   // Load saved goals — live Firestore subscription, scoped to the signed-in
   // account (so a goal set on one device shows up on every other). Preview
@@ -288,28 +217,6 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
   useEffect(() => {
     if (hasEndDate && daysLeft > 0 && daysLeft < 7 && rUnit !== 'days') setRUnit('days');
   }, [hasEndDate, daysLeft]);
-
-  // Insight generation animation — brief simulated delay when entering done state
-  useEffect(() => {
-    if (phase !== 'done') { setInsightReady(false); return; }
-    setInsightReady(false);
-    setInsightVerbIdx(0);
-    const t = setTimeout(() => setInsightReady(true), 1100);
-    return () => clearTimeout(t);
-  }, [phase]);
-
-  // Verb cycling while insight is loading
-  useEffect(() => {
-    if (insightReady || phase !== 'done') return;
-    const t = setInterval(() => {
-      setInsightVerbVisible(false);
-      setTimeout(() => {
-        setInsightVerbIdx(i => (i + 1) % GTF_VERBS.length);
-        setInsightVerbVisible(true);
-      }, 180);
-    }, 700);
-    return () => clearInterval(t);
-  }, [insightReady, phase]);
 
   const autoTotal: number | null =
     hasEndDate && endDateObj && rCount && rEvery
@@ -372,7 +279,7 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
   };
 
   // ── Edit / Reset ──
-  const startEdit = () => {
+  const startEdit = useCallback(() => {
     if (!savedConfig) return;
     setHasEndDate(savedConfig.hasEndDate);
     setEndDate(savedConfig.endDate);
@@ -381,19 +288,59 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
     setREvery(savedConfig.recurringEvery || '');
     setRUnit(savedConfig.recurringUnit);
     setTotalCases(savedConfig.totalCases || '');
+    setCountPastCases(savedConfig.countPastCases);
     setPerType({ ...savedConfig.perType } as Partial<Record<CaseType, number | ''>>);
     setHistory([]); setIsEditing(true);
     setDir('bwd'); setAnimKey(k => k + 1); setPhase('welcome');
-  };
+  }, [savedConfig]);
   const cancelEdit = () => {
     setIsEditing(false); setHistory([]);
     setDir('fwd'); setAnimKey(k => k + 1); setPhase('done');
   };
+
+  /** Archives the current goal into goalHistory before it's cleared — feeds the AI insight's cross-goal axis. */
+  const archiveCurrentGoal = useCallback(async () => {
+    if (!user || !savedConfig) return;
+    try {
+      const start = parseDMY(savedConfig.startDate);
+      const today = startOfDay(new Date());
+      let finalStreak = 0;
+      let bestStreak = 0;
+      if (savedConfig.goalKind === 'cadence' && start) {
+        const streak = computeStreak(
+          counts.countedSessions.map((s) => new Date(s.completedAtMs)),
+          { unit: savedConfig.recurringUnit as CadenceUnit, every: savedConfig.recurringEvery, count: savedConfig.recurringCount },
+          start,
+          today,
+        );
+        finalStreak = streak.currentStreak;
+        bestStreak = streak.bestStreak;
+      }
+      const completed = savedConfig.totalCases > 0 && counts.done >= savedConfig.totalCases;
+      const daysToComplete = completed && start ? Math.round((today.getTime() - start.getTime()) / 86400000) : undefined;
+      const fellShortBy = !completed && savedConfig.totalCases > 0 ? Math.max(0, savedConfig.totalCases - counts.done) : undefined;
+
+      await addDoc(goalHistoryCol(user.uid), {
+        config: { ...savedConfig },
+        completed,
+        finalDone: counts.done,
+        finalStreak,
+        bestStreak,
+        daysToComplete,
+        fellShortBy,
+        closedAt: serverTimestamp(),
+      });
+    } catch {
+      // Best-effort — losing one history entry shouldn't block the reset itself.
+    }
+  }, [user, savedConfig, counts]);
+
   const reset = async () => {
+    await archiveCurrentGoal();
     setSavedConfig(null);
     setHasEndDate(null); setEndDate(''); setHasRecurring(null);
     setRCount(''); setREvery(''); setRUnit('weeks');
-    setTotalCases(''); setPerType({}); setHistory([]);
+    setTotalCases(''); setCountPastCases(false); setPerType({}); setHistory([]);
     setIsEditing(false); setDir('fwd'); setSaveError('');
     setAnimKey(k => k + 1); setPhase('welcome');
     if (!user) return;
@@ -408,6 +355,7 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
   // ── Save ──
   const finish = async (withPerType: boolean) => {
     if (saving) return;
+    const goalKind: GoalConfig['goalKind'] = hasRecurring ? 'cadence' : 'flat';
     const cfg: GoalConfig = {
       hasEndDate:     !!hasEndDate,
       endDate,
@@ -423,6 +371,12 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
               .filter(([, v]) => typeof v === 'number' && (v as number) > 0)
           ) as Record<string, number>)
         : {},
+      startDate: isEditing && savedConfig ? savedConfig.startDate : getTodayDMY(),
+      countPastCases,
+      countMode: isEditing && savedConfig ? savedConfig.countMode : 'completed',
+      excludedTypes: isEditing && savedConfig ? savedConfig.excludedTypes : [],
+      excludedSessionIds: isEditing && savedConfig ? savedConfig.excludedSessionIds : [],
+      goalKind,
     };
 
     if (!user) {
@@ -437,7 +391,8 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
     setSaving(true);
     setSaveError('');
     try {
-      await setDoc(goalDoc(user.uid), { ...cfg, updatedAt: serverTimestamp() });
+      const createdAtPatch = isEditing && savedConfig?.createdAt ? {} : { createdAt: serverTimestamp() };
+      await setDoc(goalDoc(user.uid), { ...cfg, ...createdAtPatch, updatedAt: serverTimestamp() });
       setSavedConfig(cfg);
       setIsEditing(false);
       go('done');
@@ -446,6 +401,11 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleExclusionsSave = async (patch: Partial<GoalConfig>) => {
+    if (!user) return;
+    await setDoc(goalDoc(user.uid), { ...patch, updatedAt: serverTimestamp() }, { merge: true });
   };
 
   // ── Step content ──
@@ -543,7 +503,7 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
               )}
               <button
                 onClick={() => {
-                  if (hasEndDate && autoTotal && autoTotal > 0) { setTotalCases(autoTotal); go('askPerType'); }
+                  if (hasEndDate && autoTotal && autoTotal > 0) { setTotalCases(autoTotal); go('freshVsPast'); }
                   else { go('askOverrideTotal'); }
                 }}
                 disabled={!valid || !ok}
@@ -580,7 +540,7 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
               placeholder="e.g. 50" className="w-full text-center text-sm font-semibold"
             />
             <button
-              onClick={() => go('askPerType')}
+              onClick={() => go('freshVsPast')}
               disabled={!(typeof totalCases === 'number' && totalCases > 0)}
               className="gt-cta"
             >
@@ -588,6 +548,14 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
             </button>
           </div>
         </div>
+      );
+
+      case 'freshVsPast': return (
+        <FreshVsPastStep
+          pastCasesCount={pastCasesPreview}
+          OptionList={OptionList}
+          onChoose={(choice: boolean) => { setCountPastCases(choice); go('askPerType'); }}
+        />
       );
 
       case 'askPerType': return (
@@ -664,156 +632,31 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
         );
       }
 
-      // DONE — GTF dashboard
-      case 'done': return savedConfig ? (() => {
-        const totalDone = entries.length;
-        const doneByType: Record<string, number> = {};
-        entries.forEach((c: any) => { doneByType[c.type] = (doneByType[c.type] || 0) + 1; });
-
-        // ── TGR calculation ──
-        let tgr: number | null = null;
-        let daysRemaining = 0;
-        if (savedConfig.hasEndDate && savedConfig.endDate && savedConfig.totalCases > 0 && entries.length > 0) {
-          const endObj = parseDDMMYYYY(savedConfig.endDate);
-          if (endObj) {
-            const earliest = entries.reduce((m: string, c: any) => c.date < m ? c.date : m, entries[0].date);
-            const startObj = new Date(earliest + 'T00:00:00');
-            const today = new Date(); today.setHours(0, 0, 0, 0);
-            daysRemaining = Math.max(0, Math.round((endObj.getTime() - today.getTime()) / 86400000));
-            const totalDays = Math.max(1, Math.round((endObj.getTime() - startObj.getTime()) / 86400000));
-            const elapsed = Math.max(0, Math.round((today.getTime() - startObj.getTime()) / 86400000));
-            const goalPct = totalDone / savedConfig.totalCases;
-            tgr = goalPct > 0 ? (elapsed / totalDays) / goalPct : 10;
-          }
-        }
-
-        const zone: Zone = tgr === null ? 'focused'
-          : tgr < 0.8 ? 'cruising' : tgr < 1.2 ? 'focused' : tgr < 1.5 ? 'high' : 'critical';
-        const meta = ZONE_META[zone];
-        const insight = generateGTFInsight(tgr, totalDone, savedConfig, doneByType);
-        const completionPct = savedConfig.totalCases > 0
-          ? Math.min(100, Math.round((totalDone / savedConfig.totalCases) * 100)) : 0;
-        const perTypeEntries = savedConfig.hasPerType
-          ? (Object.entries(savedConfig.perType) as [string, number][]).filter(([, v]) => v > 0)
-          : [];
-
-        return (
-          <div className="flex flex-col gap-4">
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-2">
-              <button onClick={startEdit}
-                className="flex items-center gap-1 text-[9px] uppercase tracking-wider font-semibold text-[#3D5A35]/60 hover:text-[#3D5A35] transition-colors">
-                <Settings2 className="w-2.5 h-2.5" /> Edit
-              </button>
-              <span className="text-[#5C4033]/25 text-[10px]">·</span>
-              <button onClick={reset}
-                className="text-[9px] uppercase tracking-wider font-semibold text-[#5C4033]/35 hover:text-[#5C4033]/65 transition-colors">
-                Reset
-              </button>
+      // DONE — dispatches to the flow-specific renderer
+      case 'done': return savedConfig ? (
+        showExclusions ? (
+          <ExclusionsPanel
+            config={savedConfig}
+            countedSessions={counts.countedSessions}
+            onSave={handleExclusionsSave}
+            onClose={() => setShowExclusions(false)}
+          />
+        ) : (
+          <>
+            <FlowRenderer
+              config={savedConfig}
+              counts={counts}
+              onEdit={startEdit}
+              onReset={reset}
+              onShowExclusions={() => setShowExclusions(true)}
+              onStateResolved={setResolvedState}
+            />
+            <div className="border-t border-[#5C4033]/6 pt-3 mt-1 flex justify-center">
+              <AskTrackerButton goalState={resolvedState} />
             </div>
-
-            {/* Overall progress + deadline */}
-            {savedConfig.totalCases > 0 && (
-              <div>
-                <div className="flex items-baseline justify-between mb-1.5">
-                  <span className="text-[10px] text-[#5C4033]/60">{totalDone} of {savedConfig.totalCases} cases</span>
-                  <div className="flex items-baseline gap-2">
-                    {savedConfig.hasEndDate && (
-                      <span className="text-[9px] text-[#5C4033]/45">
-                        {daysRemaining > 0 ? `${daysRemaining}d left` : 'due'}
-                      </span>
-                    )}
-                    <span className="text-[10px] font-semibold" style={{ color: meta.color }}>{completionPct}%</span>
-                  </div>
-                </div>
-                <div className="h-[2px] bg-[#5C4033]/6 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-500"
-                       style={{ width: `${completionPct}%`, backgroundColor: meta.color, opacity: 0.6 }} />
-                </div>
-              </div>
-            )}
-
-            {/* TGR Gauge — only when deadline is set */}
-            {tgr !== null && (
-              <div className="max-w-[148px] mx-auto w-full">
-                <TGRGauge tgr={tgr} zone={zone} />
-              </div>
-            )}
-
-            {/* Strategy insight — with AI generating animation */}
-            <div className="border-t border-[#5C4033]/6 pt-3">
-              <div className="flex items-center gap-1.5 mb-2.5">
-                <Sparkles className="w-2.5 h-2.5 shrink-0" style={{ color: meta.color, opacity: 0.8 }} />
-                <span className="text-[8px] uppercase tracking-[0.12em] font-semibold"
-                      style={{ color: meta.color }}>Strategy</span>
-                <div className="ml-auto flex items-center gap-1">
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${insightReady ? '' : 'animate-pulse'}`}
-                        style={{ backgroundColor: insightReady ? meta.color : '#C4A882' }} />
-                  <span className="text-[8px] uppercase tracking-[0.1em] font-semibold text-[#5C4033]/35">
-                    {insightReady ? 'Ready' : 'Thinking'}
-                  </span>
-                </div>
-              </div>
-
-              {!insightReady ? (
-                <div className="flex flex-col gap-2 py-0.5">
-                  <div className="flex items-end gap-[3px] h-[18px]">
-                    {[0.5, 0.75, 1, 0.85, 0.65, 0.8, 0.55].map((h, i) => (
-                      <div key={i} className="w-[2px] rounded-full"
-                           style={{
-                             height: `${h * 16}px`,
-                             backgroundColor: meta.color,
-                             opacity: 0.5,
-                             animation: `_wv 1.1s ease-in-out ${i * 90}ms infinite alternate`,
-                           }} />
-                    ))}
-                  </div>
-                  <p className="text-[10px] font-medium text-[#5C4033]/38 tracking-wide"
-                     style={{ opacity: insightVerbVisible ? 1 : 0, transition: 'opacity 180ms ease' }}>
-                    {GTF_VERBS[insightVerbIdx]}…
-                  </p>
-                </div>
-              ) : (
-                <p className="text-xs text-[#5C4033]/70 leading-relaxed"
-                   style={{ animation: '_ci 0.4s ease forwards' }}>
-                  {insight}
-                </p>
-              )}
-            </div>
-
-            {/* Per-type grid */}
-            {perTypeEntries.length > 0 && (
-              <div className="border-t border-[#5C4033]/6 pt-3 grid grid-cols-3 gap-x-3 gap-y-3">
-                {perTypeEntries.map(([type, target]) => {
-                  const done = doneByType[type] || 0;
-                  const pct = target > 0 ? Math.min(100, (done / target) * 100) : 0;
-                  const barColor = pct >= 100 ? '#3D5A35' : pct < 20 ? '#C47A6A' : '#C4A882';
-                  return (
-                    <div key={type} className="flex flex-col gap-1">
-                      <span className="text-[8px] font-semibold text-[#5C4033]/38 truncate">{type.split(' ')[0]}</span>
-                      <div className="h-[2px] bg-[#5C4033]/7 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-700"
-                             style={{ width: `${pct}%`, backgroundColor: barColor, opacity: 0.75 }} />
-                      </div>
-                      <span className="text-[8px] font-semibold text-[#3B2F2F]/35">{done}/{target}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Cadence */}
-            {savedConfig.hasRecurring && savedConfig.recurringCount > 0 && (
-              <div className="border-t border-[#5C4033]/6 pt-2">
-                <p className="text-[9px] text-[#5C4033]/50">
-                  Cadence: {savedConfig.recurringCount} {savedConfig.recurringCount === 1 ? 'case' : 'cases'} /{' '}
-                  {savedConfig.recurringEvery} {savedConfig.recurringEvery === 1 ? savedConfig.recurringUnit.slice(0, -1) : savedConfig.recurringUnit}
-                </p>
-              </div>
-            )}
-          </div>
-        );
-      })() : null;
+          </>
+        )
+      ) : null;
 
       default: return null;
     }
@@ -825,7 +668,6 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
         @keyframes _gt_fwd  { from { opacity: 0; transform: translateX(12px);  } to { opacity: 1; transform: translateX(0); } }
         @keyframes _gt_bwd  { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes _gt_glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.9; } }
-        @keyframes _wv { from { transform: scaleY(0.35); opacity: 0.25; } to { transform: scaleY(1); opacity: 0.65; } }
         @keyframes _ci { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes _gt_lock_float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
         @keyframes _gt_lock_pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
@@ -860,17 +702,6 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
           <Target className="w-3 h-3 mr-2 text-[#3D5A35]" />
           THE TRACKER
         </div>
-        {gtfZone && (
-          <div className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded-full border"
-               style={{ borderColor: `${ZONE_META[gtfZone].color}40`, backgroundColor: `${ZONE_META[gtfZone].color}12` }}>
-            <span className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse"
-                  style={{ backgroundColor: ZONE_META[gtfZone].color }} />
-            <span className="text-[8px] uppercase tracking-[0.1em] font-semibold"
-                  style={{ color: ZONE_META[gtfZone].color }}>
-              {ZONE_META[gtfZone].label}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Progress bar — below header, no collision */}
