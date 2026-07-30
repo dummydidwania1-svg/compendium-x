@@ -55,6 +55,37 @@ async function callVertex(systemInstruction: string, userMessage: string, config
   return text
 }
 
+/**
+ * Defensively extracts a JSON object from a model response that may include
+ * conversational preamble/markdown fencing despite responseMimeType being
+ * set to 'application/json' — some Gemini serving paths (including Express
+ * Mode, observed in production) don't strictly honor the structured-output
+ * constraint and free-text instead (e.g. "Here is the ..." followed by the
+ * JSON). Strips code fences, then falls back to slicing out the first
+ * balanced {...} block rather than assuming raw is valid JSON on its own.
+ */
+function extractJsonObject(raw: string): unknown {
+  const fenced = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+  try {
+    return JSON.parse(fenced)
+  } catch {
+    // fall through to brace-matching below
+  }
+  const start = fenced.indexOf('{')
+  if (start === -1) throw new Error(`No JSON object found in Vertex AI response: ${raw.slice(0, 80)}`)
+  let depth = 0
+  for (let i = start; i < fenced.length; i += 1) {
+    if (fenced[i] === '{') depth += 1
+    else if (fenced[i] === '}') {
+      depth -= 1
+      if (depth === 0) {
+        return JSON.parse(fenced.slice(start, i + 1))
+      }
+    }
+  }
+  throw new Error(`Unbalanced JSON object in Vertex AI response: ${raw.slice(0, 80)}`)
+}
+
 /* -------------------------------------------------------------------------- */
 /* Stage 1 — ranking                                                          */
 /* -------------------------------------------------------------------------- */
@@ -74,7 +105,8 @@ Pick exactly one shapeId from the candidates provided, using this priority order
 3. Statistical strength — prefer the candidate with higher magnitude.
 4. Non-redundancy — avoid a pattern that just restates a number already visible on the card.
 Also rotate across axes over time rather than always favoring the same axis.
-Respond with only the winning shapeId, exactly as given in the candidate list.`
+Respond with ONLY a raw JSON object of the exact shape {"winningShapeId": "..."} — no
+markdown code fences, no explanation, no preamble like "Here is...", just the JSON object itself.`
 
 export async function callVertexRank(
   candidates: ShapeCandidate[],
@@ -92,7 +124,7 @@ export async function callVertexRank(
     responseSchema: RANK_SCHEMA,
   })
 
-  const parsed = JSON.parse(raw) as { winningShapeId: string }
+  const parsed = extractJsonObject(raw) as { winningShapeId: string }
   const winningCandidate = candidates.find((c) => c.shapeId === parsed.winningShapeId)
   if (!winningCandidate) {
     // Model returned a shapeId not in the candidate list — fall back to the
@@ -124,7 +156,9 @@ informal "buddy" tone matching this app's existing copy (examples: "You are bang
   If the data involves scores, only frame it as a correlation with pursuit behavior (pace, timing, rhythm),
   never as a verdict on how good the user is.
 - Do not restate a number that's already obviously visible elsewhere on the card (like the raw done/total count).
-- Ground the sentence in the specific data provided; do not invent numbers.`
+- Ground the sentence in the specific data provided; do not invent numbers.
+Respond with ONLY a raw JSON object of the exact shape {"text": "..."} — no markdown code fences,
+no explanation, no preamble like "Here is...", just the JSON object itself.`
 
 export async function callVertexFill(
   candidate: ShapeCandidate,
@@ -142,7 +176,7 @@ export async function callVertexFill(
     responseSchema: FILL_SCHEMA,
   })
 
-  const parsed = JSON.parse(raw) as { text: string }
+  const parsed = extractJsonObject(raw) as { text: string }
   return { text: parsed.text.trim() }
 }
 
