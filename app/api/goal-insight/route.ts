@@ -110,7 +110,10 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
     today,
   })
 
-  if (candidates.length === 0) return jsonOk({ insight: null })
+  if (candidates.length === 0) {
+    console.log('[goal-insight] zero candidates', { uid: caller.uid, done, sessionsCount: candidateSessions.length })
+    return jsonOk({ insight: null })
+  }
 
   const deterministicCardNumbers = [String(done), String(config.totalCases)]
 
@@ -119,14 +122,17 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
     let result = await callVertexFill(winningCandidate)
 
     if (!validateInsight(result.text, deterministicCardNumbers)) {
+      console.log('[goal-insight] first fill failed validation', { uid: caller.uid, text: result.text })
       result = await callVertexFill(winningCandidate, { stricter: true })
       if (!validateInsight(result.text, deterministicCardNumbers)) {
+        console.log('[goal-insight] retry also failed validation', { uid: caller.uid, text: result.text })
         return jsonOk({ insight: null })
       }
     }
 
     return jsonOk({ insight: { text: result.text, shapeId: winningCandidate.shapeId } })
-  } catch {
+  } catch (err) {
+    console.log('[goal-insight] vertex call threw', { uid: caller.uid, error: err instanceof Error ? err.message : String(err) })
     return jsonOk({ insight: null })
   }
 })
