@@ -128,17 +128,25 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
 
   try {
     const { winningCandidate } = await callVertexRank(candidates, lastShownShapeId ?? null)
+    console.log('[goal-insight] candidates and winner', {
+      uid: caller.uid,
+      candidateCount: candidates.length,
+      candidateShapeIds: candidates.map((c) => c.shapeId),
+      winningShapeId: winningCandidate.shapeId,
+      winningData: winningCandidate.data,
+    })
     let result = await callVertexFill(winningCandidate)
 
-    if (!validateInsight(result.text, deterministicCardNumbers)) {
+    if (!validateInsight(result.text, deterministicCardNumbers, winningCandidate.data)) {
       console.log('[goal-insight] first fill failed validation', { uid: caller.uid, text: result.text })
       result = await callVertexFill(winningCandidate, { stricter: true })
-      if (!validateInsight(result.text, deterministicCardNumbers)) {
+      if (!validateInsight(result.text, deterministicCardNumbers, winningCandidate.data)) {
         console.log('[goal-insight] retry also failed validation', { uid: caller.uid, text: result.text })
         return jsonOk({ insight: null })
       }
     }
 
+    console.log('[goal-insight] shipped insight', { uid: caller.uid, shapeId: winningCandidate.shapeId, text: result.text })
     return jsonOk({ insight: { text: result.text, shapeId: winningCandidate.shapeId } })
   } catch (err) {
     console.log('[goal-insight] vertex call threw', { uid: caller.uid, error: err instanceof Error ? err.message : String(err) })

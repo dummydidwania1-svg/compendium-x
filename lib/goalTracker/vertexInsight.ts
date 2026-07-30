@@ -108,7 +108,7 @@ export async function callVertexRank(
 
   const raw = await callVertex(RANK_SYSTEM_PROMPT, userMessage, {
     temperature: 0.4,
-    maxOutputTokens: 300,
+    maxOutputTokens: 400,
   })
 
   const shapeIdRaw = extractPrefixedLine(raw, 'SHAPE_ID:')
@@ -136,7 +136,11 @@ informal "buddy" tone matching this app's existing copy (examples: "You are bang
   If the data involves scores, only frame it as a correlation with pursuit behavior (pace, timing, rhythm),
   never as a verdict on how good the user is.
 - Do not restate a number that's already obviously visible elsewhere on the card (like the raw done/total count).
-- Ground the sentence in the specific data provided; do not invent numbers.
+- CRITICAL: the sentence MUST cite a concrete, specific fact taken directly from the Data given below
+  (e.g. a day of the week, a time window, a case type name, a specific number/percentage/streak length,
+  a comparison between two periods). A vague sentence with no specific fact from the data (e.g. "you have
+  really picked up", "great momentum", "keep it up") is a FAILURE and must never be produced — every
+  sentence must sound like it could only be said about THIS user's actual data, not any user in this state.
 
 Respond with EXACTLY ONE line, in this exact format, with nothing else before or after it:
 INSIGHT: <the sentence>`
@@ -150,9 +154,12 @@ export async function callVertexFill(
     ? `${FILL_SYSTEM_PROMPT}\nIMPORTANT: your previous attempt failed validation (too long, contained a dash, or restated a visible number, or had extra text around the INSIGHT: line). Be stricter this time — shorter, plainer, no dashes, and output ONLY the single "INSIGHT: ..." line.`
     : FILL_SYSTEM_PROMPT
 
+  // Generous budget: some Gemini models spend tokens on internal reasoning
+  // before the visible answer, and a tight cap here was a plausible
+  // contributor to thin, generic output (nothing left after "thinking").
   const raw = await callVertex(systemPrompt, userMessage, {
     temperature: 0.4,
-    maxOutputTokens: 250,
+    maxOutputTokens: 800,
   })
 
   const text = extractPrefixedLine(raw, 'INSIGHT:')
@@ -179,11 +186,55 @@ const BANNED_STANDALONE_SCORE_PHRASES = [
   'technique',
 ]
 
-export function validateInsight(text: string, deterministicCardNumbers: string[]): boolean {
+const GENERIC_FILLER_PHRASES = [
+  'really picked up',
+  'great momentum',
+  'keep it up',
+  'keep going',
+  'nice progress',
+  'good progress',
+  'making progress',
+  'on the right track',
+  'doing great',
+  'well done',
+]
+
+/**
+ * Requires the sentence to cite something specific to THIS user's data — a
+ * number/percentage/streak length from the winning candidate, or a
+ * recognizable specific term (day name, case type, time-of-day word) that
+ * actually appears in the candidate's data values. Rejects content-free
+ * filler like "you have really picked up" that could describe any user.
+ */
+function hasConcreteFact(text: string, candidateData: Record<string, unknown>): boolean {
+  if (/\d/.test(text)) return true // any digit at all — a number, percentage, streak length, etc.
+
+  const dataValues = Object.values(candidateData)
+    .map((v) => String(v).toLowerCase())
+    .join(' ')
+  const lower = text.toLowerCase()
+
+  const DAY_NAMES = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+  const TIME_WORDS = ['morning', 'afternoon', 'evening', 'night']
+  const specificTerms = [...DAY_NAMES, ...TIME_WORDS]
+
+  // A specific term counts only if it's both in the sentence AND actually
+  // present in this candidate's real data — not just any day/time word,
+  // which the model could hallucinate to fake specificity.
+  return specificTerms.some((term) => lower.includes(term) && dataValues.includes(term))
+}
+
+export function validateInsight(
+  text: string,
+  deterministicCardNumbers: string[],
+  candidateData: Record<string, unknown>,
+): boolean {
   if (text.length === 0 || text.length > 110) return false
   if (/[—–]/.test(text)) return false // em dash (—) or en dash (–)
   const lower = text.toLowerCase()
   if (BANNED_STANDALONE_SCORE_PHRASES.some((phrase) => lower.includes(phrase))) return false
+  if (GENERIC_FILLER_PHRASES.some((phrase) => lower.includes(phrase))) return false
   if (deterministicCardNumbers.some((n) => n.length > 0 && text.includes(n))) return false
+  if (!hasConcreteFact(text, candidateData)) return false
   return true
 }
