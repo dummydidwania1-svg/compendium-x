@@ -1,12 +1,21 @@
 /**
- * Two-stage structured Gemini call for the Goal Tracker AI Insight layer, run
- * against Vertex AI Express Mode (not the plain Gemini API Coach/Analyser
- * use). Server-only — the API key must never reach the browser.
+ * Two-stage Gemini call for the Goal Tracker AI Insight layer, run against
+ * Vertex AI Express Mode (not the plain Gemini API Coach/Analyser use).
+ * Server-only — the API key must never reach the browser.
  *
  * Hand-rolled fetch, matching the established pattern in
  * lib/geminiFeedback.ts / lib/geminiCoach.ts rather than adding the
- * @google/genai SDK — this route needs exactly two generateContent calls
- * with structured output, which fetch handles cleanly.
+ * @google/genai SDK.
+ *
+ * Uses PLAIN TEXT output with a strict single-line-prefix contract, not
+ * responseMimeType:'application/json' + responseSchema — in production,
+ * gemini-3.6-flash on this Express Mode endpoint was observed emitting only
+ * a conversational preamble ("Here is the JSON requested:") with no JSON
+ * ever following, despite the schema constraint and explicit "no preamble"
+ * instructions. This mirrors lib/geminiCoach.ts's existing plain-text +
+ * line-parsing approach elsewhere in this codebase, which is more robust to
+ * a model/endpoint combination that doesn't reliably honor structured
+ * output.
  */
 import 'server-only'
 import type { InsightShapeId, ShapeCandidate } from './insightShapes'
@@ -23,8 +32,6 @@ function apiKey(): string {
 interface VertexGenerationConfig {
   temperature: number
   maxOutputTokens: number
-  responseMimeType: 'application/json'
-  responseSchema: Record<string, unknown>
 }
 
 async function callVertex(systemInstruction: string, userMessage: string, config: VertexGenerationConfig): Promise<string> {
@@ -45,58 +52,39 @@ async function callVertex(systemInstruction: string, userMessage: string, config
 
   const data = await response.json()
   const parts: Array<{ text?: string; thought?: boolean }> = data?.candidates?.[0]?.content?.parts ?? []
+  const finishReason = data?.candidates?.[0]?.finishReason
   const text = parts
     .filter((p) => !p.thought)
     .map((p) => p.text ?? '')
     .join('')
     .trim()
 
-  if (!text) throw new Error('Vertex AI returned an empty response.')
+  if (finishReason && finishReason !== 'STOP') {
+    console.log('[vertexInsight] non-STOP finishReason', { finishReason, textLength: text.length, textPreview: text.slice(0, 200) })
+  }
+
+  if (!text) throw new Error(`Vertex AI returned an empty response (finishReason: ${finishReason ?? 'unknown'}).`)
   return text
 }
 
 /**
- * Defensively extracts a JSON object from a model response that may include
- * conversational preamble/markdown fencing despite responseMimeType being
- * set to 'application/json' — some Gemini serving paths (including Express
- * Mode, observed in production) don't strictly honor the structured-output
- * constraint and free-text instead (e.g. "Here is the ..." followed by the
- * JSON). Strips code fences, then falls back to slicing out the first
- * balanced {...} block rather than assuming raw is valid JSON on its own.
+ * Extracts the value following a required line prefix (e.g. "SHAPE_ID:"),
+ * tolerant of the model prepending conversational text before that line —
+ * scans every line rather than assuming line 1 is the answer.
  */
-function extractJsonObject(raw: string): unknown {
-  const fenced = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
-  try {
-    return JSON.parse(fenced)
-  } catch {
-    // fall through to brace-matching below
-  }
-  const start = fenced.indexOf('{')
-  if (start === -1) throw new Error(`No JSON object found in Vertex AI response: ${raw.slice(0, 80)}`)
-  let depth = 0
-  for (let i = start; i < fenced.length; i += 1) {
-    if (fenced[i] === '{') depth += 1
-    else if (fenced[i] === '}') {
-      depth -= 1
-      if (depth === 0) {
-        return JSON.parse(fenced.slice(start, i + 1))
-      }
+function extractPrefixedLine(raw: string, prefix: string): string | null {
+  const lines = raw.split('\n').map((l) => l.trim())
+  for (const line of lines) {
+    if (line.toUpperCase().startsWith(prefix.toUpperCase())) {
+      return line.slice(prefix.length).trim().replace(/^["'`]+|["'`]+$/g, '')
     }
   }
-  throw new Error(`Unbalanced JSON object in Vertex AI response: ${raw.slice(0, 80)}`)
+  return null
 }
 
 /* -------------------------------------------------------------------------- */
 /* Stage 1 — ranking                                                          */
 /* -------------------------------------------------------------------------- */
-
-const RANK_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    winningShapeId: { type: 'STRING' },
-  },
-  required: ['winningShapeId'],
-}
 
 const RANK_SYSTEM_PROMPT = `You are ranking candidate insight patterns for a practice-goal tracker.
 Pick exactly one shapeId from the candidates provided, using this priority order:
@@ -105,8 +93,9 @@ Pick exactly one shapeId from the candidates provided, using this priority order
 3. Statistical strength — prefer the candidate with higher magnitude.
 4. Non-redundancy — avoid a pattern that just restates a number already visible on the card.
 Also rotate across axes over time rather than always favoring the same axis.
-Respond with ONLY a raw JSON object of the exact shape {"winningShapeId": "..."} — no
-markdown code fences, no explanation, no preamble like "Here is...", just the JSON object itself.`
+
+Respond with EXACTLY ONE line, in this exact format, with nothing else before or after it:
+SHAPE_ID: <the winning shapeId>`
 
 export async function callVertexRank(
   candidates: ShapeCandidate[],
@@ -119,15 +108,14 @@ export async function callVertexRank(
 
   const raw = await callVertex(RANK_SYSTEM_PROMPT, userMessage, {
     temperature: 0.4,
-    maxOutputTokens: 200,
-    responseMimeType: 'application/json',
-    responseSchema: RANK_SCHEMA,
+    maxOutputTokens: 300,
   })
 
-  const parsed = extractJsonObject(raw) as { winningShapeId: string }
-  const winningCandidate = candidates.find((c) => c.shapeId === parsed.winningShapeId)
+  const shapeIdRaw = extractPrefixedLine(raw, 'SHAPE_ID:')
+  const winningCandidate = candidates.find((c) => c.shapeId === shapeIdRaw)
   if (!winningCandidate) {
-    // Model returned a shapeId not in the candidate list — fall back to the
+    console.log('[vertexInsight] rank response did not match a candidate', { rawPreview: raw.slice(0, 200), shapeIdRaw })
+    // Model returned an unparseable or unknown shapeId — fall back to the
     // highest-magnitude candidate rather than erroring the whole request.
     const fallback = [...candidates].sort((a, b) => b.magnitude - a.magnitude)[0]
     return { winningShapeId: fallback.shapeId, winningCandidate: fallback }
@@ -139,14 +127,6 @@ export async function callVertexRank(
 /* Stage 2 — fill                                                             */
 /* -------------------------------------------------------------------------- */
 
-const FILL_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    text: { type: 'STRING' },
-  },
-  required: ['text'],
-}
-
 const FILL_SYSTEM_PROMPT = `You write a single short insight sentence for a practice-goal tracker card, in a warm,
 informal "buddy" tone matching this app's existing copy (examples: "You are bang on track for Aug 30."
 / "Smashed it, with 6 days to spare." / "Slightly behind, but nothing you can't fix."). Rules:
@@ -157,8 +137,9 @@ informal "buddy" tone matching this app's existing copy (examples: "You are bang
   never as a verdict on how good the user is.
 - Do not restate a number that's already obviously visible elsewhere on the card (like the raw done/total count).
 - Ground the sentence in the specific data provided; do not invent numbers.
-Respond with ONLY a raw JSON object of the exact shape {"text": "..."} — no markdown code fences,
-no explanation, no preamble like "Here is...", just the JSON object itself.`
+
+Respond with EXACTLY ONE line, in this exact format, with nothing else before or after it:
+INSIGHT: <the sentence>`
 
 export async function callVertexFill(
   candidate: ShapeCandidate,
@@ -166,18 +147,20 @@ export async function callVertexFill(
 ): Promise<{ text: string }> {
   const userMessage = `Shape: ${candidate.shapeId}\nAxis: ${candidate.axis}\nData: ${JSON.stringify(candidate.data)}`
   const systemPrompt = opts?.stricter
-    ? `${FILL_SYSTEM_PROMPT}\nIMPORTANT: your previous attempt failed validation (too long, contained a dash, or restated a visible number). Be stricter this time — shorter, plainer, no dashes.`
+    ? `${FILL_SYSTEM_PROMPT}\nIMPORTANT: your previous attempt failed validation (too long, contained a dash, or restated a visible number, or had extra text around the INSIGHT: line). Be stricter this time — shorter, plainer, no dashes, and output ONLY the single "INSIGHT: ..." line.`
     : FILL_SYSTEM_PROMPT
 
   const raw = await callVertex(systemPrompt, userMessage, {
     temperature: 0.4,
-    maxOutputTokens: 150,
-    responseMimeType: 'application/json',
-    responseSchema: FILL_SCHEMA,
+    maxOutputTokens: 250,
   })
 
-  const parsed = extractJsonObject(raw) as { text: string }
-  return { text: parsed.text.trim() }
+  const text = extractPrefixedLine(raw, 'INSIGHT:')
+  if (!text) {
+    console.log('[vertexInsight] fill response missing INSIGHT: line', { rawPreview: raw.slice(0, 200) })
+    throw new Error('Vertex AI fill response did not contain an INSIGHT: line.')
+  }
+  return { text: text.trim() }
 }
 
 /* -------------------------------------------------------------------------- */
