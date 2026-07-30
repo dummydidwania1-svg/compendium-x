@@ -24,10 +24,19 @@ export const runtime = 'nodejs'
 
 const goalInsightInput = z.object({
   lastShownShapeId: z.string().nullable().optional(),
+  /**
+   * Epoch ms of local midnight on the client, per the locked §2 timezone
+   * rule ("today"/period boundaries use the USER'S local timezone). The
+   * server (Vercel, UTC) cannot derive this correctly on its own — computing
+   * "today" server-side silently shifts the day boundary and produces
+   * inconsistent done-counts across requests. Falls back to server time if
+   * omitted (older client / bad clock), which may be off by a few hours.
+   */
+  localMidnightMs: z.number().optional(),
 })
 
 export const POST = authenticatedRoute('/api/goal-insight', async (request, caller) => {
-  const { lastShownShapeId } = await parseBody(request, goalInsightInput)
+  const { lastShownShapeId, localMidnightMs } = await parseBody(request, goalInsightInput)
 
   const goalSnap = await adminDb.collection('goals').doc(caller.uid).get()
   if (!goalSnap.exists) return jsonOk({ insight: null })
@@ -82,7 +91,7 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
     .filter((r) => r.success)
     .map((r) => r.data)
 
-  const today = startOfDay(new Date())
+  const today = startOfDay(localMidnightMs != null ? new Date(localMidnightMs) : new Date())
   const flow = resolveFlow(config)
   const done = countedSessions.length
 

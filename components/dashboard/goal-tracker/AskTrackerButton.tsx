@@ -42,8 +42,11 @@ export default function AskTrackerButton({ goalState: _goalState }: { goalState:
     setVerbIdx(0)
     startVerbCycle()
     try {
+      const localMidnight = new Date()
+      localMidnight.setHours(0, 0, 0, 0)
       const res = await apiPost<InsightResponse>('/api/goal-insight', {
         lastShownShapeId: lastShapeIdRef.current,
+        localMidnightMs: localMidnight.getTime(),
       })
       stopVerbCycle()
       if (res.insight) {
