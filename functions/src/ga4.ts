@@ -64,6 +64,38 @@ export interface Ga4DimensionBreakdown {
   metricValue: number
 }
 
+// A single report run fires ~18 GA4 calls at once (6 metrics x 3 time
+// windows, all via Promise.all) — right after the Analytics Data API is
+// freshly enabled on a project, or under a burst against a low initial
+// quota, some of those concurrent calls can transiently fail
+// (PERMISSION_DENIED during propagation, RESOURCE_EXHAUSTED on quota,
+// UNAVAILABLE) even while sibling calls in the very same run succeed.
+// Retrying transient failures with backoff makes GA4 metrics reliable on
+// every run rather than only "eventually consistent after enough retries
+// across separate report sends."
+const RETRYABLE_MESSAGE_PATTERNS = [/PERMISSION_DENIED/i, /RESOURCE_EXHAUSTED/i, /UNAVAILABLE/i, /has not been used in project/i]
+
+function isRetryable(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err)
+  return RETRYABLE_MESSAGE_PATTERNS.some((pattern) => pattern.test(message))
+}
+
+async function withRetry<T>(label: string, fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  let lastErr: unknown
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastErr = err
+      if (attempt === maxAttempts || !isRetryable(err)) throw err
+      const delayMs = 500 * 2 ** (attempt - 1) // 500ms, 1000ms, ...
+      console.warn(`[ga4] ${label} attempt ${attempt} failed transiently, retrying in ${delayMs}ms`, err instanceof Error ? err.message : String(err))
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+    }
+  }
+  throw lastErr
+}
+
 async function runSimpleReport(opts: {
   startDate: string
   endDate: string
@@ -75,13 +107,15 @@ async function runSimpleReport(opts: {
   if (!client) return null
 
   try {
-    const [response] = await client.runReport({
-      property: `properties/${GA4_PROPERTY_ID}`,
-      dateRanges: [{ startDate: opts.startDate, endDate: opts.endDate }],
-      dimensions: [{ name: opts.dimension }],
-      metrics: [{ name: opts.metric }],
-      limit: opts.limit ?? 25,
-    })
+    const [response] = await withRetry(`runReport(${opts.dimension})`, () =>
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: opts.startDate, endDate: opts.endDate }],
+        dimensions: [{ name: opts.dimension }],
+        metrics: [{ name: opts.metric }],
+        limit: opts.limit ?? 25,
+      }),
+    )
 
     const rows = (response.rows ?? []).map((row) => ({
       dimensionValue: row.dimensionValues?.[0]?.value ?? '(not set)',
@@ -121,11 +155,13 @@ export async function getAvgTimeOnSite(startDate: string, endDate: string): Prom
   if (!client) return null
 
   try {
-    const [response] = await client.runReport({
-      property: `properties/${GA4_PROPERTY_ID}`,
-      dateRanges: [{ startDate, endDate }],
-      metrics: [{ name: 'averageSessionDuration' }],
-    })
+    const [response] = await withRetry('getAvgTimeOnSite', () =>
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        metrics: [{ name: 'averageSessionDuration' }],
+      }),
+    )
     const value = response.rows?.[0]?.metricValues?.[0]?.value
     const parsed = value != null ? Number(value) : null
     console.log('[ga4] getAvgTimeOnSite succeeded', { dateRange: `${startDate}..${endDate}`, seconds: parsed })
@@ -142,11 +178,13 @@ export async function getTotalVisitors(startDate: string, endDate: string): Prom
   if (!client) return null
 
   try {
-    const [response] = await client.runReport({
-      property: `properties/${GA4_PROPERTY_ID}`,
-      dateRanges: [{ startDate, endDate }],
-      metrics: [{ name: 'totalUsers' }],
-    })
+    const [response] = await withRetry('getTotalVisitors', () =>
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        metrics: [{ name: 'totalUsers' }],
+      }),
+    )
     const value = response.rows?.[0]?.metricValues?.[0]?.value
     const parsed = value != null ? Number(value) : null
     console.log('[ga4] getTotalVisitors succeeded', { dateRange: `${startDate}..${endDate}`, totalUsers: parsed })
