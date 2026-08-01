@@ -27,6 +27,14 @@ const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID ?? ''
 
 let cachedClient: BetaAnalyticsDataClient | null = null
 
+/**
+ * Resolves the GA4 client, logging exactly why it's unavailable when it is
+ * — every silent-null return elsewhere in this file was previously
+ * indistinguishable from a real API failure in the logs (both just
+ * produced no output at all), which made "not configured" and "configured
+ * but GA4 has no data yet" impossible to tell apart from Cloud Functions
+ * logs. This function is now the single place that explains a null client.
+ */
 function getClient(): BetaAnalyticsDataClient | null {
   if (cachedClient) return cachedClient
   const saKeyJson = process.env.GA4_SERVICE_ACCOUNT_KEY
@@ -34,11 +42,16 @@ function getClient(): BetaAnalyticsDataClient | null {
     console.warn('[ga4] GA4_SERVICE_ACCOUNT_KEY secret missing — GA4-backed metrics will read as N/A')
     return null
   }
+  if (!GA4_PROPERTY_ID) {
+    console.warn('[ga4] GA4_PROPERTY_ID env var missing — GA4-backed metrics will read as N/A')
+    return null
+  }
   try {
     const saKey = JSON.parse(saKeyJson) as { client_email: string; private_key: string }
     cachedClient = new BetaAnalyticsDataClient({
       credentials: { client_email: saKey.client_email, private_key: saKey.private_key },
     })
+    console.log('[ga4] client initialized', { clientEmail: saKey.client_email, propertyId: GA4_PROPERTY_ID })
     return cachedClient
   } catch (err) {
     console.error('[ga4] failed to parse GA4_SERVICE_ACCOUNT_KEY', err instanceof Error ? err.message : String(err))
@@ -59,7 +72,7 @@ async function runSimpleReport(opts: {
   limit?: number
 }): Promise<Ga4DimensionBreakdown[] | null> {
   const client = getClient()
-  if (!client || !GA4_PROPERTY_ID) return null
+  if (!client) return null
 
   try {
     const [response] = await client.runReport({
@@ -70,10 +83,12 @@ async function runSimpleReport(opts: {
       limit: opts.limit ?? 25,
     })
 
-    return (response.rows ?? []).map((row) => ({
+    const rows = (response.rows ?? []).map((row) => ({
       dimensionValue: row.dimensionValues?.[0]?.value ?? '(not set)',
       metricValue: Number(row.metricValues?.[0]?.value ?? 0),
     }))
+    console.log('[ga4] runReport succeeded', { dimension: opts.dimension, metric: opts.metric, rowCount: rows.length, dateRange: `${opts.startDate}..${opts.endDate}` })
+    return rows
   } catch (err) {
     console.error('[ga4] runReport failed', { dimension: opts.dimension, metric: opts.metric, error: err instanceof Error ? err.message : String(err) })
     return null
@@ -103,7 +118,7 @@ export async function getGeographyBreakdown(startDate: string, endDate: string) 
 /** Average engagement time per session (seconds), across all visitors. */
 export async function getAvgTimeOnSite(startDate: string, endDate: string): Promise<number | null> {
   const client = getClient()
-  if (!client || !GA4_PROPERTY_ID) return null
+  if (!client) return null
 
   try {
     const [response] = await client.runReport({
@@ -112,7 +127,9 @@ export async function getAvgTimeOnSite(startDate: string, endDate: string): Prom
       metrics: [{ name: 'averageSessionDuration' }],
     })
     const value = response.rows?.[0]?.metricValues?.[0]?.value
-    return value != null ? Number(value) : null
+    const parsed = value != null ? Number(value) : null
+    console.log('[ga4] getAvgTimeOnSite succeeded', { dateRange: `${startDate}..${endDate}`, seconds: parsed })
+    return parsed
   } catch (err) {
     console.error('[ga4] getAvgTimeOnSite failed', err instanceof Error ? err.message : String(err))
     return null
@@ -122,7 +139,7 @@ export async function getAvgTimeOnSite(startDate: string, endDate: string): Prom
 /** Total visitors (any session) in the window — includes people who never signed up. */
 export async function getTotalVisitors(startDate: string, endDate: string): Promise<number | null> {
   const client = getClient()
-  if (!client || !GA4_PROPERTY_ID) return null
+  if (!client) return null
 
   try {
     const [response] = await client.runReport({
@@ -131,7 +148,9 @@ export async function getTotalVisitors(startDate: string, endDate: string): Prom
       metrics: [{ name: 'totalUsers' }],
     })
     const value = response.rows?.[0]?.metricValues?.[0]?.value
-    return value != null ? Number(value) : null
+    const parsed = value != null ? Number(value) : null
+    console.log('[ga4] getTotalVisitors succeeded', { dateRange: `${startDate}..${endDate}`, totalUsers: parsed })
+    return parsed
   } catch (err) {
     console.error('[ga4] getTotalVisitors failed', err instanceof Error ? err.message : String(err))
     return null
