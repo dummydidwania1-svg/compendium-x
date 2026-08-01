@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Newsreader, Work_Sans } from 'next/font/google'
 import GlobalStyles from '@/components/GlobalStyles'
 import Analytics from '@/components/Analytics';
+import ActivityHeartbeat from '@/components/ActivityHeartbeat'
 import OfflineSetup from '@/components/OfflineSetup'
 import OfflineBanner from '@/components/OfflineBanner'
 import { SiteStructuredData } from '@/components/seo/StructuredData'
@@ -174,6 +175,7 @@ export default function RootLayout({
       <body className={`${newsreader.variable} ${workSans.variable}`}>
         <SiteStructuredData />
         <Analytics />
+        <ActivityHeartbeat />
         <GlobalStyles />
         <OfflineSetup />
         <OfflineBanner />

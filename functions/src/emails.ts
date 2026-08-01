@@ -10,7 +10,7 @@ import { google } from 'googleapis'
 import { randomUUID } from 'node:crypto'
 
 /** Minimal HTML escape for interpolated user text (names). */
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -415,11 +415,12 @@ function encodeHeaderValue(value: string): string {
   return value
 }
 
-function buildRawEmail(opts: { from: string; to: string; subject: string; html: string }): string {
+function buildRawEmail(opts: { from: string; to: string | string[]; subject: string; html: string }): string {
   const boundary = `boundary_${randomUUID().replace(/-/g, '')}`
+  const toHeader = Array.isArray(opts.to) ? opts.to.join(', ') : opts.to
   const message = [
     `From: ${opts.from}`,
-    `To: ${opts.to}`,
+    `To: ${toHeader}`,
     `Subject: ${encodeHeaderValue(opts.subject)}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
@@ -446,6 +447,39 @@ function buildRawEmail(opts: { from: string; to: string; subject: string; html: 
  * misconfiguration or send failure so callers can decide how to react.
  */
 export async function sendGmail(opts: { to: string; subject: string; html: string }): Promise<void> {
+  const saKeyJson = process.env.GMAIL_SA_KEY
+  if (!saKeyJson) {
+    throw new Error('GMAIL_SA_KEY secret missing')
+  }
+
+  const saKey = JSON.parse(saKeyJson) as { client_email: string; private_key: string }
+
+  const jwtClient = new google.auth.JWT({
+    email: saKey.client_email,
+    key: saKey.private_key,
+    scopes: ['https://www.googleapis.com/auth/gmail.send'],
+    subject: 'contact@casecompendiumx.in',
+  })
+  await jwtClient.authorize()
+
+  const gmail = google.gmail({ version: 'v1', auth: jwtClient })
+  const raw = buildRawEmail({
+    from: 'Case CompendiumX <contact@casecompendiumx.in>',
+    to: opts.to,
+    subject: opts.subject,
+    html: opts.html,
+  })
+
+  await gmail.users.messages.send({ userId: 'me', requestBody: { raw } })
+}
+
+/**
+ * Same as sendGmail, but for multiple `To:` recipients in a single send
+ * (used by the weekly KPI report — no Cc, all three recipients addressed
+ * directly). Kept as a distinct function rather than overloading sendGmail
+ * so every other caller's single-recipient behavior is untouched.
+ */
+export async function sendGmailMulti(opts: { to: string[]; subject: string; html: string }): Promise<void> {
   const saKeyJson = process.env.GMAIL_SA_KEY
   if (!saKeyJson) {
     throw new Error('GMAIL_SA_KEY secret missing')

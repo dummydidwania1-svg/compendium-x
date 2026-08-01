@@ -926,6 +926,8 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
     e: React.MouseEvent<HTMLAnchorElement>,
     caseItem: CaseListItem,
   ) => {
+    // Best-effort, non-blocking — never delays or breaks navigation.
+    apiPost('/api/case-view', { caseId: caseItem.id, action: 'view' }).catch(() => {})
     const slug = caseItem.slug ?? slugifyCase(caseItem.title)
     if (READY_CASE_SLUGS.has(slug)) return
     e.preventDefault()
@@ -940,6 +942,8 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
       setComingSoonVisible(true)
       return
     }
+    // Best-effort, non-blocking — never delays or breaks case selection.
+    apiPost('/api/case-view', { caseId: caseItem.id, action: 'select' }).catch(() => {})
     void handleSelectCase(caseItem.id, caseItem.title)
   }, [handleSelectCase, setComingSoonBody, setComingSoonVisible])
 

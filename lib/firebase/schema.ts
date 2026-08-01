@@ -64,6 +64,43 @@ export const profileSchema = z
     pendingDeletion: z.boolean().optional(),
     /** Server timestamp when pendingDeletion was set. */
     pendingDeletionAt: timestamp.optional(),
+    /**
+     * Set once, server-side, at raw Firebase Auth account creation (the
+     * `sendWelcomeEmail` onCreate trigger) — never rewritten afterward.
+     * Distinct from `updatedAt`. Absent on any profile created before this
+     * field existed; the weekly KPI report treats those as "unknown signup
+     * date" rather than backfilling a guess.
+     */
+    createdAt: timestamp.optional(),
+    /**
+     * One-time IP geolocation captured at signup only (not continuous
+     * tracking) via a call to ip-api.com from a Vercel API route. Absent if
+     * the lookup failed/timed out — geolocation is enrichment, never a hard
+     * signup dependency.
+     */
+    signupGeo: z
+      .object({
+        country: optionalString,
+        region: optionalString,
+        city: optionalString,
+        ip: optionalString,
+        source: z.enum(['ip-api', 'unknown']).optional(),
+        capturedAt: timestamp.optional(),
+      })
+      .optional(),
+    /**
+     * Passively-inferred acquisition source at signup (UTM params +
+     * document.referrer, read client-side) — never a user-facing question.
+     */
+    signupAttribution: z
+      .object({
+        utmSource: optionalString,
+        utmMedium: optionalString,
+        utmCampaign: optionalString,
+        referrerHost: optionalString,
+        landingPath: optionalString,
+      })
+      .optional(),
     updatedAt: timestamp.optional(),
   })
   .loose()
@@ -412,3 +449,78 @@ export const forumVoteSchema = z
   })
   .loose()
 export type ForumVote = z.infer<typeof forumVoteSchema>
+
+/* -------------------------------------------------------------------------- */
+/* activityHeartbeats/{uid}_{YYYY-MM-DD} — weekly KPI report instrumentation  */
+/* -------------------------------------------------------------------------- */
+
+// One doc per user per UTC calendar day; existence alone means "active this
+// day" — this doc-ID-enforced uniqueness is what makes DAU/WAU/MAU and the
+// unique-vs-recurring split cheap to compute (group by uid, count distinct
+// dateKeys) without a raw per-page-view event log. Server-only: written by
+// app/api/heartbeat/route.ts via the Admin SDK, never client-direct.
+export const activityHeartbeatSchema = z
+  .object({
+    uid: z.string(),
+    dateKey: z.string(), // 'YYYY-MM-DD', UTC — redundant with the doc-id suffix, kept for query/debug convenience
+    firstSeenAt: timestamp.optional(),
+    lastSeenAt: timestamp.optional(),
+    /** Pings within the same day, past the first. A recurrence signal within the day, not a page-view counter. */
+    pingCount: z.number().optional(),
+  })
+  .loose()
+export type ActivityHeartbeat = z.infer<typeof activityHeartbeatSchema>
+
+/* -------------------------------------------------------------------------- */
+/* caseViewAggregates/{YYYY-MM-DD} — daily case browse/start counters         */
+/* -------------------------------------------------------------------------- */
+
+// One doc per day, not one doc per view — a daily aggregate updated via
+// FieldValue.increment. A founder/growth weekly report only ever needs
+// "how many views/starts this week/month/year," never per-user-per-case
+// forensics, so this trades event-level granularity for a cost profile that
+// stays flat regardless of traffic volume.
+export const caseViewAggregateSchema = z
+  .object({
+    dateKey: z.string(), // 'YYYY-MM-DD', UTC
+    /** caseId -> browse/preview count that day. */
+    viewsByCase: z.record(z.string(), z.number()).default({}),
+    /** caseId -> select/start count that day. */
+    startsByCase: z.record(z.string(), z.number()).default({}),
+    totalViews: z.number().default(0),
+    totalStarts: z.number().default(0),
+    updatedAt: timestamp.optional(),
+  })
+  .loose()
+export type CaseViewAggregate = z.infer<typeof caseViewAggregateSchema>
+
+/* -------------------------------------------------------------------------- */
+/* weeklyReportRuns/{isoWeekKey} — KPI report idempotency + metrics history   */
+/* -------------------------------------------------------------------------- */
+
+// Serves two roles at once: (1) the idempotency/audit record for "has this
+// week's report already sent" (mirrors the mailFlags/{uid} claim pattern
+// used by onboarding-email sending), and (2) the stored metrics snapshot
+// future weeks diff against for WoW/MoM/YoY — so period-over-period deltas
+// never require recomputing raw historical data from scratch.
+export const weeklyReportRunSchema = z
+  .object({
+    isoWeekKey: z.string(), // e.g. '2026-W31'
+    weekStart: z.string(), // 'YYYY-MM-DD', the Monday
+    weekEnd: z.string(), // 'YYYY-MM-DD', the Saturday (inclusive; Sunday deliberately excluded)
+    status: z.enum(['pending', 'sent', 'failed']),
+    sentAt: timestamp.optional(),
+    failedAt: timestamp.optional(),
+    error: optionalString,
+    triggeredBy: z.enum(['schedule', 'manual-test']),
+    /**
+     * Full computed metrics payload for this run. Loosely typed
+     * (record<string, unknown>) deliberately — this shape evolves fastest of
+     * anything in this feature, written only by trusted server code (never
+     * parsed through a client read-path), so a rigid nested schema here
+     * would need updating in lockstep with every metrics-function change.
+     */
+    metrics: z.record(z.string(), z.unknown()).optional(),
+  })
+  .loose()
+export type WeeklyReportRun = z.infer<typeof weeklyReportRunSchema>

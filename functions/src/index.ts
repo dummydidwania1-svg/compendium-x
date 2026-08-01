@@ -46,7 +46,17 @@ import {
   buildVerificationEmailHtml,
   firstNameFrom,
   sendGmail,
+  sendGmailMulti,
 } from './emails.js'
+import { computeFullReportMetrics, type FullReportMetrics, type WindowMetrics } from './reportMetrics.js'
+import {
+  isoWeekKey,
+  monthToDateWindow,
+  priorWeekWindow,
+  twoWeeksAgoWindow,
+  yearToDateWindow,
+} from './reportDates.js'
+import { buildWeeklyReportEmailHtml } from './reportEmail.js'
 
 if (getApps().length === 0) initializeApp()
 const db = getFirestore()
@@ -2242,6 +2252,19 @@ export const sendWelcomeEmail = functionsV1
   .runWith({ secrets: ['GMAIL_SA_KEY'], timeoutSeconds: 60, memory: '256MB' })
   .auth.user()
   .onCreate(async (user) => {
+    // Weekly KPI report needs a raw account-creation timestamp, captured here
+    // (not deferred to onboarding completion) so incomplete-onboarding
+    // signups still count toward acquisition metrics. Best-effort: never let
+    // this block or fail the actual welcome/verification email below.
+    try {
+      await db.collection('profiles').doc(user.uid).set(
+        { createdAt: FieldValue.serverTimestamp() },
+        { merge: true },
+      )
+    } catch (err) {
+      console.error('[sendWelcomeEmail] createdAt write failed for uid=' + user.uid, err instanceof Error ? err.message : String(err))
+    }
+
     if (!user.email) return
     if (!process.env.GMAIL_SA_KEY) {
       console.error('[sendWelcomeEmail] GMAIL_SA_KEY secret missing')
@@ -2493,3 +2516,148 @@ export const sessionMaintenanceSweep = onSchedule(
     })
   },
 )
+
+/* -------------------------------------------------------------------------- */
+/* Weekly KPI report — Monday 8am IST schedule + manual test-send callable.  */
+/* -------------------------------------------------------------------------- */
+
+const KPI_REPORT_RECIPIENTS = ['pratik.ag42@gmail.com', 'skshm.d26@gmail.com', 'nityamall.3@gmail.com']
+// Sole account authorized to trigger a manual test-send — separate from its
+// existing role as the email's sending identity (impersonated by sendGmail*).
+const KPI_REPORT_TEST_AUTHORIZED_EMAIL = 'contact@casecompendiumx.in'
+
+function formatWindowLabel(window: { start: string; end: string }): string {
+  const fmt = (key: string) => {
+    const [y, m, d] = key.split('-').map(Number)
+    return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+  }
+  const [, , endYear] = window.end.split('-')
+  return `${fmt(window.start)} – ${fmt(window.end)}, ${endYear}`
+}
+
+/**
+ * Runs the full weekly KPI report pipeline: claims idempotency via
+ * `weeklyReportRuns/{isoWeekKey}` (mirrors claimOnboardingSend's
+ * transaction-based claim), computes metrics, builds the email, sends it,
+ * and records the outcome. Scheduled runs skip if already sent this week
+ * (real double-send guard); manual-test runs bypass that guard so repeated
+ * test sends during development still work.
+ */
+async function runWeeklyReport(triggeredBy: 'schedule' | 'manual-test', referenceDateOverride?: Date): Promise<{ ok: boolean; isoWeekKey: string }> {
+  const referenceDate = referenceDateOverride ?? new Date()
+  const weekKey = isoWeekKey(referenceDate)
+  const runRef = db.collection('weeklyReportRuns').doc(weekKey)
+
+  if (triggeredBy === 'schedule') {
+    const claimed = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(runRef)
+      if (snap.exists && snap.data()?.status === 'sent') return false
+      tx.set(runRef, { isoWeekKey: weekKey, status: 'pending', triggeredBy }, { merge: true })
+      return true
+    })
+    if (!claimed) {
+      logger.info('[weeklyKpiReport] already sent for', weekKey, '- skipping scheduled run')
+      return { ok: true, isoWeekKey: weekKey }
+    }
+  }
+
+  const weekWindow = priorWeekWindow(referenceDate)
+  const monthWindow = monthToDateWindow(referenceDate)
+  const yearWindow = yearToDateWindow(referenceDate)
+
+  try {
+    const metrics: FullReportMetrics = await computeFullReportMetrics({ weekWindow, monthWindow, yearWindow })
+
+    // Best-effort WoW baseline: read the prior week's stored snapshot, if any.
+    const priorWeekKeyForDiff = isoWeekKey(new Date(`${twoWeeksAgoWindow(referenceDate).end}T12:00:00.000Z`))
+    let priorWeek: WindowMetrics | undefined
+    try {
+      const priorRunSnap = await db.collection('weeklyReportRuns').doc(priorWeekKeyForDiff).get()
+      const storedMetrics = priorRunSnap.exists ? (priorRunSnap.data()?.metrics as { week?: WindowMetrics } | undefined) : undefined
+      priorWeek = storedMetrics?.week
+    } catch {
+      priorWeek = undefined
+    }
+
+    const html = buildWeeklyReportEmailHtml(metrics, {
+      isoWeekKey: weekKey,
+      weekWindowLabel: formatWindowLabel(weekWindow),
+      monthLabel: `${new Date(`${monthWindow.end}T12:00:00.000Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })} (month-to-date)`,
+      yearLabel: `${new Date(`${yearWindow.end}T12:00:00.000Z`).getUTCFullYear()} (year-to-date)`,
+      triggeredBy,
+      isTest: triggeredBy === 'manual-test',
+      priorWeek,
+    })
+
+    const subject = triggeredBy === 'manual-test'
+      ? `(TEST SEND) Weekly KPI Report — ${weekKey}`
+      : `Weekly KPI Report — ${weekKey}`
+
+    await sendGmailMulti({ to: KPI_REPORT_RECIPIENTS, subject, html })
+
+    await runRef.set(
+      {
+        isoWeekKey: weekKey,
+        weekStart: weekWindow.start,
+        weekEnd: weekWindow.end,
+        status: 'sent',
+        sentAt: FieldValue.serverTimestamp(),
+        triggeredBy,
+        metrics,
+      },
+      { merge: true },
+    )
+
+    logger.info('[weeklyKpiReport] sent', { weekKey, triggeredBy })
+    return { ok: true, isoWeekKey: weekKey }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    logger.error('[weeklyKpiReport] FAILED', { weekKey, triggeredBy, error: message })
+    await runRef.set(
+      { isoWeekKey: weekKey, status: 'failed', failedAt: FieldValue.serverTimestamp(), error: message, triggeredBy },
+      { merge: true },
+    )
+    throw err
+  }
+}
+
+export const sendWeeklyKpiReport = onSchedule(
+  {
+    schedule: '0 8 * * 1',
+    timeZone: 'Asia/Kolkata',
+    region: 'us-central1',
+    timeoutSeconds: 300,
+    memory: '512MiB',
+    secrets: ['GMAIL_SA_KEY', 'GA4_SERVICE_ACCOUNT_KEY'],
+  },
+  async () => {
+    await runWeeklyReport('schedule')
+  },
+)
+
+/**
+ * triggerWeeklyKpiReportTest — callable, admin-gated to the single
+ * authorized caller email (contact@casecompendiumx.in), the same identity
+ * the report is sent *from*, now also the only account allowed to trigger a
+ * manual test send. Accepts an optional referenceDateIso so a test send on
+ * any day of the week can simulate "as if next Monday."
+ */
+export const triggerWeeklyKpiReportTest = functionsV1
+  .runWith({ secrets: ['GMAIL_SA_KEY', 'GA4_SERVICE_ACCOUNT_KEY'], timeoutSeconds: 300, memory: '512MB' })
+  .https.onCall(async (data, context) => {
+    const uid = context.auth?.uid
+    if (!uid) throw new functionsV1.https.HttpsError('unauthenticated', 'Sign in to continue.')
+
+    const user = await getAuth().getUser(uid)
+    if (user.email !== KPI_REPORT_TEST_AUTHORIZED_EMAIL) {
+      throw new functionsV1.https.HttpsError('permission-denied', 'Not authorized to trigger a test report send.')
+    }
+
+    const referenceDateIso = typeof data?.referenceDateIso === 'string' ? data.referenceDateIso : undefined
+    const referenceDate = referenceDateIso ? new Date(referenceDateIso) : undefined
+    if (referenceDateIso && (!referenceDate || Number.isNaN(referenceDate.getTime()))) {
+      throw new functionsV1.https.HttpsError('invalid-argument', 'referenceDateIso must be a valid ISO date string.')
+    }
+
+    return runWeeklyReport('manual-test', referenceDate)
+  })

@@ -150,5 +150,21 @@ service cloud.firestore {
         }
       }
     }
+
+    // Weekly KPI report instrumentation: server-only, every write goes
+    // through the Admin SDK (Vercel API routes or Cloud Functions). No
+    // client-direct access in either direction — these are internal
+    // aggregate/audit collections, never rendered to end users.
+    match /activityHeartbeats/{docId} {
+      allow read, write: if false;
+    }
+
+    match /caseViewAggregates/{dateKey} {
+      allow read, write: if false;
+    }
+
+    match /weeklyReportRuns/{isoWeekKey} {
+      allow read, write: if false;
+    }
   }
 }

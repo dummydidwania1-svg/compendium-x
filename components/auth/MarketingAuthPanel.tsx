@@ -17,6 +17,7 @@ import { authenticateWithPasswordFallback } from '@/lib/auth/passwordFallback'
 import { requestPasswordResetFallback } from '@/lib/auth/passwordResetFallback'
 import { triggerOnboardingEmail, triggerVerificationEmail } from '@/lib/auth/accountEmails'
 import { consumeGoogleRedirectResult, signInWithGoogle } from '@/lib/auth/googleSignIn'
+import { reportSignupGeo } from '@/lib/auth/reportSignupGeo'
 
 export type AuthMode = 'signin' | 'signup'
 
@@ -313,6 +314,9 @@ export default function MarketingAuthPanel({
         typeof existingUniversity === 'string' && existingUniversity.trim().length > 0
 
       if (!hasUniversity) {
+        // No university on file yet == this is a new signup, not a
+        // returning sign-in (same signal used elsewhere in this function).
+        void reportSignupGeo(user)
         setCollegeUid(user.uid)
         setNeedsCollege(true)
         setGoogleLoading(false)
@@ -510,6 +514,7 @@ export default function MarketingAuthPanel({
           }
           setMessage('Account created. Redirecting...')
           setMessageTone('info')
+          if (auth.currentUser) void reportSignupGeo(auth.currentUser)
           await finishAuth(credential.user.uid, true)
           return
         }
@@ -530,6 +535,9 @@ export default function MarketingAuthPanel({
             }
           }
 
+          // Must fire before signOut() below — reportSignupGeo needs the
+          // user still signed in to call getIdToken().
+          void reportSignupGeo(result.user)
           await signOut(auth)
           setVerificationEmail(normalizedEmail)
           setVerificationSent(true)
