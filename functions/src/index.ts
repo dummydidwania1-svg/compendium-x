@@ -2628,7 +2628,7 @@ export const sendWeeklyKpiReport = onSchedule(
     region: 'us-central1',
     timeoutSeconds: 300,
     memory: '512MiB',
-    secrets: ['GMAIL_SA_KEY', 'GA4_SERVICE_ACCOUNT_KEY'],
+    secrets: ['GMAIL_SA_KEY', 'GA4_SERVICE_ACCOUNT_KEY', 'GA4_PROPERTY_ID'],
   },
   async () => {
     await runWeeklyReport('schedule')
@@ -2643,7 +2643,7 @@ export const sendWeeklyKpiReport = onSchedule(
  * any day of the week can simulate "as if next Monday."
  */
 export const triggerWeeklyKpiReportTest = functionsV1
-  .runWith({ secrets: ['GMAIL_SA_KEY', 'GA4_SERVICE_ACCOUNT_KEY'], timeoutSeconds: 300, memory: '512MB' })
+  .runWith({ secrets: ['GMAIL_SA_KEY', 'GA4_SERVICE_ACCOUNT_KEY', 'GA4_PROPERTY_ID'], timeoutSeconds: 300, memory: '512MB' })
   .https.onCall(async (data, context) => {
     const uid = context.auth?.uid
     if (!uid) throw new functionsV1.https.HttpsError('unauthenticated', 'Sign in to continue.')
