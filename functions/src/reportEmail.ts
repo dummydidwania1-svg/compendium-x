@@ -30,8 +30,8 @@ const COLOR = {
 export interface ReportRunMeta {
   isoWeekKey: string
   weekWindowLabel: string // e.g. "Jul 27 – Aug 1, 2026"
-  monthLabel: string // e.g. "August 2026 (month-to-date)"
-  yearLabel: string // e.g. "2026 (year-to-date)"
+  monthLabel: string // e.g. "August 2026"
+  yearLabel: string // e.g. "2026"
   triggeredBy: 'schedule' | 'manual-test'
   isTest: boolean
   priorWeek?: WindowMetrics // for WoW comparison, undefined if no history yet
@@ -104,11 +104,17 @@ export function buildWeeklyReportEmailHtml(metrics: FullReportMetrics, meta: Rep
   const { week, month, year } = metrics
   const prior = meta.priorWeek
 
-  const trendChart = trendLineChartUrl({
-    labels: ['This week'],
-    values: [week.usage.casesCompleted],
-    label: 'Cases completed',
-  })
+  // A single-point "trend" isn't a trend — only render this once a real
+  // prior-week snapshot exists to plot against, so the chart always shows
+  // at least two genuine points. Before that, a plain text line is shown
+  // instead (see the year-to-date section below).
+  const trendChart = prior
+    ? trendLineChartUrl({
+        labels: ['Last week', 'This week'],
+        values: [prior.usage.casesCompleted, week.usage.casesCompleted],
+        label: 'Cases completed',
+      })
+    : null
 
   const caseTypeChart = week.usage.caseTypeDistribution.length > 0
     ? distributionBarChartUrl({
@@ -118,11 +124,22 @@ export function buildWeeklyReportEmailHtml(metrics: FullReportMetrics, meta: Rep
       })
     : null
 
-  const engagementComparisonChart = comparisonBarChartUrl({
-    categoryLabels: ['New vs Returning', 'Unique vs Recurring'],
-    seriesA: { label: 'New / Unique', values: [week.engagement.newVsReturning.new, week.engagement.uniqueVsRecurring.unique] },
-    seriesB: { label: 'Returning / Recurring', values: [week.engagement.newVsReturning.returning, week.engagement.uniqueVsRecurring.recurring] },
-  })
+  // All-zero data renders as an empty-looking chart (correct, but reads as
+  // broken to a human) — only render this once at least one side has a
+  // real non-zero value.
+  const engagementValues = [
+    week.engagement.newVsReturning.new,
+    week.engagement.uniqueVsRecurring.unique,
+    week.engagement.newVsReturning.returning,
+    week.engagement.uniqueVsRecurring.recurring,
+  ]
+  const engagementComparisonChart = engagementValues.some((v) => v > 0)
+    ? comparisonBarChartUrl({
+        categoryLabels: ['New vs Returning', 'Unique vs Recurring'],
+        seriesA: { label: 'New / Unique', values: [week.engagement.newVsReturning.new, week.engagement.uniqueVsRecurring.unique] },
+        seriesB: { label: 'Returning / Recurring', values: [week.engagement.newVsReturning.returning, week.engagement.uniqueVsRecurring.recurring] },
+      })
+    : null
 
   return `<!doctype html>
 <html lang="en">
@@ -249,7 +266,9 @@ export function buildWeeklyReportEmailHtml(metrics: FullReportMetrics, meta: Rep
                     barRow('Stickiness (DAU/MAU)', fmtPct(week.engagement.stickiness)),
                   ])}
                 </div>
-                ${imageRow(engagementComparisonChart.url, engagementComparisonChart.alt)}
+                ${engagementComparisonChart
+                  ? imageRow(engagementComparisonChart.url, engagementComparisonChart.alt)
+                  : `<p style="margin:10px 0 0;font-family:Arial,sans-serif;font-size:12px;color:${COLOR.textFaint};">No engagement activity recorded yet this week.</p>`}
               </td>
             </tr>
 
@@ -327,7 +346,9 @@ export function buildWeeklyReportEmailHtml(metrics: FullReportMetrics, meta: Rep
                   barRow('Minutes practiced', fmtNum(year.usage.minutesPracticed)),
                   barRow('Evaluations completed', fmtNum(year.usage.evaluationsCompleted)),
                 ])}
-                ${imageRow(trendChart.url, trendChart.alt, 520, 200)}
+                ${trendChart
+                  ? imageRow(trendChart.url, trendChart.alt, 520, 200)
+                  : `<p style="margin:10px 0 0;font-family:Arial,sans-serif;font-size:12px;color:${COLOR.textFaint};">Trend chart will appear once at least two weekly reports have been sent.</p>`}
               </td>
             </tr>
 

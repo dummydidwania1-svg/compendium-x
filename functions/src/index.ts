@@ -2531,7 +2531,7 @@ function formatWindowLabel(window: { start: string; end: string }): string {
     const [y, m, d] = key.split('-').map(Number)
     return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
   }
-  const [, , endYear] = window.end.split('-')
+  const [endYear] = window.end.split('-')
   return `${fmt(window.start)} – ${fmt(window.end)}, ${endYear}`
 }
 
@@ -2582,8 +2582,8 @@ async function runWeeklyReport(triggeredBy: 'schedule' | 'manual-test', referenc
     const html = buildWeeklyReportEmailHtml(metrics, {
       isoWeekKey: weekKey,
       weekWindowLabel: formatWindowLabel(weekWindow),
-      monthLabel: `${new Date(`${monthWindow.end}T12:00:00.000Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })} (month-to-date)`,
-      yearLabel: `${new Date(`${yearWindow.end}T12:00:00.000Z`).getUTCFullYear()} (year-to-date)`,
+      monthLabel: new Date(`${monthWindow.end}T12:00:00.000Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
+      yearLabel: String(new Date(`${yearWindow.end}T12:00:00.000Z`).getUTCFullYear()),
       triggeredBy,
       isTest: triggeredBy === 'manual-test',
       priorWeek,
