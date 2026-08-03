@@ -23649,5 +23649,340 @@
       }
     ],
     "framework": "Candidate: Are we concerned with the meals served on flights alone or other places as well like meals served to the on-ground and corporate staff?\nInterviewer: Let's only consider the meals needed in flights for now.\nCandidate: Will it be fair to assume that the meals are prepared by Udaan only once during the day which is morning in this case?\nInterviewer: Yes, that is a fair assumption.\nCandidate: Do I look at both domestic as well as international flights?\nInterviewer: No, focus on only domestic flights for now.\nCandidate: Are we operating in a post-pandemic world?\nInterviewer: Yes, you can assume that.\nCandidate: Just to clarify here, can we classify Udaan as a high-frill airline for the purpose of this guesstimate?\nInterviewer: Sure!\nCandidate: Let me draw out how I want to approach this problem. I will try to estimate the number of meals actually served on flights first and then account for wastage in the end. Given that Udaan is a high-frill airline, the meals are included in the ticket price and would be served to every passenger on board as well as the flight crew. The meals prepared in Delhi in the morning will be served on the flights which depart from Delhi. I have built an expression to estimate the number of meals served.\n^ Number of meals = No. of flights where meals are served x (Average number of passengers per flight + Flight crew members per flight) + wastage\nInterviewer: This sounds fine, go ahead.\nCandidate: Given the scale Udaan operates on, having a sizeable market share, I believe it should have 4 flights a day from Delhi to the tier 1 cities and 2 flights a day from Delhi to the tier 2 cities. Excluding Delhi, there are 7 tier 1 cities and around 100 tier 2 cities but the flights don't go to all tier-2 cities from Delhi. Assuming that the flights go to 40 tier 2 cities, we get 108 flights a day (4x7 + 2x40). However, I assume that the meals would be served only during particular time slots during the day.\nCandidate: If we set aside 5 hours each for breakfast, lunch and dinner and assume the flights to be uniformly distributed throughout the day, we get nine hours where we are not serving any meals. The number of flights where meals would be served should be\n^ (15/24)*108 = ~ 68 flights\nCandidate: The last time I went on a domestic flight, I remember the aircraft having 30 rows with 6 seats per row. That gives us 180 passenger seats when the layout is all economy. Udaan on the other hand has an option for business-class as well. I assume I can replace 6 rows of 3 at the front with 3 rows of 2 to come up with the new estimated number of seats.\n^ 180 - 18 + 6 = 168\nCandidate: The Pandemic also saw lower than usual occupancy rates, I, therefore, assume that 50% of the seats are occupied on average in flights departing from Delhi.\nCandidate: That gives us 84 (168/2) passengers, 4 flight attendants and 2 pilots on board. Flight crew assumptions are made based on the fact that domestic flights out of Delhi can be classified as short-haul, given that the flying time doesn't go far beyond 3 hours.\nCandidate: ~ The number of meals served onboard should be around 90*68 = 6120 meals\nCandidate: Assuming 5% wastage in the supply chain and another 10% kept as a buffer (for reasons like reordering, grievance redressal, complimentary offerings, etc.) the number of meals prepared goes up to approximately 7000.\nInterviewer: How would you check the accuracy of your estimate?\nCandidate: The Delhi airport has three runways, two of which are used on a regular basis for commercial passenger flights. Assuming that 50% of the time the runway is used for take-offs and the other 50% for landings, and every flight occupies the runway for 4 minutes while taking off, that gives us 15 flights taking off from the airport every hour. Our assumption of 108 domestic flights a day departing from Delhi gives us around 4.5 flights (108/24) for Udaan taking off every hour.\nCandidate: The Indian airline industry is an oligopoly with 5-6 players, Udaan should have a market share of roughly 16-20%. Even the more aggressive end of this range doesn't justify the ~ 33% of take-offs being those of Udaan's out of the Delhi airport. I, therefore, believe that we have slightly overestimated the number of meals prepared.\nInterviewer: What do you think might have led to this overestimation?\nCandidate: I believe that we have overestimated the number of flights as seen in the sanity check. The most probable reason would be that most cities would not have direct flights from Delhi, but flights with layovers at intermediate cities. This should have a considerable effect on our estimated number of flights and subsequently, meals prepared.\nCandidate: We should also be mindful of certain special situations wherein flights departing from elsewhere get meals that are prepared in Delhi when they make a layover during transit. This should also be incorporated in the analysis. Do you want me to dive deeper into it?\nInterviewer: No, that will not be required. Thank you for your time.\n\nMile High Club Framework\nNUMBER OF MEALS PREPARED BY UDAAN AIRLINES IN DELHI EVERY MORNING\nClarifying Questions: Only consider meals to be served on flight or also on ground? Incorporate analysis for both domestic and international flights or not?\nBrownie Points: Accounting for wastage and buffer in your analysis. Knowing that not all tier 2 cities will have airports or flights landing from Delhi.\nKeep In Mind: Average occupancy will vary based on the context so clarify if the pandemic plays a role."
+  },
+  {
+    "id": 90,
+    "docId": "case-90",
+    "title": "Home Alone: Sensing an Elder-Care Opportunity",
+    "industry": "Artificial Intelligence",
+    "difficulty": "Hard",
+    "case_type": "Market Entry",
+    "company": "By the Authors",
+    "round": "N/A",
+    "prompt": "A startup has built an AI-enabled motion-detecting sensor that can be placed in an elderly parent's home. It alerts family or a trusted contact immediately if something seems wrong, such as a fall or an unusually long period without movement. Should this launch in India, and how big is the opportunity?",
+    "frameworkTree": {
+      "nodes": {
+        "root": {
+          "id": "root",
+          "label": "Should We Enter",
+          "tone": "root",
+          "children": [
+            "market-attractiveness",
+            "operational-feasibility",
+            "risks"
+          ]
+        },
+        "market-attractiveness": {
+          "id": "market-attractiveness",
+          "label": "Market Attractiveness",
+          "tone": "branch",
+          "children": [
+            "revenue",
+            "cost",
+            "profit"
+          ]
+        },
+        "revenue": {
+          "id": "revenue",
+          "label": "Revenue (Y1 ₹94cr, Y2 ₹150cr)",
+          "tone": "support",
+          "children": []
+        },
+        "cost": {
+          "id": "cost",
+          "label": "Cost (Y1 ₹83cr, Y2 ₹67cr)",
+          "tone": "support",
+          "children": []
+        },
+        "profit": {
+          "id": "profit",
+          "label": "Profit (Y1 ₹11cr, Y2 ₹83cr)",
+          "tone": "highlight",
+          "children": []
+        },
+        "operational-feasibility": {
+          "id": "operational-feasibility",
+          "label": "Operational Feasibility",
+          "tone": "branch",
+          "children": [
+            "model",
+            "certification",
+            "manufacturing",
+            "reach",
+            "service",
+            "after-sales"
+          ]
+        },
+        "model": {
+          "id": "model",
+          "label": "Build Model",
+          "tone": "leaf",
+          "children": []
+        },
+        "certification": {
+          "id": "certification",
+          "label": "Certification",
+          "tone": "leaf",
+          "children": []
+        },
+        "manufacturing": {
+          "id": "manufacturing",
+          "label": "Manufacturing (Outsourced)",
+          "tone": "leaf",
+          "children": []
+        },
+        "reach": {
+          "id": "reach",
+          "label": "Reach (Partnerships First)",
+          "tone": "leaf",
+          "children": []
+        },
+        "service": {
+          "id": "service",
+          "label": "Service (Escalation Path)",
+          "tone": "leaf",
+          "children": []
+        },
+        "after-sales": {
+          "id": "after-sales",
+          "label": "After-Sales Support",
+          "tone": "leaf",
+          "children": []
+        },
+        "risks": {
+          "id": "risks",
+          "label": "Risks",
+          "tone": "support",
+          "children": []
+        }
+      },
+      "defaultExpanded": [
+        "root",
+        "market-attractiveness",
+        "operational-feasibility"
+      ],
+      "defaultFocusedId": "profit",
+      "notes": [
+        {
+          "title": "Questions",
+          "items": [
+            "Existing company or new startup?",
+            "Objective and timeline?",
+            "Pan-India or specific cities?",
+            "Any existing competitors?"
+          ]
+        },
+        {
+          "title": "Keep In Mind",
+          "items": [
+            "Anchor price against the real alternative",
+            "Don't recharge hardware to existing customers"
+          ]
+        },
+        {
+          "title": "Brownie Points",
+          "items": [
+            "Excluding the critically ill from the target market",
+            "Splitting willingness by who actually pays"
+          ]
+        }
+      ]
+    },
+    "additionalFrameworkTrees": [
+      {
+        "label": "Market Sizing",
+        "nodes": {
+          "india": {
+            "id": "india",
+            "label": "India (140 Cr)",
+            "tone": "root",
+            "children": [
+              "urban"
+            ]
+          },
+          "urban": {
+            "id": "urban",
+            "label": "Urban (30% = 42 Cr)",
+            "tone": "branch",
+            "children": [
+              "elderly"
+            ]
+          },
+          "elderly": {
+            "id": "elderly",
+            "label": "Elderly (10% = 4.2 Cr)",
+            "tone": "branch",
+            "children": [
+              "living-alone"
+            ]
+          },
+          "living-alone": {
+            "id": "living-alone",
+            "label": "Living Alone (15% = 63L)",
+            "tone": "branch",
+            "children": [
+              "excl-critical"
+            ]
+          },
+          "excl-critical": {
+            "id": "excl-critical",
+            "label": "Excl. Critically Ill (85% = 53.5L)",
+            "tone": "branch",
+            "children": [
+              "income-qualify"
+            ]
+          },
+          "income-qualify": {
+            "id": "income-qualify",
+            "label": "Income Qualifying (40% = 21.4L)",
+            "tone": "branch",
+            "children": [
+              "child-pays",
+              "self-pays"
+            ]
+          },
+          "child-pays": {
+            "id": "child-pays",
+            "label": "Child Pays (60% x 30% = 3.85L)",
+            "tone": "leaf",
+            "children": []
+          },
+          "self-pays": {
+            "id": "self-pays",
+            "label": "Self Pays (40% x 10% = 0.85L)",
+            "tone": "leaf",
+            "children": []
+          }
+        },
+        "defaultExpanded": [
+          "india",
+          "urban",
+          "elderly",
+          "living-alone",
+          "excl-critical",
+          "income-qualify"
+        ],
+        "defaultFocusedId": "income-qualify",
+        "notes": []
+      }
+    ],
+    "visualisations": [
+      {
+        "id": "revenue-build",
+        "type": "table",
+        "title": "Revenue Build: Year 1 vs Year 2",
+        "header": "Revenue Build: Year 1 vs Year 2",
+        "noTitle": true,
+        "columns": [
+          "Particulars",
+          "Year 1",
+          "Year 2"
+        ],
+        "columnWidths": [
+          "40%",
+          "30%",
+          "30%"
+        ],
+        "rows": [
+          [
+            "New households",
+            "47,000",
+            "47,000"
+          ],
+          [
+            "Retained households",
+            "-",
+            "47,000"
+          ],
+          [
+            "Revenue from new households",
+            "₹94 crore",
+            "₹94 crore"
+          ],
+          [
+            "Revenue from retained households",
+            "-",
+            "₹56.4 crore"
+          ],
+          [
+            "Total Revenue",
+            "₹94 crore",
+            "₹150.4 crore"
+          ]
+        ],
+        "summaryRows": [
+          4
+        ],
+        "insight": "Year 2 revenue isn't simply double year 1, since retained households only pay the subscription, not the hardware again."
+      },
+      {
+        "id": "cost-profit-build",
+        "type": "table",
+        "title": "Cost and Profit Build: Year 1 vs Year 2",
+        "header": "Cost and Profit Build: Year 1 vs Year 2",
+        "noTitle": true,
+        "columns": [
+          "Particulars",
+          "Year 1",
+          "Year 2"
+        ],
+        "columnWidths": [
+          "40%",
+          "30%",
+          "30%"
+        ],
+        "rows": [
+          [
+            "Total Variable Cost",
+            "₹33 crore",
+            "₹42.4 crore"
+          ],
+          [
+            "Fixed Cost",
+            "₹50 crore",
+            "₹25 crore"
+          ],
+          [
+            "Total Cost",
+            "₹83 crore",
+            "₹67.4 crore"
+          ],
+          [
+            "Revenue",
+            "₹94 crore",
+            "₹150.4 crore"
+          ],
+          [
+            "Profit",
+            "₹11 crore",
+            "₹83 crore"
+          ]
+        ],
+        "summaryRows": [
+          2,
+          4
+        ],
+        "insight": "Profit grows faster than revenue, since the one-time fixed setup cost doesn't repeat and retained households cost far less to serve."
+      },
+      {
+        "title": "Year 1 Households",
+        "type": "formula",
+        "lhs": "Year 1 Households",
+        "rhs": "Addressable Market x Year 1 Market Share"
+      },
+      {
+        "title": "Year 2 Revenue",
+        "type": "formula",
+        "lhs": "Year 2 Revenue",
+        "rhs": "(New Households x Hardware + Subscription) + (Retained Households x Subscription Only)"
+      },
+      {
+        "title": "Profit",
+        "type": "formula",
+        "lhs": "Profit",
+        "rhs": "Revenue - Variable Cost - Fixed Cost"
+      }
+    ],
+    "framework": "Candidate: Thank you. A few questions before I structure this. Is this an existing hardware or health-tech company adding this product, or a new startup with no track record in this space?\nInterviewer: A new startup, no prior product in the market.\nCandidate: Understood. What's the objective here, maximizing profit, market share, or something else, and is there a timeline in mind?\nInterviewer: Profit, and they'd like to see this succeed within about two to three years.\nCandidate: Is this being launched pan-India, or would we start with specific cities?\nInterviewer: Assume urban India broadly for this discussion.\nCandidate: Is there anything already in the market that competes for the same need, another product, or even a non-tech alternative?\nInterviewer: No direct AI-based competitor yet. The real alternative today is hiring some form of human help, a part-time attendant or domestic help who checks in.\nCandidate: That's useful. Any budget or regulatory constraints I should know about?\nInterviewer: No major constraints for now.\nCandidate: Thank you. I'd like to look at this in three parts. First, market attractiveness, the financial feasibility of the opportunity. Second, operational feasibility, how we'd actually build and deliver this. Third, the risks involved. Should I start with market attractiveness?\nInterviewer: Yes, go ahead.\nCandidate: I'll build this down from India's population, narrowing at each step to the households that would realistically buy this. I'll start with about 140 crore. Since this needs a certain income level and access to a service like this, I'd focus on urban India, commonly cited as around 30%, so about 42 crore.\nInterviewer: That's fine, go ahead.\nCandidate: Within that, I need the elderly. Senior citizens are commonly cited as around 10% of India's population, I'd use the same for urban areas. That's about 4.2 crore.\nInterviewer: Reasonable, use that.\nCandidate: Not all of them are the target though. I specifically want those living alone, no child nearby and not in an old-age home, since that's who actually needs this. I don't have an exact figure, but given how much internal migration for work there's been, I'd guess somewhere around 15 to 20%. Do you have a number you'd rather I use?\nInterviewer: 15% is fine.\nCandidate: That's about 63 lakh.\nBefore I go further, I want to flag one more group I'd exclude. Not everyone living alone is actually the right target for a sensor like this. Some would be critically ill or need full-time nursing care, and for them, a motion sensor doesn't really change anything, they either already have a full-time caregiver or urgently need one regardless. I'd set this group aside.\nInterviewer: Fair point. How much would you exclude?\nCandidate: I don't have a precise figure, I'd estimate around 15% of the living-alone group.\nInterviewer: That's reasonable, use 15%.\nCandidate: That brings 63 lakh down to about 53.5 lakh, elderly living independently, relatively healthy, but without anyone immediately around them.\nBefore I apply an income filter, I'd like to nail down the price first, since that tells me who can actually afford this. Do we have a sense of what the device and any ongoing service would cost?\nInterviewer: The device is about 8,000 rupees, one time. The ongoing monitoring service is about 12,000 rupees a year.\nCandidate: So a household spends about 20,000 rupees in year one. That's still cheaper than a couple of months of part-time attendant help, but it's a discretionary safety purchase, not a necessity, so I'd expect this to mainly be affordable to upper and upper-middle income households, roughly 40% of the urban population using the usual split.\nInterviewer: That's a fair way to cut it, go with 40%.\nCandidate: That's about 21.4 lakh income-qualifying elderly.\nNow for willingness. I don't think everyone here is equally likely to buy, and it depends on who's deciding. I'd split this into two groups. First, those who have a child who could pay, even living elsewhere, since a lot of urban elderly do have children who've moved cities or countries for work. I'd guess this is the bigger group, maybe 60%. For them, I'd expect decent acceptability, since it's really the child's own peace of mind driving it, maybe 30%.\nInterviewer: And the rest?\nCandidate: The other 40% would have to fund it themselves, out of pension or savings. I'd expect lower acceptability there, maybe 10%.\nInterviewer: Reasonable, go with both figures.\nCandidate: So that's 21.4 lakh times 60% times 30%, about 3.85 lakh, plus 21.4 lakh times 40% times 10%, about 0.85 lakh. Together, about 4.7 lakh households who'd realistically consider this.\nInterviewer: Good. How much of that would you capture in year one?\nCandidate: Since some other elder-safety products already exist in some form, I wouldn't assume a large first-year share. Something modest, around 10%, since we'd still be building trust.\nInterviewer: Sure, use 10%.\nCandidate: That's about 47,000 households. At 20,000 rupees each, hardware plus the first year's subscription, that's roughly 94 crore rupees in year one.\nInterviewer: Good. Now project this into year two. How would you approach it?\nCandidate: Carefully, because year two isn't just double the households at full price. The 47,000 from year one already own the device, so in year two they'd only pay the subscription, not buy the hardware again. Only households newly acquired in year two pay for both.\nInterviewer: Go ahead and build it.\nCandidate: If our cumulative share of the 4.7 lakh grows from 10% to about 20% by year two, on the back of a successful first year, that's 94,000 households total. 47,000 of those are the ones we already have, so the other 47,000 are new.\nYear two revenue would be the new 47,000 paying the full 20,000 rupees, that's 94 crore, plus the existing 47,000 paying just the 12,000 rupee subscription, about 56.4 crore. Total, around 150 crore.\nInterviewer: And if you'd charged all 94,000 the full price again?\nCandidate: That would be 188 crore, about 38 crore too high, since it wrongly assumes existing customers buy a new device every year.\nInterviewer: Exactly the trap I wanted to check for. Now let's look at costs.\nCandidate: For costs, I'd split this into variable costs, the ones that scale with each household, and fixed costs, the ones that don't.\nFor variable costs, I'd expect two things per household, the cost to manufacture the device, and the ongoing cost of running the monitoring and alert service. Do we have figures?\nInterviewer: The device costs about 5,000 rupees to manufacture. The monitoring service costs about 2,000 rupees per household per year.\nCandidate: So for a new household in year one, that's 7,000 rupees in variable cost. Against a price of 20,000 rupees, that leaves about 13,000 rupees of contribution per new household. With 47,000 households, total variable cost is about 33 crore.\nInterviewer: Good. What about fixed costs?\nCandidate: I'd expect that to cover building and training the AI model, certifying the hardware, setting up manufacturing, and the core team and marketing needed to launch. Do we have a number?\nInterviewer: Assume that's about 50 crore in year one.\nCandidate: Revenue of 94 crore, minus 33 crore variable cost, minus 50 crore fixed cost, gives a year one profit of about 11 crore.\nInterviewer: Now project this into year two. What happens to costs?\nCandidate: I'd be as careful here as I was with revenue. A large part of that 50 crore was a one-time setup, building the model, certifying the hardware, standing up manufacturing. That shouldn't recur at the same level. What continues is really just the core team and some ongoing marketing.\nInterviewer: Good instinct. Assume the recurring portion from year two onward is about 25 crore.\nCandidate: For variable costs, I'd split by new versus retained households the same way as revenue. New households still cost 7,000 rupees each. Retained households already own the device, so they only cost the 2,000 rupee monitoring fee.\n47,000 new households at 7,000 rupees is about 33 crore. 47,000 retained households at 2,000 rupees is about 9.4 crore. Total variable cost, about 42.4 crore.\nInterviewer: And profit?\nCandidate: Revenue of about 150 crore, minus 42.4 crore variable cost, minus 25 crore fixed cost, gives a year two profit of about 83 crore.\nInterviewer: That's a big jump from year one. What's driving it?\nCandidate: Two things. The one-time setup cost from year one doesn't repeat. And half of year two's customers are existing households who only cost the monitoring fee, not the hardware, so margin on that side is much higher. Profit grows faster than revenue.\nInterviewer: Clean answer. Let's move to operational feasibility.\nCandidate: I'd lay this out as six steps: building the model, certification, manufacturing, reaching customers, service delivery, and after-sales support.\nInterviewer: Sure, walk me through each.\nCandidate: First, building the model. This means training the AI to reliably tell a fall or unusual inactivity apart from normal movement, which needs a fair amount of real usage data before we could trust it in someone's home.\nInterviewer: Go on.\nCandidate: Second, certification. Since this is a device making safety-related calls in someone's home, it would likely need to clear some safety and quality certification before we could sell it.\nInterviewer: Fair. Next?\nCandidate: Third, manufacturing. Since we're a new startup without our own factory, and there's nothing proprietary about the hardware itself, I'd outsource this to an existing contract manufacturer rather than build our own facility. It's faster to market and needs far less upfront capital.\nInterviewer: Makes sense. Go on.\nCandidate: Fourth, reaching customers. I see two options, selling directly to families ourselves, or partnering with people who already have this customer's trust, hospitals, insurers, elder-care agencies, resident welfare associations. Since we're a new, unproven brand and this is a personal, trust-sensitive purchase, I'd start through partnerships and open up direct sales once we've built a track record.\nInterviewer: Reasonable. And service delivery?\nCandidate: This is what happens once someone's actually using it. I'd want a clear escalation path, if the sensor flags something and the primary contact doesn't respond in time, it tries a backup contact, and if no one responds at all, it escalates further, to a local emergency service or a neighbour.\nInterviewer: Last one, support?\nCandidate: After the sale, I'd handle device replacements if something malfunctions, and keep improving the model over time as more real cases come through.\nInterviewer: Good structure. That covers everything we wanted to go through today. We can close the case here.\n\nHome Alone: Sensing an Elder-Care Opportunity Framework\nSHOULD AN AI-ENABLED ELDER-CARE SENSOR LAUNCH IN INDIA\nClarifying Questions: Existing company or new startup? Objective and timeline? Pan-India or specific cities? Any existing competitors?\nBrownie Points: Excluding the critically ill from the target market. Splitting willingness by who actually pays.\nKeep In Mind: Anchor price against the real alternative. Don't recharge hardware to existing customers."
   }
 ]

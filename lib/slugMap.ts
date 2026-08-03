@@ -102,4 +102,5 @@ export const SLUG_TO_DOC_ID: Record<string, string> = {
   "no-of-fence": "case-85",
   "waddle-we-eat": "case-86",
   "mile-high-club": "case-87",
+  "home-alone-sensing-an-elder-care-opportunity": "case-90",
 }
