@@ -8,8 +8,8 @@ import {
   parseDMY,
   resolvePerTypeGoals,
   resolveTotalState,
-  startOfDay,
 } from '@/lib/goalTracker/engine';
+import { useToday } from '@/lib/hooks/useToday';
 import { FLOW1_COPY } from '@/lib/goalTracker/copy';
 import type { CopyContext } from '@/lib/goalTracker/copy';
 import type { FlowRenderProps } from './types';
@@ -17,9 +17,9 @@ import TGRGauge from './TGRGauge';
 import StateChip from './StateChip';
 
 /** Flow 1 — Total + Deadline. Full pace-banded 8-state table (§3). */
-export default function Flow1TotalDeadline({ config, counts, onEdit, onReset, onShowExclusions, onStateResolved }: FlowRenderProps) {
+export default function Flow1TotalDeadline({ config, counts, onEdit, onReset, onShowExclusions, onQuickAdjust, onStateResolved }: FlowRenderProps) {
   const { done, doneByType } = counts;
-  const today = useMemo(() => startOfDay(new Date()), []);
+  const today = useToday();
   const start = useMemo(() => parseDMY(config.startDate), [config.startDate]);
   const end = useMemo(() => parseDMY(config.endDate), [config.endDate]);
 
@@ -103,8 +103,8 @@ export default function Flow1TotalDeadline({ config, counts, onEdit, onReset, on
             <div className="flex items-center gap-2 mt-1">
               <button onClick={onReset} className="gt-cta flex-1 !py-2 !text-[11px]">Set a new goal</button>
               {state === 'fellShort' && (
-                <button onClick={onEdit} className="flex-1 !py-2 text-[11px] font-semibold rounded-[10px] border border-[#3D5A35]/25 text-[#3D5A35]">
-                  Extend deadline
+                <button onClick={onQuickAdjust} className="flex-1 !py-2 text-[11px] font-semibold rounded-[10px] border border-[#3D5A35]/25 text-[#3D5A35]">
+                  Adjust goal
                 </button>
               )}
             </div>

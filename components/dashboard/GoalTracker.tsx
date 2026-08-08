@@ -8,8 +8,8 @@ import { goalDoc, goalHistoryCol } from '@/lib/firebase/collections';
 import type { GoalConfig } from '@/lib/firebase/schema';
 import { useDashboard } from './DashboardContext';
 import { subscribeGoalCounts, type GoalCountResult } from '@/lib/goalTracker/sessionCounts';
-import { computeStreak, parseDMY, resolveFlow, startOfDay, type CadenceUnit, type GoalState } from '@/lib/goalTracker/engine';
-import FlowRenderer, { ExclusionsPanel, AskTrackerButton, FreshVsPastStep } from './goal-tracker';
+import { computeStreak, deriveImpliedTotal, parseDMY, resolveFlow, startOfDay, type CadenceUnit, type GoalState } from '@/lib/goalTracker/engine';
+import FlowRenderer, { ExclusionsPanel, AdjustGoalPanel, AskTrackerButton, FreshVsPastStep } from './goal-tracker';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -41,12 +41,6 @@ function daysFromTomorrow(end: Date): number {
   const t = new Date(); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() + 1);
   const e = new Date(end); e.setHours(0, 0, 0, 0);
   return Math.max(0, Math.round((e.getTime() - t.getTime()) / 86400000) + 1);
-}
-
-function calcAutoTotal(count: number, every: number, unit: 'days' | 'weeks' | 'months', end: Date): number {
-  const days = daysFromTomorrow(end);
-  const period = unit === 'days' ? every : unit === 'weeks' ? every * 7 : every * 30;
-  return period > 0 ? count * Math.floor(days / period) : 0;
 }
 
 function getTodayDMY(): string {
@@ -121,6 +115,7 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
   const [animKey, setAnimKey]     = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [showExclusions, setShowExclusions] = useState(false);
+  const [showAdjust, setShowAdjust] = useState(false);
 
   const [hasEndDate, setHasEndDate]     = useState<boolean | null>(null);
   const [endDate, setEndDate]           = useState('');      // DD/MM/YYYY
@@ -218,9 +213,15 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
     if (hasEndDate && daysLeft > 0 && daysLeft < 7 && rUnit !== 'days') setRUnit('days');
   }, [hasEndDate, daysLeft]);
 
+  // Anchored on the same startDate the goal will actually be saved with
+  // (today for a new goal, the immutable saved startDate when editing) so
+  // this agrees with Flow3CadenceDeadline's live-rendered total, which
+  // anchors on config.startDate too.
+  const wizardStartDate = isEditing && savedConfig ? parseDMY(savedConfig.startDate) : startOfDay(new Date());
+
   const autoTotal: number | null =
-    hasEndDate && endDateObj && rCount && rEvery
-      ? calcAutoTotal(+rCount, +rEvery, rUnit, endDateObj)
+    hasEndDate && endDateObj && rCount && rEvery && wizardStartDate
+      ? deriveImpliedTotal(+rCount, +rEvery, rUnit, wizardStartDate, endDateObj)
       : null;
 
   const effectiveTotal = typeof totalCases === 'number' && totalCases > 0
@@ -403,7 +404,7 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
     }
   };
 
-  const handleExclusionsSave = async (patch: Partial<GoalConfig>) => {
+  const handleConfigPatch = async (patch: Partial<GoalConfig>) => {
     if (!user) return;
     await setDoc(goalDoc(user.uid), { ...patch, updatedAt: serverTimestamp() }, { merge: true });
   };
@@ -638,8 +639,14 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
           <ExclusionsPanel
             config={savedConfig}
             countedSessions={counts.countedSessions}
-            onSave={handleExclusionsSave}
+            onSave={handleConfigPatch}
             onClose={() => setShowExclusions(false)}
+          />
+        ) : showAdjust ? (
+          <AdjustGoalPanel
+            config={savedConfig}
+            onSave={handleConfigPatch}
+            onClose={() => setShowAdjust(false)}
           />
         ) : (
           <>
@@ -649,6 +656,7 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
               onEdit={startEdit}
               onReset={reset}
               onShowExclusions={() => setShowExclusions(true)}
+              onQuickAdjust={() => setShowAdjust(true)}
               onStateResolved={setResolvedState}
             />
             <div className="border-t border-[#5C4033]/6 pt-3 mt-1 flex justify-center">

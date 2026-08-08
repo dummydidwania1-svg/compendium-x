@@ -145,6 +145,29 @@ export function derivePeriods(
   return periods
 }
 
+/**
+ * Implied total cases for a cadence+deadline goal (Flow 3): rate x number of
+ * cadence periods that start on/before the deadline (a trailing partial
+ * period still counts, since cases can be logged toward it right up to the
+ * deadline). Anchored on `startDate`, matching the period boundaries
+ * `computeStreak` uses, so the rhythm and total sides of Flow 3 agree on
+ * where periods fall.
+ *
+ * Single source of truth: both the wizard's save-time total and the live
+ * dashboard total must call this — do not reimplement this math elsewhere.
+ */
+export function deriveImpliedTotal(
+  recurringCount: number,
+  recurringEvery: number,
+  recurringUnit: CadenceUnit,
+  startDate: Date,
+  endDate: Date,
+): number {
+  if (recurringCount <= 0 || recurringEvery <= 0) return 0
+  const periods = derivePeriods(startDate, recurringUnit, recurringEvery, endDate)
+  return recurringCount * periods.length
+}
+
 /** Finds the period containing `date`, or null if `date` is before the first period. */
 export function findPeriodFor(periods: CadencePeriod[], date: Date): CadencePeriod | null {
   const t = startOfDay(date).getTime()
@@ -307,6 +330,18 @@ function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+/**
+ * Parses a `toISODate`-shaped "YYYY-MM-DD" string into a local-midnight Date.
+ * Unlike `new Date(isoString)`, which parses a date-only ISO string as UTC
+ * midnight per spec, this stays in local time — required whenever the result
+ * is compared against another local-midnight Date (e.g. `startOfDay(new
+ * Date())`), or the comparison silently shifts by the local UTC offset.
+ */
+export function parseISODateLocal(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 /* -------------------------------------------------------------------------- */
 /* Per-case-type sub-goal resolution (flow-aware, §4 of the locked spec)      */
 /* -------------------------------------------------------------------------- */
@@ -390,6 +425,11 @@ export function resolveTotalState(
   daysRemaining: number | null,
   dateHasPassed: boolean,
 ): GoalState {
+  // A non-positive total isn't a real target to be "done >= total" against —
+  // without this, a fresh goal with total 0 reads `0 >= 0` as true and shows
+  // "complete" before the user has done anything. Surface it as "not started
+  // yet" instead of a false completion.
+  if (total <= 0) return 'zero'
   if (dateHasPassed) return done >= total ? 'completeEarly' : 'fellShort'
   if (done >= total) return 'completeEarly'
   if (done === 0) return 'zero'

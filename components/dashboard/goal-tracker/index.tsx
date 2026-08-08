@@ -23,5 +23,6 @@ export default function FlowRenderer(props: FlowRenderProps) {
 
 export type { FlowRenderProps } from './types'
 export { default as ExclusionsPanel } from './ExclusionsPanel'
+export { default as AdjustGoalPanel } from './AdjustGoalPanel'
 export { default as AskTrackerButton } from './AskTrackerButton'
 export { default as FreshVsPastStep } from './wizardSteps/FreshVsPastStep'

@@ -4,13 +4,15 @@ import { useEffect, useMemo } from 'react';
 import {
   classifyPace,
   computeStreak,
+  deriveImpliedTotal,
   parseDMY,
+  parseISODateLocal,
   resolvePerTypeGoals,
   resolveRhythmState,
   resolveTotalState,
-  startOfDay,
   type CadenceUnit,
 } from '@/lib/goalTracker/engine';
+import { useToday } from '@/lib/hooks/useToday';
 import { FLOW3_RHYTHM_COPY, FLOW3_TOTAL_COPY } from '@/lib/goalTracker/copy';
 import type { CopyContext } from '@/lib/goalTracker/copy';
 import type { FlowRenderProps } from './types';
@@ -27,11 +29,13 @@ import { HeaderRow } from './Flow1TotalDeadline';
  */
 export default function Flow3CadenceDeadline({ config, counts, onEdit, onReset, onShowExclusions, onStateResolved }: FlowRenderProps) {
   const { done, doneByType, countedSessions } = counts
-  const today = useMemo(() => startOfDay(new Date()), [])
+  const today = useToday()
   const start = useMemo(() => parseDMY(config.startDate), [config.startDate])
   const end = useMemo(() => parseDMY(config.endDate), [config.endDate])
 
-  const impliedTotal = config.recurringCount * derivePeriodCountEstimate(config, start, end)
+  const impliedTotal = start && end
+    ? deriveImpliedTotal(config.recurringCount, config.recurringEvery, config.recurringUnit as CadenceUnit, start, end)
+    : 0
 
   const totalPace = useMemo(() => {
     if (!start || !end) return null
@@ -49,7 +53,7 @@ export default function Flow3CadenceDeadline({ config, counts, onEdit, onReset, 
   }, [countedSessions, config.recurringUnit, config.recurringEvery, config.recurringCount, start, today])
 
   const currentPeriod = streak?.periodHistory[streak.periodHistory.length - 1] ?? null
-  const previousClosed = currentPeriod && new Date(currentPeriod.periodEnd) <= today ? currentPeriod : null
+  const previousClosed = currentPeriod && parseISODateLocal(currentPeriod.periodEnd) <= today ? currentPeriod : null
   const rhythmState = resolveRhythmState(previousClosed ? null : currentPeriod, previousClosed)
 
   const dateHasPassed = end ? today.getTime() > end.getTime() : false
@@ -65,7 +69,7 @@ export default function Flow3CadenceDeadline({ config, counts, onEdit, onReset, 
   const totalTemplate = FLOW3_TOTAL_COPY[totalState]
 
   const daysLeftInPeriod = currentPeriod
-    ? Math.max(0, Math.round((new Date(currentPeriod.periodEnd).getTime() - today.getTime()) / 86_400_000))
+    ? Math.max(0, Math.round((parseISODateLocal(currentPeriod.periodEnd).getTime() - today.getTime()) / 86_400_000))
     : 0
 
   const ctx: CopyContext = {
@@ -152,16 +156,4 @@ export default function Flow3CadenceDeadline({ config, counts, onEdit, onReset, 
       )}
     </div>
   )
-}
-
-/** Estimates how many cadence periods fit between startDate and endDate, for the implied-total calc. */
-function derivePeriodCountEstimate(
-  config: { recurringUnit: string; recurringEvery: number },
-  start: Date | null,
-  end: Date | null,
-): number {
-  if (!start || !end) return 0
-  const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000))
-  const periodDays = config.recurringUnit === 'days' ? config.recurringEvery : config.recurringUnit === 'weeks' ? config.recurringEvery * 7 : config.recurringEvery * 30
-  return periodDays > 0 ? Math.max(1, Math.round(days / periodDays)) : 1
 }

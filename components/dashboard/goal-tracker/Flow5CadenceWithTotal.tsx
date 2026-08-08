@@ -4,12 +4,13 @@ import { useEffect, useMemo } from 'react';
 import {
   computeStreak,
   parseDMY,
+  parseISODateLocal,
   resolveFlatNoDeadlineState,
   resolvePerTypeGoals,
   resolveRhythmState,
-  startOfDay,
   type CadenceUnit,
 } from '@/lib/goalTracker/engine';
+import { useToday } from '@/lib/hooks/useToday';
 import { FLOW4_COPY, FLOW5_TOTAL_COPY } from '@/lib/goalTracker/copy';
 import type { CopyContext } from '@/lib/goalTracker/copy';
 import type { FlowRenderProps } from './types';
@@ -25,7 +26,7 @@ import { HeaderRow } from './Flow1TotalDeadline';
  */
 export default function Flow5CadenceWithTotal({ config, counts, onEdit, onReset, onShowExclusions, onStateResolved }: FlowRenderProps) {
   const { done, doneByType, countedSessions } = counts
-  const today = useMemo(() => startOfDay(new Date()), [])
+  const today = useToday()
   const start = useMemo(() => parseDMY(config.startDate), [config.startDate])
 
   const streak = useMemo(() => {
@@ -39,7 +40,7 @@ export default function Flow5CadenceWithTotal({ config, counts, onEdit, onReset,
   }, [countedSessions, config.recurringUnit, config.recurringEvery, config.recurringCount, start, today])
 
   const currentPeriod = streak?.periodHistory[streak.periodHistory.length - 1] ?? null
-  const previousClosed = currentPeriod && new Date(currentPeriod.periodEnd) <= today ? currentPeriod : null
+  const previousClosed = currentPeriod && parseISODateLocal(currentPeriod.periodEnd) <= today ? currentPeriod : null
   const rhythmState = resolveRhythmState(previousClosed ? null : currentPeriod, previousClosed)
   const totalState = resolveFlatNoDeadlineState(done, config.totalCases)
 

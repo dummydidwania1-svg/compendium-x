@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { computeStreak, parseDMY, resolveRhythmState, startOfDay, type CadenceUnit } from '@/lib/goalTracker/engine';
+import { computeStreak, parseDMY, parseISODateLocal, resolveRhythmState, type CadenceUnit } from '@/lib/goalTracker/engine';
+import { useToday } from '@/lib/hooks/useToday';
 import { FLOW4_COPY } from '@/lib/goalTracker/copy';
 import type { CopyContext } from '@/lib/goalTracker/copy';
 import type { FlowRenderProps } from './types';
@@ -16,7 +17,7 @@ import { HeaderRow } from './Flow1TotalDeadline';
  */
 export default function Flow4CadenceHabit({ config, counts, onEdit, onReset, onShowExclusions, onStateResolved }: FlowRenderProps) {
   const { countedSessions } = counts
-  const today = useMemo(() => startOfDay(new Date()), [])
+  const today = useToday()
   const start = useMemo(() => parseDMY(config.startDate), [config.startDate])
 
   const streak = useMemo(() => {
@@ -30,7 +31,7 @@ export default function Flow4CadenceHabit({ config, counts, onEdit, onReset, onS
   }, [countedSessions, config.recurringUnit, config.recurringEvery, config.recurringCount, start, today])
 
   const currentPeriod = streak?.periodHistory[streak.periodHistory.length - 1] ?? null
-  const previousClosed = currentPeriod && new Date(currentPeriod.periodEnd) <= today ? currentPeriod : null
+  const previousClosed = currentPeriod && parseISODateLocal(currentPeriod.periodEnd) <= today ? currentPeriod : null
   const state = resolveRhythmState(previousClosed ? null : currentPeriod, previousClosed)
   const template = FLOW4_COPY[state]
 

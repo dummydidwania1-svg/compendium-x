@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { resolveFlatNoDeadlineState, resolvePerTypeGoals, startOfDay } from '@/lib/goalTracker/engine';
+import { resolveFlatNoDeadlineState, resolvePerTypeGoals } from '@/lib/goalTracker/engine';
+import { useToday } from '@/lib/hooks/useToday';
 import { FLOW2_COPY } from '@/lib/goalTracker/copy';
 import type { CopyContext } from '@/lib/goalTracker/copy';
 import type { FlowRenderProps } from './types';
@@ -14,7 +15,7 @@ import { HeaderRow } from './Flow1TotalDeadline';
  */
 export default function Flow2TotalNoDeadline({ config, counts, onEdit, onReset, onShowExclusions, onStateResolved }: FlowRenderProps) {
   const { done, doneByType } = counts
-  const today = useMemo(() => startOfDay(new Date()), [])
+  const today = useToday()
   const state = resolveFlatNoDeadlineState(done, config.totalCases)
   const template = FLOW2_COPY[state]
 

@@ -9,6 +9,8 @@ export interface FlowRenderProps {
   onEdit: () => void
   onReset: () => void
   onShowExclusions: () => void
+  /** Opens the lightweight fell-short adjust panel (change total and/or deadline independently, no forced wizard walk-through). */
+  onQuickAdjust: () => void
   /** Reported up so the orchestrator can pass it to AskTrackerButton for redundancy context. */
   onStateResolved: (state: GoalState) => void
 }
