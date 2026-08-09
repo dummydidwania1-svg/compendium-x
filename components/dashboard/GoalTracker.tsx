@@ -660,7 +660,7 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
               onStateResolved={setResolvedState}
             />
             <div className="border-t border-[#5C4033]/6 pt-3 mt-1 flex justify-center">
-              <AskTrackerButton goalState={resolvedState} />
+              <AskTrackerButton goalState={resolvedState} onAdjust={() => setShowAdjust(true)} />
             </div>
           </>
         )

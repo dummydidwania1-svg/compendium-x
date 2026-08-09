@@ -1,20 +1,22 @@
 /**
  * POST /api/goal-insight
  *
- * Server-side, on-demand only (never auto-fires): computes the ~25 AI-insight
+ * Server-side, on-demand only (never auto-fires): computes the AI-insight
  * shape candidates for the caller's active goal, ranks them via Vertex AI
  * (gemini-3.6-flash), fills the winning shape into a short buddy-tone
  * sentence, validates it, retries once with a stricter prompt on failure,
  * then gives up cleanly. Zero-candidates and retry-exhausted both return
  * `{ insight: null }` — the client treats both identically (silent revert to
- * idle "Ask Tracker").
+ * idle "Ask Tracker"). The response also carries the winning candidate's
+ * `dimension` (and `targetType` where relevant) so the client can render the
+ * matching call-to-action instead of just a passive sentence.
  */
 import { z } from 'zod'
 import { adminDb } from '@/lib/firebase/admin'
 import { jsonOk, parseBody } from '@/lib/api/responses'
 import { authenticatedRoute } from '@/lib/api/route'
-import { goalConfigSchema, goalHistoryEntrySchema } from '@/lib/firebase/schema'
-import { computeShapeCandidates, type EvaluationScoreRow } from '@/lib/goalTracker/insightShapes'
+import { goalConfigSchema } from '@/lib/firebase/schema'
+import { computeShapeCandidates } from '@/lib/goalTracker/insightShapes'
 import { callVertexFill, callVertexRank, validateInsight } from '@/lib/goalTracker/vertexInsight'
 import { filterCountedSessions, type CountedSession } from '@/lib/goalTracker/goalCountFilter'
 import { normalizeCaseType } from '@/lib/dashboard/live'
@@ -44,10 +46,9 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
   if (!configResult.success) return jsonOk({ insight: null })
   const config = configResult.data
 
-  const [sessionsSnap, evaluationsSnap, historySnap] = await Promise.all([
+  const [sessionsSnap, evaluationsSnap] = await Promise.all([
     adminDb.collection('sessions').where('candidateId', '==', caller.uid).where('status', '==', 'completed').get(),
     adminDb.collection('evaluations').where('candidateId', '==', caller.uid).get(),
-    adminDb.collection('goalHistory').doc(caller.uid).collection('entries').get(),
   ])
 
   const caseIds = [...new Set(sessionsSnap.docs.map((d) => d.data().caseId).filter(Boolean))] as string[]
@@ -59,17 +60,9 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
     }),
   )
 
-  const evaluations: EvaluationScoreRow[] = evaluationsSnap.docs.map((d) => {
-    const data = d.data()
-    return {
-      lobbyId: data.lobbyId ?? null,
-      createdAtMs: data.createdAt?.toMillis?.() ?? 0,
-      structureScore: data.structureScore ?? null,
-      understandingScore: data.understandingScore ?? null,
-      deliveryScore: data.deliveryScore ?? null,
-      creativityScore: data.creativityScore ?? null,
-    }
-  })
+  // Only isRated is needed downstream (the score fields fed the now-removed
+  // score-correlation detectors) — kept lightweight rather than dropping the
+  // evaluations read entirely, since countMode: 'rated' still depends on it.
   const ratedLobbyIds = new Set(
     evaluationsSnap.docs.filter((d) => d.data().lobbyId && !d.data().isUnrated).map((d) => d.data().lobbyId as string),
   )
@@ -85,11 +78,6 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
     }
   })
   const countedSessions = filterCountedSessions(candidateSessions, config)
-
-  const goalHistory = historySnap.docs
-    .map((d) => goalHistoryEntrySchema.safeParse(d.data()))
-    .filter((r) => r.success)
-    .map((r) => r.data)
 
   const today = startOfDay(localMidnightMs != null ? new Date(localMidnightMs) : new Date())
   const flow = resolveFlow(config)
@@ -112,8 +100,6 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
 
   const candidates = computeShapeCandidates({
     countedSessions,
-    evaluations,
-    goalHistory,
     config,
     currentState,
     today,
@@ -147,7 +133,14 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
     }
 
     console.log('[goal-insight] shipped insight', { uid: caller.uid, shapeId: winningCandidate.shapeId, text: result.text })
-    return jsonOk({ insight: { text: result.text, shapeId: winningCandidate.shapeId } })
+    return jsonOk({
+      insight: {
+        text: result.text,
+        shapeId: winningCandidate.shapeId,
+        dimension: winningCandidate.dimension,
+        targetType: winningCandidate.targetType ?? null,
+      },
+    })
   } catch (err) {
     console.log('[goal-insight] vertex call threw', { uid: caller.uid, error: err instanceof Error ? err.message : String(err) })
     return jsonOk({ insight: null })

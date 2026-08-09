@@ -422,6 +422,17 @@ const [companyFilter, setCompanyFilter] = useState<string[]>([])
   const prevCaseName = searchParams.get('prevCaseName') ?? ''
   const isReplaceMode = selectionMode && !!lobbyId && !!prevCaseId
 
+  // Seeds the type filter from ?type= on first load only — lets an external
+  // deep link (e.g. the goal tracker's "Practice this now" insight CTA) land
+  // pre-filtered, without fighting the user if they clear the filter afterward.
+  const initialTypeAppliedRef = useRef(false)
+  useEffect(() => {
+    if (initialTypeAppliedRef.current) return
+    initialTypeAppliedRef.current = true
+    const typeParam = searchParams.get('type')
+    if (typeParam) setTypeFilter([typeParam])
+  }, [searchParams])
+
 
   const showSectionBands = typeFilter.length !== 1;
 

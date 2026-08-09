@@ -1,27 +1,57 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
 import { apiPost } from '@/lib/api/client';
 import type { GoalState } from '@/lib/goalTracker/engine';
+import type { InsightDimension } from '@/lib/goalTracker/insightShapes';
 
 /**
  * Replaces the deleted fake "Strategy insight" block entirely. Never
  * auto-renders — only fires on click. Full locked visual spec (idle / hover /
  * loading / result / failure), all states reusing existing platform
  * animations rather than inventing new ones.
+ *
+ * Every insight now ships with a call-to-action pair matched to its
+ * dimension, rather than a passive sentence: cadencePace/frontBackLoading/
+ * slipTiming open the Adjust Goal panel (cadence/total/deadline); perType
+ * Stalling deep-links straight into practicing the specific neglected case
+ * type. The "no" option is a plain dismiss — this is a nudge, not a nag.
  */
 const LOADING_VERBS = ['Noticing', 'Sensing', 'Reading the rhythm', 'Weighing it up', 'Almost there']
 
 type ButtonState = 'idle' | 'loading' | 'result'
 
-interface InsightResponse {
-  insight: { text: string; shapeId: string } | null
+interface Insight {
+  text: string
+  shapeId: string
+  dimension: InsightDimension
+  targetType: string | null
 }
 
-export default function AskTrackerButton({ goalState: _goalState }: { goalState: GoalState }) {
+interface InsightResponse {
+  insight: Insight | null
+}
+
+const CTA_COPY: Record<InsightDimension, { primary: string; secondary: string }> = {
+  cadencePace: { primary: 'Adjust my goal', secondary: "No, I'll stay the course" },
+  frontBackLoading: { primary: 'Adjust my goal', secondary: "No, I'll catch up as-is" },
+  slipTiming: { primary: 'Adjust my goal', secondary: "No, I'll stay the course" },
+  perTypeStalling: { primary: 'Practice this now', secondary: "No, I'll get to it" },
+}
+
+export default function AskTrackerButton({
+  goalState: _goalState,
+  onAdjust,
+}: {
+  goalState: GoalState
+  /** Opens the goal's Adjust panel (cadence/total/deadline), for the three dimensions whose fix is a config change. */
+  onAdjust: () => void
+}) {
+  const router = useRouter()
   const [state, setState] = useState<ButtonState>('idle')
-  const [insightText, setInsightText] = useState<string | null>(null)
+  const [insight, setInsight] = useState<Insight | null>(null)
   const [verbIdx, setVerbIdx] = useState(0)
   const [hovered, setHovered] = useState(false)
   const lastShapeIdRef = useRef<string | null>(null)
@@ -51,7 +81,7 @@ export default function AskTrackerButton({ goalState: _goalState }: { goalState:
       stopVerbCycle()
       if (res.insight) {
         lastShapeIdRef.current = res.insight.shapeId
-        setInsightText(res.insight.text)
+        setInsight(res.insight)
         setState('result')
       } else {
         setState('idle') // zero-candidates or server-side retry-exhausted — silent revert
@@ -62,18 +92,50 @@ export default function AskTrackerButton({ goalState: _goalState }: { goalState:
     }
   }
 
-  if (state === 'result' && insightText) {
+  const dismiss = () => {
+    setInsight(null)
+    setState('idle')
+  }
+
+  const handlePrimary = () => {
+    if (!insight) return
+    if (insight.dimension === 'perTypeStalling') {
+      const params = insight.targetType ? `?type=${encodeURIComponent(insight.targetType)}` : ''
+      router.push(`/repository${params}`)
+      dismiss()
+      return
+    }
+    onAdjust()
+    dismiss()
+  }
+
+  if (state === 'result' && insight) {
+    const cta = CTA_COPY[insight.dimension]
     return (
-      <div
-        className="flex items-start gap-1.5 px-3 py-2"
-        style={{ animation: '_ci 0.4s ease forwards' }}
-      >
-        <Sparkles className="w-3 h-3 shrink-0 mt-[1px]" style={{ color: '#3D5A35', opacity: 0.75 }} />
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[7.5px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35]/55">
-            Insight
-          </span>
-          <p className="text-[11px] text-[#3B2F2F]/78 leading-snug">{insightText}</p>
+      <div className="flex flex-col gap-2.5 px-3 py-2 w-full" style={{ animation: '_ci 0.4s ease forwards' }}>
+        <div className="flex items-start gap-1.5">
+          <Sparkles className="w-3 h-3 shrink-0 mt-[1px]" style={{ color: '#3D5A35', opacity: 0.75 }} />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[7.5px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35]/55">
+              Insight
+            </span>
+            <p className="text-[11px] text-[#3B2F2F]/78 leading-snug">{insight.text}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 pl-[18px]">
+          <button
+            onClick={handlePrimary}
+            className="text-[10px] font-semibold px-2.5 py-1 rounded-full transition-colors"
+            style={{ background: 'rgba(61,90,53,0.12)', color: '#3D5A35' }}
+          >
+            {cta.primary}
+          </button>
+          <button
+            onClick={dismiss}
+            className="text-[10px] font-medium text-[#5C4033]/45 hover:text-[#5C4033]/70 transition-colors"
+          >
+            {cta.secondary}
+          </button>
         </div>
       </div>
     )
