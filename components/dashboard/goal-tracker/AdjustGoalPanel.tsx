@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import CalendarPicker from '@/components/ui/CalendarPicker';
+import { resolveFlow } from '@/lib/goalTracker/engine';
 import type { GoalConfig } from '@/lib/firebase/schema';
 
 interface AdjustGoalPanelProps {
@@ -35,8 +36,12 @@ const CADENCE_UNITS: Array<'days' | 'weeks' | 'months'> = ['days', 'weeks', 'mon
  *  - Cadence only shown for cadence goals (Flow 3/4/5).
  */
 export default function AdjustGoalPanel({ config, onSave, onClose }: AdjustGoalPanelProps) {
-  const isCadenceDeadline = config.goalKind === 'cadence' && config.hasEndDate;
-  const showTotal = !isCadenceDeadline;
+  const flow = resolveFlow(config);
+  // Flow 3's total is always recomputed from cadence+dates (never read from
+  // storage) and Flow 4 has no total concept at all (pure habit, no total
+  // bar ever) — showing the field there would either be a silent no-op or
+  // force a value the goal was never meant to have.
+  const showTotal = flow !== 3 && flow !== 4;
   const showDeadline = config.hasEndDate;
   const showCadence = config.goalKind === 'cadence';
 

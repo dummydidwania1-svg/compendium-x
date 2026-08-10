@@ -81,15 +81,27 @@ export function subscribeGoalCounts(
   const unsubSessions = onSnapshot(
     query(sessionsCol, where('candidateId', '==', uid), where('status', '==', 'completed')),
     (snap) => {
-      latestSessions = snap.docs.map((d) => {
-        const data = d.data()
-        return {
-          sessionId: d.id,
-          caseId: data.caseId ?? null,
-          completedAtMs: data.completedAt?.toMillis() ?? data.updatedAt?.toMillis() ?? 0,
-          createdAtMs: data.createdAt?.toMillis() ?? 0,
-        }
-      })
+      latestSessions = snap.docs
+        .map((d) => {
+          const data = d.data()
+          const completedAtMs = data.completedAt?.toMillis() ?? data.updatedAt?.toMillis() ?? null
+          if (completedAtMs == null) {
+            // No app-level timestamp at all — the client SDK has no access
+            // to Firestore's own server-side document-creation time (that's
+            // Admin-SDK-only, see the equivalent fallback in
+            // app/api/goal-insight/route.ts), so there's no honest date left
+            // to fall back to. Excluded rather than counted under a fake one.
+            console.warn('[sessionCounts] session missing all timestamps, excluding from goal count', { sessionId: d.id })
+            return null
+          }
+          return {
+            sessionId: d.id,
+            caseId: data.caseId ?? null,
+            completedAtMs,
+            createdAtMs: data.createdAt?.toMillis() ?? 0,
+          }
+        })
+        .filter((s): s is NonNullable<typeof s> => s !== null)
       void recompute()
     },
   )

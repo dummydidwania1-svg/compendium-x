@@ -69,6 +69,12 @@ function buildInsightSignature(config: GoalConfig, countedSessions: CountedSessi
     config.recurringEvery,
     config.recurringUnit,
     config.totalCases,
+    config.hasPerType,
+    // detectPerTypeSubGoalStalling/detectUntouchedTypeGap read config.perType
+    // directly — omitting it would let a per-type-target edit serve a stale
+    // cached insight even though the session/config-total fingerprint above
+    // didn't change.
+    JSON.stringify(config.perType),
   ].join('|')
   return `${dayKey}:${sessionCount}:${latestCompletedAtMs}:${configPart}`
 }
@@ -112,11 +118,19 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
 
   const candidateSessions: CountedSession[] = sessionsSnap.docs.map((d) => {
     const data = d.data()
+    // Firestore itself timestamps every document's creation server-side,
+    // independent of whatever fields the write path set — `d.createTime` is
+    // guaranteed present for any doc that exists, unlike the app-level
+    // completedAt/updatedAt fields above it, which only exist because a
+    // specific write path chose to set them. Used as the final fallback
+    // instead of a fake epoch date, so a session can never silently count
+    // toward progress with a date that isn't real.
+    const completedAtMs = data.completedAt?.toMillis?.() ?? data.updatedAt?.toMillis?.() ?? d.createTime.toMillis()
     return {
       sessionId: d.id,
       caseType: normalizeCaseType(data.caseId ? caseTypeById.get(data.caseId) ?? null : null),
-      completedAtMs: data.completedAt?.toMillis?.() ?? data.updatedAt?.toMillis?.() ?? 0,
-      createdAtMs: data.createdAt?.toMillis?.() ?? 0,
+      completedAtMs,
+      createdAtMs: data.createdAt?.toMillis?.() ?? d.createTime.toMillis(),
       isRated: ratedLobbyIds.has(d.id),
     }
   })
