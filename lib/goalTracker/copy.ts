@@ -22,7 +22,13 @@ export interface CopyContext {
   daysLeftInPeriod: number
   finishedOnDay?: number
   percentDone: number
+  /** Singular cadence unit noun ('day'/'week'/'month'), for copy that used to hardcode "week". */
+  periodUnit: string
+  /** Plural form ('days'/'weeks'/'months'). */
+  periodUnitPlural: string
 }
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 export interface StateCopyTemplate {
   chip: string
@@ -122,33 +128,33 @@ export const FLOW2_COPY: Partial<Record<GoalState, StateCopyTemplate>> = {
 
 export const FLOW3_RHYTHM_COPY: Partial<Record<GoalState, StateCopyTemplate>> = {
   zero: {
-    chip: 'Week 1',
-    status: (ctx) => `Habit set: ${ctx.periodTarget} a week. Let's build a streak.`,
+    chip: 'Period 1',
+    status: (ctx) => `Habit set: ${ctx.periodTarget} a ${ctx.periodUnit}. Let's build a streak.`,
     action: (ctx) => `Do your first ${ctx.periodTarget} to start the streak.`,
     detail: () => null,
   },
   periodOpenOnPace: {
     chip: 'On pace',
-    status: (ctx) => `${ctx.periodActual} of ${ctx.periodTarget} done this week, ${ctx.daysLeftInPeriod} days left.`,
-    action: (ctx) => `${Math.max(0, ctx.periodTarget - ctx.periodActual)} more this week keeps the streak.`,
+    status: (ctx) => `${ctx.periodActual} of ${ctx.periodTarget} done this ${ctx.periodUnit}, ${ctx.daysLeftInPeriod} days left.`,
+    action: (ctx) => `${Math.max(0, ctx.periodTarget - ctx.periodActual)} more this ${ctx.periodUnit} keeps the streak.`,
     detail: () => null,
   },
   periodOpenAtRisk: {
     chip: 'Slipping',
-    status: (ctx) => `0 of ${ctx.periodTarget} with ${ctx.daysLeftInPeriod} days left this week.`,
-    action: (ctx) => `Do ${ctx.periodTarget} in ${ctx.daysLeftInPeriod} days to save the week.`,
+    status: (ctx) => `0 of ${ctx.periodTarget} with ${ctx.daysLeftInPeriod} days left this ${ctx.periodUnit}.`,
+    action: (ctx) => `Do ${ctx.periodTarget} in ${ctx.daysLeftInPeriod} days to save the ${ctx.periodUnit}.`,
     detail: () => null,
   },
   periodHit: {
     chip: 'Hit',
-    status: (ctx) => `Week hit. Streak now ${ctx.streak}.`,
-    action: () => 'Same again this week.',
+    status: (ctx) => `${cap(ctx.periodUnit)} hit. Streak now ${ctx.streak}.`,
+    action: (ctx) => `Same again this ${ctx.periodUnit}.`,
     detail: () => null,
   },
   periodMissed: {
-    chip: 'Missed last week',
-    status: () => 'Only some done last week. Streak reset.',
-    action: () => 'Fresh week. Hit the target to restart the streak.',
+    chip: 'Missed',
+    status: (ctx) => `Only some done last ${ctx.periodUnit}. Streak reset.`,
+    action: (ctx) => `Fresh ${ctx.periodUnit}. Hit the target to restart the streak.`,
     detail: () => null,
   },
 }
@@ -161,27 +167,27 @@ export const FLOW3_TOTAL_COPY: Partial<Record<GoalState, StateCopyTemplate>> = F
 
 export const FLOW4_COPY: Partial<Record<GoalState, StateCopyTemplate>> = {
   zero: {
-    chip: 'Week 1',
-    status: (ctx) => `Habit set: ${ctx.periodTarget} a week. Let's build a streak.`,
+    chip: 'Period 1',
+    status: (ctx) => `Habit set: ${ctx.periodTarget} a ${ctx.periodUnit}. Let's build a streak.`,
     action: (ctx) => `Do your first ${ctx.periodTarget} to start the streak.`,
     detail: () => null,
   },
   periodOpenOnPace: {
     chip: 'On pace',
-    status: (ctx) => `${ctx.periodActual} of ${ctx.periodTarget} this week.`,
+    status: (ctx) => `${ctx.periodActual} of ${ctx.periodTarget} this ${ctx.periodUnit}.`,
     action: (ctx) => `${Math.max(0, ctx.periodTarget - ctx.periodActual)} more keeps it alive.`,
     detail: () => null,
   },
   periodHit: {
     chip: 'Hit',
-    status: (ctx) => `Week done. Streak: ${ctx.streak}.`,
-    action: () => 'Same next week.',
-    detail: (ctx) => (ctx.streak >= 6 ? `${ctx.streak} weeks straight. Your best yet.` : null),
+    status: (ctx) => `${cap(ctx.periodUnit)} done. Streak: ${ctx.streak}.`,
+    action: (ctx) => `Same next ${ctx.periodUnit}.`,
+    detail: (ctx) => (ctx.streak >= 6 ? `${ctx.streak} ${ctx.periodUnitPlural} straight. Your best yet.` : null),
   },
   periodMissed: {
-    chip: 'Missed last week',
-    status: () => 'Missed last week. Streak reset to 0.',
-    action: (ctx) => `Fresh week, get ${ctx.periodTarget} to restart.`,
+    chip: 'Missed',
+    status: (ctx) => `Missed last ${ctx.periodUnit}. Streak reset to 0.`,
+    action: (ctx) => `Fresh ${ctx.periodUnit}, get ${ctx.periodTarget} to restart.`,
     detail: () => null,
   },
 }
@@ -193,7 +199,7 @@ export const FLOW4_COPY: Partial<Record<GoalState, StateCopyTemplate>> = {
 export const FLOW5_TOTAL_COPY: Partial<Record<GoalState, StateCopyTemplate>> = {
   zero: {
     chip: 'Just started',
-    status: (ctx) => `${ctx.periodTarget} a week, working toward ${ctx.total}.`,
+    status: (ctx) => `${ctx.periodTarget} a ${ctx.periodUnit}, working toward ${ctx.total}.`,
     action: (ctx) => `First ${ctx.periodTarget} starts your streak and the count.`,
     detail: () => null,
   },
@@ -202,9 +208,9 @@ export const FLOW5_TOTAL_COPY: Partial<Record<GoalState, StateCopyTemplate>> = {
     status: (ctx) => `${ctx.done} of ${ctx.total} overall.`,
     action: (ctx) => {
       const remaining = ctx.total - ctx.done
-      const weeksLeft = ctx.periodTarget > 0 ? Math.ceil(remaining / ctx.periodTarget) : null
-      return weeksLeft != null
-        ? `${remaining} to go at this rhythm, about ${weeksLeft} more weeks.`
+      const periodsLeft = ctx.periodTarget > 0 ? Math.ceil(remaining / ctx.periodTarget) : null
+      return periodsLeft != null
+        ? `${remaining} to go at this rhythm, about ${periodsLeft} more ${ctx.periodUnitPlural}.`
         : `${remaining} to go at this rhythm.`
     },
     detail: () => null,

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import {
+  cadenceUnitSingular,
   classifyPace,
   computeStreak,
   deriveImpliedTotal,
@@ -87,6 +88,8 @@ export default function Flow3CadenceDeadline({ config, counts, onEdit, onReset, 
     periodActual: currentPeriod?.actual ?? 0,
     daysLeftInPeriod,
     percentDone: impliedTotal > 0 ? (done / impliedTotal) * 100 : 0,
+    periodUnit: cadenceUnitSingular(config.recurringUnit as CadenceUnit),
+    periodUnitPlural: config.recurringUnit,
   }
 
   const perType = resolvePerTypeGoals(3, config, doneByType, today)
@@ -101,9 +104,9 @@ export default function Flow3CadenceDeadline({ config, counts, onEdit, onReset, 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-[#5C4033]/60">
-              {ctx.periodActual} of {ctx.periodTarget} this week
+              {ctx.periodActual} of {ctx.periodTarget} this {ctx.periodUnit}
             </span>
-            <StateChip state={rhythmState} />
+            <StateChip state={rhythmState} periodUnit={ctx.periodUnit} />
           </div>
           <p className="text-xs text-[#3B2F2F]/80 leading-relaxed">{rhythmTemplate.status(ctx)}</p>
           {rhythmTemplate.action(ctx) && (

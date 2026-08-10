@@ -10,12 +10,23 @@
  * idle "Ask Tracker"). The response also carries the winning candidate's
  * `dimension` (and `targetType` where relevant) so the client can render the
  * matching call-to-action instead of just a passive sentence.
+ *
+ * Cost control is data-driven, not clock-driven: the (cheap) inputs that
+ * feed the detectors — counted-session count/recency, cadence, total,
+ * dates — are fingerprinted into a signature. If a repeat call's signature
+ * matches the last one computed, the cached result is returned directly and
+ * the (expensive) Vertex AI calls are skipped entirely. Re-clicking without
+ * having logged a new case, or changed the goal, can never trigger a fresh
+ * AI call — only genuinely new data can. This also sidesteps the correctness
+ * gap a naive time-based cooldown would have (a read-then-write check isn't
+ * atomic, so a tight burst can slip both requests through) — a cache hit is
+ * side-effect-free regardless of how many requests race for it.
  */
 import { z } from 'zod'
 import { adminDb } from '@/lib/firebase/admin'
 import { jsonOk, parseBody } from '@/lib/api/responses'
 import { authenticatedRoute } from '@/lib/api/route'
-import { goalConfigSchema } from '@/lib/firebase/schema'
+import { goalConfigSchema, type GoalConfig } from '@/lib/firebase/schema'
 import { computeShapeCandidates } from '@/lib/goalTracker/insightShapes'
 import { callVertexFill, callVertexRank, validateInsight } from '@/lib/goalTracker/vertexInsight'
 import { filterCountedSessions, type CountedSession } from '@/lib/goalTracker/goalCountFilter'
@@ -36,6 +47,38 @@ const goalInsightInput = z.object({
    */
   localMidnightMs: z.number().optional(),
 })
+
+/**
+ * Fingerprint of everything that could change what the detectors/AI would
+ * say — new/removed counted sessions, a goal edit, or the calendar day
+ * itself. The day matters even with zero new sessions: momentum compares
+ * "last 3 days" against "the 11 days before that," and streak/period
+ * boundaries close overnight — so the same session data can read
+ * differently tomorrow purely because a day rolled over, and the cache must
+ * not paper over that with yesterday's answer.
+ */
+function buildInsightSignature(config: GoalConfig, countedSessions: CountedSession[], today: Date): string {
+  const dayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`
+  const sessionCount = countedSessions.length
+  const latestCompletedAtMs = sessionCount > 0 ? Math.max(...countedSessions.map((s) => s.completedAtMs)) : 0
+  const configPart = [
+    config.startDate,
+    config.endDate,
+    config.hasEndDate,
+    config.recurringCount,
+    config.recurringEvery,
+    config.recurringUnit,
+    config.totalCases,
+  ].join('|')
+  return `${dayKey}:${sessionCount}:${latestCompletedAtMs}:${configPart}`
+}
+
+interface CachedInsight {
+  text: string
+  shapeId: string
+  dimension: string
+  targetType: string | null
+}
 
 export const POST = authenticatedRoute('/api/goal-insight', async (request, caller) => {
   const { lastShownShapeId, localMidnightMs } = await parseBody(request, goalInsightInput)
@@ -78,8 +121,17 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
     }
   })
   const countedSessions = filterCountedSessions(candidateSessions, config)
-
   const today = startOfDay(localMidnightMs != null ? new Date(localMidnightMs) : new Date())
+
+  const cacheRef = adminDb.collection('goalInsightCache').doc(caller.uid)
+  const signature = buildInsightSignature(config, countedSessions, today)
+  const cacheSnap = await cacheRef.get()
+  const cached = cacheSnap.data() as { signature: string; insight: CachedInsight | null } | undefined
+  if (cached && cached.signature === signature) {
+    console.log('[goal-insight] cache hit, no new data since last computed', { uid: caller.uid, signature })
+    return jsonOk({ insight: cached.insight })
+  }
+
   const flow = resolveFlow(config)
   const done = countedSessions.length
 
@@ -107,6 +159,7 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
 
   if (candidates.length === 0) {
     console.log('[goal-insight] zero candidates', { uid: caller.uid, done, sessionsCount: candidateSessions.length })
+    await cacheRef.set({ signature, insight: null })
     return jsonOk({ insight: null })
   }
 
@@ -128,21 +181,27 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
       result = await callVertexFill(winningCandidate, { stricter: true })
       if (!validateInsight(result.text, deterministicCardNumbers, winningCandidate.data)) {
         console.log('[goal-insight] retry also failed validation', { uid: caller.uid, text: result.text })
+        // Cached deliberately: retrying against the SAME data is unlikely to
+        // pass validation differently, so don't keep burning Vertex calls on
+        // repeat clicks until something actually changes.
+        await cacheRef.set({ signature, insight: null })
         return jsonOk({ insight: null })
       }
     }
 
+    const insight: CachedInsight = {
+      text: result.text,
+      shapeId: winningCandidate.shapeId,
+      dimension: winningCandidate.dimension,
+      targetType: winningCandidate.targetType ?? null,
+    }
     console.log('[goal-insight] shipped insight', { uid: caller.uid, shapeId: winningCandidate.shapeId, text: result.text })
-    return jsonOk({
-      insight: {
-        text: result.text,
-        shapeId: winningCandidate.shapeId,
-        dimension: winningCandidate.dimension,
-        targetType: winningCandidate.targetType ?? null,
-      },
-    })
+    await cacheRef.set({ signature, insight })
+    return jsonOk({ insight })
   } catch (err) {
     console.log('[goal-insight] vertex call threw', { uid: caller.uid, error: err instanceof Error ? err.message : String(err) })
+    // Not cached — a transient failure (network blip, Vertex hiccup)
+    // shouldn't lock the user out of a retry until new data shows up.
     return jsonOk({ insight: null })
   }
 })

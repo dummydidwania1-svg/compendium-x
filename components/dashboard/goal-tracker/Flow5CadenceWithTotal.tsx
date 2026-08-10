@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import {
+  cadenceUnitSingular,
   computeStreak,
   parseDMY,
   parseISODateLocal,
@@ -67,6 +68,8 @@ export default function Flow5CadenceWithTotal({ config, counts, onEdit, onReset,
     periodActual: currentPeriod?.actual ?? 0,
     daysLeftInPeriod: 0,
     percentDone: config.totalCases > 0 ? (done / config.totalCases) * 100 : 0,
+    periodUnit: cadenceUnitSingular(config.recurringUnit as CadenceUnit),
+    periodUnitPlural: config.recurringUnit,
   }
 
   const perType = resolvePerTypeGoals(5, config, doneByType, today)
@@ -78,15 +81,16 @@ export default function Flow5CadenceWithTotal({ config, counts, onEdit, onReset,
 
       <div className="flex items-center justify-between">
         <span className="text-[10px] text-[#5C4033]/60">
-          {ctx.periodActual} of {ctx.periodTarget} this week
+          {ctx.periodActual} of {ctx.periodTarget} this {ctx.periodUnit}
         </span>
-        <StateChip state={rhythmState} />
+        <StateChip state={rhythmState} periodUnit={ctx.periodUnit} />
       </div>
 
       <StreakDots
         currentStreak={streak?.currentStreak ?? 0}
         bestStreak={streak?.bestStreak ?? 0}
         recentPeriods={streak?.periodHistory ?? []}
+        periodUnit={ctx.periodUnit}
       />
 
       {rhythmTemplate?.action(ctx) && (

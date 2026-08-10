@@ -95,6 +95,11 @@ export function addCalendarMonths(date: Date, months: number): Date {
 
 export type CadenceUnit = 'days' | 'weeks' | 'months'
 
+/** Singular noun for a cadence unit ('weeks' -> 'week'), for copy interpolation. */
+export function cadenceUnitSingular(unit: CadenceUnit): string {
+  return unit.slice(0, -1)
+}
+
 export interface CadencePeriod {
   periodStart: Date
   periodEnd: Date // exclusive

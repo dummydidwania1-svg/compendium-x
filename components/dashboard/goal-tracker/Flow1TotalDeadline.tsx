@@ -57,6 +57,8 @@ export default function Flow1TotalDeadline({ config, counts, onEdit, onReset, on
     daysLeftInPeriod: 0,
     finishedOnDay,
     percentDone,
+    periodUnit: '',
+    periodUnitPlural: '',
   }
 
   const perType = resolvePerTypeGoals(1, config, doneByType, today)

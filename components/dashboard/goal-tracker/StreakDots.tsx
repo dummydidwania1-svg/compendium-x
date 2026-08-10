@@ -13,10 +13,13 @@ export default function StreakDots({
   currentStreak,
   bestStreak,
   recentPeriods,
+  periodUnit = 'week',
 }: {
   currentStreak: number
   bestStreak: number
   recentPeriods: PeriodHitResult[]
+  /** Singular cadence unit noun ('day'/'week'/'month'), for the streak label below the flame. */
+  periodUnit?: string
 }) {
   const dots = recentPeriods.slice(-8)
 
@@ -33,7 +36,7 @@ export default function StreakDots({
         </span>
       </div>
       <span className="text-[9px] uppercase tracking-[0.1em] font-semibold text-[#5C4033]/45">
-        {currentStreak === 1 ? 'week streak' : 'week streak'}
+        {periodUnit} streak
       </span>
       {dots.length > 0 && (
         <div className="flex items-center gap-1 mt-1">

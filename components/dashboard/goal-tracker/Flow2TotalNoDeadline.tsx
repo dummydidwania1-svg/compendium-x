@@ -42,6 +42,8 @@ export default function Flow2TotalNoDeadline({ config, counts, onEdit, onReset, 
     periodActual: 0,
     daysLeftInPeriod: 0,
     percentDone,
+    periodUnit: '',
+    periodUnitPlural: '',
   }
 
   const perType = resolvePerTypeGoals(2, config, doneByType, today)

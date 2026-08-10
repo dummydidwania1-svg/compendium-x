@@ -466,6 +466,11 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
       case 'enterRecurring': {
         const valid = rCount && rEvery && +rCount > 0 && +rEvery > 0;
         const ok    = !hasEndDate || (autoTotal !== null && autoTotal > 0);
+        const cadenceChanged = isEditing && savedConfig?.goalKind === 'cadence' && valid && (
+          +rCount !== savedConfig.recurringCount ||
+          +rEvery !== savedConfig.recurringEvery ||
+          rUnit !== savedConfig.recurringUnit
+        );
         return (
           <div>
             <div className="mb-4">
@@ -490,6 +495,11 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
                   ))}
                 </div>
               </div>
+              {cadenceChanged && (
+                <p className="text-[9.5px] text-[#5C4033]/45 leading-relaxed">
+                  Changing your cadence recalculates past periods under the new schedule — your streak may shift.
+                </p>
+              )}
               {hasEndDate && valid && (
                 <div className="px-3 py-2 rounded-lg border border-[#5C4033]/8 bg-[#D9D0C4]/12">
                   {autoTotal && autoTotal > 0 ? (

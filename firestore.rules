@@ -166,5 +166,13 @@ service cloud.firestore {
     match /weeklyReportRuns/{isoWeekKey} {
       allow read, write: if false;
     }
+
+    // Per-user cached AI insight for POST /api/goal-insight, keyed by a
+    // fingerprint of the input data — skips repeat Vertex AI calls when
+    // nothing about the goal or logged cases has changed since the last
+    // computation. Server-only, Admin SDK only — no client-direct access.
+    match /goalInsightCache/{uid} {
+      allow read, write: if false;
+    }
   }
 }

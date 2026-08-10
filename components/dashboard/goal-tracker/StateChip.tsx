@@ -19,15 +19,22 @@ const STATE_META: Record<GoalState, { label: string; color: string }> = {
   periodOpenOnPace: { label: 'On pace', color: '#3D5A35' },
   periodOpenAtRisk: { label: 'Slipping', color: '#c08329' },
   periodHit: { label: 'Hit', color: '#3D5A35' },
-  periodMissed: { label: 'Missed last week', color: '#c08329' },
+  periodMissed: { label: 'Missed', color: '#c08329' },
 }
 
 export function stateColor(state: GoalState): string {
   return STATE_META[state].color
 }
 
-export default function StateChip({ state }: { state: GoalState }) {
+/**
+ * `periodUnit` (singular noun: 'day'/'week'/'month') swaps the cadence-aware
+ * labels — currently only `periodMissed` ("Missed last ..."), so a monthly
+ * goal doesn't say "Missed last week" — falls back to the static "Missed"
+ * label when omitted (non-cadence states never pass it).
+ */
+export default function StateChip({ state, periodUnit }: { state: GoalState; periodUnit?: string }) {
   const meta = STATE_META[state]
+  const label = state === 'periodMissed' && periodUnit ? `Missed last ${periodUnit}` : meta.label
   return (
     <div
       className="inline-flex items-center gap-1.5 px-2 py-[3px] rounded-full border"
@@ -35,7 +42,7 @@ export default function StateChip({ state }: { state: GoalState }) {
     >
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: meta.color }} />
       <span className="text-[8px] uppercase tracking-[0.1em] font-semibold" style={{ color: meta.color }}>
-        {meta.label}
+        {label}
       </span>
     </div>
   )

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { computeStreak, parseDMY, parseISODateLocal, resolveRhythmState, type CadenceUnit } from '@/lib/goalTracker/engine';
+import { cadenceUnitSingular, computeStreak, parseDMY, parseISODateLocal, resolveRhythmState, type CadenceUnit } from '@/lib/goalTracker/engine';
 import { useToday } from '@/lib/hooks/useToday';
 import { FLOW4_COPY } from '@/lib/goalTracker/copy';
 import type { CopyContext } from '@/lib/goalTracker/copy';
@@ -55,6 +55,8 @@ export default function Flow4CadenceHabit({ config, counts, onEdit, onReset, onS
     periodActual: currentPeriod?.actual ?? 0,
     daysLeftInPeriod: 0,
     percentDone: 0,
+    periodUnit: cadenceUnitSingular(config.recurringUnit as CadenceUnit),
+    periodUnitPlural: config.recurringUnit,
   }
 
   return (
@@ -63,15 +65,16 @@ export default function Flow4CadenceHabit({ config, counts, onEdit, onReset, onS
 
       <div className="flex items-center justify-between">
         <span className="text-[10px] text-[#5C4033]/60">
-          {ctx.periodActual} of {ctx.periodTarget} this week
+          {ctx.periodActual} of {ctx.periodTarget} this {ctx.periodUnit}
         </span>
-        <StateChip state={state} />
+        <StateChip state={state} periodUnit={ctx.periodUnit} />
       </div>
 
       <StreakDots
         currentStreak={streak?.currentStreak ?? 0}
         bestStreak={streak?.bestStreak ?? 0}
         recentPeriods={streak?.periodHistory ?? []}
+        periodUnit={ctx.periodUnit}
       />
 
       {template && (

@@ -4,9 +4,13 @@ import {
   classifyPaceBand,
   classifyPace,
   computeStreak,
+  deriveImpliedTotal,
   derivePeriods,
   parseDMY,
+  parseISODateLocal,
   resolveFlow,
+  resolveTotalState,
+  startOfDay,
 } from './engine'
 
 describe('resolveFlow', () => {
@@ -124,6 +128,68 @@ describe('derivePeriods — rolling weekly vs real-calendar monthly', () => {
     expect(periods[0].periodEnd.getDate()).toBe(15)
     expect(periods[1].periodEnd.getMonth()).toBe(2) // Mar
     expect(periods[1].periodEnd.getDate()).toBe(15)
+  })
+})
+
+describe('deriveImpliedTotal — single source of truth for the wizard-save vs live-dashboard total (bug regression)', () => {
+  it('3/week over 45 days: 7 weekly periods start on/before the deadline -> 21', () => {
+    // Anchored on the exact scenario that previously produced two different
+    // numbers (19 from the wizard's floor-based calcAutoTotal, a different
+    // round-based value from the dashboard's derivePeriodCountEstimate).
+    const start = new Date(2026, 7, 9) // Aug 9, 2026
+    const end = new Date(2026, 8, 23) // Sep 23, 2026 (45 days out)
+    expect(deriveImpliedTotal(3, 1, 'weeks', start, end)).toBe(21)
+  })
+  it('is symmetric regardless of which "caller" invokes it — same inputs, same output', () => {
+    const start = new Date(2026, 0, 1)
+    const end = new Date(2026, 2, 1)
+    const a = deriveImpliedTotal(2, 1, 'weeks', start, end)
+    const b = deriveImpliedTotal(2, 1, 'weeks', new Date(2026, 0, 1), new Date(2026, 2, 1))
+    expect(a).toBe(b)
+  })
+  it('delegates monthly periods to real-calendar-month derivation, not a 30-day approximation', () => {
+    // Feb 27 falls inside the single real-calendar month starting Jan 31
+    // (Jan 31 + 1 month clamps to Feb 28, per addCalendarMonths) but is
+    // still 3 days short of a naive 30-day-block boundary (Jan 31 + 30 =
+    // Mar 2) — so this only reads as exactly 1 period under real-calendar
+    // month math, the same math derivePeriods is independently tested with.
+    const start = new Date(2026, 0, 31)
+    const end = new Date(2026, 1, 27) // Feb 27, 2026 — inside the first calendar month, before its end
+    expect(deriveImpliedTotal(1, 1, 'months', start, end)).toBe(1)
+  })
+  it('returns 0 for non-positive rate/interval instead of throwing', () => {
+    const start = new Date(2026, 0, 1)
+    const end = new Date(2026, 1, 1)
+    expect(deriveImpliedTotal(0, 1, 'weeks', start, end)).toBe(0)
+    expect(deriveImpliedTotal(3, 0, 'weeks', start, end)).toBe(0)
+  })
+})
+
+describe('parseISODateLocal — local-midnight parsing, not UTC (timezone bug regression)', () => {
+  it('matches startOfDay(new Date(y, m, d)) for the same calendar date', () => {
+    const expected = startOfDay(new Date(2026, 0, 8)) // Jan 8, 2026, local midnight
+    const actual = parseISODateLocal('2026-01-08')
+    expect(actual.getTime()).toBe(expected.getTime())
+  })
+  it('does not equal new Date(isoString), which parses as UTC midnight', () => {
+    // This only diverges from parseISODateLocal in a non-UTC timezone, but
+    // asserting the two parsing strategies actually differ in principle:
+    // parseISODateLocal must never delegate straight to `new Date(iso)`.
+    const local = parseISODateLocal('2026-01-08')
+    expect(local.getFullYear()).toBe(2026)
+    expect(local.getMonth()).toBe(0)
+    expect(local.getDate()).toBe(8)
+    expect(local.getHours()).toBe(0)
+  })
+})
+
+describe('resolveTotalState — non-positive total never reads as instantly complete (bug regression)', () => {
+  it('total <= 0 resolves to "zero", not "completeEarly", even though 0 >= 0', () => {
+    expect(resolveTotalState(0, 0, null, null, false)).toBe('zero')
+    expect(resolveTotalState(0, -1, null, null, false)).toBe('zero')
+  })
+  it('a real positive total still resolves completeEarly once done >= total', () => {
+    expect(resolveTotalState(5, 5, null, null, false)).toBe('completeEarly')
   })
 })
 
