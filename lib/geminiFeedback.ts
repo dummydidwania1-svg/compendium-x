@@ -104,7 +104,7 @@ function buildSystemPrompt(m: FAMetrics): string {
     .map(f => {
       const c = m.allCasesCSV.split('\n').find(row => row.startsWith(f.id + ','));
       const [, date, type, level] = c ? c.split(',') : ['', '', '', ''];
-      return `Case ${f.id} (${date}, ${type}, ${level})\n  Notes: ${f.notes}\n  Verbal: "${f.verbal}"`;
+      return `Case ${f.id} (${date}, ${type}, ${level})\n  Written notes: ${f.notes}\n  Closing-minutes excerpt: "${f.verbal}"`;
     })
     .join('\n\n');
 
@@ -113,7 +113,9 @@ function buildSystemPrompt(m: FAMetrics): string {
     .map(([t, d]) => `  ${t}: avg score ${d.avgScore} (${d.count} cases)`)
     .join('\n');
 
-  return `You are Feedback Analyser. Your primary input is what interviewers actually said — written notes and verbal transcripts. Scores are secondary: use them to corroborate what the language already reveals.
+  return `You are Feedback Analyser. Your foundation is what the interviewer actually communicated as feedback: their written notes, plus a short excerpt from the closing portion of the case recording (roughly the last few minutes, or a proportional tail on older sessions), where wrap-up remarks are most likely to land. Scores are secondary: use them to corroborate what the language already reveals.
+
+The closing-minutes excerpt is NOT a full case transcript — it's deliberately just the tail end. It may contain genuine spoken feedback, or it may just be the last moments of case-solving with little evaluative content; judge each one on its own merits rather than assuming every excerpt contains a verdict. Never treat it as a record of how the whole case went.
 
 You find patterns in language: what interviewers keep saying, what has disappeared from feedback over time, what new concerns have emerged, and what strengths get consistently praised.
 
@@ -230,6 +232,17 @@ export async function callGeminiFeedback(
     { role: 'user', parts: [{ text: userQuestion }] },
   ];
 
+  // No explicit cache management here on purpose: Gemini 2.5's implicit
+  // caching is automatic (Google's infra, not this code) and this request
+  // shape already matches what it needs — systemInstruction (the large,
+  // byte-identical-across-turns feedback corpus) stays separate from and
+  // ahead of `contents` (the small, per-turn conversation history + the new
+  // question). Within one chat session every follow-up resends the same
+  // systemInstruction prefix, so consecutive calls land a cache hit on it
+  // automatically once it clears the ~2048-token minimum — at roughly 1/10th
+  // the input-token cost of a fresh (uncached) call. Building a bespoke
+  // explicit-cache layer on top would just be duplicating what already
+  // happens for free.
   const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -254,6 +267,16 @@ export async function callGeminiFeedback(
   }
 
   const data = await response.json();
+
+  // Dev-facing only — confirms the implicit cache is actually landing hits
+  // in practice, not just in theory. Never shown in the UI.
+  const usage = data?.usageMetadata;
+  if (usage && typeof usage.cachedContentTokenCount === 'number' && usage.cachedContentTokenCount > 0) {
+    console.debug(
+      `[FeedbackAnalyser] cache hit: ${usage.cachedContentTokenCount}/${usage.promptTokenCount} prompt tokens served from cache`
+    );
+  }
+
   const parts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
   const raw = parts
     .filter((p: any) => !p.thought)

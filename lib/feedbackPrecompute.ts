@@ -60,15 +60,47 @@ function feedbackIdFor(entry: DashboardCaseEntry, index: number): string {
   return String(index + 1).padStart(2, '0')
 }
 
+// "Verbal feedback" is not the interviewer's whole spoken commentary — there's
+// no dedicated recording for that. It's the closing few minutes of the case
+// recording itself, on the assumption that's roughly where wrap-up remarks
+// tend to land. A flat fixed window would swallow most of a short case, so
+// it's capped at a fraction of the case's own length too.
+const VERBAL_WINDOW_MS = 5 * 60 * 1000
+const VERBAL_WINDOW_MAX_FRACTION = 0.25
+
+function extractVerbalFeedback(entry: DashboardCaseEntry): string | null {
+  const { transcriptTurns, durationMs, transcript, transcriptPreview } = entry
+
+  // Precise path: real per-turn timestamps exist (see TranscriptTurn / the
+  // Cloud Function merge step) — slice by actual elapsed time.
+  if (transcriptTurns && transcriptTurns.length > 0 && durationMs && durationMs > 0) {
+    const windowMs = Math.min(VERBAL_WINDOW_MS, durationMs * VERBAL_WINDOW_MAX_FRACTION)
+    const cutoff = durationMs - windowMs
+    const tail = transcriptTurns.filter((t) => t.offsetMs >= cutoff)
+    if (tail.length > 0) {
+      return tail.map((t) => `${t.role === 'candidate' ? 'Candidate' : 'Interviewer'}: ${t.text}`).join('\n')
+    }
+  }
+
+  // Approximate fallback for sessions that pre-date per-turn timing — a
+  // proportional tail by character count instead of real elapsed time. Less
+  // precise (speaking pace isn't perfectly uniform), but still a small,
+  // closing-weighted excerpt rather than either the full transcript or nothing.
+  const flat = transcript?.trim() || transcriptPreview?.trim()
+  if (flat) {
+    const tailChars = Math.max(300, Math.round(flat.length * VERBAL_WINDOW_MAX_FRACTION))
+    return flat.slice(-tailChars)
+  }
+
+  return null
+}
+
 function feedbackEntriesFrom(entries: DashboardCaseEntry[]): CaseFeedback[] {
   return entries
     .map((entry, index) => ({
       id: feedbackIdFor(entry, index),
       notes: entry.notes?.trim() || 'No written interviewer notes recorded.',
-      verbal:
-        entry.transcript?.trim() ||
-        entry.transcriptPreview?.trim() ||
-        'No transcript excerpt is available for this case yet.',
+      verbal: extractVerbalFeedback(entry) || 'No closing-remarks excerpt is available for this case yet.',
     }))
 }
 

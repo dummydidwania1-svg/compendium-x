@@ -11,6 +11,12 @@ export type DashboardWidgetFilters = {
   customEnd: string
 }
 
+// A single speaker turn on the session-wide timeline (0 = session start).
+// Populated for local sessions from the embedded recording's own
+// transcriptTurns, and for remote (dual-mic) sessions from mergedTranscriptTurns
+// on the session doc — see mergeTranscriptTracks in functions/src/index.ts.
+export type TranscriptTurn = { offsetMs: number; role: 'candidate' | 'interviewer'; text: string }
+
 export type DashboardCaseEntry = {
   id: string
   evaluationId: string
@@ -39,6 +45,13 @@ export type DashboardCaseEntry = {
   transcriptStatus: string | null
   transcriptError: string | null
   transcriptReason: string | null
+  // Session-wide-timestamped turns backing `transcript` — null when unavailable
+  // (older sessions that pre-date this field, or a single-track fallback merge
+  // with no aligned timeline). See TranscriptTurn above.
+  transcriptTurns: TranscriptTurn[] | null
+  // Total case duration (ms), used as the reference point for slicing
+  // `transcriptTurns` by real elapsed time (e.g. "the last 5 minutes").
+  durationMs: number | null
   audioUrl: string | null
   interviewerAudioUrl: string | null
   mergedAudioUrl: string | null
@@ -106,6 +119,8 @@ export type DashboardSessionMeta = {
   transcriptStatus: string | null
   transcriptError: string | null
   transcriptReason: string | null
+  transcriptTurns: TranscriptTurn[] | null
+  durationMs: number | null
   audioUrl: string | null
   interviewerAudioUrl: string | null
   mergedAudioUrl: string | null
@@ -128,6 +143,34 @@ function asString(value: unknown): string | null {
 
 function asNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+// Defensively validates each entry rather than trusting Firestore's shape —
+// same posture as the rest of this file's parsing. Drops any malformed turn
+// individually instead of discarding the whole array over one bad entry.
+function parseTranscriptTurns(value: unknown): TranscriptTurn[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null
+  const turns: TranscriptTurn[] = []
+  for (const raw of value) {
+    if (!raw || typeof raw !== 'object') continue
+    const offsetMs = asNumber((raw as Record<string, unknown>).offsetMs)
+    const role = (raw as Record<string, unknown>).role
+    const text = asString((raw as Record<string, unknown>).text)
+    if (offsetMs === null || text === null) continue
+    if (role !== 'candidate' && role !== 'interviewer') continue
+    turns.push({ offsetMs, role, text })
+  }
+  return turns.length > 0 ? turns : null
+}
+
+// Reference point for slicing turns by real elapsed time ("the last 5
+// minutes"). Prefers an authoritative recorded duration; falls back to the
+// last turn's own offset when no duration field is available so slicing
+// still works even for the sessions that only have the turns array.
+function deriveDurationMs(explicitMs: number | null, turns: TranscriptTurn[] | null): number | null {
+  if (explicitMs !== null) return explicitMs
+  if (!turns || turns.length === 0) return null
+  return Math.max(...turns.map((t) => t.offsetMs))
 }
 
 function timestampToDateString(value?: Timestamp): string {
@@ -213,6 +256,16 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     asString(source.transcriptStatus) ?? asString(value?.mergedTranscriptStatus)
   const transcriptError =
     asString(source.transcriptError) ?? asString(value?.mergedTranscriptError)
+  // Same embedded-map-first, session-doc-fallback pattern as transcript above.
+  // Local: recording.transcriptTurns (single track, already session-relative).
+  // Remote: mergedTranscriptTurns on the session doc (see mergeTranscriptTracks
+  // in functions/src/index.ts) — null for older sessions that pre-date it.
+  const transcriptTurns =
+    parseTranscriptTurns(source.transcriptTurns) ?? parseTranscriptTurns(value?.mergedTranscriptTurns)
+  const durationMs = deriveDurationMs(
+    asNumber(source.durationMs) ?? asNumber(value?.mergedAudioDurationMs),
+    transcriptTurns,
+  )
 
   // Authoritative session mode: read from explicit fields, not inferred from mergedAudioUrl.
   const rawMode =
@@ -238,6 +291,8 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     transcriptStatus,
     transcriptError,
     transcriptReason: asString(value?.mergedTranscriptReason),
+    transcriptTurns,
+    durationMs,
     // Local sessions: embedded recording.audioUrl
     // Remote sessions: denormalized candidateAudioUrl written by the recording route
     audioUrl: asString(source.audioUrl) ?? asString(value?.candidateAudioUrl),
@@ -327,6 +382,8 @@ return {
     transcriptStatus: sessionMeta?.transcriptStatus ?? null,
     transcriptError: sessionMeta?.transcriptError ?? null,
     transcriptReason: sessionMeta?.transcriptReason ?? null,
+    transcriptTurns: sessionMeta?.transcriptTurns ?? null,
+    durationMs: sessionMeta?.durationMs ?? null,
     audioUrl: sessionMeta?.audioUrl ?? null,
     interviewerAudioUrl: sessionMeta?.interviewerAudioUrl ?? null,
     mergedAudioUrl: sessionMeta?.mergedAudioUrl ?? null,

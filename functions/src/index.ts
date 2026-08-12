@@ -864,6 +864,9 @@ type TrackData = {
   durationMs?: number
 }
 
+/** A single speaker turn on the merged session-wide timeline (0 = session start). */
+export type MergedTurn = { offsetMs: number; role: 'candidate' | 'interviewer'; text: string }
+
 /**
  * Interleave two per-track transcripts into one merged transcript using structured
  * turns and partial-marker interpolation.
@@ -877,11 +880,18 @@ type TrackData = {
  * within the same track, so sparse markers degrade gracefully rather than forcing
  * a whole-block fallback. Only when a track has zero turns at all does it fall back
  * to the raw transcript string.
+ *
+ * Also returns the same turns as a positioned, session-wide-timestamped array
+ * (`turns`) — the alignment work below already computes this; previously it was
+ * thrown away once flattened into `text`. Consumers that need to reference a
+ * specific point in the timeline (e.g. "the last 5 minutes") use `turns`, and
+ * everything that only ever wanted the flat transcript keeps reading `text`
+ * exactly as before.
  */
 function mergeTranscriptTracks(
   candidate: TrackData | null,
   interviewer: TrackData | null,
-): string {
+): { text: string; turns: MergedTurn[] } {
   // Label each line with its known speaker. In dual-mic, the role is 100% certain
   // (each track is one person), so no diarization guessing is needed.
   const labelLines = (text: string, role: 'Candidate' | 'Interviewer'): string =>
@@ -891,9 +901,12 @@ function mergeTranscriptTracks(
       .map((l) => `${role}: ${l}`)
       .join('\n')
 
-  if (!candidate && !interviewer) return ''
-  if (!candidate) return labelLines(interviewer!.transcript, 'Interviewer')
-  if (!interviewer) return labelLines(candidate.transcript, 'Candidate')
+  if (!candidate && !interviewer) return { text: '', turns: [] }
+  // Single-track fallback: no counterpart to align against, so this degrades
+  // to flat labeled text with no positioned turns (same as before this
+  // function returned turns at all) rather than guessing a timeline.
+  if (!candidate) return { text: labelLines(interviewer!.transcript, 'Interviewer'), turns: [] }
+  if (!interviewer) return { text: labelLines(candidate.transcript, 'Candidate'), turns: [] }
 
   type PositionedTurn = {
     globalMs: number
@@ -973,14 +986,21 @@ function mergeTranscriptTracks(
   const cTurns = buildPositioned(candidate, cStart, 0, 'Candidate')
   const iTurns = buildPositioned(interviewer, iStart, 1_000_000, 'Interviewer')
 
-  if (cTurns.length === 0 && iTurns.length === 0) return ''
-  if (cTurns.length === 0) return labelLines(interviewer.transcript, 'Interviewer')
-  if (iTurns.length === 0) return labelLines(candidate.transcript, 'Candidate')
+  if (cTurns.length === 0 && iTurns.length === 0) return { text: '', turns: [] }
+  if (cTurns.length === 0) return { text: labelLines(interviewer.transcript, 'Interviewer'), turns: [] }
+  if (iTurns.length === 0) return { text: labelLines(candidate.transcript, 'Candidate'), turns: [] }
 
   const all = [...cTurns, ...iTurns]
   all.sort((a, b) => (a.globalMs !== b.globalMs ? a.globalMs - b.globalMs : a.seqKey - b.seqKey))
 
-  return all.map((t) => `${t.role}: ${t.text}`).join('\n')
+  return {
+    text: all.map((t) => `${t.role}: ${t.text}`).join('\n'),
+    turns: all.map((t) => ({
+      offsetMs: Math.round(t.globalMs),
+      role: t.role === 'Candidate' ? 'candidate' as const : 'interviewer' as const,
+      text: t.text,
+    })),
+  }
 }
 
 /**
@@ -1478,9 +1498,9 @@ if (sessionData.sessionMode === 'local') {
     // Only treat as partial when a track is actually missing.
     const isPartial = !candidateCompleted || !hasInterviewerTrack
     const finalMerged =
-      interviewerInterrupted && !hasInterviewerTrack && merged
-        ? '[Note: the interviewer left mid-session; their audio is partial up to the point they disconnected.]\n\n' + merged
-        : merged
+      interviewerInterrupted && !hasInterviewerTrack && merged.text
+        ? '[Note: the interviewer left mid-session; their audio is partial up to the point they disconnected.]\n\n' + merged.text
+        : merged.text
 
     const mergedTranscriptReason =
       interviewerInterrupted && !hasInterviewerTrack
@@ -1502,6 +1522,11 @@ if (sessionData.sessionMode === 'local') {
     await sessionRef.set(
       {
         mergedTranscript: finalMerged,
+        // Session-wide-timestamped turns backing the same text above — additive,
+        // nothing existing reads this yet. Lets a consumer slice by real elapsed
+        // time (e.g. "the last 5 minutes") instead of only having flat text.
+        // Empty on the single-track fallback paths, same as before this existed.
+        mergedTranscriptTurns: merged.turns,
         mergedTranscriptStatus: isPartial ? 'partial' : 'completed',
         mergedTranscriptCompletedAt: FieldValue.serverTimestamp(),
         mergedTranscriptError: null,
@@ -1917,6 +1942,169 @@ export const mergeTranscripts = onDocumentWritten(
     if (terminal(beforeStatus)) return // already was terminal — don't re-merge
 
     await evaluateAndMerge(event.params.sessionId)
+  },
+)
+
+/* -------------------------------------------------------------------------- */
+/* Cloud Function 3b — case execution analysis, gated + once per case         */
+/* -------------------------------------------------------------------------- */
+
+// Calibrated against real session data (Aug 2026): roughly half of all
+// "completed" sessions run under 2 minutes — test accounts, abandoned
+// attempts, connectivity checks, not real case attempts. Genuine full
+// attempts cluster well above that once the short ones are excluded. 8 min
+// sits at the natural gap between the two populations. 60 min excludes a
+// handful of sessions found running 60-400 min — almost certainly a
+// forgotten/stuck recording, not a candidate genuinely taking that long.
+const EXECUTION_ANALYSIS_MIN_DURATION_MS = 8 * 60 * 1000
+const EXECUTION_ANALYSIS_MAX_DURATION_MS = 60 * 60 * 1000
+
+type ExecutionAnalysisTurn = { offsetMs: number; role: string; text: string }
+
+const EXECUTION_ANALYSIS_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    findings: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          issue: { type: 'STRING' },
+          momentDescription: { type: 'STRING' },
+          approxOffsetSec: { type: 'NUMBER' },
+        },
+        required: ['issue', 'momentDescription'],
+      },
+    },
+    overallNote: { type: 'STRING' },
+  },
+  required: ['findings', 'overallNote'],
+}
+
+function buildExecutionAnalysisPrompt(turns: ExecutionAnalysisTurn[]): string {
+  const transcriptText = turns
+    .map((t) => `[${Math.round(t.offsetMs / 1000)}s] ${t.role === 'candidate' ? 'Candidate' : 'Interviewer'}: ${t.text}`)
+    .join('\n')
+
+  return `You are analysing a single case-interview recording to identify HOW the candidate executed the case — not what the interviewer said about it afterward (that is tracked separately, from the interviewer's own written/spoken feedback, and you have no visibility into it here). Look only at what actually happened during this conversation.
+
+Find concrete, specific execution issues: time lost before structuring the problem, long pauses or hesitation, circular or repeated reasoning, missed opportunities to ask clarifying questions before diving in, unproductive branches later abandoned, stalls during arithmetic, or similar patterns. Only report a finding you can point to a specific moment for — do not invent one to fill space. If nothing notable stands out, say so plainly.
+
+=== TRANSCRIPT (timestamped, seconds from session start) ===
+${transcriptText}
+
+=== OUTPUT (valid JSON only) ===
+{ "findings": [{ "issue": "short label", "momentDescription": "one specific sentence about what happened", "approxOffsetSec": 0 }], "overallNote": "one sentence, or 'No notable execution issues found.' if findings is empty" }
+Keep findings to at most 4.`
+}
+
+/**
+ * Best-effort enrichment, not a critical-path step: any failure here just
+ * means this case doesn't get an execution-analysis summary. Never retried,
+ * never blocks or affects the transcript/merge pipeline it runs after.
+ */
+async function runExecutionAnalysis(
+  sessionId: string,
+  turns: ExecutionAnalysisTurn[],
+  apiKey: string,
+): Promise<void> {
+  try {
+    const response = await fetch(
+      `${GEMINI_API_BASE}/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: buildExecutionAnalysisPrompt(turns) }] }],
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: 'application/json',
+            responseSchema: EXECUTION_ANALYSIS_SCHEMA,
+          },
+        }),
+      },
+    )
+    const payload = await response.json().catch(() => null)
+    if (!response.ok) throw new Error(extractGeminiErrorMessage(payload))
+
+    const parts = (payload as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })
+      ?.candidates?.[0]?.content?.parts ?? []
+    const raw = parts.map((p) => p.text ?? '').join('').trim()
+    const parsed = JSON.parse(raw) as { findings?: unknown; overallNote?: unknown }
+
+    await db.collection('sessions').doc(sessionId).set(
+      {
+        executionAnalysis: {
+          findings: Array.isArray(parsed.findings) ? parsed.findings.slice(0, 4) : [],
+          overallNote: typeof parsed.overallNote === 'string' ? parsed.overallNote : '',
+          computedAt: FieldValue.serverTimestamp(),
+          model: GEMINI_MODEL,
+        },
+      },
+      { merge: true },
+    )
+  } catch (err) {
+    logger.warn('execution_analysis_failed', {
+      sessionId,
+      message: err instanceof Error ? err.message : 'Unknown error.',
+    })
+  }
+}
+
+/**
+ * Fires on every session doc write. Only acts once, right when a session's
+ * transcript newly reaches a genuinely terminal 'completed' state (either
+ * mode) — never 'partial'/'failed', never re-fires once executionAnalysis
+ * exists. Gated on duration (EXECUTION_ANALYSIS_MIN/MAX) so short/abandoned/
+ * stuck sessions never get analyzed as if they were real full attempts.
+ */
+export const analyzeCaseExecution = onDocumentWritten(
+  {
+    document: 'sessions/{sessionId}',
+    region: 'us-central1',
+    timeoutSeconds: 120,
+    memory: '256MiB',
+    secrets: [GEMINI_API_KEY],
+    retry: false,
+  },
+  async (event) => {
+    const before = event.data?.before?.data()
+    const after = event.data?.after?.data()
+    if (!after) return
+    if (after.executionAnalysis) return
+
+    const rawMode = String(after.sessionMode ?? '').toLowerCase()
+    const isLocal = rawMode === 'local' || rawMode === 'samedevice'
+
+    let justCompleted: boolean
+    let turns: unknown
+    let durationMs: number | undefined
+
+    if (isLocal) {
+      const beforeStatus = before?.recording?.transcriptStatus
+      const afterStatus = after?.recording?.transcriptStatus
+      justCompleted = afterStatus === 'completed' && beforeStatus !== 'completed'
+      turns = after?.recording?.transcriptTurns
+      durationMs = typeof after?.recording?.durationMs === 'number' ? after.recording.durationMs : undefined
+    } else {
+      const beforeStatus = before?.mergedTranscriptStatus
+      const afterStatus = after?.mergedTranscriptStatus
+      justCompleted = afterStatus === 'completed' && beforeStatus !== 'completed'
+      turns = after?.mergedTranscriptTurns
+      durationMs =
+        typeof after?.mergedAudioDurationMs === 'number'
+          ? after.mergedAudioDurationMs
+          : Array.isArray(turns) && turns.length > 0
+            ? Math.max(...(turns as ExecutionAnalysisTurn[]).map((t) => t.offsetMs))
+            : undefined
+    }
+
+    if (!justCompleted) return
+    if (!Array.isArray(turns) || turns.length === 0) return
+    if (typeof durationMs !== 'number') return
+    if (durationMs < EXECUTION_ANALYSIS_MIN_DURATION_MS || durationMs > EXECUTION_ANALYSIS_MAX_DURATION_MS) return
+
+    await runExecutionAnalysis(event.params.sessionId, turns as ExecutionAnalysisTurn[], GEMINI_API_KEY.value())
   },
 )
 

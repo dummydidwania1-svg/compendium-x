@@ -98,6 +98,8 @@ export function buildPreviewDashboardData(): {
       transcriptStatus: transcript ? 'completed' : null,
       transcriptError: null,
       transcriptReason: null,
+      transcriptTurns: null,
+      durationMs: null,
       audioUrl: null,
       interviewerAudioUrl: null,
       mergedAudioUrl: null,
