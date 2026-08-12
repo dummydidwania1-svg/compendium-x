@@ -1519,14 +1519,35 @@ if (sessionData.sessionMode === 'local') {
               ? 'candidate_transcription_failed'
               : null
 
+    // Safety cap: a session that ran for many hours (a forgotten/stuck
+    // recording, not a real case — confirmed against real data that a
+    // handful of these exist) could carry thousands of turns. mergedTranscript
+    // (flat text) already existed and worked fine on its own; don't let this
+    // new, purely-additive field push the combined write over Firestore's 1
+    // MiB document limit and take the whole write down with it. Measured
+    // against the most extreme real session found (~9 hours): its turns
+    // array alone would sit around 350 KB, well under this cap — normal
+    // 8-60 min cases are a few KB. Skips the field entirely rather than
+    // truncating mid-conversation, which would misrepresent the timeline.
+    const MAX_MERGED_TURNS_BYTES = 400_000
+    const turnsPayload = merged.turns
+    const turnsTooLarge = JSON.stringify(turnsPayload).length > MAX_MERGED_TURNS_BYTES
+    if (turnsTooLarge) {
+      logger.warn('merged_transcript_turns_too_large_skipped', {
+        sessionId,
+        turnCount: turnsPayload.length,
+      })
+    }
+
     await sessionRef.set(
       {
         mergedTranscript: finalMerged,
         // Session-wide-timestamped turns backing the same text above — additive,
         // nothing existing reads this yet. Lets a consumer slice by real elapsed
         // time (e.g. "the last 5 minutes") instead of only having flat text.
-        // Empty on the single-track fallback paths, same as before this existed.
-        mergedTranscriptTurns: merged.turns,
+        // Empty on the single-track fallback paths, same as before this existed,
+        // and on the (rare, real) oversized-session case guarded above.
+        mergedTranscriptTurns: turnsTooLarge ? [] : turnsPayload,
         mergedTranscriptStatus: isPartial ? 'partial' : 'completed',
         mergedTranscriptCompletedAt: FieldValue.serverTimestamp(),
         mergedTranscriptError: null,
