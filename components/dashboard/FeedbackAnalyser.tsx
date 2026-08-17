@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, ChevronRight, Sparkles, BarChart2, Layers, TrendingUp } from 'lucide-react';
+import { X, ChevronRight, Sparkles, BarChart2, Layers, TrendingUp, Lock } from 'lucide-react';
 import TieLogo from '@/components/ui/TieLogo';
 import { computeFAMetrics } from '@/lib/feedbackPrecompute';
 import { callGeminiFeedback, ANALYSIS_MODES, type ChatMessage, type FAResponse, type FABlock, type FAViz } from '@/lib/geminiFeedback';
@@ -427,18 +427,18 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
                 style={{ animation: '_fa_ring2 3.4s cubic-bezier(0.215,0.61,0.355,1) 0.6s infinite' }} />
               <span className="absolute inset-0 rounded-full border border-[#3D5A35]/30"
                 style={{ animation: '_fa_ring 2.8s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
-              <Sparkles
+              <Lock
                 className="w-4 h-4 text-[#3D5A35]/70 relative z-10"
                 style={{ animation: '_fa_lock_float 3s ease-in-out infinite, _fa_lock_pulse 3s ease-in-out infinite' }}
               />
             </div>
             <div className="flex flex-col items-center gap-1.5">
               <p className="text-[10.5px] font-semibold tracking-[0.1em] uppercase text-[#3D5A35]/80 whitespace-nowrap">
-                Open Analyser
+                Coming Soon
               </p>
               <div className="h-px w-10 bg-[#3D5A35]/20" />
               <p className="text-[9.5px] text-[#5C4033]/45 whitespace-nowrap">
-                Dissect your sessions.
+                We&apos;re building this.
               </p>
             </div>
           </div>
@@ -446,8 +446,7 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
 
         {/* FAB */}
         <button
-          onClick={() => setIsOpen(true)}
-          className="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-2xl cursor-pointer hover:scale-105"
+          className="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-2xl cursor-default"
           style={{
             background: 'rgba(255,248,240,0.65)',
             border: '1px solid rgba(61,90,53,0.22)',
@@ -460,7 +459,7 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
         </button>
       </div>
 
-      {/* ── Full overlay (FAB opens it) ──────────────────────────────────── */}
+      {/* ── Full overlay (disabled — FAB no longer opens it) ─────────────── */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center p-6 animate-scale-in"
