@@ -28,7 +28,7 @@ export default function MobileSoftNotice({ onDismiss }: { onDismiss: () => void 
         backdropFilter: 'blur(20px) saturate(1.6)',
         WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
         boxShadow: '0 12px 32px rgba(59,47,47,0.16), 0 2px 8px rgba(59,47,47,0.06)',
-        fontFamily: "'Work Sans', sans-serif",
+        fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
         animation: 'msn-in 0.4s cubic-bezier(0.22,1,0.36,1) both',
       }}
     >

@@ -18,12 +18,15 @@ function OnboardingForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const requestedRedirect = searchParams.get('redirect')
-  const redirectTarget = requestedRedirect && requestedRedirect.startsWith('/') ? requestedRedirect : '/dashboard'
+  const redirectTarget = requestedRedirect && requestedRedirect.startsWith('/') && !requestedRedirect.startsWith('//') ? requestedRedirect : '/dashboard'
 
   useEffect(() => {
     const checkUser = async () => {
       const user = await waitForAuthUser()
-      if (!user) {
+      if (!user || user.isAnonymous) {
+        // Guest sessions (provisioned by invite links) have no account to
+        // onboard -- saving a profile under a throwaway uid would orphan it.
+        // Send them to the real login form instead.
         router.push('/login')
         return
       }
@@ -81,7 +84,7 @@ function OnboardingForm() {
     return (
       <div
         className="flex min-h-screen items-center justify-center bg-[#fff8f0] p-4"
-        style={{ fontFamily: "'Work Sans', sans-serif", color: '#5C4033' }}
+        style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: '#5C4033' }}
       >
         Preparing onboarding...
       </div>
@@ -90,7 +93,7 @@ function OnboardingForm() {
 
   return (
     <div
-      style={{ fontFamily: "'Work Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
       className="relative flex min-h-screen flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
       <style>{`
@@ -183,7 +186,7 @@ function OnboardingForm() {
               height={56}
               className="h-14 w-14 object-contain"
             />
-            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
+            <div style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
               <span className="text-[#453a2a]">Case Compendium</span>
               <span className="text-[#3D5A35]">X</span>
             </div>
@@ -205,7 +208,7 @@ function OnboardingForm() {
             </span>
             <h1
               style={{
-                fontFamily: "'Newsreader', serif",
+                fontFamily: "var(--font-newsreader), 'Newsreader', serif",
                 animation: mounted ? 'onboarding-title-settle 0.75s cubic-bezier(0.22,1,0.36,1) 0.1s both' : 'none',
                 opacity: mounted ? undefined : 0,
               }}
@@ -295,7 +298,7 @@ export default function OnboardingPage() {
       fallback={
         <div
           className="flex min-h-screen items-center justify-center bg-[#fff8f0] p-4"
-          style={{ fontFamily: "'Work Sans', sans-serif", color: '#5C4033' }}
+          style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: '#5C4033' }}
         >
           Loading...
         </div>

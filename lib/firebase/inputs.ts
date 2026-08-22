@@ -10,11 +10,9 @@
  */
 import { z } from 'zod'
 
-// Existing client generator uses `Math.random().toString(36).substring(7)` →
-// produces ~5 character strings. Loose lower bound so we don't reject legit
-// lobby IDs. TODO: tighten generator to use crypto.randomUUID() for remote
-// sessions (where the ID is shared over the network and must resist guessing),
-// then raise this minimum to 16.
+// New sessions generate IDs via lib/session/lobbyId.ts (crypto.randomUUID —
+// 122 bits of CSPRNG entropy). The loose lower bound keeps pre-existing
+// short-format lobby IDs (older sessions, in-flight at deploy time) working.
 const lobbyId = z.string().min(4).max(128)
 const caseId = z.string().min(1).max(128)
 const sessionMode = z.enum(['remote', 'local'])

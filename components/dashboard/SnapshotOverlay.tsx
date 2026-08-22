@@ -1,11 +1,12 @@
 'use client'
 
-import { type ChangeEvent, type DragEvent, useState } from 'react'
+import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from 'react'
 import { Image, ImageUp, Loader2, X } from 'lucide-react'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
 import { storage, waitForAuthUser } from '@/lib/firebase/config'
 import { apiPost } from '@/lib/api/client'
 import type { DashboardCaseEntry } from '@/lib/dashboard/live'
+import { formatDashboardDateDot } from '@/lib/dashboard/date'
 
 function safeFileExtension(filename: string): string {
   const raw = filename.toLowerCase().split('.').pop() ?? 'jpg'
@@ -13,13 +14,7 @@ function safeFileExtension(filename: string): string {
   return clean || 'jpg'
 }
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr)
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const yyyy = d.getFullYear()
-  return `${dd}.${mm}.${yyyy}`
-}
+const formatDate = (dateStr: string): string => formatDashboardDateDot(dateStr)
 
 export default function SnapshotOverlay({
   entry,
@@ -37,6 +32,25 @@ export default function SnapshotOverlay({
   const [localImageUrl, setLocalImageUrl] = useState(entry.workspaceImageUrls[0] ?? '')
 
   const hasSnapshot = Boolean(localImageUrl || entry.hasSnapshot)
+
+  // Escape closes the modal (matching CaseDetailOverlay/FullHistoryModal), but
+  // never mid-upload — a stray Escape must not be mistaken for a cancel while
+  // the request is in flight. Focus is restored to the trigger on close.
+  const uploadingRef = useRef(uploading)
+  uploadingRef.current = uploading
+  const restoreFocusRef = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    restoreFocusRef.current = document.activeElement as HTMLElement | null
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !uploadingRef.current) onClose()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      restoreFocusRef.current?.focus?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const uploadFile = async (file: File | null | undefined) => {
     if (!file || uploading) return
@@ -96,7 +110,13 @@ export default function SnapshotOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={hasSnapshot ? 'Workspace snapshot' : 'Upload workspace snapshot'}
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-[#3B2F2F]/30 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-md overflow-hidden rounded-2xl border border-[#5C4033]/12 bg-[#fff8f0]/90 shadow-2xl backdrop-blur-xl animate-scale-in"

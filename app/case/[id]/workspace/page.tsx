@@ -59,6 +59,10 @@ function pickSupportedMimeType(): string | null {
 
 function fileExtensionFromType(mimeType: string): string {
   if (mimeType.includes('ogg')) return 'ogg'
+  // Safari's MediaRecorder emits audio/mp4 — storing that payload under a
+  // .webm name confuses downstream content sniffing and transcription.
+  if (mimeType.includes('mp4') || mimeType.includes('aac')) return 'm4a'
+  if (mimeType.includes('webm')) return 'webm'
   return 'webm'
 }
 
@@ -109,13 +113,13 @@ function CompactPlatformFooter() {
       <div className="mx-auto max-w-screen-2xl">
         <div className="mb-5 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center md:gap-10">
           <div>
-            <Link href="/" style={{ fontFamily: "'Newsreader', serif" }} className="mb-2 inline-block text-2xl font-semibold tracking-tight transition-opacity hover:opacity-85">
+            <Link href="/" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="mb-2 inline-block text-2xl font-semibold tracking-tight transition-opacity hover:opacity-85">
               <span style={{ color: '#d5c4b1' }}>Case Compendium</span>
               <span style={{ color: '#aed0a1' }}>X</span>
             </Link>
             <p
               style={{
-                fontFamily: "'Work Sans', sans-serif",
+                fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                 color: 'rgba(213,196,177,0.5)',
                 maxWidth: '280px',
                 lineHeight: 1.6,
@@ -126,19 +130,19 @@ function CompactPlatformFooter() {
             </p>
           </div>
           <div className="flex flex-wrap gap-x-10 gap-y-3 md:gap-x-12">
-            <Link href="/" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+            <Link href="/" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
               Home
             </Link>
-            <Link href="/about-ccx" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+            <Link href="/about-ccx" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
               The Platform
             </Link>
-            <Link href="/our-story" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+            <Link href="/our-story" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
               The Team
             </Link>
-            <Link href="/collaborators" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+            <Link href="/collaborators" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
               Acknowledgements
             </Link>
-            <a href="mailto:contact@casecompendiumx.in?subject=Case%20CompendiumX%20Query" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+            <a href="mailto:contact@casecompendiumx.in?subject=Case%20CompendiumX%20Query" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
               Contact Us
             </a>
           </div>
@@ -156,7 +160,7 @@ function CompactPlatformFooter() {
               </svg>
             </a>
           </div>
-          <p style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.35)', lineHeight: 1.8 }} className="text-[10px] tracking-[0.2em] uppercase">
+          <p style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.35)', lineHeight: 1.8 }} className="text-[10px] tracking-[0.2em] uppercase">
             &copy; 2026 Case CompendiumX. All rights reserved.
           </p>
         </div>
@@ -219,6 +223,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
   const [endSessionActionInProgress, setEndSessionActionInProgress] = useState(false)
   const [endSessionSavedVisible, setEndSessionSavedVisible] = useState(false)
   const [endSessionSavedKind, setEndSessionSavedKind] = useState<'rated' | 'unrated'>('unrated')
+  // True when the candidate-side completion POST (submit-draft / save-unrated /
+  // complete) failed even after retries. The local draft is kept on device in
+  // that case; the saved-overlay copy reflects it honestly.
+  const [completionSaveFailed, setCompletionSaveFailed] = useState(false)
   // Suppresses interviewer-window-closed and capture-error overlays after end session is triggered
   const endSessionInitiatedRef = useRef(false)
   // ── Recoverable capture error overlay ──────────────────────────────────────
@@ -697,6 +705,13 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
         setRecordingError('Recording is available only in linked practice sessions.')
         return
       }
+      // Already recording (e.g. the auto-start effect and a manual click, or
+      // two triggers firing around the same time) -- don't spin up a second
+      // concurrent MediaRecorder. A stacked recorder corrupts the cumulative
+      // blob (two interleaved chunk sequences) and leaks a live mic track
+      // that teardownMedia() would never see.
+      const activeRecorder = recorderRef.current
+      if (activeRecorder && activeRecorder.state !== 'inactive') return
 
       setRecordingMode(mode)
       setRecordingState('starting')
@@ -731,6 +746,9 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
 
             setRecordingState('recording')
             if (lobbyId) {
+              if (candidateFlushTimerRef.current) {
+                clearInterval(candidateFlushTimerRef.current)
+              }
               candidateFlushTimerRef.current = setInterval(() => {
                 void flushCandidateAudio({ final: false })
               }, CANDIDATE_FLUSH_MS)
@@ -818,6 +836,9 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
         // if the tab is closed before the final upload, the pagehide beacon can
         // register the last-flushed URL and transcription still fires.
         if (lobbyId) {
+          if (candidateFlushTimerRef.current) {
+            clearInterval(candidateFlushTimerRef.current)
+          }
           candidateFlushTimerRef.current = setInterval(() => {
             void flushCandidateAudio({ final: false })
           }, CANDIDATE_FLUSH_MS)
@@ -1008,6 +1029,30 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
     setEndSessionOverlayKind(isRated ? 'rated' : 'unrated')
   }, [endingSession, lobbyId, checkRatingStatus])
 
+  // Retries transient failures of the candidate-side completion POSTs with a
+  // short backoff. A network blip here used to silently swallow the error and
+  // then delete the interviewer's local draft anyway -- stranding the session
+  // in_progress forever. Callers only clear the draft once this resolves
+  // successfully; on exhaustion they keep it and surface an honest notice.
+  const postWithRetry = useCallback(
+    async (path: string, body: Record<string, unknown>, attempts = 3): Promise<void> => {
+      let lastError: unknown
+      for (let attempt = 0; attempt < attempts; attempt += 1) {
+        try {
+          await apiPost(path, body)
+          return
+        } catch (error) {
+          lastError = error
+          if (attempt < attempts - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)))
+          }
+        }
+      }
+      throw lastError instanceof Error ? lastError : new Error('Request failed.')
+    },
+    [],
+  )
+
   const handleEndSessionSaveAndEnd = useCallback(async () => {
     if (endSessionActionInProgress || !lobbyId) return
     setEndSessionActionInProgress(true)
@@ -1022,12 +1067,13 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
     // submit-draft is idempotent server-side and also marks the session completed —
     // no need to call /complete separately. We submit even partial drafts (1-3 scores)
     // so that whatever the interviewer filled in is never silently discarded.
+    let completionSaved = false
     try {
       const draft = readDraftScores(lobbyId)
       const hasAnyScore = draft && Object.values(draft.scores).some(s => (s ?? 0) > 0)
       const hasNotes = draft && draft.notes.trim().length > 0
       if (draft && (hasAnyScore || hasNotes)) {
-        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/submit-draft`, {
+        await postWithRetry(`/api/sessions/${encodeURIComponent(lobbyId)}/submit-draft`, {
           scores: {
             ...(draft.scores.structure ? { structure: draft.scores.structure } : {}),
             ...(draft.scores.understanding ? { understanding: draft.scores.understanding } : {}),
@@ -1039,13 +1085,19 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
       } else {
         // No local draft at all — the interviewer already submitted formally,
         // so the eval exists server-side. Just mark the session complete.
-        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, { completedBy: 'candidate' })
+        await postWithRetry(`/api/sessions/${encodeURIComponent(lobbyId)}/complete`, { completedBy: 'candidate' })
       }
+      completionSaved = true
     } catch {
-      // Non-fatal
+      // Kept non-fatal (audio finalization below must still run), but the
+      // draft is intentionally NOT deleted and the overlay says so -- the
+      // user can reopen this session link to retry the submission.
+      setCompletionSaveFailed(true)
     }
 
-    try { localStorage.removeItem(`compendium-interviewer-draft-${lobbyId}`) } catch { }
+    if (completionSaved) {
+      try { localStorage.removeItem(`compendium-interviewer-draft-${lobbyId}`) } catch { }
+    }
 
     type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
     ;(window as PopupHost).__compendiumInterviewerWindow?.close()
@@ -1054,7 +1106,7 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
     setEndSessionActionInProgress(false)
     setEndSessionSavedKind('rated')
     setEndSessionSavedVisible(true)
-  }, [endSessionActionInProgress, lobbyId, readDraftScores, stopRecordingAndFinalize])
+  }, [endSessionActionInProgress, lobbyId, readDraftScores, stopRecordingAndFinalize, postWithRetry])
 
   const handleEndSessionSaveAudio = useCallback(async () => {
     if (endSessionActionInProgress || !lobbyId) return
@@ -1069,12 +1121,13 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
     // Save audio and any partial draft scores the interviewer may have filled in.
     // If a draft exists (even partial), submit it so ratings aren't discarded.
     // Fall back to save-unrated if there's nothing to submit.
+    let completionSaved = false
     try {
       const draft = readDraftScores(lobbyId)
       const hasAnyScore = draft && Object.values(draft.scores).some(s => (s ?? 0) > 0)
       const hasNotes = draft && draft.notes.trim().length > 0
       if (draft && (hasAnyScore || hasNotes)) {
-        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/submit-draft`, {
+        await postWithRetry(`/api/sessions/${encodeURIComponent(lobbyId)}/submit-draft`, {
           scores: {
             ...(draft.scores.structure ? { structure: draft.scores.structure } : {}),
             ...(draft.scores.understanding ? { understanding: draft.scores.understanding } : {}),
@@ -1084,13 +1137,16 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
           notes: draft.notes,
         })
       } else {
-        await apiPost(`/api/sessions/${encodeURIComponent(lobbyId)}/save-unrated`, {})
+        await postWithRetry(`/api/sessions/${encodeURIComponent(lobbyId)}/save-unrated`, {})
       }
+      completionSaved = true
     } catch {
-      // Non-fatal
+      setCompletionSaveFailed(true)
     }
 
-    try { localStorage.removeItem(`compendium-interviewer-draft-${lobbyId}`) } catch { }
+    if (completionSaved) {
+      try { localStorage.removeItem(`compendium-interviewer-draft-${lobbyId}`) } catch { }
+    }
 
     type PopupHost = Window & { __compendiumInterviewerWindow?: Window | null }
     ;(window as PopupHost).__compendiumInterviewerWindow?.close()
@@ -1099,7 +1155,7 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
     setEndSessionActionInProgress(false)
     setEndSessionSavedKind('unrated')
     setEndSessionSavedVisible(true)
-  }, [endSessionActionInProgress, lobbyId, readDraftScores, stopRecordingAndFinalize])
+  }, [endSessionActionInProgress, lobbyId, readDraftScores, stopRecordingAndFinalize, postWithRetry])
 
   const handleEndSessionDrop = useCallback(async () => {
     if (endSessionActionInProgress || !lobbyId) return
@@ -1133,12 +1189,13 @@ startedAtMs: recordingStartMsRef.current ?? nowMs,
   useEffect(() => { preferredRecordingModeRef.current = preferredRecordingMode }, [preferredRecordingMode])
 
   // B4 (remote): staleness threshold for interviewerPresence.
-  // If lastSeenAt is older than 3s (3× the 1s heartbeat), the interviewer
+  // If lastSeenAt is older than 30s (3× the 10s heartbeat), the interviewer
   // is treated as disconnected. Only used in remote mode.
-  const PRESENCE_STALE_MS = 3_000
+  const PRESENCE_STALE_MS = 30_000
 // Overlay-only threshold (kept separate from the audio-declined check above,
-// which intentionally stays at PRESENCE_STALE_MS). 8s = 4× the 2s heartbeat.
-const INTERVIEWER_DISCONNECT_STALE_MS = 8_000
+// which intentionally stays at PRESENCE_STALE_MS). 35s allows two missed
+// 10s heartbeats before the disconnect overlay fires.
+const INTERVIEWER_DISCONNECT_STALE_MS = 35_000
   // Latest interviewerPresence payload, cached so a periodic timer (not just
   // each incoming Firestore snapshot) can re-check staleness.
   const interviewerPresenceRef = useRef<{ active?: boolean; lastSeenAt?: { toDate: () => Date } } | undefined>(undefined)
@@ -2265,7 +2322,7 @@ interrupted: true,
 
   return (
     <div
-      style={{ fontFamily: "'Work Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
       className="relative min-h-screen flex flex-col overflow-hidden bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
       <style>{`
@@ -2527,7 +2584,7 @@ interrupted: true,
               height={56}
               className="h-14 w-14 object-contain"
             />
-            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
+            <div style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
               <span className="text-[#453a2a]">Case Compendium</span>
               <span className="text-[#3D5A35]">X</span>
             </div>
@@ -2757,7 +2814,11 @@ interrupted: true,
             </svg>
           }
           title="Session saved. Heading to dashboard."
-          body={recordingConsentDeclined
+          body={completionSaveFailed
+            ? (recordingConsentDeclined
+              ? "The rating draft couldn't reach the server after several attempts, so it's kept on this device. Reopen this session's link to retry."
+              : "Audio is safe, but the feedback draft couldn't reach the server after several attempts. It's kept on this device -- reopen this session's link to retry.")
+            : recordingConsentDeclined
             ? (endSessionSavedKind === 'rated'
                 ? "Ratings saved. This case ran without recording, so there's no audio or transcript. It's in your dashboard."
                 : "This case ran without recording, so there's no audio or transcript. It's in your dashboard as unrated.")
@@ -3082,7 +3143,7 @@ interrupted: true,
             </div>
             <h1
               className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
-              style={{ fontFamily: "'Newsreader', serif" }}
+              style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}
             >
               {wsH1Primary} <span className="text-[#3D5A35]">{wsH1Secondary}</span>
             </h1>

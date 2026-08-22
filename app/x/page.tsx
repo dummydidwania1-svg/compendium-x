@@ -22,7 +22,7 @@ const PAGE_CSS = `
 }
 
 html, body { background: var(--cream) !important; color: var(--text-primary); }
-body { font-family: 'Work Sans', sans-serif; }
+body { font-family: var(--font-work-sans), 'Work Sans', sans-serif; }
 
 /* Zero rounding everywhere on this page — design-system requirement */
 .ccx-page * { border-radius: 0 !important; }
@@ -54,7 +54,7 @@ header.ccx-hero .hero-inner {
   padding: 0 48px 0 calc(48px + 42%);
 }
 header.ccx-hero h1 {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-newsreader), 'Newsreader', serif;
   margin: 0;
 }
 header.ccx-hero .ctas {
@@ -65,7 +65,7 @@ header.ccx-hero .ctas a {
   display: inline-block;
   padding: 16px 32px;
   white-space: nowrap;
-  font-family: 'Work Sans', sans-serif;
+  font-family: var(--font-work-sans), 'Work Sans', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.2em;
@@ -117,7 +117,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   display: flex;
   align-items: center;
   gap: 16px;
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-newsreader), 'Newsreader', serif;
   font-style: italic;
   font-size: 28px;
   font-weight: 400;
@@ -134,7 +134,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   flex-shrink: 0;
 }
 #ccx-main-title {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-newsreader), 'Newsreader', serif;
   font-size: 96px;
   font-weight: 400;
   color: var(--text-heading);
@@ -162,7 +162,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   color: var(--text-heading) !important;
   font-weight: 300 !important;
   font-style: normal !important;
-  font-family: 'Newsreader', serif !important;
+  font-family: var(--font-newsreader), 'Newsreader', serif !important;
   font-size: 36px !important;
   letter-spacing: -0.6px !important;
   margin-top: 8px;
@@ -172,7 +172,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   color: var(--accent) !important;
   font-weight: 400 !important;
   font-style: italic !important;
-  font-family: 'Newsreader', serif !important;
+  font-family: var(--font-newsreader), 'Newsreader', serif !important;
   font-size: 36px !important;
   width: auto !important;
 }
@@ -180,7 +180,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   color: var(--accent) !important;
   font-size: 36px !important;
   font-style: italic !important;
-  font-family: 'Newsreader', serif !important;
+  font-family: var(--font-newsreader), 'Newsreader', serif !important;
 }
 .ccx-hidden { display: none !important; }
 
@@ -297,7 +297,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   to { opacity: 1; transform: scale(1); }
 }
 #ccx-edition-reveal {
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-newsreader), 'Newsreader', serif;
   font-style: italic;
   font-size: 18px;
   font-weight: 400;
@@ -388,7 +388,7 @@ header.ccx-hero .ctas a.secondary:hover { background: var(--accent); color: #fff
   gap: 20px;
 }
 .ccx-supported__label {
-  font-family: 'Work Sans', sans-serif;
+  font-family: var(--font-work-sans), 'Work Sans', sans-serif;
   font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
@@ -517,7 +517,7 @@ function Navbar() {
                   isActive ? 'font-medium' : 'text-[#57534E] font-normal',
                 ].join(' ')}
                 style={{
-                  fontFamily: "'Work Sans', sans-serif",
+                  fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                   color: isActive ? ACCENT : undefined,
                 }}
                 onMouseEnter={(e) => {
@@ -544,7 +544,7 @@ function Navbar() {
           href="/login?redirect=/x"
           className="px-5 py-2 text-[10px] uppercase tracking-[0.2em] font-medium transition-all duration-300 cursor-pointer bg-transparent"
           style={{
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             color: ACCENT,
             border: `1px solid ${ACCENT}`,
           }}
@@ -587,7 +587,7 @@ function Footer() {
             <p
               className="text-xs"
               style={{
-                fontFamily: "'Work Sans', sans-serif",
+                fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                 color: 'rgba(213, 196, 177, 0.5)',
               }}
             >
@@ -602,7 +602,7 @@ function Footer() {
                 href={href}
                 className="transition-all hover:text-white hover:font-semibold"
                 style={{
-                  fontFamily: "'Work Sans', sans-serif",
+                  fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                   fontSize: '10px',
                   fontWeight: 400,
                   letterSpacing: '2px',
@@ -670,7 +670,7 @@ function Footer() {
           <p
             className="text-[10px] tracking-[0.2em] uppercase"
             style={{
-              fontFamily: "'Work Sans', sans-serif",
+              fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
               color: 'rgba(213, 196, 177, 0.5)',
             }}
           >
@@ -763,7 +763,7 @@ export default function LandingX() {
       h1.style.marginTop = '14px'
       h1.style.marginBottom = '8px'
       h1.style.fontWeight = '300'
-      h1.style.fontFamily = "'Newsreader', serif"
+      h1.style.fontFamily = "var(--font-newsreader), 'Newsreader', serif"
 
       const firstText = Array.from(h1.childNodes).find(
         (n) => n.nodeType === 3 && (n.textContent || '').trim().length > 0,
@@ -886,12 +886,10 @@ export default function LandingX() {
 
   return (
     <div className="ccx-page">
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400;1,6..72,500&family=Work+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
+      {/* Fonts are self-hosted site-wide via next/font (see app/layout.tsx);
+          the literal 'Work Sans'/'Newsreader' names resolve through the
+          --font-* CSS variables, so the Google-CDN stylesheet is no longer
+          needed here (it duplicated every face and blocked first paint). */}
       <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
 
       <Navbar />

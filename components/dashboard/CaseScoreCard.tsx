@@ -447,7 +447,17 @@ const CaseScoreCard = ({ filters }: CaseScoreCardProps) => {
     <>
       <div
         onClick={() => !noData && setShowDrilldown(true)}
-        className="glass-card p-6 flex flex-col justify-between transition-all duration-300 ease-out relative overflow-visible cursor-pointer hover:bg-[#D9D0C4]/20 hover:-translate-y-0.5 hover:shadow-lg group"
+        onKeyDown={(e) => {
+          if (noData) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setShowDrilldown(true)
+          }
+        }}
+        role={noData ? undefined : 'button'}
+        tabIndex={noData ? -1 : 0}
+        aria-label={noData ? undefined : 'Open score breakdown'}
+        className="glass-card p-6 flex flex-col justify-between transition-all duration-300 ease-out relative overflow-visible cursor-pointer hover:bg-[#D9D0C4]/20 hover:-translate-y-0.5 hover:shadow-lg group focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3D5A35]"
       >
         {/* ── Header ── */}
         <div className="flex items-start justify-between mb-3">

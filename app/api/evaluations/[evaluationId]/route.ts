@@ -1,7 +1,7 @@
 /**
  * DELETE /api/evaluations/[evaluationId]
  *
- * Permanently removes a candidate's case-session record from their dashboard
+ * Permanently removes a case-session record from the caller's dashboard
  * history. Firestore's security rules set `allow delete: if false` on the
  * evaluations collection, so this Admin-SDK route is the only way to delete
  * one — mirroring the workspace-image route's server-owned mutation pattern.
@@ -9,8 +9,12 @@
  * Deletes:
  *   - the `evaluations/{evaluationId}` doc (what drives the dashboard listing)
  *   - best-effort: the linked `sessions/{lobbyId}` doc AND its
- *     `recordings/{candidate,interviewer}` subcollection, where the transcript
- *     and audio metadata for this attempt live.
+ *     `recordings/{candidate,interviewer}` subcollection — BUT only when no
+ *     OTHER evaluation still references that lobby. The session doc and its
+ *     recordings are shared between both participants (and duplicate
+ *     evaluation docs can legitimately exist for one lobby), so cascading
+ *     unconditionally would destroy the other participant's transcript and
+ *     audio metadata and orphan any surviving evaluation pointing at it.
  *
  * Storage cleanup (audio under `session-recordings/…`, merged audio, and
  * `workspace-images/…`) is intentionally NOT performed here — see PR notes.
@@ -46,12 +50,20 @@ export const DELETE = authenticatedRoute<{ evaluationId: string }>(
     await ref.delete()
 
     // Then best-effort remove the linked session doc and its recordings
-    // subcollection. Failure here must not fail the request: the evaluation
-    // (the user-visible entry) is already gone.
+    // subcollection — only if this was the LAST evaluation referencing the
+    // lobby. Failure here must not fail the request: the evaluation (the
+    // user-visible entry) is already gone.
     const lobbyId = typeof data.lobbyId === 'string' ? data.lobbyId : null
     if (lobbyId) {
       try {
-        await adminDb.recursiveDelete(adminDb.collection('sessions').doc(lobbyId))
+        const siblings = await adminDb
+          .collection('evaluations')
+          .where('lobbyId', '==', lobbyId)
+          .limit(1)
+          .get()
+        if (siblings.empty) {
+          await adminDb.recursiveDelete(adminDb.collection('sessions').doc(lobbyId))
+        }
       } catch {
         // Swallow — the evaluation is deleted, which is what the user sees.
       }

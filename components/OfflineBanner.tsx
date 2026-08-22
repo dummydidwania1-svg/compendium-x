@@ -24,7 +24,7 @@ export default function OfflineBanner() {
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#fff8f0]"
-      style={{ fontFamily: "'Work Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
     >
       <style>{`
         @keyframes ob-pulse {
@@ -66,7 +66,7 @@ export default function OfflineBanner() {
             You&rsquo;re offline
           </p>
           <h2
-            style={{ fontFamily: "'Newsreader', serif", fontWeight: 300 }}
+            style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontWeight: 300 }}
             className="text-[28px] leading-snug tracking-tight text-[#3B2F2F]"
           >
             No connection right now

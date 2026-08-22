@@ -184,13 +184,13 @@ const AboutPage = () => {
   return (
     <div
       ref={rootRef}
-      style={{ fontFamily: "'Work Sans', sans-serif", background: '#fff8f0', color: '#1e1b15' }}
+      style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", background: '#fff8f0', color: '#1e1b15' }}
       className="min-h-screen antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
       <style>{`
-        .font-headline { font-family: 'Newsreader', serif; }
-        .font-body { font-family: 'Work Sans', sans-serif; }
-        .font-label { font-family: 'Work Sans', sans-serif; }
+        .font-headline { font-family: var(--font-newsreader), 'Newsreader', serif; }
+        .font-body { font-family: var(--font-work-sans), 'Work Sans', sans-serif; }
+        .font-label { font-family: var(--font-work-sans), 'Work Sans', sans-serif; }
         .material-symbols-outlined {
           font-family: 'Material Symbols Outlined';
           font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
@@ -259,7 +259,7 @@ const AboutPage = () => {
           font-variation-settings: 'FILL' 1, 'wght' 300;
         }
         .founder-avatar .photo-placeholder .ph-label {
-          font-family: 'Work Sans', sans-serif;
+          font-family: var(--font-work-sans), 'Work Sans', sans-serif;
           font-size: 7px;
           text-transform: uppercase;
           letter-spacing: 0.1em;
@@ -271,7 +271,7 @@ const AboutPage = () => {
           align-items: center;
           gap: 6px;
           padding: 6px 14px;
-          font-family: 'Work Sans', sans-serif;
+          font-family: var(--font-work-sans), 'Work Sans', sans-serif;
           font-size: 9px;
           text-transform: uppercase;
           letter-spacing: 0.2em;
@@ -335,7 +335,7 @@ const AboutPage = () => {
           50% { box-shadow: 0 0 0 12px rgba(61,90,53,0); }
         }
         .tl-year {
-          font-family: 'Work Sans', sans-serif;
+          font-family: var(--font-work-sans), 'Work Sans', sans-serif;
           font-size: 10px;
           letter-spacing: 0.15em;
           text-transform: uppercase;
@@ -344,7 +344,7 @@ const AboutPage = () => {
           transition: color 0.3s;
         }
         .tl-label {
-          font-family: 'Newsreader', serif;
+          font-family: var(--font-newsreader), 'Newsreader', serif;
           font-size: 13px;
           font-style: italic;
           margin-top: 4px;

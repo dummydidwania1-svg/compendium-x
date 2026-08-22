@@ -39,12 +39,6 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
 
     // If an evaluation already exists (interviewer submitted), just mark the
     // session completed — don't overwrite real scores with an unrated stub.
-    const existing = await adminDb
-      .collection('evaluations')
-      .where('lobbyId', '==', lobbyId)
-      .limit(1)
-      .get()
-
     const caseSnap = await adminDb.collection('cases').doc(caseId).get()
     const caseData = caseSnap.exists ? (caseSnap.data() ?? {}) : {}
     const caseTitle =
@@ -70,48 +64,55 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
     const interviewerEmail =
       typeof sessionData.interviewerEmail === 'string' ? sessionData.interviewerEmail : caller.email
 
-    const batch = adminDb.batch()
-
-    if (existing.empty) {
-      // Use a stable, lobbyId-derived document ID so concurrent calls are
-      // idempotent — both would set the same doc with the same data rather
-      // than creating two separate unrated stubs.
-      const evaluationRef = adminDb.collection('evaluations').doc(`unrated_${lobbyId}`)
-      batch.set(evaluationRef, {
-        caseId,
-        caseTitle,
-        caseType,
-        industry,
-        lobbyId,
-        candidateId,
-        interviewerId,
-        candidateName: candidateEmail ?? caller.email,
-        interviewerEmail,
-        isUnrated: true,
-        notes: '',
-        interviewerObservations: '',
-        createdAt: FieldValue.serverTimestamp(),
-      })
-    }
-
-    batch.set(
-      sessionRef,
-      {
-        status: 'completed',
-        completedBy: 'candidate_unrated_save',
-        interviewerId,
-        interviewerEmail,
-        completedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    )
-
-    await batch.commit()
+    // Create atomically under the canonical lobby-derived document ID, guarded
+    // by a re-query inside the transaction. This mirrors submit-draft so the
+    // two candidate-side completion routes can never produce duplicate
+    // evaluation docs for the same lobby, and completion + stub creation land
+    // together or not at all.
+    let evaluationId: string | undefined
+    let existingEvaluationId: string | undefined
+    await adminDb.runTransaction(async (tx) => {
+      const dup = await tx.get(
+        adminDb.collection('evaluations').where('lobbyId', '==', lobbyId).limit(1),
+      )
+      if (!dup.empty) {
+        existingEvaluationId = dup.docs[0].id
+      } else {
+        const evaluationRef = adminDb.collection('evaluations').doc(`unrated_${lobbyId}`)
+        tx.create(evaluationRef, {
+          caseId,
+          caseTitle,
+          caseType,
+          industry,
+          lobbyId,
+          candidateId,
+          interviewerId,
+          candidateName: candidateEmail ?? caller.email,
+          interviewerEmail,
+          isUnrated: true,
+          notes: '',
+          interviewerObservations: '',
+          createdAt: FieldValue.serverTimestamp(),
+        })
+        evaluationId = evaluationRef.id
+      }
+      tx.set(
+        sessionRef,
+        {
+          status: 'completed',
+          completedBy: 'candidate_unrated_save',
+          interviewerId,
+          interviewerEmail,
+          completedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+    })
 
     return jsonOk({
       ok: true,
-      evaluationId: existing.empty ? undefined : existing.docs[0].id,
+      evaluationId: existingEvaluationId ?? evaluationId,
     })
   },
 )

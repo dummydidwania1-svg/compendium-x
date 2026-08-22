@@ -1,7 +1,7 @@
 // Service worker for Case CompendiumX
 // Caches app shell on install, serves offline for repository + case pages.
 
-const CACHE = 'ccx-shell-v6'
+const CACHE = 'ccx-shell-v7'
 
 // App shell: pages that must survive offline
 const SHELL = [
@@ -48,14 +48,21 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Never intercept: Firebase/Firestore, API routes, auth, analytics
+  if (request.method !== 'GET') return
+
+  // Google-hosted webfonts ARE cached so the offline shell keeps the brand
+  // typography. Every other Google host (analytics, Firestore, identity
+  // toolkit) is passed straight through untouched.
+  const isGoogleFontsHost =
+    url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com'
+
   if (
-    url.hostname.includes('firestore.googleapis.com') ||
-    url.hostname.includes('firebase') ||
-    url.hostname.includes('google') ||
-    url.pathname.startsWith('/api/') ||
-    url.pathname.startsWith('/_next/data/') ||
-    request.method !== 'GET'
+    !isGoogleFontsHost &&
+    (url.hostname.includes('firestore.googleapis.com') ||
+      url.hostname.includes('firebase') ||
+      url.hostname.includes('google') ||
+      url.pathname.startsWith('/api/') ||
+      url.pathname.startsWith('/_next/data/'))
   ) {
     return
   }
@@ -77,8 +84,10 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Navigation requests (HTML pages) — network-first, fall back to cached
-  // shell at '/' so the React app loads and shows the OfflineBanner overlay.
+  // Navigation requests (HTML pages) — network-first; fall back to the exact
+  // cached page when we have it, otherwise the dedicated offline page (NOT
+  // the home page — an offline deep-link to /login used to silently render
+  // the landing page under the wrong URL).
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -91,7 +100,8 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() =>
           caches.match(request).then(cached =>
-            cached ?? caches.match('/')
+            cached ??
+            caches.match('/offline.html').then(offline => offline ?? caches.match('/'))
           )
         )
     )

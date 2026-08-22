@@ -68,7 +68,7 @@
 
 /* Recharts label consistency */
 .recharts-text {
-  font-family: 'Work Sans', system-ui, sans-serif !important;
+  font-family: var(--font-work-sans), 'Work Sans', system-ui, sans-serif !important;
   font-size: 10px !important;
   fill: rgba(92, 64, 51, 0.6) !important;
 }
@@ -82,7 +82,7 @@
 }
 
 body {
-  font-family: 'Work Sans', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-work-sans), 'Work Sans', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   color: #3B2F2F;

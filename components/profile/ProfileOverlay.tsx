@@ -63,7 +63,7 @@ const fieldClass = 'ccx-input w-full px-4 py-2.5 text-[13px] text-[#1e1b15] outl
 const labelClass =
   'mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5c4033]/55'
 const sectionTitleClass = 'text-[19px] font-medium text-[#3B2F2F]'
-const serifStyle = { fontFamily: "'Newsreader', serif" }
+const serifStyle = { fontFamily: "var(--font-newsreader), 'Newsreader', serif" }
 const iconStyle = { fontSize: 18 }
 
 /** Tiny inline status that fades in beside an action, then fades away. No boxes. */
@@ -695,7 +695,7 @@ export default function ProfileOverlay({ onClose }: ProfileOverlayProps) {
 
       <div
         className="ccx-profile-panel relative flex w-full max-w-[680px] overflow-hidden bg-[#fff8f0]"
-        style={{ height: 'min(478px, calc(100vh - 64px))', fontFamily: "'Work Sans', sans-serif" }}
+        style={{ height: 'min(478px, calc(100vh - 64px))', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
       >
         <button
           type="button"

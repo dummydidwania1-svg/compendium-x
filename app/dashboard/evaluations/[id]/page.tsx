@@ -66,8 +66,10 @@ type SessionRecordingView = {
 const AUDIO_MERGE_PENDING_STATUSES = new Set(['none', 'pending', 'processing', 'partial', 'completed'])
 // Terminal audio-merge outcomes — once mergedAudioStatus reaches one of these,
 // the audio side is definitively resolved and should never show "generating"
-// again, regardless of what mergedTranscriptStatus says.
-const AUDIO_MERGE_TERMINAL_STATUSES = new Set(['completed', 'single_side', 'none'])
+// again, regardless of what mergedTranscriptStatus says. 'failed' must be
+// treated as terminal too, otherwise a failed merge leaves this page spinning
+// forever with the per-side audio players hidden.
+const AUDIO_MERGE_TERMINAL_STATUSES = new Set(['completed', 'single_side', 'none', 'failed'])
 
 function asNullableString(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
@@ -150,7 +152,10 @@ export default function EvaluationDetailPage() {
       setError('')
       try {
         const user = await waitForAuthUser()
-        if (!user) {
+        if (!user || user.isAnonymous) {
+          // Guest sessions (provisioned by invite links) can never read
+          // private evaluations -- Firestore rules would deny the read and
+          // surface raw permission jargon below. Treat them as signed out.
           router.replace(`/login?redirect=${encodeURIComponent(`/dashboard/evaluations/${evaluationId}`)}`)
           return
         }
@@ -166,7 +171,18 @@ export default function EvaluationDetailPage() {
         setRecord(mapEvaluationDoc(snapshot.id, snapshot.data()))
       } catch (fetchError) {
         setRecord(null)
-        setError(fetchError instanceof Error ? fetchError.message : 'Unable to load feedback entry.')
+        const isPermissionDenied =
+          typeof fetchError === 'object' &&
+          fetchError !== null &&
+          'code' in fetchError &&
+          (fetchError as { code?: unknown }).code === 'permission-denied'
+        setError(
+          isPermissionDenied
+            ? "This entry doesn't exist or you don't have access to it."
+            : fetchError instanceof Error && fetchError.message
+              ? 'Unable to load this feedback entry. Please try again.'
+              : 'Unable to load feedback entry.',
+        )
       } finally {
         setLoading(false)
       }

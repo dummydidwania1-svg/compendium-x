@@ -16,7 +16,7 @@ const NAV_SECTIONS = [
 
 const PAGE_CSS = `
   .pf-root {
-    font-family: 'Work Sans', sans-serif;
+    font-family: var(--font-work-sans), 'Work Sans', sans-serif;
     background: #fff8f0;
     color: #453a2a;
     min-height: 100vh;
@@ -67,7 +67,7 @@ const PAGE_CSS = `
     color: rgba(92,64,51,.48); margin-bottom: 14px;
   }
   .pf-headline {
-    font-family: 'Newsreader', serif;
+    font-family: var(--font-newsreader), 'Newsreader', serif;
     font-size: clamp(40px, 6vw, 72px); font-weight: 300;
     line-height: 1.0; letter-spacing: -.025em; color: #453a2a; margin-bottom: 20px;
   }
@@ -92,7 +92,7 @@ const PAGE_CSS = `
     letter-spacing: .3em; color: rgba(92,64,51,.45); margin-bottom: 10px; margin-top: 8px;
   }
   .pf-section-title {
-    font-family: 'Newsreader', serif; font-size: clamp(22px, 3vw, 30px);
+    font-family: var(--font-newsreader), 'Newsreader', serif; font-size: clamp(22px, 3vw, 30px);
     font-weight: 300; color: #453a2a; letter-spacing: -.01em; line-height: 1.25; margin-bottom: 22px;
   }
 
@@ -101,7 +101,7 @@ const PAGE_CSS = `
   /* Callout */
   .pf-callout { border-left: 2px solid #5C4033; padding: 18px 22px; background: rgba(92,64,51,.03); margin-bottom: 32px; }
   .pf-callout-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .26em; color: rgba(92,64,51,.5); margin-bottom: 8px; }
-  .pf-callout-txt { font-family: 'Newsreader', serif; font-size: 18px; font-style: italic; font-weight: 300; color: #453a2a; line-height: 1.6; }
+  .pf-callout-txt { font-family: var(--font-newsreader), 'Newsreader', serif; font-size: 18px; font-style: italic; font-weight: 300; color: #453a2a; line-height: 1.6; }
 
   /* Numbered list */
   .pf-qlist { list-style: none; margin: 0; padding: 0; }
@@ -114,7 +114,7 @@ const PAGE_CSS = `
   .pf-q:first-child { border-top: 1px solid rgba(92,64,51,.07); }
   .pf-q.visible { opacity: 1; transform: translateX(0); }
   @media (prefers-reduced-motion: reduce) { .pf-q { transition: none; opacity: 1; transform: none; } }
-  .pf-qn { font-family: 'Newsreader', serif; font-size: 13px; font-weight: 300; color: rgba(92,64,51,.38); min-width: 22px; flex-shrink: 0; padding-top: 2px; }
+  .pf-qn { font-family: var(--font-newsreader), 'Newsreader', serif; font-size: 13px; font-weight: 300; color: rgba(92,64,51,.38); min-width: 22px; flex-shrink: 0; padding-top: 2px; }
   .pf-qt { font-size: 15px; line-height: 1.7; color: #5a4f43; }
 
   .pf-split { display: grid; grid-template-columns: 380px 1fr; gap: 64px; align-items: start; margin-top: 96px; }
@@ -144,12 +144,12 @@ const PAGE_CSS = `
     .pf-lens:first-child { border-top: none; padding-top: 8px; }
   }
   .pf-lens-ey { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .24em; color: rgba(92,64,51,.5); margin-bottom: 12px; }
-  .pf-lens-h { font-family: 'Newsreader', serif; font-size: 19px; font-weight: 300; color: #453a2a; line-height: 1.25; letter-spacing: -.01em; margin: 0 0 18px; min-height: 48px; }
+  .pf-lens-h { font-family: var(--font-newsreader), 'Newsreader', serif; font-size: 19px; font-weight: 300; color: #453a2a; line-height: 1.25; letter-spacing: -.01em; margin: 0 0 18px; min-height: 48px; }
   .pf-lens-list { list-style: none; margin: 0; padding: 0; }
   .pf-lens-list li { font-size: 14px; line-height: 1.5; color: #5a4f43; padding: 8px 0 8px 18px; position: relative; }
   .pf-lens-list li::before { content: ''; position: absolute; left: 0; top: .82em; width: 8px; height: 1px; background: rgba(92,64,51,.42); }
-  .pf-lens-eq { margin: 14px 0 0; padding-left: 18px; font-family: 'Newsreader', serif; font-style: italic; font-weight: 300; font-size: 13.5px; color: rgba(69,58,42,.7); line-height: 1.45; }
-  .pf-lenses-foot { margin-top: 34px; padding-top: 22px; border-top: 1px solid rgba(92,64,51,.10); text-align: center; font-family: 'Newsreader', serif; font-style: italic; font-weight: 300; font-size: 15px; color: rgba(90,79,67,.72); }
+  .pf-lens-eq { margin: 14px 0 0; padding-left: 18px; font-family: var(--font-newsreader), 'Newsreader', serif; font-style: italic; font-weight: 300; font-size: 13.5px; color: rgba(69,58,42,.7); line-height: 1.45; }
+  .pf-lenses-foot { margin-top: 34px; padding-top: 22px; border-top: 1px solid rgba(92,64,51,.10); text-align: center; font-family: var(--font-newsreader), 'Newsreader', serif; font-style: italic; font-weight: 300; font-size: 15px; color: rgba(90,79,67,.72); }
 
   .pf-costpair { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; margin-top: 88px; align-items: start; }
   @media (max-width: 980px) { .pf-costpair { grid-template-columns: 1fr; gap: 40px; } }
@@ -161,7 +161,7 @@ const PAGE_CSS = `
   .pf-snav { position: fixed; right: 28px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 16px; z-index: 50; }
   @media (max-width: 1300px) { .pf-snav { display: none; } }
   .pf-snav-btn { display: flex; align-items: center; gap: 9px; background: none; border: none; cursor: pointer; padding: 0; justify-content: flex-end; }
-  .pf-snav-lbl { font-family: 'Work Sans', sans-serif; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .2em; color: #5C4033; opacity: 0; transition: opacity .18s ease; pointer-events: none; white-space: nowrap; }
+  .pf-snav-lbl { font-family: var(--font-work-sans), 'Work Sans', sans-serif; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .2em; color: #5C4033; opacity: 0; transition: opacity .18s ease; pointer-events: none; white-space: nowrap; }
   .pf-snav-btn:hover .pf-snav-lbl { opacity: 1; }
   .pf-snav-bar { width: 18px; height: 2px; border-radius: 1px; background: rgba(92,64,51,.22); transition: width .28s cubic-bezier(.22,1,.36,1), background .28s ease; flex-shrink: 0; }
   .pf-snav-btn:hover .pf-snav-bar { background: rgba(92,64,51,.5); width: 26px; }
@@ -171,7 +171,7 @@ const PAGE_CSS = `
   .pf-flowblock { margin-top: 72px; }
   .pf-flowblock:first-of-type { margin-top: 40px; }
   .pf-flow-cap {
-    font-family: 'Newsreader', serif; font-size: 19px; font-weight: 300;
+    font-family: var(--font-newsreader), 'Newsreader', serif; font-size: 19px; font-weight: 300;
     color: #453a2a; line-height: 1.4; margin-bottom: 6px;
   }
   .pf-flow-desc {
@@ -187,7 +187,7 @@ const PAGE_CSS = `
     background: rgba(196,168,130,.18);
     border: 1px solid rgba(92,64,51,.28);
     border-radius: 4px;
-    font-family: 'Work Sans', sans-serif; font-size: 13.5px; font-weight: 500;
+    font-family: var(--font-work-sans), 'Work Sans', sans-serif; font-size: 13.5px; font-weight: 500;
     color: #453a2a; line-height: 1.3;
     transition: background .3s ease, border-color .3s ease, transform .3s ease;
   }

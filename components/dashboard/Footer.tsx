@@ -9,11 +9,11 @@ const Footer = (_props: FooterProps) => (
     <div className="max-w-screen-2xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-12 mb-10">
         <div>
-          <Link href="/" style={{ fontFamily: "'Newsreader', serif" }} className="mb-2 inline-block text-2xl font-semibold tracking-tight transition-opacity hover:opacity-85">
+          <Link href="/" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="mb-2 inline-block text-2xl font-semibold tracking-tight transition-opacity hover:opacity-85">
             <span style={{ color: '#d5c4b1' }}>Case Compendium</span>
             <span style={{ color: '#aed0a1' }}>X</span>
           </Link>
-          <p style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.5)', maxWidth: '280px', lineHeight: 1.6 }} className="text-xs">
+          <p style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.5)', maxWidth: '280px', lineHeight: 1.6 }} className="text-xs">
             The case book a million readers grew up on. Now built to coach you.
           </p>
         </div>
@@ -21,22 +21,22 @@ const Footer = (_props: FooterProps) => (
             snippet from concatenating into "HomeThePlatformThe Team...". The
             flex gap controls the real spacing, so these spaces are visually inert. */}
         <div className="flex flex-wrap gap-x-12 gap-y-4">
-          <Link href="/" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+          <Link href="/" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             Home
           </Link>{' '}
-          <Link href="/about-ccx" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+          <Link href="/about-ccx" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             The Platform
           </Link>{' '}
-          <Link href="/the-casebook" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+          <Link href="/the-casebook" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             The Casebook
           </Link>{' '}
-          <Link href="/our-story" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+          <Link href="/our-story" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             The Team
           </Link>{' '}
-          <Link href="/collaborators" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+          <Link href="/collaborators" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             Acknowledgements
           </Link>{' '}
-          <a href="mailto:contact@casecompendiumx.in?subject=Case%20CompendiumX%20Query" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+          <a href="mailto:contact@casecompendiumx.in?subject=Case%20CompendiumX%20Query" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
             Contact Us
           </a>
         </div>
@@ -54,7 +54,7 @@ const Footer = (_props: FooterProps) => (
             </svg>
           </a>
         </div>
-        <p style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.35)', lineHeight: 1.8 }} className="text-[10px] tracking-[0.2em] uppercase">
+        <p style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.35)', lineHeight: 1.8 }} className="text-[10px] tracking-[0.2em] uppercase">
           &copy; 2026 Case CompendiumX. All rights reserved.
         </p>
       </div>

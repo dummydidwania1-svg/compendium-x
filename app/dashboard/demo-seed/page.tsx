@@ -100,7 +100,7 @@ export default function DashboardDemoSeedPage() {
           <div className="mt-8">
             <p className="text-[10px] uppercase tracking-[0.26em] text-[#3D5A35]">Dashboard Demo Seed</p>
             <h1
-              style={{ fontFamily: "'Newsreader', serif" }}
+              style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}
               className="mt-3 text-5xl font-light leading-none text-[#453a2a]"
             >
               Seed A Demo Persona

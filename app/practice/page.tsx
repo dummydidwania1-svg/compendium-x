@@ -14,6 +14,7 @@ import MobileBlockModal from '@/components/permissions/MobileBlockModal'
 import { isMobileDevice, isSafariBrowser } from '@/lib/browser'
 import { interviewerWindowName, writeInterviewerReady, readInterviewerReady, clearInterviewerReady } from '@/lib/session/candidateTab'
 import { startPrimedRecording, pickSupportedMimeType, micDebug } from '@/lib/session/primedMic'
+import { generateLobbyId } from '@/lib/session/lobbyId'
 
 export default function PracticeModeSelection() {
   const [loading, setLoading] = useState(true)
@@ -26,6 +27,13 @@ export default function PracticeModeSelection() {
   // until the user grants mic access and retries.
   const [micBlocked, setMicBlocked] = useState(false)
   const micReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The mic-reshow re-check fires 1.5s after dismissing the overlay; without
+  // this cleanup it would run (and touch state) after leaving the page.
+  useEffect(() => {
+    return () => {
+      if (micReshowTimerRef.current) clearTimeout(micReshowTimerRef.current)
+    }
+  }, [])
   // Set while we're awaiting the browser's mic permission prompt before
   // opening the interviewer popup. Shows a transient "Setting up..." state
   // on the local card so the user knows their click registered.
@@ -74,7 +82,7 @@ export default function PracticeModeSelection() {
     }
     setMicBlocked(false)
     micBlockedForRef.current = 'remote'
-    const lobbyId = Math.random().toString(36).substring(7)
+    const lobbyId = generateLobbyId()
     if (!skipRecording && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -104,7 +112,7 @@ export default function PracticeModeSelection() {
 
     const isSafari = isSafariBrowser()
 
-    const lobbyId = Math.random().toString(36).substring(7)
+    const lobbyId = generateLobbyId()
     const popupHost = window as Window & { __compendiumInterviewerWindow?: Window | null }
     if (popupHost.__compendiumInterviewerWindow && !popupHost.__compendiumInterviewerWindow.closed) {
       popupHost.__compendiumInterviewerWindow.close()
@@ -212,7 +220,7 @@ export default function PracticeModeSelection() {
 
   return (
     <div
-      style={{ fontFamily: "'Work Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
       className="relative flex min-h-screen flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
       <style>{`
@@ -419,7 +427,7 @@ export default function PracticeModeSelection() {
             </div>
             <h1
               style={{
-                fontFamily: "'Newsreader', serif",
+                fontFamily: "var(--font-newsreader), 'Newsreader', serif",
                 animation: mounted ? 'practice-title-settle 0.75s cubic-bezier(0.22,1,0.36,1) 0.12s both' : 'none',
                 opacity: mounted ? undefined : 0,
               }}
@@ -462,18 +470,29 @@ export default function PracticeModeSelection() {
 
             {/* Remote */}
             <article
-              className="practice-mode-card relative rounded-xl overflow-hidden"
+              className="practice-mode-card relative rounded-xl overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3D5A35]"
               style={{
                 animation: mounted ? 'practice-card-in 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both' : 'none',
                 opacity: mounted ? undefined : 0,
               }}
               onClick={() => void startRemoteSession()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  const target = e.target as HTMLElement
+                  if (target.closest('button')) return // inner buttons handle themselves
+                  e.preventDefault()
+                  void startRemoteSession()
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label="Start a Remote Partner session"
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#3D5A35]/6">
                 <div>
                   <span className="text-[9px] uppercase tracking-[0.25em] text-[#3D5A35]/50 font-semibold">01 / Remote</span>
                   <div className="flex items-center gap-1">
-                    <h2 style={{ fontFamily: "'Newsreader', serif" }} className="text-2xl text-[#3D5A35] leading-tight mt-0.5">
+                    <h2 style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="text-2xl text-[#3D5A35] leading-tight mt-0.5">
                       Remote Partner
                     </h2>
                     <button
@@ -512,18 +531,29 @@ export default function PracticeModeSelection() {
 
             {/* Local */}
             <article
-              className="practice-mode-card relative rounded-xl overflow-hidden"
+              className="practice-mode-card relative rounded-xl overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3D5A35]"
               style={{
                 animation: mounted ? 'practice-card-in 0.6s cubic-bezier(0.22,1,0.36,1) 0.25s both' : 'none',
                 opacity: mounted ? undefined : 0,
               }}
               onClick={() => void handleLocalClick()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  const target = e.target as HTMLElement
+                  if (target.closest('button')) return // inner buttons handle themselves
+                  e.preventDefault()
+                  void handleLocalClick()
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label="Start a Same Device session"
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#3D5A35]/6">
                 <div>
                   <span className="text-[9px] uppercase tracking-[0.25em] text-[#3D5A35]/50 font-semibold">02 / Local</span>
                   <div className="flex items-center gap-1">
-                    <h2 style={{ fontFamily: "'Newsreader', serif" }} className="text-2xl text-[#3D5A35] leading-tight mt-0.5">
+                    <h2 style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="text-2xl text-[#3D5A35] leading-tight mt-0.5">
                       Same Device
                     </h2>
                     <button
@@ -604,13 +634,13 @@ export default function PracticeModeSelection() {
         <div className="mx-auto max-w-screen-2xl">
           <div className="mb-5 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center md:gap-10">
             <div>
-              <Link href="/" style={{ fontFamily: "'Newsreader', serif" }} className="mb-2 inline-block text-2xl font-semibold tracking-tight transition-opacity hover:opacity-85">
+              <Link href="/" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="mb-2 inline-block text-2xl font-semibold tracking-tight transition-opacity hover:opacity-85">
                 <span style={{ color: '#d5c4b1' }}>Case Compendium</span>
                 <span style={{ color: '#aed0a1' }}>X</span>
               </Link>
               <p
                 style={{
-                  fontFamily: "'Work Sans', sans-serif",
+                  fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                   color: 'rgba(213,196,177,0.5)',
                   maxWidth: '280px',
                   lineHeight: 1.6,
@@ -621,19 +651,19 @@ export default function PracticeModeSelection() {
               </p>
             </div>
             <div className="flex flex-wrap gap-x-10 gap-y-3 md:gap-x-12">
-              <Link href="/" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+              <Link href="/" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
                 Home
               </Link>
-              <Link href="/about-ccx" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+              <Link href="/about-ccx" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
                 The Platform
               </Link>
-              <Link href="/our-story" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+              <Link href="/our-story" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
                 The Team
               </Link>
-              <Link href="/collaborators" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+              <Link href="/collaborators" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
                 Acknowledgements
               </Link>
-              <a href="mailto:contact@casecompendiumx.in?subject=Case%20CompendiumX%20Query" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+              <a href="mailto:contact@casecompendiumx.in?subject=Case%20CompendiumX%20Query" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
                 Contact Us
               </a>
             </div>
@@ -651,7 +681,7 @@ export default function PracticeModeSelection() {
                 </svg>
               </a>
             </div>
-            <p style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.35)', lineHeight: 1.8 }} className="text-[10px] tracking-[0.2em] uppercase">
+            <p style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.35)', lineHeight: 1.8 }} className="text-[10px] tracking-[0.2em] uppercase">
               &copy; 2026 Case CompendiumX. All rights reserved.
             </p>
           </div>

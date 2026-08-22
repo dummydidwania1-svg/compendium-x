@@ -290,11 +290,11 @@ const HomePage = () => {
     activeTab === 'repository' && (index === 0 || featureProgress >= REPO_THRESHOLDS[index]);
 
   return (
-    <div style={{ fontFamily: "'Work Sans', sans-serif", background: '#fff8f0', color: '#1e1b15' }} className="antialiased">
+    <div style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", background: '#fff8f0', color: '#1e1b15' }} className="antialiased">
       <style>{`
-        .font-headline { font-family: 'Newsreader', serif; }
-        .font-body { font-family: 'Work Sans', sans-serif; }
-        .font-label { font-family: 'Work Sans', sans-serif; }
+        .font-headline { font-family: var(--font-newsreader), 'Newsreader', serif; }
+        .font-body { font-family: var(--font-work-sans), 'Work Sans', sans-serif; }
+        .font-label { font-family: var(--font-work-sans), 'Work Sans', sans-serif; }
 
         .word-carousel {
           display: inline-flex;
@@ -425,7 +425,7 @@ const HomePage = () => {
           border-bottom: 1px solid rgba(61,90,53,0.08);
         }
         .dash-topbar-title {
-          font-family: 'Newsreader', serif;
+          font-family: var(--font-newsreader), 'Newsreader', serif;
           font-size: 0.9rem;
           color: #453a2a;
           font-style: italic;
@@ -477,7 +477,7 @@ const HomePage = () => {
           margin-bottom: 2px;
         }
         .skel-title {
-          font-family: 'Newsreader', serif;
+          font-family: var(--font-newsreader), 'Newsreader', serif;
           font-size: 0.85rem;
           color: #453a2a;
           margin-bottom: 8px;
@@ -496,7 +496,7 @@ const HomePage = () => {
           margin-bottom: 8px;
         }
         .skel-score-num {
-          font-family: 'Newsreader', serif;
+          font-family: var(--font-newsreader), 'Newsreader', serif;
           font-size: 1.8rem;
           color: #453a2a;
           font-weight: 300;
@@ -542,7 +542,7 @@ const HomePage = () => {
           margin-bottom: 1px;
         }
         .skel-stat-lg {
-          font-family: 'Newsreader', serif;
+          font-family: var(--font-newsreader), 'Newsreader', serif;
           font-size: 1.2rem;
           color: #453a2a;
           opacity: 0.2;
@@ -716,7 +716,7 @@ const HomePage = () => {
         }
         .repo-slab .slab-icon { color: rgba(255,255,255,0.8); }
         .repo-slab .slab-label {
-          font-family: 'Newsreader', serif;
+          font-family: var(--font-newsreader), 'Newsreader', serif;
           font-size: 0.95rem;
           color: rgba(255,255,255,0.88);
           letter-spacing: 0.03em;
@@ -770,7 +770,7 @@ const HomePage = () => {
         .tier-callout.visible { opacity: 1; }
         .callout-connector { width: 28px; height: 2px; flex-shrink: 0; }
         .callout-body .callout-num {
-          font-family: 'Work Sans', sans-serif;
+          font-family: var(--font-work-sans), 'Work Sans', sans-serif;
           font-size: 8px;
           text-transform: uppercase;
           letter-spacing: 0.2em;
@@ -779,12 +779,12 @@ const HomePage = () => {
           display: block;
         }
         .callout-body .callout-title {
-          font-family: 'Newsreader', serif;
+          font-family: var(--font-newsreader), 'Newsreader', serif;
           font-size: 1.05rem;
           color: #453a2a;
         }
         .callout-body .callout-desc {
-          font-family: 'Work Sans', sans-serif;
+          font-family: var(--font-work-sans), 'Work Sans', sans-serif;
           font-size: 0.72rem;
           color: #434840;
           line-height: 1.45;
@@ -1151,7 +1151,7 @@ const HomePage = () => {
 }
 
 .demo-step-label {
-  font-family: 'Work Sans', sans-serif;
+  font-family: var(--font-work-sans), 'Work Sans', sans-serif;
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -1311,7 +1311,7 @@ const HomePage = () => {
 .demo-overlay-label {
   position: relative;
   z-index: 1;
-  font-family: 'Work Sans', sans-serif;
+  font-family: var(--font-work-sans), 'Work Sans', sans-serif;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.2em;
@@ -1738,13 +1738,13 @@ const HomePage = () => {
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flexDirection: isLeft ? 'row' : 'row' }}>
                         {isLeft && (
                           <div style={{ flex: 1 }}>
-                            <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.15em', color: `${callout.color}80`, fontWeight: 600, display: 'block', marginBottom: '2px' }}>
+                            <span style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.15em', color: `${callout.color}80`, fontWeight: 600, display: 'block', marginBottom: '2px' }}>
                               {callout.number}
                             </span>
-                            <span style={{ fontFamily: "'Newsreader', serif", fontSize: '0.9rem', color: '#453a2a', display: 'block', marginBottom: '3px' }}>
+                            <span style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontSize: '0.9rem', color: '#453a2a', display: 'block', marginBottom: '3px' }}>
                               {callout.title}
                             </span>
-                            <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '0.68rem', color: '#434840', lineHeight: 1.4 }}>
+                            <span style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", fontSize: '0.68rem', color: '#434840', lineHeight: 1.4 }}>
                               {callout.description}
                             </span>
                           </div>
@@ -1763,13 +1763,13 @@ const HomePage = () => {
                         </svg>
                         {!isLeft && (
                           <div style={{ flex: 1 }}>
-                            <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.15em', color: `${callout.color}80`, fontWeight: 600, display: 'block', marginBottom: '2px' }}>
+                            <span style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.15em', color: `${callout.color}80`, fontWeight: 600, display: 'block', marginBottom: '2px' }}>
                               {callout.number}
                             </span>
-                            <span style={{ fontFamily: "'Newsreader', serif", fontSize: '0.9rem', color: '#453a2a', display: 'block', marginBottom: '3px' }}>
+                            <span style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontSize: '0.9rem', color: '#453a2a', display: 'block', marginBottom: '3px' }}>
                               {callout.title}
                             </span>
-                            <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '0.68rem', color: '#434840', lineHeight: 1.4 }}>
+                            <span style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", fontSize: '0.68rem', color: '#434840', lineHeight: 1.4 }}>
                               {callout.description}
                             </span>
                           </div>

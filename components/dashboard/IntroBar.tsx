@@ -53,7 +53,7 @@ const IntroBar = ({ filters, setFilters, hasActiveFilters, clearAllFilters, supp
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 pt-4 border-b border-[#5C4033]/10">
         {/* Heading — "Hi" fades in soft, name springs in with blur-to-clear */}
         <div>
-          <h1 className="text-[26px] md:text-[34px] xl:text-[38px] tracking-[-0.03em] leading-none text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>
+          <h1 className="text-[26px] md:text-[34px] xl:text-[38px] tracking-[-0.03em] leading-none text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>
             <span
               className="inline-block"
               style={{ fontWeight: 300, animation: '_hi 0.45s ease forwards', opacity: 0 }}

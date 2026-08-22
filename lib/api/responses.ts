@@ -84,7 +84,10 @@ export function errorToResponse(err: unknown): NextResponse {
     return jsonError(err.status, err.code, err.message)
   }
   if (err instanceof Error) {
-    return jsonError(500, 'internal_error', err.message)
+    // Unexpected errors: never echo internal messages (Firestore/gRPC details,
+    // driver internals) to the client. The structured request logger already
+    // captures the full error server-side.
+    return jsonError(500, 'internal_error', 'Something went wrong on our end. Please try again.')
   }
-  return jsonError(500, 'internal_error', 'Unknown error')
+  return jsonError(500, 'internal_error', 'Something went wrong on our end. Please try again.')
 }

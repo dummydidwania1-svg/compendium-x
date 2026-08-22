@@ -932,35 +932,36 @@ export function InterviewerPageInner({
 	// homepage instead — with its own visible 3.5s countdown rather than the
 	// previous silent, immediate redirect (which contradicted the "you can
 	// close this tab now" copy shown at the same time).
+	// NOTE: the side effects (redirect/window.close) deliberately live in the
+	// interval callbacks, NOT inside setState updaters — StrictMode double-
+	// invokes updaters, which used to fire navigation twice.
 	useEffect(() => {
 		if (!overlaySuccess) return
 		if (interviewerUploadState === 'uploading') return
 		if (isRemoteMode) {
-			setRemoteSuccessTenths(REMOTE_SUCCESS_REDIRECT_MS / 100)
+			const deadline = Date.now() + REMOTE_SUCCESS_REDIRECT_MS
+			setRemoteSuccessTenths(Math.ceil(REMOTE_SUCCESS_REDIRECT_MS / 100))
 			const iv = setInterval(() => {
-				setRemoteSuccessTenths(prev => {
-					if (prev <= 1) {
-						clearInterval(iv)
-						goHomeAfterSession()
-						return 0
-					}
-					return prev - 1
-				})
+				const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 100))
+				setRemoteSuccessTenths(remaining)
+				if (remaining <= 0) {
+					clearInterval(iv)
+					goHomeAfterSession()
+				}
 			}, 100)
 			return () => clearInterval(iv)
 		}
+		const closeDeadline = Date.now() + 3000
 		setOverlayAutoClose(3)
 		const iv = setInterval(() => {
-			setOverlayAutoClose(prev => {
-				if (prev <= 1) {
-					clearInterval(iv)
-					window.open('', '_self')
-					window.close()
-					return 0
-				}
-				return prev - 1
-			})
-		}, 1000)
+			const remaining = Math.max(0, Math.ceil((closeDeadline - Date.now()) / 1000))
+			setOverlayAutoClose(remaining)
+			if (remaining <= 0) {
+				clearInterval(iv)
+				window.open('', '_self')
+				window.close()
+			}
+		}, 250)
 		return () => clearInterval(iv)
 	}, [overlaySuccess, interviewerUploadState, isRemoteMode, goHomeAfterSession])
 
@@ -986,6 +987,11 @@ export function InterviewerPageInner({
 	const bannerFromPermissionRef = useRef(false)
 	const interviewerRecorderRef = useRef<MediaRecorder | null>(null)
 	const interviewerChunksRef = useRef<Blob[]>([])
+	// Chunks captured before a mid-session recorder restart (mic drop → recovery).
+	// The cumulative flush must prepend these so audio recorded before the drop
+	// survives; without this, restarting recording after a mic loss would
+	// permanently discard everything captured beforehand.
+	const interviewerPrefixChunksRef = useRef<Blob[]>([])
 	const interviewerMicStreamRef = useRef<MediaStream | null>(null)
 	const interviewerStartMsRef = useRef<number | null>(null)
 	const interviewerSelectedAtMsRef = useRef<number | null>(null)
@@ -1007,6 +1013,10 @@ export function InterviewerPageInner({
 	const lastInterviewerFlushUrlRef = useRef<string | null>(null)
 	const lastInterviewerFlushPathRef = useRef<string | null>(null)
 	const lastInterviewerFlushMimeTypeRef = useRef<string>('audio/webm')
+	// Real size of the last successfully flushed cumulative blob. The pagehide
+	// beacon used to report byteSize:0, which the merge pipeline's idempotency
+	// checks treat as an empty upload.
+	const lastInterviewerFlushByteSizeRef = useRef<number>(0)
 	const recordingFinalizedRef = useRef(false)
 	const cachedAuthTokenRef = useRef<string | null>(null)
 	const selectingGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -1373,10 +1383,11 @@ export function InterviewerPageInner({
 	}, [isRemoteMode, lobbyId, previewMode])
 
 	// ── Remote mode: interviewer presence heartbeat ──────────────────────────────
-	// Sends a heartbeat to Firestore every 1s so the candidate's workspace can
-	// detect if the interviewer disconnects (B4) within a ~3s buffer. Also marks
-	// inactive on pagehide. Local mode uses compendium-interviewer-window
-	// localStorage — unchanged.
+	// Sends a heartbeat to Firestore every 10s (the presence API's documented
+	// cadence, matching the candidate's own heartbeat) so the candidate's
+	// workspace can detect if the interviewer disconnects. Also marks inactive
+	// on pagehide. Local mode uses compendium-interviewer-window localStorage —
+	// unchanged.
 	useEffect(() => {
 		if (!isRemoteMode || !lobbyId || previewMode) return
 
@@ -1395,7 +1406,7 @@ export function InterviewerPageInner({
 			sendHeartbeat(true)
 			// Keep token fresh for the pagehide beacon (tokens last 1 h; frequent refresh is fine)
 			auth.currentUser?.getIdToken(false).then((t) => { cachedAuthTokenRef.current = t }).catch(() => {})
-		}, 1_000)
+		}, 10_000)
 
 		// On page close: mark presence inactive and, if recording is still live,
 		// fire a keepalive beacon to finalize the last-flushed interviewer audio.
@@ -1423,7 +1434,7 @@ export function InterviewerPageInner({
 						storagePath: lastInterviewerFlushPathRef.current,
 						audioUrl: lastInterviewerFlushUrlRef.current,
 						mimeType: lastInterviewerFlushMimeTypeRef.current,
-						byteSize: 0,
+						byteSize: lastInterviewerFlushByteSizeRef.current,
 						startedAtMs: interviewerStartMsRef.current ?? nowMs,
 						stoppedAtMs: nowMs,
 						durationMs: interviewerStartMsRef.current ? nowMs - interviewerStartMsRef.current : null,
@@ -1506,7 +1517,12 @@ export function InterviewerPageInner({
 			} catch { /* recorder may have transitioned state — ignore */ }
 		}
 
-		const chunks = interviewerChunksRef.current
+		// Cumulative blob spans every segment of the session: chunks captured
+		// before any mid-session recorder restart (mic drop → recovery) plus the
+		// current recorder's timeslices. WebM/MP4 cluster-concatenation stays
+		// decodable, and the restart picker resolves to the same mime type in a
+		// given browser, so the combined blob is safe to transcode/transcribe.
+		const chunks = [...interviewerPrefixChunksRef.current, ...interviewerChunksRef.current]
 		if (chunks.length === 0) {
 			if (isFinal) {
 				setInterviewerUploadState('not_captured')
@@ -1533,7 +1549,13 @@ export function InterviewerPageInner({
 			}
 
 			await auth.currentUser?.getIdToken(true).catch(() => {})
-			const ext = mimeType.includes('ogg') ? 'ogg' : 'webm'
+			// Extension must match the container: Safari emits audio/mp4, and a
+			// .webm extension on an MP4 payload confuses downstream tooling.
+			const ext = mimeType.includes('ogg')
+				? 'ogg'
+				: mimeType.includes('mp4') || mimeType.includes('aac')
+					? 'm4a'
+					: 'webm'
 			// Stable path — every flush overwrites the same file
 			const storagePath = `session-recordings/${user.uid}/${lobbyId}/interviewer-live.${ext}`
 			const sRef = storageRef(storage, storagePath)
@@ -1564,6 +1586,8 @@ export function InterviewerPageInner({
 				live: !isFinal,
 			})
 
+			lastInterviewerFlushByteSizeRef.current = blob.size
+
 			if (isFinal) setInterviewerUploadState('uploaded')
 
 			// Cache token for the pagehide keepalive beacon
@@ -1577,7 +1601,10 @@ export function InterviewerPageInner({
 			return 'upload_failed'
 		} finally {
 			flushInFlightRef.current = false
-			if (isFinal) interviewerChunksRef.current = []
+			if (isFinal) {
+				interviewerChunksRef.current = []
+				interviewerPrefixChunksRef.current = []
+			}
 		}
 	}, [isRemoteMode, lobbyId, signalNoInterviewerAudio])
 
@@ -1614,6 +1641,10 @@ export function InterviewerPageInner({
 				? new MediaRecorder(stream, { mimeType })
 				: new MediaRecorder(stream)
 			interviewerRecorderRef.current = recorder
+			// Salvage any chunks captured by a previous recorder instance (mic drop →
+			// recovery restart) into the prefix so the cumulative flush keeps them.
+			// On a genuinely fresh start the prefix and buffer are both empty.
+			interviewerPrefixChunksRef.current = [...interviewerPrefixChunksRef.current, ...interviewerChunksRef.current]
 			interviewerChunksRef.current = []
 			interviewerStartMsRef.current = Date.now()
 			recorder.ondataavailable = (e) => {
@@ -2528,7 +2559,7 @@ useEffect(() => {
 
 	if (loadError) {
 		return (
-			<div className="min-h-screen bg-[#fff8f0] flex items-center justify-center p-6" style={{ fontFamily: "'Work Sans', sans-serif" }}>
+			<div className="min-h-screen bg-[#fff8f0] flex items-center justify-center p-6" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}>
 				<div className="max-w-md w-full rounded-2xl border border-[#3D5A35]/10 bg-[rgba(255,248,240,0.9)] shadow-[0_4px_24px_rgba(59,47,47,0.06)] p-8 flex flex-col items-center gap-4 text-center">
 					<svg viewBox="0 0 64 64" fill="none" style={{ width: 28, height: 28, opacity: 0.22 }}>
 						<path d="M16 10h32l-8 14 5 8-13 22-13-22 5-8-8-14Z" fill="#5C4033" />
@@ -2896,7 +2927,7 @@ if (previewMode && !forcePreview) {
 				{/* Replace case — centered confirmation overlay */}
 				{showReplaceCaseConfirm && (
 					<div
-						style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif" }}
+						style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
 					>
 						{/* Scrim */}
 						<div style={{ position: 'absolute', inset: 0, background: 'rgba(69,58,42,0.08)', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', animation: 'ixo-scrim-in 0.4s ease forwards' }} />
@@ -2949,7 +2980,7 @@ if (previewMode && !forcePreview) {
 				{/* Cancel session — centered confirmation overlay */}
 				{showCancelConfirm && (
 					<div
-						style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif" }}
+						style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
 					>
 						{/* Scrim */}
 						<div style={{ position: 'absolute', inset: 0, background: 'rgba(69,58,42,0.08)', backdropFilter: 'blur(2.5px)', WebkitBackdropFilter: 'blur(2.5px)', animation: 'ixo-scrim-in 0.4s ease forwards' }} />
@@ -3004,7 +3035,7 @@ if (previewMode && !forcePreview) {
 					const unratedCriteria = LIVE_EVALUATION_CRITERIA.filter(c => scores[c.id] === 0)
 					const hasUnrated = unratedCriteria.length > 0
 					return (
-						<div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif" }}>
+						<div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}>
 							{/* Scrim — clicking closes only in review state, not during edit or confirm */}
 							<div
 								style={{ position: 'absolute', inset: 0, background: 'rgba(36,26,16,0.48)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', animation: 'ixo-scrim-in 0.3s ease forwards' }}
@@ -3103,14 +3134,14 @@ if (previewMode && !forcePreview) {
 												type="button"
 												disabled={submitting}
 												onClick={() => void handleSubmitFeedback({ force: true })}
-												style={{ flex: 1, borderRadius: '12px', background: '#3D5A35', color: '#efe8de', border: 'none', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.22em', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: "'Work Sans', sans-serif" }}
+												style={{ flex: 1, borderRadius: '12px', background: '#3D5A35', color: '#efe8de', border: 'none', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.22em', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
 											>
 												{submitting ? 'Submitting…' : 'Yes, Submit'}
 											</button>
 											<button
 												type="button"
 												onClick={() => { setShowUnratedConfirm(false); setEditingOverlay(true) }}
-												style={{ flexShrink: 0, borderRadius: '12px', background: 'transparent', color: 'rgba(92,64,51,0.65)', border: '1px solid rgba(92,64,51,0.2)', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+												style={{ flexShrink: 0, borderRadius: '12px', background: 'transparent', color: 'rgba(92,64,51,0.65)', border: '1px solid rgba(92,64,51,0.2)', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', cursor: 'pointer', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
 											>
 												Go Back &amp; Edit
 											</button>
@@ -3118,7 +3149,7 @@ if (previewMode && !forcePreview) {
 										<button
 											type="button"
 											onClick={closeEvalOverlay}
-											style={{ marginTop: '10px', width: '100%', background: 'none', border: 'none', padding: '4px', fontSize: '11px', color: 'rgba(92,64,51,0.4)', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+											style={{ marginTop: '10px', width: '100%', background: 'none', border: 'none', padding: '4px', fontSize: '11px', color: 'rgba(92,64,51,0.4)', cursor: 'pointer', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
 										>
 											← Back to session
 										</button>
@@ -3210,7 +3241,7 @@ if (previewMode && !forcePreview) {
 												value={notes}
 												onChange={setNotes}
 												placeholder="What did they do well? What should they improve?"
-												style={{ width: '100%', minHeight: '72px', borderRadius: '10px', border: '1px solid rgba(92,64,51,0.13)', background: 'rgba(255,248,238,0.7)', padding: '9px 12px', fontSize: '12px', lineHeight: 1.5, color: '#2e2318', fontFamily: "'Work Sans', sans-serif", outline: 'none', boxSizing: 'border-box' }}
+												style={{ width: '100%', minHeight: '72px', borderRadius: '10px', border: '1px solid rgba(92,64,51,0.13)', background: 'rgba(255,248,238,0.7)', padding: '9px 12px', fontSize: '12px', lineHeight: 1.5, color: '#2e2318', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", outline: 'none', boxSizing: 'border-box' }}
 											/>
 										</div>
 
@@ -3225,14 +3256,14 @@ if (previewMode && !forcePreview) {
 														void handleSubmitFeedback()
 													}
 												}}
-												style={{ flex: 1, borderRadius: '12px', background: '#3D5A35', color: '#efe8de', border: 'none', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.24em', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: "'Work Sans', sans-serif" }}
+												style={{ flex: 1, borderRadius: '12px', background: '#3D5A35', color: '#efe8de', border: 'none', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.24em', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
 											>
 												{submitting ? 'Submitting…' : 'Save & Submit'}
 											</button>
 											<button
 												type="button"
 												onClick={() => setEditingOverlay(false)}
-												style={{ flexShrink: 0, borderRadius: '12px', background: 'transparent', color: 'rgba(92,64,51,0.65)', border: '1px solid rgba(92,64,51,0.2)', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+												style={{ flexShrink: 0, borderRadius: '12px', background: 'transparent', color: 'rgba(92,64,51,0.65)', border: '1px solid rgba(92,64,51,0.2)', padding: '11px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', cursor: 'pointer', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
 											>
 												Cancel
 											</button>
@@ -3246,7 +3277,7 @@ if (previewMode && !forcePreview) {
 											<button
 												type="button"
 												onClick={() => setEditingOverlay(true)}
-												style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', borderRadius: '999px', border: '1px solid rgba(92,64,51,0.18)', background: 'rgba(255,248,238,0.8)', color: 'rgba(92,64,51,0.62)', padding: '4px 13px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+												style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', borderRadius: '999px', border: '1px solid rgba(92,64,51,0.18)', background: 'rgba(255,248,238,0.8)', color: 'rgba(92,64,51,0.62)', padding: '4px 13px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', cursor: 'pointer', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
 											>
 												<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
 													<path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -3288,14 +3319,14 @@ if (previewMode && !forcePreview) {
 													void handleSubmitFeedback()
 												}
 											}}
-											style={{ marginTop: '16px', width: '100%', borderRadius: '12px', background: '#3D5A35', color: '#efe8de', border: 'none', padding: '13px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.28em', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.6 : 1, fontFamily: "'Work Sans', sans-serif", boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(61,90,53,0.25), inset 0 1px 0 rgba(255,255,255,0.12)' }}
+											style={{ marginTop: '16px', width: '100%', borderRadius: '12px', background: '#3D5A35', color: '#efe8de', border: 'none', padding: '13px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.28em', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.6 : 1, fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(61,90,53,0.25), inset 0 1px 0 rgba(255,255,255,0.12)' }}
 										>
 											{submitting ? 'Submitting…' : 'Submit & Close Case'}
 										</button>
 										<button
 											type="button"
 											onClick={closeEvalOverlay}
-											style={{ marginTop: '10px', width: '100%', background: 'none', border: 'none', padding: '4px', fontSize: '11px', color: 'rgba(92,64,51,0.4)', cursor: 'pointer', fontFamily: "'Work Sans', sans-serif" }}
+											style={{ marginTop: '10px', width: '100%', background: 'none', border: 'none', padding: '4px', fontSize: '11px', color: 'rgba(92,64,51,0.4)', cursor: 'pointer', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
 										>
 											← Back to session
 										</button>

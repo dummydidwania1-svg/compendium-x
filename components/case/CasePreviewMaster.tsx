@@ -873,7 +873,7 @@ const MetaField = ({ label, value, index = 0 }: { label: string; value: string; 
       </p>
     </div>
     <div className="px-4 pb-2.5">
-      <p className="text-base font-medium text-[#3B2F2F] tracking-tight" style= {{fontFamily: "'Newsreader', serif" }}>
+      <p className="text-base font-medium text-[#3B2F2F] tracking-tight" style= {{fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>
         {value}
       </p>
     </div>
@@ -2165,7 +2165,7 @@ function MobileDrilldownOverlay() {
       }}
     >
       <div style=
-        {{fontFamily: "'Work Sans', sans-serif", fontSize: '9.5px', fontWeight: 600,
+        {{fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", fontSize: '9.5px', fontWeight: 600,
         letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(92,64,51,0.55)', marginBottom: '10px',}}
       >
         Drill-down preview
@@ -2244,11 +2244,11 @@ function CompactFooter() {
       <div className="mx-auto max-w-screen-2xl">
         <div className="mb-5 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center md:gap-10">
           <div>
-            <Link href="/" style={{ fontFamily: "'Newsreader', serif" }} className="mb-2 inline-block text-2xl font-semibold tracking-tight transition-opacity hover:opacity-85">
+            <Link href="/" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="mb-2 inline-block text-2xl font-semibold tracking-tight transition-opacity hover:opacity-85">
               <span style={{ color: '#d5c4b1' }}>Case Compendium</span>
               <span style={{ color: '#aed0a1' }}>X</span>
             </Link>
-            <p style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.5)', maxWidth: '280px', lineHeight: 1.6 }} className="text-xs">
+            <p style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.5)', maxWidth: '280px', lineHeight: 1.6 }} className="text-xs">
               The case book a million readers grew up on. Now built to coach you.
             </p>
           </div>
@@ -2259,11 +2259,11 @@ function CompactFooter() {
               { href: '/our-story', label: 'The Team' },
               { href: '/collaborators', label: 'Acknowledgements' },
             ].map(({ href, label }) => (
-              <Link key={href} href={href} style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+              <Link key={href} href={href} style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
                 {label}
               </Link>
             ))}
-            <a href="mailto:contact@casecompendiumx.in?subject=Case%20CompendiumX%20Privacy%20Request" style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
+            <a href="mailto:contact@casecompendiumx.in?subject=Case%20CompendiumX%20Privacy%20Request" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.7)' }} className="text-[10px] tracking-[0.2em] uppercase hover:text-white transition-all">
               Contact Us
             </a>
           </div>
@@ -2277,7 +2277,7 @@ function CompactFooter() {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
             </a>
           </div>
-          <p style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(213,196,177,0.35)', lineHeight: 1.8 }} className="text-[10px] tracking-[0.2em] uppercase">
+          <p style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(213,196,177,0.35)', lineHeight: 1.8 }} className="text-[10px] tracking-[0.2em] uppercase">
             &copy; 2026 Case CompendiumX. All rights reserved.
           </p>
         </div>
@@ -2607,7 +2607,7 @@ function SyncedNotesSidebar({ notes }: { notes: { title: string; items: string[]
               {n.items.map(item => (
                 <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
                   <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                  <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{fontFamily: "'Newsreader', serif"}}>{item}</span>
+                  <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{fontFamily: "var(--font-newsreader), 'Newsreader', serif"}}>{item}</span>
                 </li>
               ))}
             </ul>
@@ -2647,7 +2647,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
    Visualization: Formula block (drilldown, between chart and recs)
    ═══════════════════════════════════════════════════════════ */
 function VisFormulaBlock({ formulas }: { formulas: VisFormula[] }) {
-  const serif: React.CSSProperties = { fontFamily: "'Newsreader', serif" }
+  const serif: React.CSSProperties = { fontFamily: "var(--font-newsreader), 'Newsreader', serif" }
   const termColor = '#3B2F2F'
 
   const termStyle: React.CSSProperties = { ...serif, color: termColor, fontSize: 14, fontWeight: 500 }
@@ -2835,7 +2835,7 @@ function VisTableInline({ vis }: { vis: VisTable }) {
   const colStyle = (w: string): React.CSSProperties => ({ width: w })
 
   const headerStyle: React.CSSProperties = {
-    fontFamily: "'Work Sans', sans-serif",
+    fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
     color: '#f0f5ee', background: '#5C4033',
   }
@@ -2879,7 +2879,7 @@ function VisTableInline({ vis }: { vis: VisTable }) {
               cells.push(
                 <td key="merged-final" colSpan={mergeFinalRowCols} className="px-4 py-1.5"
                   style={{
-                    fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500,
+                    fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontSize: '14px', fontWeight: 500,
                     color: '#3B2F2F', lineHeight: 1.5, textAlign: 'left', verticalAlign: 'middle',
                     borderTop: '1px solid rgba(61,90,53,0.08)',
                   }}>
@@ -2890,7 +2890,7 @@ function VisTableInline({ vis }: { vis: VisTable }) {
                 cells.push(
                   <td key={ci} className="px-4 py-1.5"
                     style={{
-                      fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 400,
+                      fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontSize: '14px', fontWeight: 400,
                       color: '#3B2F2F', lineHeight: 1.5, textAlign: 'center', verticalAlign: 'middle',
                       borderTop: '1px solid rgba(61,90,53,0.08)',
                       borderLeft: '1px solid rgba(61,90,53,0.08)',
@@ -2910,7 +2910,7 @@ function VisTableInline({ vis }: { vis: VisTable }) {
                 cells.push(
                   <td key={ci} rowSpan={rowSpan} className="px-4 py-1.5"
                     style={{
-                      fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: ci === 0 ? 500 : 400,
+                      fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontSize: '14px', fontWeight: ci === 0 ? 500 : 400,
                       color: '#3B2F2F', lineHeight: 1.5,
                       // col 0 always left; merged cols 1+ centered; non-merged cols centered
                       textAlign: ci === 0 ? 'left' : 'center',
@@ -2942,7 +2942,7 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
   // Only the first summaryRow gets the separator line above it; subsequent ones just bold
   const lastCol = cols.length - 1
   const headerStyle: React.CSSProperties = {
-  fontFamily: "'Work Sans', sans-serif",
+  fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
   fontSize: '10px', fontWeight: 600,
   textTransform: 'uppercase', letterSpacing: '0.2em',
   color: '#f0f5ee', background: '#5C4033',
@@ -2964,7 +2964,7 @@ function VisTableBlock({ vis }: { vis: VisTable }) {
                 <th key={i} className="px-4 py-2"
                   style={{
 textAlign: i  === 0 ? 'left' : 'center',   // th
-                    fontFamily: "'Work Sans', sans-serif",
+                    fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
                     color: '#f0f5ee', background: '#5C4033', whiteSpace: 'nowrap',
                     borderLeft: i > 0 ? '1px solid rgba(240,245,238,0.15)' : undefined,
@@ -2994,7 +2994,7 @@ textAlign: i  === 0 ? 'left' : 'center',   // th
             textAlign: ci === 0 ? 'left' : 'center',                       // step 3: center the 3 data cols
             fontWeight: isSummary ? (ci === 0 ? 600 : 600) : (ci === 0 ? 500 : 400),
             color: '#3B2F2F',
-            fontFamily: "'Newsreader', serif",
+            fontFamily: "var(--font-newsreader), 'Newsreader', serif",
             whiteSpace: 'nowrap',
           }
           return (
@@ -3010,7 +3010,7 @@ textAlign: i  === 0 ? 'left' : 'center',   // th
         </table>
       </div>
       {vis.insight && (
-        <p className="mt-2 pl-1 text-[12px] leading-relaxed italic text-[#3B2F2F]/50" style={{ fontFamily: "'Newsreader', serif" }}>
+        <p className="mt-2 pl-1 text-[12px] leading-relaxed italic text-[#3B2F2F]/50" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>
           {vis.insight}
         </p>
       )}
@@ -3034,7 +3034,7 @@ function VisFunnelBlock({ vis }: { vis: VisFunnel }) {
           <Fragment key={i}>
             <div
               className="flex w-full max-w-[320px] items-center justify-center rounded-[4px] border px-5 py-4 text-center"
-              style={{ background: BOX_BG, borderColor: BOX_BD, color: BOX_TX, fontFamily: "'Newsreader', serif", fontSize: '15px', lineHeight: 1.3, fontWeight: 500 }}
+              style={{ background: BOX_BG, borderColor: BOX_BD, color: BOX_TX, fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontSize: '15px', lineHeight: 1.3, fontWeight: 500 }}
             >
               {step}
             </div>
@@ -3118,7 +3118,7 @@ function renderDecisionBlocks(visualisations: Visualisation[] | undefined, keyPr
 function VisCalcPairBlock({ vis, className = 'mt-8' }: { vis: VisCalcPair; className?: string }) {
   const TX    = '#3B2F2F'        // dark — matches left sticky panel labels
   const MUTED = '#5C4033'        // muted brown for values / eq signs
-  const FONT = "'Work Sans', sans-serif"
+  const FONT = "var(--font-work-sans), 'Work Sans', sans-serif"
   const FS   = 'text-[13px] leading-relaxed'
 
   function Panel({ panel }: { panel: VisCalcPanel }) {
@@ -3193,7 +3193,7 @@ function VisCalcPairBlock({ vis, className = 'mt-8' }: { vis: VisCalcPair; class
    ═══════════════════════════════════════════════════════════ */
 function VisDecisionBlock({ vis }: { vis: VisDecision }) {
   const FS = 13         // matches framework tree font-size
-  const FONT = "'Work Sans', sans-serif"
+  const FONT = "var(--font-work-sans), 'Work Sans', sans-serif"
   const PX = 18         // horizontal padding inside node
   const PY = 12         // vertical padding inside node
   const LINE_H = FS * 1.4
@@ -3405,7 +3405,7 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
   const matrixMode = !hideDimension && !!d.dimensionHeader
   const cols = d.columns ?? ['Short-Term', 'Long-Term']
   const headerStyle: React.CSSProperties = {
-    fontFamily: "'Work Sans', sans-serif",
+    fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
     color: '#f0f5ee', background: '#5C4033', whiteSpace: 'nowrap',
   }
@@ -3417,7 +3417,7 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
         {lines.map((line, li) => (
           <li key={li} className="flex items-start gap-2">
             <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{line}</span>
+            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{line}</span>
           </li>
         ))}
       </ul>
@@ -3434,7 +3434,7 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
       <th style={{
         width: '180px',
         padding: '11px 16px',
-        fontFamily: "'Work Sans', sans-serif",
+        fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
         fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em',
         color: '#f0f5ee', background: '#5C4033',
       }} />
@@ -3443,7 +3443,7 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
      const thStyle: React.CSSProperties = {
   padding: '11px 16px',
   textAlign: 'left',
-  fontFamily: "'Work Sans', sans-serif",
+  fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
   fontSize: '10px',
   fontWeight: 600,
   textTransform: 'uppercase',
@@ -3472,7 +3472,7 @@ function RecTableBlock({ data }: { data: RecommendationsTableB }) {
                       borderTop: '1px solid rgba(240,245,238,0.15)',
                       borderRight: '1px solid rgba(240,245,238,0.15)',
                     } : {
-                      fontFamily: "'Newsreader', serif", fontSize: '14px', fontWeight: 500, color: '#3B2F2F',
+                      fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontSize: '14px', fontWeight: 500, color: '#3B2F2F',
                       borderTop: ri > 0 ? '1px solid rgba(61,90,53,0.08)' : undefined,
                     }}>
                     {row.dimension}
@@ -4169,7 +4169,7 @@ return () => document.removeEventListener('mousedown', handleClickOutside)
      Render
      ═══════════════════════════════════════════════ */
   return (
-    <div style={{ fontFamily: "'Work Sans', sans-serif" }}
+    <div style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
       className="min-h-screen bg-[#fff8f0] text-[#3B2F2F] antialiased selection:bg-[#5C4033]/20 selection:text-[#3B2F2F]">
 
       {/* ─── Keyframes ────────────────────────── */}
@@ -4321,7 +4321,7 @@ html::-webkit-scrollbar {
   </div>
 
   <h1 className="font-light leading-[1.02] tracking-tight text-[#453a2a]"
-    style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '3.4rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
+    style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontSize: isDesktop ? '3.4rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
     <span className="inline-flex items-center justify-center gap-3 w-full">
       <NewCaseBadge caseId={caseData.id} caseKey={caseData.title} size="md" />
       <span>{caseData.title.trim()}</span>
@@ -4425,7 +4425,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
               <p className="text-[13px] uppercase tracking-[0.2em] font-bold leading-none" style={{ color: h.fg }}>{item.label}</p>
             </div>
             <div className="flex flex-1 items-center justify-center border border-[rgba(61,90,53,0.12)] px-2 py-1.5" style={{ background: h.bottomBg }}>
-              <p className="text-[20px] font-medium text-[#3B2F2F] tracking-tight text-center leading-tight" style={{ fontFamily: "'Newsreader', serif" }}>
+              <p className="text-[20px] font-medium text-[#3B2F2F] tracking-tight text-center leading-tight" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>
                 {item.value}
               </p>
             </div>
@@ -4636,7 +4636,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                               <Reveal key={`rec-${i}`}>
                                 <li className="flex items-start gap-2">
                                   <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                  <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                  <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                                 </li>
                               </Reveal>
                             ))}
@@ -4664,7 +4664,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                                 <Reveal key={`rec-${i}`}>
                                   <li className="flex items-start gap-2">
                                     <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                                   </li>
                                 </Reveal>
                               ))}
@@ -4697,7 +4697,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                         {n.items.map(item => (
                           <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
                             <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                           </li>
                         ))}
                       </ul>
@@ -4760,7 +4760,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                       <Reveal key={`rec-m-${i}`}>
                         <li className="flex items-start gap-2">
                           <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                          <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                          <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                         </li>
                       </Reveal>
                     ))}
@@ -4788,7 +4788,7 @@ className="sticky top-[128px] flex flex-col gap-3.5 px-3 py-4" style={{minHeight
                                 <Reveal key={`rec-${i}`}>
                                   <li className="flex items-start gap-2">
                                     <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                                   </li>
                                 </Reveal>
                               ))}
@@ -5495,7 +5495,7 @@ export function CaseInterviewerMaster({
   }
 
   return (
-    <div style={{ fontFamily: "'Work Sans', sans-serif" }}
+    <div style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
       className="min-h-screen bg-[#fff8f0] text-[#3B2F2F] antialiased selection:bg-[#5C4033]/20 selection:text-[#3B2F2F]">
 
       <style>{`
@@ -5543,13 +5543,13 @@ export function CaseInterviewerMaster({
         <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-4 md:px-12">
           <div className="flex items-center gap-1">
             <Image src="/logo.png" alt="Case Compendium X" width={56} height={56} className="h-14 w-14 object-contain" />
-            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
+            <div style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
               <span className="text-[#453a2a]">Case Compendium</span>
               <span className="text-[#5C4033]">X</span>
             </div>
           </div>
           {(onReplaceCase || onCancelSession) && (
-            <div className="flex items-center gap-2" style={{ fontFamily: "'Work Sans', sans-serif" }}>
+            <div className="flex items-center gap-2" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}>
               <style>{`
                 @keyframes ixm-pulse-amber {
                   0%, 100% { box-shadow: 0 0 0 0 rgba(146,64,14,0); }
@@ -5614,7 +5614,7 @@ export function CaseInterviewerMaster({
             {/* Hero */}
             <section className="relative z-10 pb-4 pt-2">
               <h1 className="-ml-[2px] font-light leading-[1.02] tracking-tight text-[#453a2a]"
-                style={{ fontFamily: "'Newsreader', serif", fontSize: isDesktop ? '4.2rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
+                style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontSize: isDesktop ? '4.2rem' : '2.8rem', animation: 'cpm-fade-up 0.75s cubic-bezier(0.22,1,0.36,1) 0.06s both' }}>
                 <span className="inline-flex items-center gap-3">
                   <NewCaseBadge caseId={caseData.id} caseKey={caseData.title} size="md" />
                   <span>{caseData.title.trim()}</span>
@@ -5755,7 +5755,7 @@ export function CaseInterviewerMaster({
                                 <Reveal key={`rec-${i}`}>
                                   <li className="flex items-start gap-2">
                                     <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                                   </li>
                                 </Reveal>
                               ))}
@@ -5782,7 +5782,7 @@ export function CaseInterviewerMaster({
                                 <Reveal key={`rec-${i}`}>
                                   <li className="flex items-start gap-2">
                                     <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                                   </li>
                                 </Reveal>
                               ))}
@@ -5816,7 +5816,7 @@ export function CaseInterviewerMaster({
                         {n.items.map(item => (
                           <li key={item} className="flex items-start gap-2 mb-2 last:mb-0">
                             <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                           </li>
                         ))}
                       </ul>
@@ -5870,7 +5870,7 @@ export function CaseInterviewerMaster({
                         <Reveal key={`rec-m-${i}`}>
                           <li className="flex items-start gap-2">
                             <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                            <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                           </li>
                         </Reveal>
                       ))}
@@ -5897,7 +5897,7 @@ export function CaseInterviewerMaster({
                                 <Reveal key={`rec-${i}`}>
                                   <li className="flex items-start gap-2">
                                     <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#3B2F2F]/60" />
-                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "'Newsreader', serif" }}>{item}</span>
+                                    <span className="flex-1 text-[14px] leading-relaxed font-medium text-[#3B2F2F]" style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}>{item}</span>
                                   </li>
                                 </Reveal>
                               ))}
@@ -5931,7 +5931,7 @@ export function CaseInterviewerMaster({
     .notes-ta::-webkit-scrollbar-thumb { background:rgba(92,64,51,0.18); border-radius:4px; }
     .notes-ta::-webkit-scrollbar-thumb:hover { background:rgba(92,64,51,0.32); }
     .notes-hint { position:absolute; inset:0; padding:14px; pointer-events:none; overflow:hidden; }
-    .notes-hint-title { font-size:13px; font-style:italic; color:rgba(92,64,51,0.42); font-family:'Newsreader',serif; }
+    .notes-hint-title { font-size:13px; font-style:italic; color:rgba(92,64,51,0.42); font-family:var(--font-newsreader), 'Newsreader', serif; }
     .notes-hint-lines { margin-top:12px; display:flex; flex-direction:column; gap:9px; }
     .notes-hint-line { font-size:10.5px; line-height:1.45; color:rgba(92,64,51,0.5); }
     .notes-hint-line b { font-weight:700; color:rgba(92,64,51,0.7); }

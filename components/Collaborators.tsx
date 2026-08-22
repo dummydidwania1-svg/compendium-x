@@ -92,7 +92,7 @@ const TOTAL_FIRMS = FIRMS.length
 const PAGE_CSS = `
   /* ── Root ─────────────────────────────────────────── */
   .cl-root {
-    font-family: 'Work Sans', sans-serif;
+    font-family: var(--font-work-sans), 'Work Sans', sans-serif;
     background: #fff8f0;
     color: #453a2a;
     min-height: 100vh;
@@ -122,7 +122,7 @@ const PAGE_CSS = `
     right: -20px;
     top: 50%;
     transform: translateY(-46%);
-    font-family: 'Newsreader', serif;
+    font-family: var(--font-newsreader), 'Newsreader', serif;
     font-size: clamp(200px, 28vw, 340px);
     line-height: 1;
     color: rgba(61,90,53,.042);
@@ -141,7 +141,7 @@ const PAGE_CSS = `
     margin-bottom: 20px;
   }
   .cl-headline {
-    font-family: 'Newsreader', serif;
+    font-family: var(--font-newsreader), 'Newsreader', serif;
     font-size: clamp(52px, 9vw, 92px);
     line-height: 1.0;
     color: #453a2a;
@@ -161,7 +161,7 @@ const PAGE_CSS = `
   .cl-stats { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
   .cl-stat  { display: flex; align-items: baseline; gap: 8px; }
   .cl-stat-num {
-    font-family: 'Newsreader', serif;
+    font-family: var(--font-newsreader), 'Newsreader', serif;
     font-size: 30px;
     font-weight: 400;
     color: #3D5A35;
@@ -247,7 +247,7 @@ const PAGE_CSS = `
 
   /* Names start hidden; JS staggers them in */
   .cl-firm .cl-name {
-    font-family: 'Newsreader', serif;
+    font-family: var(--font-newsreader), 'Newsreader', serif;
     font-size: 26px;
     font-style: italic;
     font-weight: 400;
@@ -347,7 +347,7 @@ const PAGE_CSS = `
   }
   .cl-closing-eyebrow:hover { letter-spacing: .42em; color: rgba(61,90,53,.65); }
   .cl-closing-pull {
-    font-family: 'Newsreader', serif;
+    font-family: var(--font-newsreader), 'Newsreader', serif;
     font-size: 26px;
     font-style: italic;
     font-weight: 300;
@@ -370,7 +370,7 @@ const PAGE_CSS = `
   /* ── CTA ─────────────────────────────────────────────── */
   .cl-cta { padding: 56px 40px 80px; text-align: center; }
   .cl-cta-heading {
-    font-family: 'Newsreader', serif;
+    font-family: var(--font-newsreader), 'Newsreader', serif;
     font-size: 28px;
     font-weight: 300;
     color: #453a2a;

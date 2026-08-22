@@ -81,11 +81,21 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         }
         tx.set(ref, candidateUpdate, { merge: true })
       } else {
-        // Allow writes before interviewerId is registered (lobby phase).
-        // Once set, require identity match.
-        if (data.interviewerId && data.interviewerId !== caller.uid) {
+        const registeredInterviewerId =
+          typeof data.interviewerId === 'string' && data.interviewerId.length > 0
+            ? data.interviewerId
+            : null
+        // Once an interviewer is registered, ONLY they may write presence.
+        if (registeredInterviewerId && registeredInterviewerId !== caller.uid) {
           throw new TransitionError(403, 'not_interviewer', 'Caller is not the session interviewer.')
         }
+        // Pre-registration (lobby / case-browsing phase) there is no way to
+        // verify who the real interviewer is, so only the cosmetic
+        // `interviewerBrowsing` signal is accepted. The sensitive signals --
+        // audio-capture opt-out and draft completeness -- change what the
+        // candidate sees and how their transcript is built, so they are
+        // gated behind registration.
+        const mayWriteSensitiveSignals = Boolean(registeredInterviewerId)
         const interviewerUpdate: Record<string, unknown> = {
           interviewerPresence: {
             active,
@@ -96,13 +106,13 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
         // merge interviewerAudioCaptured:false onto the session doc so the
         // candidate sees the "only your side will be in the transcript" notice
         // and the Cloud Function produces a partial (candidate-only) transcript.
-        if (interviewerAudioCaptured === false) {
+        if (mayWriteSensitiveSignals && interviewerAudioCaptured === false) {
           interviewerUpdate.interviewerAudioCaptured = false
         }
         if (typeof interviewerBrowsing === 'boolean') {
           interviewerUpdate.interviewerBrowsing = interviewerBrowsing
         }
-        if (typeof interviewerDraftAllRated === 'boolean') {
+        if (mayWriteSensitiveSignals && typeof interviewerDraftAllRated === 'boolean') {
           interviewerUpdate.interviewerDraftAllRated = interviewerDraftAllRated
         }
         tx.set(ref, interviewerUpdate, { merge: true })

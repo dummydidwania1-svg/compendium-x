@@ -48,14 +48,14 @@ export default function SessionEndedScreen({ destination = '/' }: { destination?
         </div>
 
         <h1
-          style={{ fontFamily: "'Newsreader', serif", color: '#3B2F2F' }}
+          style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif", color: '#3B2F2F' }}
           className="mb-2.5 text-[26px] font-medium leading-tight"
         >
           This Session Has Ended
         </h1>
 
         <p
-          style={{ fontFamily: "'Work Sans', sans-serif", color: 'rgba(92,64,51,0.7)' }}
+          style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: 'rgba(92,64,51,0.7)' }}
           className="mb-7 text-[13.5px] leading-relaxed"
         >
           This case has already been completed and rated. Taking you home...
@@ -64,7 +64,7 @@ export default function SessionEndedScreen({ destination = '/' }: { destination?
         <button
           type="button"
           onClick={() => router.replace(destination)}
-          style={{ fontFamily: "'Work Sans', sans-serif", color: '#3D5A35' }}
+          style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: '#3D5A35' }}
           className="text-[11px] font-semibold uppercase tracking-[0.16em] underline underline-offset-2 transition-opacity hover:opacity-70"
         >
           Home

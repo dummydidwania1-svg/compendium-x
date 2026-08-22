@@ -197,7 +197,7 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
         @keyframes imgk-glow { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.55; transform: scale(1.08); } }
         @keyframes imgk-mic-breathe { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 0.75; transform: scale(1.07); } }
         @keyframes imgk-progress { from { width: 100%; } to { width: 0%; } }
-        .imgk-btn { display: inline-flex; align-items: center; justify-content: center; width: auto; border-radius: 999px; padding: 6px 16px; font-family: 'Work Sans', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); transition: opacity 0.15s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .imgk-btn { display: inline-flex; align-items: center; justify-content: center; width: auto; border-radius: 999px; padding: 6px 16px; font-family: var(--font-work-sans), 'Work Sans', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); transition: opacity 0.15s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .imgk-btn:hover { opacity: 0.82; }
         .imgk-btn:active { transform: scale(0.97); opacity: 0.8; }
         .imgk-btn-primary { color: #7f1d1d; border: 1px solid rgba(127,29,29,0.22); background: rgba(127,29,29,0.06); }
@@ -268,7 +268,7 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
           <div className="flex flex-col items-center gap-2.5">
             <h2
               style={{
-                fontFamily: "'Newsreader', serif",
+                fontFamily: "var(--font-newsreader), 'Newsreader', serif",
                 fontWeight: 300,
                 color: isDenied ? '#7f1d1d' : '#3B2F2F',
                 fontSize: '30px',
@@ -286,7 +286,7 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
             </h2>
             <p
               style={{
-                fontFamily: "'Work Sans', sans-serif",
+                fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                 fontSize: '13px',
                 color: isDenied ? 'rgba(127,29,29,0.65)' : 'rgba(92,64,51,0.65)',
                 maxWidth: '280px',
@@ -330,13 +330,13 @@ export function InterviewerMicGate({ lobbyId, onResolved }: InterviewerMicGatePr
                   }}
                 />
               </div>
-              <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.35)', fontFamily: "'Work Sans', sans-serif", letterSpacing: '0.04em' }}>
+              <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.35)', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", letterSpacing: '0.04em' }}>
                 Opening in {countdown > 0 ? countdown : 1}s
               </p>
             </div>
           ) : (
             /* Asking state or checking state */
-            <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.35)', fontFamily: "'Work Sans', sans-serif", letterSpacing: '0.04em' }}>
+            <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.35)', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", letterSpacing: '0.04em' }}>
               {checking ? 'One moment...' : 'Waiting for your answer...'}
             </p>
           )}

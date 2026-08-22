@@ -21,7 +21,16 @@ export function useActivityHeartbeat(): void {
 
       const dateKey = todayUtcDateKey()
       const storageKey = `compendiumx-heartbeat-${user.uid}-${dateKey}`
-      if (sessionStorage.getItem(storageKey)) return
+      // Storage can be blocked (private mode, extensions); a thrown read here
+      // would abort this auth-listener invocation. Worst case without the
+      // guard: one extra ping per mount — harmless for the KPI rollup.
+      let alreadySent = false
+      try {
+        alreadySent = sessionStorage.getItem(storageKey) === '1'
+      } catch {
+        alreadySent = false
+      }
+      if (alreadySent) return
 
       user
         .getIdToken()
@@ -33,7 +42,11 @@ export function useActivityHeartbeat(): void {
           }),
         )
         .then(() => {
-          sessionStorage.setItem(storageKey, '1')
+          try {
+            sessionStorage.setItem(storageKey, '1')
+          } catch {
+            /* storage blocked — dedupe simply won't work this session */
+          }
         })
         .catch((err) => {
           console.error('[useActivityHeartbeat] ping failed', err instanceof Error ? err.message : String(err))

@@ -95,9 +95,26 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
   if (!configResult.success) return jsonOk({ insight: null })
   const config = configResult.data
 
+  // Field projections + runaway bounds: downstream only consumes caseId and
+  // timestamps from sessions, and lobbyId/isUnrated from evaluations — yet the
+  // unprojected queries used to pull FULL documents (merged transcripts,
+  // recording metadata, notes) for a user's entire history on every call.
+  // Limits are generous safety valves (no real goal approaches these); they
+  // just stop a pathological history from an unbounded read.
   const [sessionsSnap, evaluationsSnap] = await Promise.all([
-    adminDb.collection('sessions').where('candidateId', '==', caller.uid).where('status', '==', 'completed').get(),
-    adminDb.collection('evaluations').where('candidateId', '==', caller.uid).get(),
+    adminDb
+      .collection('sessions')
+      .where('candidateId', '==', caller.uid)
+      .where('status', '==', 'completed')
+      .select('caseId', 'completedAt', 'updatedAt')
+      .limit(1000)
+      .get(),
+    adminDb
+      .collection('evaluations')
+      .where('candidateId', '==', caller.uid)
+      .select('lobbyId', 'isUnrated')
+      .limit(2000)
+      .get(),
   ])
 
   const caseIds = [...new Set(sessionsSnap.docs.map((d) => d.data().caseId).filter(Boolean))] as string[]

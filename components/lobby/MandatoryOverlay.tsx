@@ -20,7 +20,7 @@ export interface MandatoryOverlayProps {
 
 export function MandatoryOverlay({ title, body, primaryLabel, onPrimary }: MandatoryOverlayProps) {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Work Sans', sans-serif" }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}>
       {/* Scrim — no onClick. Not dismissible. */}
       <div
         style={{ position: 'absolute', inset: 0, background: 'rgba(36,26,16,0.48)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', animation: 'mo-scrim-in 0.3s ease forwards' }}

@@ -84,47 +84,58 @@ export const POST = authenticatedRoute<{ lobbyId: string }>(
     const interviewerEmail =
       typeof sessionData.interviewerEmail === 'string' ? sessionData.interviewerEmail : caller.email
 
-    const evaluationRef = adminDb.collection('evaluations').doc()
-    const batch = adminDb.batch()
-
     const scoredCount = [input.scores.structure, input.scores.understanding, input.scores.delivery, input.scores.creativity]
       .filter((s) => s !== undefined).length
 
-    batch.set(evaluationRef, {
-      caseId,
-      caseTitle,
-      caseType,
-      industry,
-      lobbyId,
-      candidateId,
-      interviewerId,
-      candidateName: candidateEmail ?? caller.email,
-      interviewerEmail,
-      ...(input.scores.structure !== undefined && { structureScore: input.scores.structure }),
-      ...(input.scores.understanding !== undefined && { understandingScore: input.scores.understanding }),
-      ...(input.scores.delivery !== undefined && { deliveryScore: input.scores.delivery }),
-      ...(input.scores.creativity !== undefined && { creativityScore: input.scores.creativity }),
-      ...(scoredCount < 4 && { isUnrated: true }),
-      notes: input.notes,
-      interviewerObservations: input.notes,
-      createdAt: FieldValue.serverTimestamp(),
+    // Create atomically under the canonical lobby-derived document ID. The
+    // earlier existence check + random auto-ID used to race: two concurrent
+    // submissions both saw "no evaluation" and created two docs, double-counting
+    // the score trend. Inside the transaction the lobbyId query re-runs against
+    // committed state, so exactly one writer ever creates the document.
+    let evaluationId: string | undefined
+    await adminDb.runTransaction(async (tx) => {
+      const dup = await tx.get(
+        adminDb.collection('evaluations').where('lobbyId', '==', lobbyId).limit(1),
+      )
+      if (!dup.empty) {
+        evaluationId = dup.docs[0].id
+        return
+      }
+      const evaluationRef = adminDb.collection('evaluations').doc(`unrated_${lobbyId}`)
+      tx.create(evaluationRef, {
+        caseId,
+        caseTitle,
+        caseType,
+        industry,
+        lobbyId,
+        candidateId,
+        interviewerId,
+        candidateName: candidateEmail ?? caller.email,
+        interviewerEmail,
+        ...(input.scores.structure !== undefined && { structureScore: input.scores.structure }),
+        ...(input.scores.understanding !== undefined && { understandingScore: input.scores.understanding }),
+        ...(input.scores.delivery !== undefined && { deliveryScore: input.scores.delivery }),
+        ...(input.scores.creativity !== undefined && { creativityScore: input.scores.creativity }),
+        ...(scoredCount < 4 && { isUnrated: true }),
+        notes: input.notes,
+        interviewerObservations: input.notes,
+        createdAt: FieldValue.serverTimestamp(),
+      })
+      tx.set(
+        sessionRef,
+        {
+          status: 'completed',
+          completedBy: 'candidate_draft_submit',
+          interviewerId,
+          interviewerEmail,
+          completedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      )
+      evaluationId = evaluationRef.id
     })
 
-    batch.set(
-      sessionRef,
-      {
-        status: 'completed',
-        completedBy: 'candidate_draft_submit',
-        interviewerId,
-        interviewerEmail,
-        completedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    )
-
-    await batch.commit()
-
-    return jsonOk({ ok: true, evaluationId: evaluationRef.id })
+    return jsonOk({ ok: true, evaluationId })
   },
 )

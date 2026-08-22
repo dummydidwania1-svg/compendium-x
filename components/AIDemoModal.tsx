@@ -508,7 +508,7 @@ const AIDemoModal = ({ onClose }: AIDemoModalProps) => {
         }
         .demo-rail-index {
           padding-top: 2px;
-          font-family: 'Work Sans', sans-serif;
+          font-family: var(--font-work-sans), 'Work Sans', sans-serif;
           font-size: 9px;
           letter-spacing: 0.22em;
           text-transform: uppercase;
@@ -567,7 +567,7 @@ const AIDemoModal = ({ onClose }: AIDemoModalProps) => {
         .demo-rail-eyebrow {
           display: block;
           margin-bottom: 6px;
-          font-family: 'Work Sans', sans-serif;
+          font-family: var(--font-work-sans), 'Work Sans', sans-serif;
           font-size: 8px;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -576,7 +576,7 @@ const AIDemoModal = ({ onClose }: AIDemoModalProps) => {
         }
         .demo-rail-title {
           display: block;
-          font-family: 'Newsreader', serif;
+          font-family: var(--font-newsreader), 'Newsreader', serif;
           font-size: 1.08rem;
           line-height: 1.05;
           color: rgba(69,58,42,0.86);
@@ -684,7 +684,7 @@ const AIDemoModal = ({ onClose }: AIDemoModalProps) => {
           gap: 12px;
         }
         .demo-stage-kicker {
-          font-family: 'Work Sans', sans-serif;
+          font-family: var(--font-work-sans), 'Work Sans', sans-serif;
           font-size: 8px;
           letter-spacing: 0.2em;
           text-transform: uppercase;
@@ -717,7 +717,7 @@ const AIDemoModal = ({ onClose }: AIDemoModalProps) => {
         }
         .demo-stage-copy h4 {
           margin: 0;
-          font-family: 'Newsreader', serif;
+          font-family: var(--font-newsreader), 'Newsreader', serif;
           font-size: clamp(2rem, 4vw, 3rem);
           line-height: 0.95;
           letter-spacing: -0.04em;
@@ -725,7 +725,7 @@ const AIDemoModal = ({ onClose }: AIDemoModalProps) => {
         }
         .demo-stage-copy p {
           margin: 10px 0 0;
-          font-family: 'Work Sans', sans-serif;
+          font-family: var(--font-work-sans), 'Work Sans', sans-serif;
           font-size: 0.8rem;
           line-height: 1.5;
           color: rgba(67,72,64,0.72);

@@ -4,17 +4,12 @@ import { createPortal } from 'react-dom';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Eye, ImageUp, Image, ChevronDown, ChevronUp, ArrowUpDown, X } from 'lucide-react';
 import { filterDashboardEntries } from '@/lib/dashboard/live';
+import { formatDashboardDateDot, parseDashboardDate } from '@/lib/dashboard/date';
 import { useDashboard } from './DashboardContext';
 import CaseDetailOverlay from './CaseDetailOverlay';
 
-// ── Utility: format date as "Mar 12, 2026" ──
-const formatDate = (dateStr: string): string => {
-  const d = new Date(dateStr);
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${dd}.${mm}.${yyyy}`;
-};
+// ── Utility: format date as "12.03.2026" ──
+const formatDate = (dateStr: string): string => formatDashboardDateDot(dateStr);
 
 const formatDateStr = (dateStr: string): string => {
   return formatDate(dateStr);
@@ -149,7 +144,9 @@ const sortedCases = useMemo(() => {
     if (sortField === 'name') {
       cmp = a.name.localeCompare(b.name);
     } else if (sortField === 'date') {
-      cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
+      cmp =
+        (parseDashboardDate(a.date)?.getTime() ?? 0) -
+        (parseDashboardDate(b.date)?.getTime() ?? 0);
     } else if (sortField === 'score') {
       // Unrated entries sort to the bottom regardless of direction.
       if (a.score === null && b.score === null) cmp = 0;
@@ -174,8 +171,17 @@ const sortedCases = useMemo(() => {
 
     check();
     el.addEventListener('scroll', check);
-    return () => el.removeEventListener('scroll', check);
-  }, []);
+    // Re-measure when the row count changes (filters, live listener, deletes)
+    // or the layout resizes — a mount-only check leaves the hint stale.
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(check) : null;
+    if (ro) ro.observe(el);
+    window.addEventListener('resize', check);
+    return () => {
+      el.removeEventListener('scroll', check);
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', check);
+    };
+  }, [sortedCases.length]);
 
   const maxHeight = MAX_VISIBLE_ROWS * ROW_HEIGHT + 40;
 
@@ -273,14 +279,17 @@ const sortedCases = useMemo(() => {
         {/* Scrollable table */}
         <div
   ref={scrollRef}
-  className="overflow-y-auto overflow-x-hidden"
+  className="ccx-hide-scrollbar overflow-y-auto overflow-x-hidden"
   style={{
     height: `${maxHeight}px`,
     scrollbarWidth: 'none',
     msOverflowStyle: 'none',
   }}
 >
-          <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+          {/* Scoped so ONLY this container's scrollbar is hidden on WebKit —
+              an unscoped `div::-webkit-scrollbar` rule hides every div's
+              scrollbar document-wide, including portaled overlays. */}
+          <style>{`.ccx-hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
 
           {sortedCases.length === 0 ? (
             <div className="flex items-center justify-center" style={{ height: `${maxHeight}px` }}>

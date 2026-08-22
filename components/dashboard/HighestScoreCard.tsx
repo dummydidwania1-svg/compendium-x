@@ -5,6 +5,7 @@ import { Eye, ImageUp, Image, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { COLORS } from '@/lib/constants';
 import { createPortal } from 'react-dom';
 import { filterDashboardEntries } from '@/lib/dashboard/live';
+import { formatDashboardDateDot } from '@/lib/dashboard/date';
 import { useDashboard } from './DashboardContext';
 import CaseDetailOverlay from './CaseDetailOverlay';
 
@@ -15,14 +16,8 @@ const scoreColor = (score: number): string => {
   return COLORS.dark;
 };
 
-// ── Date formatter (same as CaseHistoryTable) ──
-const formatDate = (dateStr: string): string => {
-  const d = new Date(dateStr);
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${dd}.${mm}.${yyyy}`;
-};
+// ── Date formatter (shared, timezone-safe — see lib/dashboard/date.ts) ──
+const formatDate = (dateStr: string): string => formatDashboardDateDot(dateStr);
 
 // ── Icon button (SAME as CaseHistoryTable — includes label) ──
 const IconButton = ({
@@ -86,8 +81,17 @@ const ScoreOverlay = ({
     };
     check();
     el.addEventListener('scroll', check);
-    return () => el.removeEventListener('scroll', check);
-  }, []);
+    // Re-measure when rows arrive/leave or the layout resizes — a mount-only
+    // check leaves the scroll hint stale.
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(check) : null;
+    if (ro) ro.observe(el);
+    window.addEventListener('resize', check);
+    return () => {
+      el.removeEventListener('scroll', check);
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', check);
+    };
+  }, [cases.length]);
 
   const ROW_HEIGHT = 68;
   const MAX_ROWS = 2;
@@ -130,14 +134,15 @@ const ScoreOverlay = ({
           <div className="p-4">
             <div
               ref={scrollRef}
-              className="overflow-y-auto overflow-x-hidden"
+              className="ccx-hide-scrollbar overflow-y-auto overflow-x-hidden"
               style={{
                 maxHeight: `${maxHeight}px`,
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
               }}
             >
-              <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+              {/* Scoped — see CaseHistoryTable for why the unscoped rule was a bug. */}
+              <style>{`.ccx-hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
 
               {cases.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
@@ -269,7 +274,17 @@ const HighestScoreCard = ({ filters }: HighestScoreCardProps) => {
     <>
       <div
         onClick={() => !noData && setShowOverlay(true)}
-        className="glass-card p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-[#D9D0C4]/20 transition-all group min-h-[140px] hover:-translate-y-0.5 hover:shadow-lg duration-300 ease-out"
+        onKeyDown={(e) => {
+          if (noData) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setShowOverlay(true)
+          }
+        }}
+        role={noData ? undefined : 'button'}
+        tabIndex={noData ? -1 : 0}
+        aria-label={noData ? undefined : 'Open highest-score case details'}
+        className="glass-card p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-[#D9D0C4]/20 transition-all group min-h-[140px] hover:-translate-y-0.5 hover:shadow-lg duration-300 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3D5A35]"
       >
         <div className="eyebrow !mb-0.5 justify-center text-[9px]">BEST CASE</div>
         <h3 className="text-[10px] font-semibold text-[#3B2F2F] tracking-tight text-center">

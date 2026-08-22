@@ -33,7 +33,7 @@ export default function MobileBlockModal({
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: "'Work Sans', sans-serif",
+        fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
       }}
     >
       <div

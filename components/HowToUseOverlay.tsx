@@ -57,7 +57,7 @@ const OVERLAY_CSS = `
 }
 .pr-overlay.open .pr-chrome { opacity: 1; transform: translateY(0); }
 .pr-title {
-  font-family: 'Newsreader', serif; font-style: italic; font-weight: 400; font-size: 14px;
+  font-family: var(--font-newsreader), 'Newsreader', serif; font-style: italic; font-weight: 400; font-size: 14px;
   color: rgba(255,248,240,.6); margin-bottom: 14px; letter-spacing: .01em;
 }
 
@@ -74,7 +74,7 @@ const OVERLAY_CSS = `
 .pr-switch-btn {
   position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px;
   padding: 9px 20px; border: none; background: none; border-radius: 999px; cursor: pointer;
-  font-family: 'Work Sans', sans-serif; font-size: 11px; font-weight: 600;
+  font-family: var(--font-work-sans), 'Work Sans', sans-serif; font-size: 11px; font-weight: 600;
   letter-spacing: .14em; text-transform: uppercase;
   color: rgba(255,248,240,.72); transition: color .3s ease;
 }
@@ -177,7 +177,7 @@ const OVERLAY_CSS = `
 
 .pr-speed {
   background: none; border: 1px solid rgba(92,64,51,.18); border-radius: 999px;
-  padding: 4px 10px; font-family: 'Work Sans', sans-serif; font-size: 10px; font-weight: 600;
+  padding: 4px 10px; font-family: var(--font-work-sans), 'Work Sans', sans-serif; font-size: 10px; font-weight: 600;
   letter-spacing: .08em; color: #5C4033; cursor: pointer; flex-shrink: 0;
   font-variant-numeric: tabular-nums; transition: background .2s ease, border-color .2s ease;
   min-width: 44px;
@@ -205,7 +205,7 @@ const OVERLAY_CSS = `
 .pr-replay-lbl { font-size: 10px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,248,240,.85); }
 .pr-next {
   background: none; border: none; cursor: pointer;
-  font-family: 'Newsreader', serif; font-style: italic; font-size: 14px;
+  font-family: var(--font-newsreader), 'Newsreader', serif; font-style: italic; font-size: 14px;
   color: rgba(255,248,240,.55); transition: color .25s ease;
 }
 .pr-next:hover { color: rgba(255,248,240,.9); }

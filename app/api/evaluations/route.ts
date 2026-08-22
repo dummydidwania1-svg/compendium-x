@@ -58,11 +58,49 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
     }
     sessionData = sessionSnap.data() ?? {}
 
-    if (sessionData.interviewerId && sessionData.interviewerId !== caller.uid) {
+    const registeredInterviewerId =
+      typeof sessionData.interviewerId === 'string' && sessionData.interviewerId.length > 0
+        ? sessionData.interviewerId
+        : null
+
+    if (registeredInterviewerId && registeredInterviewerId !== caller.uid) {
       throw new TransitionError(
         403,
         'not_interviewer',
         'Caller is not the registered interviewer for this session.',
+      )
+    }
+    // No interviewer bound yet: the caller may CLAIM the interviewer-of-record
+    // slot, but only while the session is still live. Once a session has
+    // resolved (completed/abandoned/unrated-fallback), an unbound session must
+    // never accept feedback from an arbitrary authenticated caller -- that
+    // would let anyone who guesses a lobbyId fabricate scores onto another
+    // user's dashboard.
+    const sessionStatus = typeof sessionData.status === 'string' ? sessionData.status : null
+    if (
+      !registeredInterviewerId &&
+      sessionStatus !== 'waiting' &&
+      sessionStatus !== 'in_progress' &&
+      sessionStatus !== 'replacing'
+    ) {
+      throw new TransitionError(
+        409,
+        'session_already_resolved',
+        'Session is already resolved and has no interviewer bound. Cannot submit evaluation.',
+      )
+    }
+    // The submitted case must match the case actually assigned to this
+    // session -- otherwise a caller could re-point someone else's completed
+    // session at an arbitrary case.
+    if (
+      typeof sessionData.caseId === 'string' &&
+      sessionData.caseId.length > 0 &&
+      sessionData.caseId !== input.caseId
+    ) {
+      throw new TransitionError(
+        409,
+        'case_mismatch',
+        'Submitted case does not match the case assigned to this session.',
       )
     }
     if (typeof sessionData.candidateId !== 'string') {
@@ -193,13 +231,17 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
   }
 
   // 4) Create evaluation + (optionally) complete session in one batch.
-  const evaluationRef = adminDb.collection('evaluations').doc()
-  const batch = adminDb.batch()
-
+  // The canonical lobby-derived document ID makes this race-proof against the
+  // candidate-side completion routes (submit-draft / save-unrated): they all
+  // converge on one document per lobby instead of creating duplicates.
   const scoredCount = [input.scores.structure, input.scores.understanding, input.scores.delivery, input.scores.creativity]
     .filter((s) => s !== undefined).length
+  const evaluationRef = input.lobbyId
+    ? adminDb.collection('evaluations').doc(`unrated_${input.lobbyId}`)
+    : adminDb.collection('evaluations').doc()
+  const batch = adminDb.batch()
 
-  batch.set(evaluationRef, {
+  batch.create(evaluationRef, {
     caseId: input.caseId,
     caseTitle,
     caseType,
@@ -224,7 +266,11 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
       sessionRef,
       {
         status: 'completed',
-        caseId: input.caseId,
+        // Only bind the case onto the session when it somehow lacks one --
+        // never re-point an existing assignment (validated above anyway).
+        ...(typeof sessionData.caseId !== 'string' || sessionData.caseId.length === 0
+          ? { caseId: input.caseId }
+          : {}),
         interviewerId: caller.uid,
         interviewerEmail: caller.email,
         completedAt: FieldValue.serverTimestamp(),
@@ -234,7 +280,32 @@ export const POST = authenticatedRoute('/api/evaluations', async (request, calle
     )
   }
 
-  await batch.commit()
+  try {
+    await batch.commit()
+  } catch (commitError) {
+    // A concurrent completion route (submit-draft / save-unrated) won the
+    // canonical document slot between our upsert pre-check and this commit.
+    // Converge onto the winning doc with the same merge semantics as the
+    // formal-submit upsert path instead of failing the interviewer's submit.
+    const code =
+      typeof commitError === 'object' && commitError !== null && 'code' in commitError
+        ? String((commitError as { code?: unknown }).code)
+        : ''
+    if (!code.includes('already-exists')) throw commitError
+    await evaluationRef.set(
+      {
+        notes: input.notes,
+        interviewerObservations: input.notes,
+        updatedAt: FieldValue.serverTimestamp(),
+        ...(input.scores.structure !== undefined && { structureScore: input.scores.structure }),
+        ...(input.scores.understanding !== undefined && { understandingScore: input.scores.understanding }),
+        ...(input.scores.delivery !== undefined && { deliveryScore: input.scores.delivery }),
+        ...(input.scores.creativity !== undefined && { creativityScore: input.scores.creativity }),
+        ...(scoredCount < 4 ? { isUnrated: true } : { isUnrated: FieldValue.delete() }),
+      },
+      { merge: true },
+    )
+  }
 
   // If the interviewer's recording track is stuck in 'recording' (periodic flush
   // wrote the audio but the final upload beacon never arrived — common when the

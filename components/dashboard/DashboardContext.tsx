@@ -10,7 +10,7 @@ import {
 } from 'react'
 import type { User } from 'firebase/auth'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { collection, doc, onSnapshot, query, where } from 'firebase/firestore'
+import { collection, doc, getDocs, onSnapshot, query, where } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import {
   buildDashboardEntries,
@@ -20,8 +20,9 @@ import {
   type DashboardCaseMeta,
   type DashboardSessionMeta,
 } from '@/lib/dashboard/live'
-import { buildPreviewDashboardData } from '@/lib/dashboard/preview'
 import type { EvaluationRecord } from '@/lib/dashboard/types'
+
+type StreamKey = 'profile' | 'cases' | 'evaluations' | 'sessions'
 
 type DashboardContextValue = {
   authResolved: boolean
@@ -38,15 +39,50 @@ type DashboardContextValue = {
 
 const DashboardContext = createContext<DashboardContextValue | undefined>(undefined)
 
+// Case-meta cache: short TTL, sessionStorage-scoped per tab.
+const CASES_META_CACHE_KEY = 'ccx-dashboard-case-meta-v1'
+const CASES_META_CACHE_TTL_MS = 30 * 60 * 1000
+
 function firstNameOf(value: string | null, fallbackEmail?: string | null) {
   const raw = value?.trim() || fallbackEmail?.trim() || 'Candidate'
   return raw.split(' ')[0] || 'Candidate'
 }
 
+/**
+ * Translates Firestore listener failures into calm, actionable copy. Raw SDK
+ * messages ("Missing or insufficient permissions") previously surfaced verbatim
+ * and never cleared even after the stream recovered.
+ */
+function friendlyStreamError(label: string, issue: unknown): string {
+  const code =
+    typeof issue === 'object' && issue !== null && 'code' in issue
+      ? String((issue as { code?: unknown }).code)
+      : ''
+  if (code.includes('permission-denied')) {
+    return `Your ${label} couldn't be loaded (access denied). Try signing out and back in.`
+  }
+  if (
+    code.includes('unavailable') ||
+    code.includes('failed-precondition') ||
+    code.includes('deadline-exceeded')
+  ) {
+    return `Connection hiccup while loading ${label} — it will retry automatically.`
+  }
+  return `Your ${label} couldn't be loaded just now — it will retry automatically.`
+}
+
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const [authResolved, setAuthResolved] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-  const [error, setError] = useState('')
+  // Per-stream error slots: any single stream hiccup no longer banners the
+  // whole dashboard, success clears its own slot, and unrelated streams don't
+  // overwrite each other.
+  const [streamErrors, setStreamErrors] = useState<Record<StreamKey, string>>({
+    profile: '',
+    cases: '',
+    evaluations: '',
+    sessions: '',
+  })
   const [profileName, setProfileName] = useState<string | null>(null)
   const [goalTargetCases, setGoalTargetCases] = useState(20)
   const [evaluationDocs, setEvaluationDocs] = useState<Array<{ id: string; data: Record<string, unknown> }>>([])
@@ -56,7 +92,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [evaluationsReady, setEvaluationsReady] = useState(false)
   const [casesReady, setCasesReady] = useState(false)
   const [sessionsReady, setSessionsReady] = useState(false)
-  const previewData = useMemo(() => buildPreviewDashboardData(), [])
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
@@ -75,7 +110,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (!authResolved) return
 
     if (!user) {
-      setError('')
+      setStreamErrors({ profile: '', cases: '', evaluations: '', sessions: '' })
       setProfileName(null)
       setGoalTargetCases(20)
       setEvaluationDocs([])
@@ -88,11 +123,74 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    setError('')
+    setStreamErrors({ profile: '', cases: '', evaluations: '', sessions: '' })
     setProfileReady(false)
     setEvaluationsReady(false)
     setCasesReady(false)
     setSessionsReady(false)
+
+    let casesCancelled = false
+
+    // Case metadata (title/type/company/industry/difficulty) is effectively
+    // immutable during a dashboard visit and only six fields of ~90 docs are
+    // consumed — a realtime listener over the FULL cases collection (including
+    // every framework tree payload) streamed hundreds of KB per visitor and
+    // re-pushed on every catalog write anywhere. A one-shot fetch is all the
+    // dashboard needs; a short-lived sessionStorage cache makes repeat
+    // navigation render instantly while a background refresh keeps it honest.
+    const loadCaseMeta = async () => {
+      let hydrated = false
+      try {
+        const raw = sessionStorage.getItem(CASES_META_CACHE_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw) as { ts: number; cases: Record<string, DashboardCaseMeta> }
+          if (
+            parsed?.cases &&
+            typeof parsed.ts === 'number' &&
+            Date.now() - parsed.ts < CASES_META_CACHE_TTL_MS &&
+            Object.keys(parsed.cases).length > 0
+          ) {
+            setCasesById(parsed.cases)
+            setCasesReady(true)
+            hydrated = true
+          }
+        }
+      } catch {
+        // Malformed cache — ignore and fetch fresh.
+      }
+
+      try {
+        const snapshot = await getDocs(query(collection(db, 'cases')))
+        if (casesCancelled) return
+        const nextCases = snapshot.docs.reduce<Record<string, DashboardCaseMeta>>((acc, item) => {
+          acc[item.id] = mapCaseMeta(item.id, item.data())
+          return acc
+        }, {})
+        setCasesById(nextCases)
+        setStreamErrors((prev) => ({ ...prev, cases: '' }))
+        setCasesReady(true)
+        try {
+          sessionStorage.setItem(
+            CASES_META_CACHE_KEY,
+            JSON.stringify({ ts: Date.now(), cases: nextCases }),
+          )
+        } catch {
+          // Storage blocked/quota — cache simply won't help next time.
+        }
+      } catch (issue) {
+        if (casesCancelled) return
+        // A hydrated cache means the user still sees correct data — don't
+        // banner the whole dashboard over a failed refresh.
+        if (!hydrated) {
+          setStreamErrors((prev) => ({
+            ...prev,
+            cases: friendlyStreamError('case catalogue', issue),
+          }))
+          setCasesReady(true)
+        }
+      }
+    }
+    void loadCaseMeta()
 
     const unsubscribes = [
       onSnapshot(
@@ -118,36 +216,29 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
           setProfileName(fullName || user.email || 'Candidate')
           setGoalTargetCases(goalTarget)
+          setStreamErrors((prev) => ({ ...prev, profile: '' }))
           setProfileReady(true)
         },
         (issue) => {
-          setError(issue instanceof Error ? issue.message : 'Unable to load dashboard profile data.')
+          setStreamErrors((prev) => ({
+            ...prev,
+            profile: friendlyStreamError('profile', issue),
+          }))
           setProfileReady(true)
-        }
-      ),
-      onSnapshot(
-        collection(db, 'cases'),
-        (snapshot) => {
-          const nextCases = snapshot.docs.reduce<Record<string, DashboardCaseMeta>>((acc, item) => {
-            acc[item.id] = mapCaseMeta(item.id, item.data())
-            return acc
-          }, {})
-          setCasesById(nextCases)
-          setCasesReady(true)
-        },
-        (issue) => {
-          setError(issue instanceof Error ? issue.message : 'Unable to load case repository data for dashboard.')
-          setCasesReady(true)
         }
       ),
       onSnapshot(
         query(collection(db, 'evaluations'), where('candidateId', '==', user.uid)),
         (snapshot) => {
           setEvaluationDocs(snapshot.docs.map((item) => ({ id: item.id, data: item.data() })))
+          setStreamErrors((prev) => ({ ...prev, evaluations: '' }))
           setEvaluationsReady(true)
         },
         (issue) => {
-          setError(issue instanceof Error ? issue.message : 'Unable to load evaluation data for dashboard.')
+          setStreamErrors((prev) => ({
+            ...prev,
+            evaluations: friendlyStreamError('practice history', issue),
+          }))
           setEvaluationsReady(true)
         }
       ),
@@ -159,16 +250,21 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             return acc
           }, {})
           setSessionsByLobby(nextSessions)
+          setStreamErrors((prev) => ({ ...prev, sessions: '' }))
           setSessionsReady(true)
         },
         (issue) => {
-          setError(issue instanceof Error ? issue.message : 'Unable to load session data for dashboard.')
+          setStreamErrors((prev) => ({
+            ...prev,
+            sessions: friendlyStreamError('session details', issue),
+          }))
           setSessionsReady(true)
         }
       ),
     ]
 
     return () => {
+      casesCancelled = true
       for (const unsubscribe of unsubscribes) unsubscribe()
     }
   }, [authResolved, user])
@@ -176,6 +272,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const { records, entries } = useMemo(
     () => buildDashboardEntries(evaluationDocs, casesById, sessionsByLobby),
     [casesById, evaluationDocs, sessionsByLobby]
+  )
+
+  const error = useMemo(
+    () =>
+      [streamErrors.profile, streamErrors.evaluations, streamErrors.sessions, streamErrors.cases]
+        .filter(Boolean)
+        .join(' '),
+    [streamErrors]
   )
 
   const value = useMemo<DashboardContextValue>(
@@ -202,7 +306,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       goalTargetCases,
       profileName,
       profileReady,
-      previewData,
       records,
       sessionsReady,
       user,

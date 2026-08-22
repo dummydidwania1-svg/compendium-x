@@ -110,7 +110,7 @@ export default function NewCaseBadge({
         <text
           x="20"
           y="20.5"
-          fontFamily="'Work Sans', system-ui, -apple-system, sans-serif"
+          fontFamily="var(--font-work-sans), 'Work Sans', system-ui, -apple-system, sans-serif"
           fontSize="11"
           fontWeight="700"
           fill="#FFFCF7"

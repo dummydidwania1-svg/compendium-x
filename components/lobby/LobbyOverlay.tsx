@@ -48,6 +48,19 @@ export function LobbyOverlay({
   const [leaving, setLeaving] = useState(false)
   const [topOffset, setTopOffset] = useState(82)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The exit animation delays onDismiss by 280ms; if the PARENT unmounts this
+  // overlay in the meantime (e.g. its own state changed from the action
+  // handler), that stale callback used to fire anyway and clobber fresh state.
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const unmountedRef = useRef(false)
+
+  useEffect(
+    () => () => {
+      unmountedRef.current = true
+      if (exitTimerRef.current) clearTimeout(exitTimerRef.current)
+    },
+    [],
+  )
 
   // Measure the header height dynamically so positioning survives zoom + resize
   useEffect(() => {
@@ -73,7 +86,10 @@ export function LobbyOverlay({
     if (leaving) return
     setLeaving(true)
     timerRef.current && clearTimeout(timerRef.current)
-    setTimeout(() => onDismiss(), 280)
+    if (exitTimerRef.current) clearTimeout(exitTimerRef.current)
+    exitTimerRef.current = setTimeout(() => {
+      if (!unmountedRef.current) onDismiss()
+    }, 280)
   }, [leaving, onDismiss])
 
   // Slide in on mount
@@ -141,7 +157,7 @@ export function LobbyOverlay({
           backdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)',
           WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.04)',
           boxShadow: '0 4px 24px rgba(196,168,130,0.18), 0 1px 4px rgba(59,47,47,0.06), inset 0 1px 0 rgba(255,255,255,0.82), inset 0 0 0 0.5px rgba(255,248,240,0.6)',
-          fontFamily: "'Work Sans', sans-serif",
+          fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
           opacity: visible ? 1 : 0,
           animation: leaving
             ? 'lo-slide-out 0.28s cubic-bezier(0.4,0,1,1) forwards'

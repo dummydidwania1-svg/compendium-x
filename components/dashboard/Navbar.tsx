@@ -118,7 +118,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
           <div className="hidden md:flex items-center space-x-10 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="nav-dropdown">
               <span
-                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
                 className={`nav-link nav-dropdown-trigger text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${
                   currentPage === 'about' || currentPage === 'about-ccx' || currentPage === 'collaborators' || currentPage === 'the-casebook' ? 'active' : ''
                 }`}
@@ -128,23 +128,23 @@ const Navbar = ({ currentPage }: NavbarProps) => {
                 <span className="material-symbols-outlined chevron">expand_more</span>
               </span>
               <div className="nav-dropdown-menu" role="menu">
-                <Link href="/the-casebook" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
-                  <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
+                <Link href="/the-casebook" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
+                  <span style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
                     The Casebook
                   </span>
                 </Link>
-                <Link href="/about-ccx" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
-                  <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
+                <Link href="/about-ccx" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
+                  <span style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
                     The Platform
                   </span>
                 </Link>
-                <Link href="/our-story" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
-                  <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
+                <Link href="/our-story" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
+                  <span style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
                     The Team
                   </span>
                 </Link>
-                <Link href="/collaborators" style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
-                  <span style={{ fontFamily: "'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
+                <Link href="/collaborators" style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }} className="nav-dropdown-item" role="menuitem">
+                  <span style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }} className="nav-dropdown-item-label text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300">
                     Acknowledgements
                   </span>
                 </Link>
@@ -153,7 +153,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
 
             <Link
               href="/repository"
-              style={{ fontFamily: "'Work Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
               className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'repository' ? 'active' : ''}`}
             >
               REPOSITORY
@@ -171,14 +171,14 @@ const Navbar = ({ currentPage }: NavbarProps) => {
 
             <Link
               href="/dashboard"
-              style={{ fontFamily: "'Work Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
               className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'dashboard' ? 'active' : ''}`}
             >
               DASHBOARD
             </Link>
             <Link
               href="/practice"
-              style={{ fontFamily: "'Work Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
               className={`nav-link text-xs uppercase tracking-[0.2em] hover:text-[#3D5A35] transition-colors duration-300 pb-1 ${currentPage === 'practice' ? 'active' : ''}`}
             >
               PRACTICE
@@ -190,7 +190,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
             {isSignedIn ? (
               <button
                 onClick={() => setShowProfileModal(true)}
-                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
                 className="flex items-center gap-1.5 border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 whitespace-nowrap cursor-pointer bg-transparent"
               >
                 <span className="material-symbols-outlined text-[16px] leading-none" style={{ fontSize: '16px' }}>account_circle</span>
@@ -199,7 +199,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
-                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
                 className={`border border-[#3D5A35] px-3 py-1.5 sm:px-4 sm:py-2 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap${isPreview ? ' _nav_signin_btn' : ''}`}
               >
                 SIGN IN
@@ -212,7 +212,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
             {isSignedIn ? (
               <button
                 onClick={() => setShowProfileModal(true)}
-                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
                 className="flex items-center gap-1.5 border border-[#3D5A35] px-3 py-1.5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 whitespace-nowrap cursor-pointer bg-transparent"
               >
                 <span className="material-symbols-outlined text-[16px] leading-none" style={{ fontSize: '16px' }}>account_circle</span>
@@ -221,7 +221,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
-                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
                 className={`border border-[#3D5A35] px-3 py-1.5 text-[#3D5A35] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#3D5A35] hover:text-white transition-all duration-300 cursor-pointer bg-transparent whitespace-nowrap${isPreview ? ' _nav_signin_btn' : ''}`}
               >
                 SIGN IN
@@ -273,7 +273,7 @@ const Navbar = ({ currentPage }: NavbarProps) => {
               <Link
                 key={href}
                 href={href}
-                style={{ fontFamily: "'Work Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
                 className={`block px-3 py-3 text-[11px] uppercase tracking-[0.2em] transition-colors duration-200 rounded-lg ${
                   currentPage === page
                     ? 'text-[#3D5A35] font-medium bg-[#3D5A35]/8'
@@ -289,14 +289,14 @@ const Navbar = ({ currentPage }: NavbarProps) => {
               <div className="mt-2 border-t border-[#3D5A35]/10 pt-2 space-y-0.5">
                 <button
                   onClick={() => { setMobileMenuOpen(false); setShowProfileModal(true) }}
-                  style={{ fontFamily: "'Work Sans', sans-serif" }}
+                  style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
                   className="block w-full text-left px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#3D5A35] font-medium rounded-lg hover:bg-[#3D5A35]/8 transition-colors duration-200"
                 >
                   My Account
                 </button>
                 <button
                   onClick={() => { setMobileMenuOpen(false); handleLogout() }}
-                  style={{ fontFamily: "'Work Sans', sans-serif" }}
+                  style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
                   className="block w-full text-left px-3 py-3 text-[11px] uppercase tracking-[0.2em] text-[#92400e] rounded-lg hover:bg-[#92400e]/8 transition-colors duration-200"
                 >
                   Sign Out

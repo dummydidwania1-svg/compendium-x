@@ -86,7 +86,7 @@ const PANEL_STYLES = `
     padding: 12px 16px !important;
     border: 1px solid #c3c8bd !important;
     background: #faf3e9 !important;
-    font-family: 'Work Sans', sans-serif !important;
+    font-family: var(--font-work-sans), 'Work Sans', sans-serif !important;
     font-size: 14px !important;
     line-height: 20px !important;
     color: #1e1b15 !important;
@@ -135,7 +135,7 @@ const PANEL_STYLES = `
     padding: 13px 16px;
     background: #faf3e9;
     color: #453a2a;
-    font-family: 'Work Sans', sans-serif;
+    font-family: var(--font-work-sans), 'Work Sans', sans-serif;
     font-size: 13px;
     border: 1px solid #c3c8bd;
     cursor: pointer;
@@ -498,13 +498,19 @@ export default function MarketingAuthPanel({
       const preferFallback = shouldPreferFallback()
 
       if (isSignUp) {
-        if (preferFallback) {
-          // Fallback signup: verification email not possible via REST path; proceed to onboarding
-          const credential = await authenticateWithPasswordFallback('signup', normalizedEmail, password)
+        // Shared tail for BOTH signup paths: fire the custom verification
+        // email (callable first, SDK default as fallback) and gate sign-in on
+        // verification — exactly like the SDK path. Fallback-created accounts
+        // used to skip this entirely, so whether an account was
+        // verification-enforced depended on transient network blips.
+        const completeSignupWithVerification = async (
+          user: User,
+          reportGeo?: () => void,
+        ): Promise<boolean> => {
           if (fullName.trim()) {
             try {
               await setDoc(
-                doc(db, 'profiles', credential.user.uid),
+                doc(db, 'profiles', user.uid),
                 { fullName: fullName.trim(), university: college.trim(), updatedAt: serverTimestamp() },
                 { merge: true }
               )
@@ -512,54 +518,62 @@ export default function MarketingAuthPanel({
               // onboarding will collect it
             }
           }
-          setMessage('Account created. Redirecting...')
-          setMessageTone('info')
-          if (auth.currentUser) void reportSignupGeo(auth.currentUser)
-          await finishAuth(credential.user.uid, true)
+          reportGeo?.()
+          let emailed = false
+          try {
+            await triggerVerificationEmail()
+            emailed = true
+          } catch {
+            try {
+              await sendEmailVerification(user)
+              emailed = true
+            } catch {
+              // Mail pipeline fully unavailable — don't lock the user out of
+              // the account they just created; proceed like the old behavior.
+            }
+          }
+          if (emailed) {
+            await signOut(auth)
+            setVerificationEmail(normalizedEmail)
+            setVerificationSent(true)
+          } else {
+            setMessage('Account created. Redirecting...')
+            setMessageTone('info')
+            await finishAuth(user.uid, true)
+          }
+          return emailed
+        }
+
+        if (preferFallback) {
+          // Fallback signup (REST proxy): the user is signed in here (the lib
+          // hydrates auth.currentUser), so the same verification flow applies.
+          await authenticateWithPasswordFallback('signup', normalizedEmail, password)
+          const fbUser = auth.currentUser
+          if (!fbUser) throw new Error('Unable to complete signup right now.')
+          await completeSignupWithVerification(fbUser, () => {
+            void reportSignupGeo(fbUser)
+          })
           return
         }
 
         try {
           const result = await createUserWithEmailAndPassword(auth, normalizedEmail, password)
           setPreferFallback(false)
-
-          if (fullName.trim()) {
-            try {
-              await setDoc(
-                doc(db, 'profiles', result.user.uid),
-                { fullName: fullName.trim(), university: college.trim(), updatedAt: serverTimestamp() },
-                { merge: true }
-              )
-            } catch {
-              // onboarding will collect it
-            }
-          }
-
-          // Must fire before signOut() below — reportSignupGeo needs the
-          // user still signed in to call getIdToken().
-          void reportSignupGeo(result.user)
-          await signOut(auth)
-          setVerificationEmail(normalizedEmail)
-          setVerificationSent(true)
+          await completeSignupWithVerification(result.user, () => {
+            // Must fire before signOut() inside completeSignupWithVerification —
+            // reportSignupGeo needs the user still signed in to call getIdToken().
+            void reportSignupGeo(result.user)
+          })
           return
         } catch (error) {
           if (error instanceof Error && error.message.includes('auth/network-request-failed')) {
             setPreferFallback(true)
-            const credential = await authenticateWithPasswordFallback('signup', normalizedEmail, password)
-            if (fullName.trim()) {
-              try {
-                await setDoc(
-                  doc(db, 'profiles', credential.user.uid),
-                  { fullName: fullName.trim(), university: college.trim(), updatedAt: serverTimestamp() },
-                  { merge: true }
-                )
-              } catch {
-                // onboarding will collect it
-              }
-            }
-            setMessage('Account created. Redirecting...')
-            setMessageTone('info')
-            await finishAuth(credential.user.uid, true)
+            await authenticateWithPasswordFallback('signup', normalizedEmail, password)
+            const fbUser = auth.currentUser
+            if (!fbUser) throw new Error('Unable to complete signup right now.')
+            await completeSignupWithVerification(fbUser, () => {
+              void reportSignupGeo(fbUser)
+            })
             return
           }
           throw error
@@ -657,7 +671,7 @@ export default function MarketingAuthPanel({
 
           <h1
             style={{
-              fontFamily: "'Newsreader', serif",
+              fontFamily: "var(--font-newsreader), 'Newsreader', serif",
               fontSize: '1.75rem',
               color: '#453a2a',
               marginBottom: '12px',
@@ -668,7 +682,7 @@ export default function MarketingAuthPanel({
 
           <p
             style={{
-              fontFamily: "'Work Sans', sans-serif",
+              fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
               fontSize: '14px',
               color: '#73796f',
               lineHeight: 1.6,
@@ -688,7 +702,7 @@ export default function MarketingAuthPanel({
               padding: '14px',
               background: '#3D5A35',
               color: '#fff',
-              fontFamily: "'Work Sans', sans-serif",
+              fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
               fontSize: '11px',
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
@@ -718,7 +732,7 @@ export default function MarketingAuthPanel({
 
         <h1
           style={{
-            fontFamily: "'Newsreader', serif",
+            fontFamily: "var(--font-newsreader), 'Newsreader', serif",
             fontSize: '1.75rem',
             color: '#453a2a',
             marginBottom: '12px',
@@ -729,7 +743,7 @@ export default function MarketingAuthPanel({
 
         <p
           style={{
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             fontSize: '14px',
             color: '#73796f',
             lineHeight: 1.6,
@@ -791,7 +805,7 @@ export default function MarketingAuthPanel({
               padding: '14px',
               background: '#3D5A35',
               color: '#fff',
-              fontFamily: "'Work Sans', sans-serif",
+              fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
               fontSize: '11px',
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
@@ -809,7 +823,7 @@ export default function MarketingAuthPanel({
           style={{
             marginTop: '16px',
             textAlign: 'center',
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             fontSize: '13px',
             color: '#73796f',
           }}
@@ -823,7 +837,7 @@ export default function MarketingAuthPanel({
               textDecoration: 'underline',
               background: 'none',
               border: 'none',
-              fontFamily: "'Work Sans', sans-serif",
+              fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
               fontSize: '13px',
             }}
           >
@@ -842,7 +856,7 @@ export default function MarketingAuthPanel({
 
         <h1
           style={{
-            fontFamily: "'Newsreader', serif",
+            fontFamily: "var(--font-newsreader), 'Newsreader', serif",
             fontSize: '1.75rem',
             color: '#453a2a',
             marginBottom: '12px',
@@ -853,7 +867,7 @@ export default function MarketingAuthPanel({
 
         <p
           style={{
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             fontSize: '14px',
             color: '#73796f',
             lineHeight: 1.6,
@@ -912,7 +926,7 @@ export default function MarketingAuthPanel({
               padding: '14px',
               background: '#3D5A35',
               color: '#fff',
-              fontFamily: "'Work Sans', sans-serif",
+              fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
               fontSize: '11px',
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
@@ -944,7 +958,7 @@ export default function MarketingAuthPanel({
 
         <h1
           style={{
-            fontFamily: "'Newsreader', serif",
+            fontFamily: "var(--font-newsreader), 'Newsreader', serif",
             fontSize: '1.75rem',
             color: '#453a2a',
             marginBottom: '12px',
@@ -955,7 +969,7 @@ export default function MarketingAuthPanel({
 
         <p
           style={{
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             fontSize: '14px',
             color: '#73796f',
             lineHeight: 1.6,
@@ -968,7 +982,7 @@ export default function MarketingAuthPanel({
 
         <p
           style={{
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             fontSize: '14px',
             color: '#73796f',
             lineHeight: 1.6,
@@ -980,7 +994,7 @@ export default function MarketingAuthPanel({
 
         <p
           style={{
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             fontSize: '12px',
             color: '#9b8f81',
             lineHeight: 1.5,
@@ -999,7 +1013,7 @@ export default function MarketingAuthPanel({
             padding: '14px',
             background: '#3D5A35',
             color: '#fff',
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.2em',
@@ -1030,7 +1044,7 @@ export default function MarketingAuthPanel({
 
       <h1
         style={{
-          fontFamily: "'Newsreader', serif",
+          fontFamily: "var(--font-newsreader), 'Newsreader', serif",
           fontSize: '1.75rem',
           color: '#453a2a',
           marginBottom: '24px',
@@ -1062,7 +1076,7 @@ export default function MarketingAuthPanel({
         <div style={{ flex: 1, height: '1px', background: '#c3c8bd' }} />
         <span
           style={{
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             fontSize: '12px',
             color: '#9b8f81',
             letterSpacing: '0.05em',
@@ -1164,7 +1178,7 @@ export default function MarketingAuthPanel({
                 textDecoration: 'underline',
                 background: 'none',
                 border: 'none',
-                fontFamily: "'Work Sans', sans-serif",
+                fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                 fontSize: '12px',
                 padding: 0,
               }}
@@ -1220,7 +1234,7 @@ export default function MarketingAuthPanel({
             padding: '14px',
             background: '#3D5A35',
             color: '#fff',
-            fontFamily: "'Work Sans', sans-serif",
+            fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
             fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.2em',
@@ -1239,7 +1253,7 @@ export default function MarketingAuthPanel({
         style={{
           marginTop: '16px',
           textAlign: 'center',
-          fontFamily: "'Work Sans', sans-serif",
+          fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
           fontSize: '13px',
           color: '#73796f',
         }}
@@ -1256,7 +1270,7 @@ export default function MarketingAuthPanel({
                 textDecoration: 'underline',
                 background: 'none',
                 border: 'none',
-                fontFamily: "'Work Sans', sans-serif",
+                fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                 fontSize: '13px',
               }}
             >
@@ -1275,7 +1289,7 @@ export default function MarketingAuthPanel({
                 textDecoration: 'underline',
                 background: 'none',
                 border: 'none',
-                fontFamily: "'Work Sans', sans-serif",
+                fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif",
                 fontSize: '13px',
               }}
             >

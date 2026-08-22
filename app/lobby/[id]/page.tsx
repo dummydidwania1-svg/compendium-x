@@ -60,7 +60,7 @@ function SelectionShellHeader() {
             height={56}
             className="h-14 w-14 object-contain"
           />
-          <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
+          <div style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
             <span className="text-[#453a2a]">Case Compendium</span>
             <span className="text-[#3D5A35]">X</span>
           </div>
@@ -569,7 +569,7 @@ function CandidateLobby({
 
   return (
     <div
-      style={{ fontFamily: "'Work Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
       className="relative min-h-screen flex flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
       <style>{`
@@ -759,12 +759,12 @@ function CandidateLobby({
             try {
               const token = await auth.currentUser?.getIdToken()
               if (token) {
-                void fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+                await fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                   body: JSON.stringify({ role: 'candidate', active: true, candidateOptedOutRecording: true }),
                   keepalive: true,
-                })
+                }).catch(() => { /* best-effort beacon */ })
               }
             } catch { /* best-effort */ }
           })()
@@ -817,7 +817,7 @@ function CandidateLobby({
             </div>
             <h1
               className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
-              style={{ fontFamily: "'Newsreader', serif" }}
+              style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}
             >
               {pageH1Primary} <span className="text-[#3D5A35]">{pageH1Secondary}</span>
             </h1>
@@ -1064,12 +1064,14 @@ if (!isCandidateBeatStale(beat)) {
       closeAttemptRef.current = false
       if (armed) setShowCloseWarning(true)
     }
+    const onVisibleReturn = () => { if (document.visibilityState === 'visible') onReturn() }
     window.addEventListener('beforeunload', onBeforeUnload)
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') onReturn() })
+    document.addEventListener('visibilitychange', onVisibleReturn)
     window.addEventListener('focus', onReturn)
     return () => {
       clearTimeout(armTimer)
       window.removeEventListener('beforeunload', onBeforeUnload)
+      document.removeEventListener('visibilitychange', onVisibleReturn)
       window.removeEventListener('focus', onReturn)
     }
   }, [])
@@ -1198,7 +1200,7 @@ if (!isCandidateBeatStale(beat)) {
       }).catch(() => { /* best-effort */ })
     }
       sendHeartbeat()
-  const interval = setInterval(sendHeartbeat, 2_000)
+  const interval = setInterval(sendHeartbeat, 10_000)
   const onVisible = () => { if (document.visibilityState === 'visible') sendHeartbeat() }
   document.addEventListener('visibilitychange', onVisible)
   return () => {
@@ -1223,7 +1225,7 @@ if (!isCandidateBeatStale(beat)) {
 
   return (
     <div
-      style={{ fontFamily: "'Work Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
       className="relative min-h-screen flex flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
       <style>{`
@@ -1365,15 +1367,15 @@ if (!isCandidateBeatStale(beat)) {
             </div>
             {/* Text */}
             <div className="flex flex-col items-center gap-2.5">
-              <h2 style={{ fontFamily: "'Newsreader', serif", fontWeight: 300, color: '#3B2F2F', fontSize: '30px', lineHeight: 1.15, letterSpacing: '-0.01em' }}>Hand it over</h2>
-              <p style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.65)', maxWidth: '260px', lineHeight: 1.65 }}>Pass the device to your interviewer. They pick a case, and things get going from there.</p>
+              <h2 style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif", fontWeight: 300, color: '#3B2F2F', fontSize: '30px', lineHeight: 1.15, letterSpacing: '-0.01em' }}>Hand it over</h2>
+              <p style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", fontSize: '13px', color: 'rgba(92,64,51,0.65)', maxWidth: '260px', lineHeight: 1.65 }}>Pass the device to your interviewer. They pick a case, and things get going from there.</p>
             </div>
             {/* Progress bar */}
             <div className="flex flex-col items-center gap-2" style={{ width: '200px' }}>
               <div style={{ width: '100%', height: '1.5px', background: 'rgba(92,64,51,0.10)', borderRadius: '999px', overflow: 'hidden' }}>
                 <div style={{ height: '100%', background: 'linear-gradient(90deg, #3D5A35, rgba(61,90,53,0.6))', borderRadius: '999px', animation: 'handoff-progress 5s linear forwards' }} />
               </div>
-              <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.35)', fontFamily: "'Work Sans', sans-serif", letterSpacing: '0.04em' }}>
+              <p style={{ fontSize: '10px', color: 'rgba(92,64,51,0.35)', fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", letterSpacing: '0.04em' }}>
                 Opening in {handoffCountdown > 0 ? handoffCountdown : 1}s
               </p>
             </div>
@@ -1401,7 +1403,7 @@ if (!isCandidateBeatStale(beat)) {
               height={56}
               className="h-14 w-14 object-contain"
             />
-            <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
+            <div style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
               <span className="text-[#453a2a]">Case Compendium</span>
               <span className="text-[#3D5A35]">X</span>
             </div>
@@ -1439,7 +1441,7 @@ if (!isCandidateBeatStale(beat)) {
             </div>
             <h1
               className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
-              style={{ fontFamily: "'Newsreader', serif" }}
+              style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}
             >
               <span className="inline-block" style={{ fontWeight: 300, animation: '_hi 0.45s ease forwards', opacity: 0 }}>Welcome,</span>
               {' '}
@@ -1806,8 +1808,9 @@ export default function LobbyPage() {
     const sessionRef = sessionDoc(lobbyId)
     // Remote-mode interviewer-window-closed detection (waiting/replacing only —
     // in_progress is covered separately by the workspace page's own B4 check).
-    // Same 3s staleness threshold and periodic-recheck pattern used there.
-    const PRESENCE_STALE_MS = 8_000 // was 3_000 — 4× the 2s heartbeat; tolerates jitter
+    // Threshold matches the workspace page's PRESENCE_STALE_MS (3× the 10s
+    // heartbeat cadence shared by all interviewer-side senders).
+    const PRESENCE_STALE_MS = 30_000
 let interviewerStaleStreak = 0
     const interviewerPresenceRef: { current: SessionState['interviewerPresence'] } = { current: undefined }
     const latestStatusRef: { current: SessionState['status'] } = { current: undefined }
@@ -2048,12 +2051,12 @@ let interviewerStaleStreak = 0
             try {
               const token = await auth.currentUser?.getIdToken()
               if (token) {
-                void fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
+                await fetch(`/api/sessions/${encodeURIComponent(lobbyId)}/presence`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                   body: JSON.stringify({ role: 'candidate', active: true, candidateOptedOutRecording: true }),
                   keepalive: true,
-                })
+                }).catch(() => { /* best-effort beacon */ })
               }
             } catch { /* best-effort */ }
           }

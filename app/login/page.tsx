@@ -2,15 +2,16 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { signOut } from 'firebase/auth'
 import MarketingAuthPanel from '@/components/auth/MarketingAuthPanel'
-import { waitForAuthUser } from '@/lib/firebase/config'
+import { auth, waitForAuthUser } from '@/lib/firebase/config'
 import { getPostAuthRoute } from '@/lib/auth/postAuth'
 
 function LoginScreen() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const requestedRedirect = searchParams.get('redirect')
-  const redirectTarget = requestedRedirect && requestedRedirect.startsWith('/') ? requestedRedirect : '/dashboard'
+  const redirectTarget = requestedRedirect && requestedRedirect.startsWith('/') && !requestedRedirect.startsWith('//') ? requestedRedirect : '/dashboard'
   const [checkingSession, setCheckingSession] = useState(true)
 
   useEffect(() => {
@@ -19,11 +20,25 @@ function LoginScreen() {
     const checkExistingSession = async () => {
       const existingUser = await waitForAuthUser()
       if (!isMounted) return
-      if (existingUser) {
+      if (existingUser && !existingUser.isAnonymous) {
         const nextRoute = await getPostAuthRoute(existingUser.uid, redirectTarget)
         router.replace(nextRoute)
         router.refresh()
         return
+      }
+      if (existingUser?.isAnonymous) {
+        // A persistent guest session (provisioned by invite links so an
+        // interviewer can browse without an account) must never be mistaken
+        // for a signed-in user -- otherwise the login form never mounts and
+        // /practice keeps bouncing the visitor back here forever. Sign the
+        // guest out so the form can render; invite flows re-provision as
+        // needed.
+        try {
+          await signOut(auth)
+        } catch {
+          // Even if sign-out fails, still show the form below.
+        }
+        if (!isMounted) return
       }
       setCheckingSession(false)
     }
@@ -38,7 +53,7 @@ function LoginScreen() {
     return (
       <div
         className="flex min-h-screen items-center justify-center bg-[#fff8f0] p-4"
-        style={{ fontFamily: "'Work Sans', sans-serif", color: '#5C4033' }}
+        style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: '#5C4033' }}
       >
         Checking your session...
       </div>
@@ -48,7 +63,7 @@ function LoginScreen() {
   return (
     <div
       className="relative min-h-screen overflow-hidden bg-[#fff8f0]"
-      style={{ fontFamily: "'Work Sans', sans-serif", color: '#1e1b15' }}
+      style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: '#1e1b15' }}
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(61,90,53,0.08),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(92,64,51,0.08),transparent_32%),linear-gradient(180deg,#fff8f0_0%,#fbf4ea_100%)]" />
@@ -68,7 +83,7 @@ export default function LoginPage() {
       fallback={
         <div
           className="flex min-h-screen items-center justify-center bg-[#fff8f0] p-6"
-          style={{ fontFamily: "'Work Sans', sans-serif", color: '#5C4033' }}
+          style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif", color: '#5C4033' }}
         >
           Loading...
         </div>

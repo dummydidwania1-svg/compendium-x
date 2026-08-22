@@ -19,7 +19,7 @@ import { LobbyOverlay } from '@/components/lobby/LobbyOverlay'
 import { MicGuardOverlay } from '@/components/permissions/MicGuardOverlay'
 import { InterviewerMicRecovery } from '@/components/permissions/InterviewerMicRecovery'
 import { readCandidateBeat, sessionEndedForLobby, CANDIDATE_TAB_STALE_MS, openCandidateTab, isCandidateClosedDismissed, dismissCandidateClosedForSession } from '@/lib/session/candidateTab'
-import casesCatalog from '@/data/cases.json'
+import { SLUG_TO_DOC_ID } from '@/lib/slugMap'
 import NewCaseBadge, { isNewCase } from '@/components/case/NewCaseBadge'
 
 
@@ -49,11 +49,9 @@ const CASES_CACHE_VERSION = 4
 // something immediately or render a brief loading state."
 const CASES_CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
 
-const READY_CASE_SLUGS = new Set<string>(
-  (casesCatalog as Array<{ title?: string; slug?: string }>)
-    .map((c) => (c.slug && c.slug.trim()) ? c.slug.trim() : slugifyCase(c.title ?? ''))
-    .filter(Boolean)
-)
+// The ready-slug set comes from the static slug→docId map (same source of
+// truth as cases.json, ~2KB instead of the full 1MB catalog import).
+const READY_CASE_SLUGS = new Set<string>(Object.keys(SLUG_TO_DOC_ID))
 
 type CaseListItem = {
   id: string
@@ -565,7 +563,13 @@ const clearAllFilters = () => {
     // Signal to the candidate that the interviewer has opened the case library.
     // Local mode: localStorage storage event (same device).
     // Remote mode: Firestore presence field (cross-device).
-    localStorage.setItem('compendium-interviewer-browsing', JSON.stringify({ lobbyId, ts: Date.now() }))
+    try {
+      localStorage.setItem('compendium-interviewer-browsing', JSON.stringify({ lobbyId, ts: Date.now() }))
+    } catch {
+      // Storage blocked (private mode / extensions) — remote-mode presence
+      // below still signals browsing, so local-mode only loses the instant
+      // "interviewer is browsing" hint.
+    }
     let heartbeatInterval: ReturnType<typeof setInterval> | null = null
     if (sessionMode !== 'local') {
       const sendPresence = (browsing: boolean) => {
@@ -587,10 +591,13 @@ const clearAllFilters = () => {
       // in the candidate's interviewer-disconnect detection) — without this,
       // interviewerPresence.lastSeenAt only updates once on mount and never
       // again, so the candidate would see the interviewer as instantly stale.
-      heartbeatInterval = setInterval(() => sendPresence(true), 1_000)
+      // 10s matches the presence API's documented cadence and the candidate's
+      // own heartbeat; each ping triggers a Cloud Function invocation server-
+      // side, so anything faster burns quota for no detection benefit.
+      heartbeatInterval = setInterval(() => sendPresence(true), 10_000)
     }
     return () => {
-      localStorage.removeItem('compendium-interviewer-browsing')
+      try { localStorage.removeItem('compendium-interviewer-browsing') } catch { /* storage blocked */ }
       if (heartbeatInterval) clearInterval(heartbeatInterval)
       if (sessionMode !== 'local') {
         void (async () => {
@@ -966,7 +973,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
 
   return (
     <div
-      style={{ fontFamily: "'Work Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-work-sans), 'Work Sans', sans-serif" }}
       className="relative flex min-h-screen flex-col bg-[#fff8f0] text-[#1e1b15] antialiased selection:bg-[#3D5A35]/20 selection:text-[#3B2F2F]"
     >
       {/* Mic-blocked guard — only while picking a case for a live local session.
@@ -1291,7 +1298,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
 /* ===== Permanent "Frameworks" label left of chip row ===== */
 .repo-frameworks-label {
   flex-shrink: 0;
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-newsreader), 'Newsreader', serif;
   font-style: italic;
   font-weight: 400;
   font-size: 17px;
@@ -1501,7 +1508,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
                 height={56}
                 className="h-14 w-14 object-contain"
               />
-              <div style={{ fontFamily: "'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
+              <div style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }} className="text-xl font-semibold tracking-tight">
                 <span className="text-[#453a2a]">Case Compendium</span>
                 <span className="text-[#3D5A35]">X</span>
               </div>
@@ -1543,7 +1550,7 @@ const prefetchCase = useCallback((caseItem: CaseListItem) => {
                 </div>
               </div>
               <h1
-                style={{ fontFamily: "'Newsreader', serif" }}
+                style={{ fontFamily: "var(--font-newsreader), 'Newsreader', serif" }}
                 className="text-4xl font-light leading-[0.94] tracking-tight text-[#453a2a] md:text-5xl"
               >
                 Case Repository
