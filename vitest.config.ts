@@ -5,6 +5,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
+      // 'server-only' is a Next.js runtime guard package; stub it so
+      // server-only modules (vertexInsight) can be unit-tested.
+      'server-only': path.resolve(__dirname, 'lib/goalTracker/__mocks__/server-only.ts'),
     },
   },
   test: {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { FILTER_TYPES } from '@/lib/constants';
 import type { GoalConfig } from '@/lib/firebase/schema';
@@ -9,6 +9,9 @@ import type { CountedSession } from '@/lib/goalTracker/sessionCounts';
 interface ExclusionsPanelProps {
   config: GoalConfig
   countedSessions: CountedSession[]
+  /** Pre-filter candidate set — excluded sessions only exist here, so this is
+   *  what makes them un-excludable. Falls back to countedSessions when absent. */
+  candidateSessions?: CountedSession[]
   onSave: (patch: Partial<GoalConfig>) => Promise<void>
   onClose: () => void
 }
@@ -23,11 +26,20 @@ interface ExclusionsPanelProps {
  * and engine.ts's pure functions re-derive from the new counted set on the
  * next render. No explicit migration step.
  */
-export default function ExclusionsPanel({ config, countedSessions, onSave, onClose }: ExclusionsPanelProps) {
+export default function ExclusionsPanel({ config, countedSessions, candidateSessions, onSave, onClose }: ExclusionsPanelProps) {
   const [countMode, setCountMode] = useState(config.countMode)
   const [excludedTypes, setExcludedTypes] = useState<string[]>(config.excludedTypes)
   const [excludedSessionIds, setExcludedSessionIds] = useState<string[]>(config.excludedSessionIds)
   const [saving, setSaving] = useState(false)
+
+  // Render the PRE-filter candidate list: an excluded session disappears from
+  // `countedSessions`, so listing only those would trap it as permanently
+  // excluded. Newest first for scannability.
+  const listableSessions = useMemo(() => {
+    const source = (candidateSessions?.length ? candidateSessions : countedSessions)
+      ?? []
+    return [...source].sort((a, b) => b.completedAtMs - a.completedAtMs)
+  }, [candidateSessions, countedSessions])
 
   const toggleType = (type: string) => {
     setExcludedTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]))
@@ -101,14 +113,15 @@ export default function ExclusionsPanel({ config, countedSessions, onSave, onClo
         </div>
       )}
 
-      {/* Single-case exclude list */}
-      {countedSessions.length > 0 && (
+      {/* Single-case exclude list — shows ALL candidates, including ones
+          already excluded (so they can be un-excluded) */}
+      {listableSessions.length > 0 && (
         <div>
           <p className="text-[9px] uppercase tracking-[0.1em] font-semibold text-[#5C4033]/40 mb-2">
             Exclude a single case
           </p>
           <div className="max-h-[140px] overflow-y-auto flex flex-col gap-1">
-            {countedSessions.map((s) => (
+            {listableSessions.map((s) => (
               <label key={s.sessionId} className="flex items-center gap-2 text-[10px] text-[#3B2F2F]/65 cursor-pointer px-1 py-1 rounded hover:bg-[#D9D0C4]/15">
                 <input
                   type="checkbox"
@@ -117,6 +130,9 @@ export default function ExclusionsPanel({ config, countedSessions, onSave, onClo
                   className="accent-[#3D5A35]"
                 />
                 {s.caseType} &middot; {new Date(s.completedAtMs).toLocaleDateString()}
+                {!countedSessions.some((c) => c.sessionId === s.sessionId) && (
+                  <span className="text-[8.5px] text-[#5C4033]/35 italic ml-auto pl-2 shrink-0">excluded</span>
+                )}
               </label>
             ))}
           </div>

@@ -18,6 +18,13 @@ export interface CountedSession {
 
 export interface GoalCountResult {
   countedSessions: CountedSession[]
+  /**
+   * Pre-filter candidate set (before exclusions/countMode/date-window). The
+   * ExclusionsPanel needs this: once a session is excluded it vanishes from
+   * `countedSessions`, and rendering only that list would make an excluded
+   * row impossible to un-exclude.
+   */
+  candidateSessions: CountedSession[]
   done: number
   doneByType: Record<string, number>
 }
@@ -27,12 +34,23 @@ export type ExclusionConfig = Pick<
   'startDate' | 'countPastCases' | 'countMode' | 'excludedTypes' | 'excludedSessionIds'
 >
 
-export function buildGoalCountResult(countedSessions: CountedSession[]): GoalCountResult {
+export function buildGoalCountResult(
+  countedSessions: CountedSession[],
+  candidateSessions?: CountedSession[],
+): GoalCountResult {
   const doneByType: Record<string, number> = {}
   for (const s of countedSessions) {
     doneByType[s.caseType] = (doneByType[s.caseType] ?? 0) + 1
   }
-  return { countedSessions, done: countedSessions.length, doneByType }
+  return {
+    countedSessions,
+    // Fall back to the post-filter list when a caller (older/tests) doesn't
+    // supply candidates — panel then degrades to the old behavior rather
+    // than crashing.
+    candidateSessions: candidateSessions ?? countedSessions,
+    done: countedSessions.length,
+    doneByType,
+  }
 }
 
 /**

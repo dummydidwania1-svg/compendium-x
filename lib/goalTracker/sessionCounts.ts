@@ -75,7 +75,7 @@ export function subscribeGoalCounts(
       isRated: latestRatedLobbyIds.has(s.sessionId),
     }))
 
-    onUpdate(buildGoalCountResult(filterCountedSessions(candidates, config)))
+    onUpdate(buildGoalCountResult(filterCountedSessions(candidates, config), candidates))
   }
 
   const unsubSessions = onSnapshot(

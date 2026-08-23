@@ -39,7 +39,8 @@ export default function Flow1TotalDeadline({ config, counts, onEdit, onReset, on
 
   const completionPct = config.totalCases > 0 ? Math.min(100, Math.round((done / config.totalCases) * 100)) : 0
   const percentDone = config.totalCases > 0 ? (done / config.totalCases) * 100 : 0
-  const finishedOnDay = start ? daysBetween(start, today) : undefined
+  // 1-based so finishing on launch day reads "day 1", not "day 0".
+  const finishedOnDay = start ? daysBetween(start, today) + 1 : undefined
 
   const ctx: CopyContext = {
     done,

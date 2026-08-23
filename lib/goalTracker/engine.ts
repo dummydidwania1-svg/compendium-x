@@ -242,7 +242,7 @@ export function classifyPace(
   const band = classifyPaceBand(pace)
   const gap = Math.max(0, expectedByNow - done)
 
-  const catchUpToday = daysRemaining > 0 ? Math.ceil(gap / 1) : Math.ceil(gap)
+  const catchUpToday = Math.ceil(gap)
   const remainingCases = Math.max(0, total - done)
   const requiredRatePerDay = daysRemaining > 0 ? remainingCases / daysRemaining : remainingCases
 
@@ -461,4 +461,33 @@ export function resolveRhythmState(
   const remaining = currentPeriod.target - currentPeriod.actual
   if (remaining <= 0) return 'periodOpenOnPace'
   return currentPeriod.actual > 0 ? 'periodOpenOnPace' : 'periodOpenAtRisk'
+}
+
+/**
+ * Which just-elapsed period (if any) should be framed as "just closed" for the
+ * Hit/Missed chip.
+ *
+ * `derivePeriods(…, through=today)` structurally always ends with an OPEN
+ * period (end > today), so flows can't find a closed period by comparing the
+ * LAST entry's end to today — that check was always false, leaving the
+ * `periodHit`/`periodMissed` states unreachable and making the morning after
+ * hitting your target read "Slipping" instead of "Hit".
+ *
+ * Rule: on day 1 of a fresh WEEK or MONTH period (today == its start), surface
+ * the previous closed period so the morning-after verdict shows; from day 2
+ * onward the open-period progress states take over. Daily cadence is excluded
+ * deliberately — every day would be "day 1", permanently hiding today's live
+ * counter behind yesterday's verdict.
+ */
+export function previousClosedPeriodFor(
+  streak: Pick<StreakResult, 'periodHistory'> | null,
+  today: Date,
+  unit: CadenceUnit,
+): PeriodHitResult | null {
+  if (!streak || unit === 'days') return null
+  const history = streak.periodHistory
+  const currentPeriod = history[history.length - 1] ?? null
+  if (!currentPeriod) return null
+  if (parseISODateLocal(currentPeriod.periodStart).getTime() !== today.getTime()) return null
+  return history[history.length - 2] ?? null
 }

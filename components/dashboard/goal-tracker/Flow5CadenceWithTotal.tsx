@@ -5,7 +5,7 @@ import {
   cadenceUnitSingular,
   computeStreak,
   parseDMY,
-  parseISODateLocal,
+  previousClosedPeriodFor,
   resolveFlatNoDeadlineState,
   resolvePerTypeGoals,
   resolveRhythmState,
@@ -41,7 +41,10 @@ export default function Flow5CadenceWithTotal({ config, counts, onEdit, onReset,
   }, [countedSessions, config.recurringUnit, config.recurringEvery, config.recurringCount, start, today])
 
   const currentPeriod = streak?.periodHistory[streak.periodHistory.length - 1] ?? null
-  const previousClosed = currentPeriod && parseISODateLocal(currentPeriod.periodEnd) <= today ? currentPeriod : null
+  // Day-1-of-a-fresh-week/month surfaces the just-closed period so the
+  // Hit/Missed verdict shows on the morning after; open-progress takes over
+  // from day 2 (see engine.previousClosedPeriodFor).
+  const previousClosed = previousClosedPeriodFor(streak, today, config.recurringUnit as CadenceUnit)
   const rhythmState = resolveRhythmState(previousClosed ? null : currentPeriod, previousClosed)
   const totalState = resolveFlatNoDeadlineState(done, config.totalCases)
 

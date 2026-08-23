@@ -30,8 +30,11 @@ interface Insight {
   targetType: string | null
 }
 
+type InsightReason = 'zero_candidates' | 'retry_exhausted' | 'unavailable'
+
 interface InsightResponse {
   insight: Insight | null
+  reason?: InsightReason
 }
 
 const CTA_COPY: Record<InsightDimension, { primary: string; secondary: string }> = {
@@ -39,6 +42,12 @@ const CTA_COPY: Record<InsightDimension, { primary: string; secondary: string }>
   frontBackLoading: { primary: 'Adjust my goal', secondary: "No, I'll catch up as-is" },
   slipTiming: { primary: 'Adjust my goal', secondary: "No, I'll stay the course" },
   perTypeStalling: { primary: 'Practice this now', secondary: "No, I'll get to it" },
+  practiceNow: { primary: 'Log a case today', secondary: 'Not right now' },
+}
+
+/** Friendly copy for the deterministic empty case — never a silent revert. */
+const REASON_COPY: Partial<Record<InsightReason, string>> = {
+  zero_candidates: 'Not enough rhythm to read yet. Log a couple more cases and try again.',
 }
 
 export default function AskTrackerButton({
@@ -52,6 +61,7 @@ export default function AskTrackerButton({
   const router = useRouter()
   const [state, setState] = useState<ButtonState>('idle')
   const [insight, setInsight] = useState<Insight | null>(null)
+  const [emptyReason, setEmptyReason] = useState<string | null>(null)
   const [verbIdx, setVerbIdx] = useState(0)
   const [hovered, setHovered] = useState(false)
   const lastShapeIdRef = useRef<string | null>(null)
@@ -70,6 +80,7 @@ export default function AskTrackerButton({
   const handleClick = async () => {
     setState('loading')
     setVerbIdx(0)
+    setEmptyReason(null)
     startVerbCycle()
     try {
       const localMidnight = new Date()
@@ -83,23 +94,29 @@ export default function AskTrackerButton({
         lastShapeIdRef.current = res.insight.shapeId
         setInsight(res.insight)
         setState('result')
+      } else if (res.reason && REASON_COPY[res.reason]) {
+        // Deterministic empty state (e.g. brand-new user): say so honestly in
+        // place of the result card. Transient failures stay silent-revert.
+        setEmptyReason(REASON_COPY[res.reason] ?? null)
+        setState('idle')
       } else {
-        setState('idle') // zero-candidates or server-side retry-exhausted — silent revert
+        setState('idle')
       }
     } catch {
       stopVerbCycle()
-      setState('idle') // network/API error — also silent revert, no error text shown
+      setState('idle') // network/API error — silent revert, no error text shown
     }
   }
 
   const dismiss = () => {
     setInsight(null)
+    setEmptyReason(null)
     setState('idle')
   }
 
   const handlePrimary = () => {
     if (!insight) return
-    if (insight.dimension === 'perTypeStalling') {
+    if (insight.dimension === 'perTypeStalling' || insight.dimension === 'practiceNow') {
       const params = insight.targetType ? `?type=${encodeURIComponent(insight.targetType)}` : ''
       router.push(`/repository${params}`)
       dismiss()
@@ -107,6 +124,16 @@ export default function AskTrackerButton({
     }
     onAdjust()
     dismiss()
+  }
+
+  // Deterministic empty-state message (muted helper text, house register).
+  if (state === 'idle' && emptyReason) {
+    return (
+      <div className="flex items-start gap-1.5 px-3 py-2 w-full" style={{ animation: '_ci 0.4s ease forwards' }}>
+        <Sparkles className="w-3 h-3 shrink-0 mt-[2px]" style={{ color: '#5C4033', opacity: 0.35 }} />
+        <p className="text-[10px] text-[#5C4033]/50 leading-snug">{emptyReason}</p>
+      </div>
+    )
   }
 
   if (state === 'result' && insight) {

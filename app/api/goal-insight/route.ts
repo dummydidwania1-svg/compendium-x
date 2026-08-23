@@ -23,6 +23,7 @@
  * side-effect-free regardless of how many requests race for it.
  */
 import { z } from 'zod'
+import { FieldPath } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase/admin'
 import { jsonOk, parseBody } from '@/lib/api/responses'
 import { authenticatedRoute } from '@/lib/api/route'
@@ -31,7 +32,7 @@ import { computeShapeCandidates } from '@/lib/goalTracker/insightShapes'
 import { callVertexFill, callVertexRank, validateInsight } from '@/lib/goalTracker/vertexInsight'
 import { filterCountedSessions, type CountedSession } from '@/lib/goalTracker/goalCountFilter'
 import { normalizeCaseType } from '@/lib/dashboard/live'
-import { resolveTotalState, classifyPace, parseDMY, resolveFlow, startOfDay } from '@/lib/goalTracker/engine'
+import { resolveTotalState, classifyPace, parseDMY, resolveFlow, startOfDay, deriveImpliedTotal, type CadenceUnit } from '@/lib/goalTracker/engine'
 
 export const runtime = 'nodejs'
 
@@ -86,6 +87,12 @@ interface CachedInsight {
   targetType: string | null
 }
 
+/**
+ * Why an insight couldn't be produced. 'zero_candidates' is deterministic and
+ * safe to message ("not enough rhythm yet"); the others get a softer generic.
+ */
+type InsightReason = 'zero_candidates' | 'retry_exhausted' | 'unavailable'
+
 export const POST = authenticatedRoute('/api/goal-insight', async (request, caller) => {
   const { lastShownShapeId, localMidnightMs } = await parseBody(request, goalInsightInput)
 
@@ -117,14 +124,38 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
       .get(),
   ])
 
+  // Batched `in` reads (chunks of 30, Firestore's IN limit) replace the old
+  // one-point-read-per-distinct-case pattern that scaled O(distinct cases).
   const caseIds = [...new Set(sessionsSnap.docs.map((d) => d.data().caseId).filter(Boolean))] as string[]
   const caseTypeById = new Map<string, string>()
-  await Promise.all(
-    caseIds.map(async (caseId) => {
-      const snap = await adminDb.collection('cases').doc(caseId).get()
-      caseTypeById.set(caseId, snap.data()?.case_type ?? 'General')
-    }),
-  )
+  for (let i = 0; i < caseIds.length; i += 30) {
+    const chunk = caseIds.slice(i, i + 30)
+    if (chunk.length === 0) continue
+    try {
+      const snap = await adminDb
+        .collection('cases')
+        .where(FieldPath.documentId(), 'in', chunk)
+        .select('case_type')
+        .get()
+      for (const doc of snap.docs) {
+        caseTypeById.set(doc.id, doc.data()?.case_type ?? 'General')
+      }
+    } catch {
+      // Fall back to per-id point reads for this chunk only — a malformed id
+      // in an IN clause fails the whole query.
+      await Promise.all(
+        chunk.map(async (caseId) => {
+          if (caseTypeById.has(caseId)) return
+          try {
+            const snap = await adminDb.collection('cases').doc(caseId).get()
+            caseTypeById.set(caseId, snap.data()?.case_type ?? 'General')
+          } catch {
+            caseTypeById.set(caseId, 'General')
+          }
+        }),
+      )
+    }
+  }
 
   // Only isRated is needed downstream (the score fields fed the now-removed
   // score-correlation detectors) — kept lightweight rather than dropping the
@@ -157,10 +188,10 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
   const cacheRef = adminDb.collection('goalInsightCache').doc(caller.uid)
   const signature = buildInsightSignature(config, countedSessions, today)
   const cacheSnap = await cacheRef.get()
-  const cached = cacheSnap.data() as { signature: string; insight: CachedInsight | null } | undefined
+  const cached = cacheSnap.data() as { signature: string; insight: CachedInsight | null; reason?: InsightReason } | undefined
   if (cached && cached.signature === signature) {
     console.log('[goal-insight] cache hit, no new data since last computed', { uid: caller.uid, signature })
-    return jsonOk({ insight: cached.insight })
+    return jsonOk({ insight: cached.insight, reason: cached.insight ? undefined : (cached.reason ?? 'unavailable') })
   }
 
   const flow = resolveFlow(config)
@@ -170,15 +201,35 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
   // client's own state resolution, but only needs the total-side state).
   const start = parseDMY(config.startDate)
   const end = parseDMY(config.endDate)
+  // Flow 3's real finish line is DERIVED from cadence × dates — AdjustGoalPanel
+  // deliberately never rewrites stored totalCases on quick-adjust (editing it
+  // there would be a silent no-op), so reasoning against config.totalCases
+  // would describe a finish line the card no longer shows. Mirror the client's
+  // deriveImpliedTotal exactly.
+  const effectiveTotal =
+    flow === 3 && start && end
+      ? deriveImpliedTotal(
+          config.recurringCount,
+          config.recurringEvery,
+          config.recurringUnit as CadenceUnit,
+          start,
+          end,
+        )
+      : config.totalCases
   let currentState: import('@/lib/goalTracker/engine').GoalState = 'zero'
-  if (flow === 1 || (flow === 3 && start && end)) {
+  if ((flow === 1 || (flow === 3 && start && end)) && effectiveTotal > 0) {
     if (start && end) {
-      const pace = classifyPace(done, config.totalCases, start, end, today)
+      const pace = classifyPace(done, effectiveTotal, start, end, today)
       const dateHasPassed = today.getTime() > end.getTime()
-      currentState = resolveTotalState(done, config.totalCases, pace, pace.daysRemaining, dateHasPassed)
+      currentState = resolveTotalState(done, effectiveTotal, pace, pace.daysRemaining, dateHasPassed)
     }
+  } else if (effectiveTotal > 0) {
+    // Total-side-only shapes (Flow 2 flat no-deadline, Flow 5 cadence+total
+    // milestone). Guarded on effectiveTotal > 0: an untotaled habit goal
+    // (Flow 4) must never read as 'complete' just because done >= 0.
+    currentState = done >= effectiveTotal ? 'complete' : done === 0 ? 'zero' : 'inProgress'
   } else {
-    currentState = done === 0 ? 'zero' : done >= config.totalCases ? 'complete' : 'inProgress'
+    currentState = done === 0 ? 'zero' : 'inProgress'
   }
 
   const candidates = computeShapeCandidates({
@@ -186,15 +237,34 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
     config,
     currentState,
     today,
+    effectiveTotal,
   })
 
+  // Machine-readable reason for empty results, so the client can show an
+  // honest inline message instead of silently reverting (which read as a
+  // broken button — worst for brand-new users who hit this every click).
   if (candidates.length === 0) {
     console.log('[goal-insight] zero candidates', { uid: caller.uid, done, sessionsCount: candidateSessions.length })
-    await cacheRef.set({ signature, insight: null })
-    return jsonOk({ insight: null })
+    await cacheRef.set({ signature, insight: null, reason: 'zero_candidates' })
+    return jsonOk({ insight: null, reason: 'zero_candidates' })
   }
 
-  const deterministicCardNumbers = [String(done), String(config.totalCases)]
+  // Validation anchors: the two numbers the card deterministically shows.
+  // Uses the SAME effective total the state above used — for Flow 3 that's
+  // the derived finish line, not the possibly-stale stored field.
+  const deterministicCardNumbers = [String(done), String(effectiveTotal)]
+
+  // What the deterministic card currently says, so the fill model can
+  // complement it instead of restating or contradicting it.
+  const cardContext = `Goal state: ${currentState}. Progress: ${done} of ${effectiveTotal || 'open-ended'} cases${
+    config.hasEndDate && end ? `, ${Math.max(0, Math.round((end.getTime() - today.getTime()) / 86_400_000))} days to deadline` : ''
+  }.`
+
+  const tryFill = async (candidate: (typeof candidates)[number], stricter: boolean) => {
+    const result = await callVertexFill(candidate, { stricter, cardContext })
+    const ok = validateInsight(result.text, deterministicCardNumbers, candidate.data)
+    return { text: result.text as string, candidate, ok }
+  }
 
   try {
     const { winningCandidate } = await callVertexRank(candidates, lastShownShapeId ?? null)
@@ -205,34 +275,44 @@ export const POST = authenticatedRoute('/api/goal-insight', async (request, call
       winningShapeId: winningCandidate.shapeId,
       winningData: winningCandidate.data,
     })
-    let result = await callVertexFill(winningCandidate)
 
-    if (!validateInsight(result.text, deterministicCardNumbers, winningCandidate.data)) {
-      console.log('[goal-insight] first fill failed validation', { uid: caller.uid, text: result.text })
-      result = await callVertexFill(winningCandidate, { stricter: true })
-      if (!validateInsight(result.text, deterministicCardNumbers, winningCandidate.data)) {
-        console.log('[goal-insight] retry also failed validation', { uid: caller.uid, text: result.text })
-        // Cached deliberately: retrying against the SAME data is unlikely to
-        // pass validation differently, so don't keep burning Vertex calls on
-        // repeat clicks until something actually changes.
-        await cacheRef.set({ signature, insight: null })
-        return jsonOk({ insight: null })
+    let attempt = await tryFill(winningCandidate, false)
+    if (!attempt.ok) {
+      console.log('[goal-insight] first fill failed validation', { uid: caller.uid, text: attempt.text })
+      attempt = await tryFill(winningCandidate, true)
+    }
+    if (!attempt.ok) {
+      // Second-ranked fallback before giving up: if the WINNING shape's data
+      // is inherently unsayable under validation rules, one unlucky model
+      // stretch used to freeze the feature until data changed.
+      const runnerUp = [...candidates]
+        .filter((c) => c.shapeId !== winningCandidate.shapeId)
+        .sort((a, b) => b.magnitude - a.magnitude)[0]
+      if (runnerUp) {
+        console.log('[goal-insight] falling back to runner-up', { uid: caller.uid, runnerUpShapeId: runnerUp.shapeId })
+        const runnerAttempt = await tryFill(runnerUp, true)
+        if (runnerAttempt.ok) attempt = runnerAttempt
       }
+    }
+    if (!attempt.ok) {
+      console.log('[goal-insight] all fill attempts failed validation', { uid: caller.uid })
+      await cacheRef.set({ signature, insight: null, reason: 'retry_exhausted' })
+      return jsonOk({ insight: null, reason: 'retry_exhausted' })
     }
 
     const insight: CachedInsight = {
-      text: result.text,
-      shapeId: winningCandidate.shapeId,
-      dimension: winningCandidate.dimension,
-      targetType: winningCandidate.targetType ?? null,
+      text: attempt.text,
+      shapeId: attempt.candidate.shapeId,
+      dimension: attempt.candidate.dimension,
+      targetType: attempt.candidate.targetType ?? null,
     }
-    console.log('[goal-insight] shipped insight', { uid: caller.uid, shapeId: winningCandidate.shapeId, text: result.text })
+    console.log('[goal-insight] shipped insight', { uid: caller.uid, shapeId: insight.shapeId, text: insight.text })
     await cacheRef.set({ signature, insight })
     return jsonOk({ insight })
   } catch (err) {
     console.log('[goal-insight] vertex call threw', { uid: caller.uid, error: err instanceof Error ? err.message : String(err) })
     // Not cached — a transient failure (network blip, Vertex hiccup)
     // shouldn't lock the user out of a retry until new data shows up.
-    return jsonOk({ insight: null })
+    return jsonOk({ insight: null, reason: 'unavailable' })
   }
 })

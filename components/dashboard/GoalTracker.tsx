@@ -38,9 +38,12 @@ function parseDDMMYYYY(s: string): Date | null {
 }
 
 function daysFromTomorrow(end: Date): number {
+  // Same counting convention as the engine's daysRemaining (deadline day =
+  // last practice day): no +1, or the wizard would say "2 days to go" where
+  // the saved goal shows "1d left" for the same date.
   const t = new Date(); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() + 1);
   const e = new Date(end); e.setHours(0, 0, 0, 0);
-  return Math.max(0, Math.round((e.getTime() - t.getTime()) / 86400000) + 1);
+  return Math.max(0, Math.round((e.getTime() - t.getTime()) / 86400000));
 }
 
 function getTodayDMY(): string {
@@ -133,12 +136,12 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
 
   // Live session-based progress (replaces the old evaluation-based `entries`
   // pipeline — count source is completed sessions, per §2 of the locked spec).
-  const [counts, setCounts] = useState<GoalCountResult>({ countedSessions: [], done: 0, doneByType: {} });
+  const [counts, setCounts] = useState<GoalCountResult>({ countedSessions: [], candidateSessions: [], done: 0, doneByType: {} });
   const [resolvedState, setResolvedState] = useState<GoalState>('zero');
 
   useEffect(() => {
     if (!user || !savedConfig) {
-      setCounts({ countedSessions: [], done: 0, doneByType: {} });
+      setCounts({ countedSessions: [], candidateSessions: [], done: 0, doneByType: {} });
       return;
     }
     const unsubscribe = subscribeGoalCounts(user.uid, savedConfig, setCounts);
@@ -317,9 +320,25 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
         finalStreak = streak.currentStreak;
         bestStreak = streak.bestStreak;
       }
-      const completed = savedConfig.totalCases > 0 && counts.done >= savedConfig.totalCases;
-      const daysToComplete = completed && start ? Math.round((today.getTime() - start.getTime()) / 86400000) : undefined;
-      const fellShortBy = !completed && savedConfig.totalCases > 0 ? Math.max(0, savedConfig.totalCases - counts.done) : undefined;
+      // Flow 3's real finish line is cadence × dates (AdjustGoalPanel never
+      // rewrites stored totalCases on quick-adjust), so archive outcome flags
+      // must judge against the derived total the card actually showed — not
+      // the stale stored field.
+      const archivedStart = start;
+      const archivedEnd = savedConfig.hasEndDate ? parseDMY(savedConfig.endDate) : null;
+      const archiveTotal =
+        savedConfig.goalKind === 'cadence' && archivedStart && archivedEnd
+          ? deriveImpliedTotal(
+              savedConfig.recurringCount,
+              savedConfig.recurringEvery,
+              savedConfig.recurringUnit as CadenceUnit,
+              archivedStart,
+              archivedEnd,
+            )
+          : savedConfig.totalCases;
+      const completed = archiveTotal > 0 && counts.done >= archiveTotal;
+      const daysToComplete = completed && archivedStart ? Math.round((today.getTime() - archivedStart.getTime()) / 86400000) : undefined;
+      const fellShortBy = !completed && archiveTotal > 0 ? Math.max(0, archiveTotal - counts.done) : undefined;
 
       await addDoc(goalHistoryCol(user.uid), {
         config: { ...savedConfig },
@@ -649,6 +668,7 @@ const GoalTracker = ({ isLocked }: { isLocked: boolean }) => {
           <ExclusionsPanel
             config={savedConfig}
             countedSessions={counts.countedSessions}
+            candidateSessions={counts.candidateSessions}
             onSave={handleConfigPatch}
             onClose={() => setShowExclusions(false)}
           />

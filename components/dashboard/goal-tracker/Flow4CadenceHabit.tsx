@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { cadenceUnitSingular, computeStreak, parseDMY, parseISODateLocal, resolveRhythmState, type CadenceUnit } from '@/lib/goalTracker/engine';
+import { cadenceUnitSingular, computeStreak, parseDMY, previousClosedPeriodFor, resolveRhythmState, type CadenceUnit } from '@/lib/goalTracker/engine';
 import { useToday } from '@/lib/hooks/useToday';
 import { FLOW4_COPY } from '@/lib/goalTracker/copy';
 import type { CopyContext } from '@/lib/goalTracker/copy';
@@ -31,7 +31,10 @@ export default function Flow4CadenceHabit({ config, counts, onEdit, onReset, onS
   }, [countedSessions, config.recurringUnit, config.recurringEvery, config.recurringCount, start, today])
 
   const currentPeriod = streak?.periodHistory[streak.periodHistory.length - 1] ?? null
-  const previousClosed = currentPeriod && parseISODateLocal(currentPeriod.periodEnd) <= today ? currentPeriod : null
+  // Day-1-of-a-fresh-week/month surfaces the just-closed period so the
+  // Hit/Missed verdict shows on the morning after; open-progress takes over
+  // from day 2 (see engine.previousClosedPeriodFor).
+  const previousClosed = previousClosedPeriodFor(streak, today, config.recurringUnit as CadenceUnit)
   const state = resolveRhythmState(previousClosed ? null : currentPeriod, previousClosed)
   const template = FLOW4_COPY[state]
 

@@ -182,7 +182,7 @@ export const FLOW4_COPY: Partial<Record<GoalState, StateCopyTemplate>> = {
     chip: 'Hit',
     status: (ctx) => `${cap(ctx.periodUnit)} done. Streak: ${ctx.streak}.`,
     action: (ctx) => `Same next ${ctx.periodUnit}.`,
-    detail: (ctx) => (ctx.streak >= 6 ? `${ctx.streak} ${ctx.periodUnitPlural} straight. Your best yet.` : null),
+    detail: (ctx) => (ctx.streak >= 6 && ctx.streak >= ctx.bestStreak ? `${ctx.streak} ${ctx.periodUnitPlural} straight. Your best yet.` : null),
   },
   periodMissed: {
     chip: 'Missed',
