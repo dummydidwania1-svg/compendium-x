@@ -106,6 +106,11 @@ function buildCorpusBlock(m: FAMetrics): string {
       const parts = [`[${f.key}] "${f.label}" (${f.date}, ${f.caseType}, ${f.level})`]
       if (f.notes) parts.push(`  Written notes: ${f.notes}`)
       if (f.verbal) parts.push(`  Closing-minutes excerpt: "${f.verbal}"`)
+      // Per-case transcript digest (deterministic Cloud Function pass over the
+      // FULL recording): lets findings cover the whole conversation — opening
+      // behaviour, framework approach, math narration, synthesis shape,
+      // adaptability — not just the closing minutes.
+      if (f.digest) parts.push(`  Transcript digest: ${f.digest}`)
       return parts.join('\n')
     })
     .join('\n\n')
@@ -165,6 +170,8 @@ function buildSystemPrompt(m: FAMetrics): string {
 
 The closing-minutes excerpt is NOT a full case transcript — it may contain genuine spoken feedback, or just the last moments of case-solving with little evaluative content; judge each on its own merits. Never treat it as a record of the whole case.
 
+Each entry may also carry a "Transcript digest" line: a deterministic extraction from the FULL recording (opening clarifying questions, framework approach, math narration with verbatim moments, synthesis shape, adaptability after redirects). Treat digest quotes as verbatim-from-transcript and cite them as measured observations woven into bullets — but do NOT use them as standalone quote blocks, since quote verification runs against written notes and spoken excerpts only.
+
 You find patterns in language: what interviewers keep saying, what has disappeared over time, what new concerns have emerged, and what strengths get consistently praised.${
     earlyJourney
       ? `
@@ -210,6 +217,8 @@ DRILL LIBRARY (adapt wording to the finding; do not invent unrelated drills):
 - Objective-first rep: restate the objective aloud and get confirmation before structuring
 - Custom-framework drill: build frameworks via "what must be true", 3-4 buckets, zero memorized templates
 - Clarifying warmup: exactly 2-3 scope questions before any structure
+- Hypothesis rep: state a testable hypothesis before each analysis branch and name the evidence that would change it
+- Exhibit-takeaway drill: state the insight sentence first, then the two numbers that prove it
 - Math-narration drill: formula, units, implication said aloud for every calculation
 - Unit-tracking drill: write units beside every number through the calculation chain
 - So-what rep: after every number produced, state one business implication sentence
@@ -218,6 +227,10 @@ DRILL LIBRARY (adapt wording to the finding; do not invent unrelated drills):
 - Redirect drill: acknowledge the interviewer's cue in one sentence, then pivot cleanly
 - Silence protocol: announce "30 seconds to organize" instead of thinking silently
 - 80/20 drill: name the two branches that matter most and why, before diving in
+
+PRIORITY HINT: structural failures cascade into weak synthesis and are weighted heaviest by evaluators;
+an isolated arithmetic slip with correct setup is recoverable. When several findings compete for attention,
+surface the load-bearing ones (structure, synthesis) first.
 
 === OUTPUT FORMAT (valid JSON only — no markdown, no code fences) ===
 Return a JSON object with exactly two keys: "blocks" and "viz".
@@ -251,14 +264,21 @@ two highest-leverage drills across your findings, in priority order.`
 }
 
 /** Drops quote blocks whose text does not appear verbatim in the cited entry's notes/verbal. */
-export function verifyQuotes(response: FAResponse, metrics: FAMetrics): FAResponse {
+export function verifyQuotes(
+  response: FAResponse,
+  metrics: FAMetrics,
+  focusedTranscript?: { label: string; transcript: string } | null,
+): FAResponse {
   const byKey = new Map(metrics.feedbackEntries.map((f) => [f.key, f]))
   const blocks = response.blocks.filter((block) => {
     if (block.type !== 'quote') return true
-    const entry = block.caseKey ? byKey.get(block.caseKey) : undefined
-    if (!entry) return false
     const quoted = normalize(block.text)
     if (!quoted) return false
+    // Quotes from a focused deep-dive are verified against that case's full
+    // transcript, which was provided verbatim in this request.
+    if (focusedTranscript && normalize(focusedTranscript.transcript).includes(quoted)) return true
+    const entry = block.caseKey ? byKey.get(block.caseKey) : undefined
+    if (!entry) return false
     return (
       (!!entry.notes && normalize(entry.notes).includes(quoted)) ||
       (!!entry.verbal && normalize(entry.verbal).includes(quoted))
@@ -285,13 +305,21 @@ export async function callFeedbackAnalyserServer(
   metrics: FAMetrics,
   history: Array<{ role: 'user' | 'agent'; text: string }>,
   userQuestion: string,
+  focusedTranscript?: { label: string; transcript: string } | null,
 ): Promise<FAResponse> {
+  const focusBlock = focusedTranscript
+    ? `\n\n=== FOCUSED CASE FULL TRANSCRIPT — "${focusedTranscript.label}" ===\nThe user is asking specifically about this case, so the ENTIRE conversation (not just the closing excerpt) is provided below. Ground your answer in it: quote the candidate's actual words for opening behaviour, framework articulation, hypothesis direction (did they steer with a view or wander branch-to-branch?), math narration, how they read any exhibits or data that were released, synthesis, and how they handled redirects. These verbatim quotes ARE allowed here because they come straight from this verified transcript.\n\n${focusedTranscript.transcript}`
+    : ''
+
   const contents = [
     ...history.map((msg) => ({
       role: msg.role === 'user' ? 'user' : 'model',
       parts: [{ text: msg.text }],
     })),
-    { role: 'user', parts: [{ text: userQuestion }] },
+    {
+      role: 'user',
+      parts: [{ text: focusBlock ? `${focusBlock}\n\n=== QUESTION ===\n${userQuestion}` : userQuestion }],
+    },
   ]
 
   // Implicit-cache-aware request shape: the large byte-stable systemInstruction
@@ -329,7 +357,7 @@ export async function callFeedbackAnalyserServer(
   try {
     const parsed = JSON.parse(raw) as FAResponse
     if (!parsed.blocks || !Array.isArray(parsed.blocks) || !parsed.viz) throw new Error('Invalid structure')
-    return verifyQuotes(parsed, metrics)
+    return verifyQuotes(parsed, metrics, focusedTranscript ?? null)
   } catch {
     // Fallback: render raw text as a single paragraph block
     return {

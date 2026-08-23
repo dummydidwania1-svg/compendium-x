@@ -2072,12 +2072,148 @@ async function runExecutionAnalysis(
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Cloud Function 3c — per-session transcript digest for the Analyser         */
+/* -------------------------------------------------------------------------- */
+
+// Looser than the execution-analysis gate: digests are valuable for ANY real
+// attempt, including short drilling sessions. The floor only excludes the
+// sub-2-minute test/abandoned population; the ceiling catches stuck
+// recordings like the 60-min cap above, with more headroom.
+const TRANSCRIPT_DIGEST_MIN_DURATION_MS = 5 * 60 * 1000
+const TRANSCRIPT_DIGEST_MAX_DURATION_MS = 120 * 60 * 1000
+
+const TRANSCRIPT_DIGEST_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    opening: {
+      type: 'OBJECT',
+      properties: {
+        clarifyingQuestions: { type: 'ARRAY', items: { type: 'STRING' } },
+        objectiveConfirmed: { type: 'BOOLEAN' },
+      },
+      required: ['clarifyingQuestions', 'objectiveConfirmed'],
+    },
+    framework: {
+      type: 'OBJECT',
+      properties: {
+        approach: { type: 'STRING' },
+        bucketsMentioned: { type: 'NUMBER' },
+      },
+      required: ['approach', 'bucketsMentioned'],
+    },
+    mathNarration: {
+      type: 'OBJECT',
+      properties: {
+        approachStatedFirst: { type: 'BOOLEAN' },
+        linkedImplications: { type: 'NUMBER' },
+        exampleMoment: { type: 'STRING' },
+      },
+      required: ['approachStatedFirst', 'linkedImplications', 'exampleMoment'],
+    },
+    synthesis: {
+      type: 'OBJECT',
+      properties: {
+        answerFirst: { type: 'BOOLEAN' },
+        gaveRecommendation: { type: 'BOOLEAN' },
+        includedNextSteps: { type: 'BOOLEAN' },
+        quote: { type: 'STRING' },
+      },
+      required: ['answerFirst', 'gaveRecommendation', 'includedNextSteps', 'quote'],
+    },
+    adaptability: {
+      type: 'OBJECT',
+      properties: {
+        redirects: { type: 'NUMBER' },
+        adaptedAfterRedirect: { type: 'STRING' },
+        example: { type: 'STRING' },
+      },
+      required: ['redirects', 'adaptedAfterRedirect', 'example'],
+    },
+  },
+  required: ['opening', 'framework', 'mathNarration', 'synthesis', 'adaptability'],
+}
+
+function buildTranscriptDigestPrompt(turns: ExecutionAnalysisTurn[]): string {
+  const transcriptText = turns
+    .map((t) => `[${Math.round(t.offsetMs / 1000)}s] ${t.role === 'candidate' ? 'Candidate' : 'Interviewer'}: ${t.text}`)
+    .join('\n')
+
+  return `You are building a structured DIGEST of one case-interview practice conversation so a feedback tool can later reference how the candidate actually performed — without ever re-reading the full transcript. Extract only what the conversation supports; never invent content to fill a field. When something did not happen, return false / 0 / null / "none" as appropriate.
+
+Extract these dimensions:
+
+1. OPENING — Did the candidate ask clarifying questions before diving into structure? Quote up to 3 of their questions VERBATIM (short). Did they confirm/restatement the objective ("Just to confirm, the goal is...")? objectiveConfirmed = true only if they explicitly restated or confirmed it.
+2. FRAMEWORK — How did they structure the problem? approach must be ONE short phrase from: "custom and specific", "generic textbook", "partial customization", "unclear". bucketsMentioned = how many top-level areas/buckets they named out loud (0 if they never presented a structure).
+3. MATH NARRATION — approachStatedFirst = true only if they described HOW they would calculate BEFORE computing. linkedImplications = count of calculations followed by a business implication ("which suggests...", "this means..."). exampleMoment = the single best such sentence, verbatim, max 25 words, or "none".
+4. SYNTHESIS — answerFirst = true only if they led the final recommendation with the answer itself. gaveRecommendation = they took a clear stance. includedNextSteps = mentioned next steps/risks. quote = the single most representative closing sentence, verbatim, max 30 words, or "none".
+5. ADAPTABILITY — redirects = times the interviewer redirected/pushed back/steered them away. adaptedAfterRedirect: "yes" if they pivoted cleanly, "partially" if reluctantly, "no" if they fought it, "none" if no redirects occurred. example = one verbatim moment (max 25 words) or "none".
+
+=== TRANSCRIPT (timestamped, seconds from session start) ===
+${transcriptText}
+
+=== OUTPUT (valid JSON only, matching the schema exactly) ===`
+}
+
 /**
- * Fires on every session doc write. Only acts once, right when a session's
- * transcript newly reaches a genuinely terminal 'completed' state (either
- * mode) — never 'partial'/'failed', never re-fires once executionAnalysis
- * exists. Gated on duration (EXECUTION_ANALYSIS_MIN/MAX) so short/abandoned/
- * stuck sessions never get analyzed as if they were real full attempts.
+ * Sibling of runExecutionAnalysis: produces the structured transcript digest
+ * the Feedback Analyser's corpus consumes. Same best-effort posture.
+ */
+async function runTranscriptDigest(
+  sessionId: string,
+  turns: ExecutionAnalysisTurn[],
+  apiKey: string,
+): Promise<void> {
+  try {
+    const response = await fetch(
+      `${GEMINI_API_BASE}/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: buildTranscriptDigestPrompt(turns) }] }],
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: 'application/json',
+            responseSchema: TRANSCRIPT_DIGEST_SCHEMA,
+          },
+        }),
+      },
+    )
+    const payload = await response.json().catch(() => null)
+    if (!response.ok) throw new Error(extractGeminiErrorMessage(payload))
+
+    const parts = (payload as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })
+      ?.candidates?.[0]?.content?.parts ?? []
+    const raw = parts.map((p) => p.text ?? '').join('').trim()
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+
+    await db.collection('sessions').doc(sessionId).set(
+      {
+        transcriptDigest: {
+          ...parsed,
+          computedAt: FieldValue.serverTimestamp(),
+          model: GEMINI_MODEL,
+        },
+      },
+      { merge: true },
+    )
+  } catch (err) {
+    logger.warn('transcript_digest_failed', {
+      sessionId,
+      message: err instanceof Error ? err.message : 'Unknown error.',
+    })
+  }
+}
+
+/**
+ * Fires on every session doc write. Acts once per pass, right when a
+ * session's transcript newly reaches a genuinely terminal 'completed' state
+ * (either mode) - never 'partial'/'failed'. Two independent enrichments:
+ *   - executionAnalysis: strict 8-60 min gate (calibrated against real data)
+ *   - transcriptDigest:  looser 5-120 min gate - the Feedback Analyser's
+ *     per-case corpus consumes these digests, so short-but-real drilling
+ *     sessions qualify too.
  */
 export const analyzeCaseExecution = onDocumentWritten(
   {
@@ -2092,7 +2228,6 @@ export const analyzeCaseExecution = onDocumentWritten(
     const before = event.data?.before?.data()
     const after = event.data?.after?.data()
     if (!after) return
-    if (after.executionAnalysis) return
 
     const rawMode = String(after.sessionMode ?? '').toLowerCase()
     const isLocal = rawMode === 'local' || rawMode === 'samedevice'
@@ -2123,9 +2258,28 @@ export const analyzeCaseExecution = onDocumentWritten(
     if (!justCompleted) return
     if (!Array.isArray(turns) || turns.length === 0) return
     if (typeof durationMs !== 'number') return
-    if (durationMs < EXECUTION_ANALYSIS_MIN_DURATION_MS || durationMs > EXECUTION_ANALYSIS_MAX_DURATION_MS) return
 
-    await runExecutionAnalysis(event.params.sessionId, turns as ExecutionAnalysisTurn[], GEMINI_API_KEY.value())
+    const apiKey = GEMINI_API_KEY.value()
+
+    // Pass 1 - execution findings (strict gates, once ever).
+    if (
+      !after.executionAnalysis &&
+      durationMs >= EXECUTION_ANALYSIS_MIN_DURATION_MS &&
+      durationMs <= EXECUTION_ANALYSIS_MAX_DURATION_MS
+    ) {
+      await runExecutionAnalysis(event.params.sessionId, turns as ExecutionAnalysisTurn[], apiKey)
+    }
+
+    // Pass 2 - structured transcript digest for the Analyser corpus (looser
+    // gates, once ever). Runs even when execution analysis was skipped so
+    // short real sessions still feed the analyser.
+    if (
+      !after.transcriptDigest &&
+      durationMs >= TRANSCRIPT_DIGEST_MIN_DURATION_MS &&
+      durationMs <= TRANSCRIPT_DIGEST_MAX_DURATION_MS
+    ) {
+      await runTranscriptDigest(event.params.sessionId, turns as ExecutionAnalysisTurn[], apiKey)
+    }
   },
 )
 

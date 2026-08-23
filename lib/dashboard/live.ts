@@ -111,6 +111,14 @@ workspaceImageUrls: string[]
     overallNote: string
     computedAt?: string | null
   } | null
+  /**
+   * Structured per-session transcript digest (Cloud Function pass 3c): opening
+   * clarifying questions, framework approach, math narration, synthesis shape,
+   * redirect adaptability. The Feedback Analyser's per-case corpus consumes
+   * these so language-level insight covers the WHOLE conversation, not just
+   * the closing tail.
+   */
+  transcriptDigest: Record<string, unknown> | null
 }
 
 export type DashboardCaseMeta = {
@@ -150,6 +158,7 @@ export type DashboardSessionMeta = {
     overallNote: string
     computedAt?: string | null
   } | null
+  transcriptDigest: Record<string, unknown> | null
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
@@ -290,6 +299,13 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     }
   }
 
+  // Transcript digest (Cloud Function pass 3c): kept as a loose record — its
+  // shape is owned by the digest prompt, and consumers (feedbackPrecompute)
+  // read fields defensively.
+  const rawDigest = value?.transcriptDigest
+  const transcriptDigest: Record<string, unknown> | null =
+    rawDigest && typeof rawDigest === 'object' ? (rawDigest as Record<string, unknown>) : null
+
   // For dual-mic remote sessions the merged transcript lives on the session doc
   // itself (mergedTranscript / mergedTranscriptStatus), not in the embedded
   // recording map. Fall back to those fields when the embedded map has nothing.
@@ -360,6 +376,7 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     // reference/backfill (the "no audio" gate keys off transcriptStatus).
     localAudioByteSize: asNumber(source.byteSize),
     localStopReason: asString(source.stopReason),
+    transcriptDigest,
     executionAnalysis,
   }
 }
@@ -430,6 +447,7 @@ return {
     transcriptReason: sessionMeta?.transcriptReason ?? null,
     transcriptTurns: sessionMeta?.transcriptTurns ?? null,
     durationMs: sessionMeta?.durationMs ?? null,
+    transcriptDigest: sessionMeta?.transcriptDigest ?? null,
     executionAnalysis: sessionMeta?.executionAnalysis ?? null,
     audioUrl: sessionMeta?.audioUrl ?? null,
     interviewerAudioUrl: sessionMeta?.interviewerAudioUrl ?? null,

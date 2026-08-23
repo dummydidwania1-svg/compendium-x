@@ -85,16 +85,22 @@ export function buildAnalysisModes(m: FAMetrics): Array<{ label: string; descrip
 /**
  * Calls the server-side analyser proxy (authenticatedRoute + rate limiting +
  * server-only Gemini key). The client never sees an API key anymore.
+ *
+ * focusKey optionally names one case (evaluation key): the server pulls that
+ * session's FULL transcript and grounds this single answer in the entire
+ * conversation instead of the closing-tail excerpt.
  */
 export async function callGeminiFeedback(
   metrics: FAMetrics,
   history: ChatMessage[],
   userQuestion: string,
+  focusKey?: string,
 ): Promise<FAResponse> {
   const res = await apiPost<{ response: FAResponse }>('/api/feedback-analyser', {
     metrics,
     history: history.map((msg) => ({ role: msg.role, text: msg.text })),
     question: userQuestion,
+    ...(focusKey ? { focusKey } : {}),
   });
   return res.response;
 }

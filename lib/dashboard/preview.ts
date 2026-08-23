@@ -117,6 +117,7 @@ workspaceImageUrls,
       hasAudio: false,
       isUnrated: false,
       executionAnalysis: null,
+      transcriptDigest: null,
     })
   }
 

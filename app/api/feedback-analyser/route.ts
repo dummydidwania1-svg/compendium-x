@@ -15,6 +15,7 @@
  *   - quote verification + corpus windowing (see feedbackAnalyserServer)
  */
 import { z } from 'zod'
+import { adminDb } from '@/lib/firebase/admin'
 import { authenticatedRoute } from '@/lib/api/route'
 import { jsonOk, parseBody, BodyError } from '@/lib/api/responses'
 import { callFeedbackAnalyserServer } from '@/lib/feedbackAnalyserServer'
@@ -60,6 +61,8 @@ const metricsSchema = z.object({
         level: z.string().max(32),
         notes: z.string().max(20_000).nullable(),
         verbal: z.string().max(40_000).nullable(),
+        lobbyId: z.string().max(200).nullable(),
+        digest: z.string().max(4_000).nullable(),
       })
     )
     .max(500),
@@ -95,6 +98,13 @@ const bodySchema = z.object({
   metrics: metricsSchema,
   history: z.array(faBlockSchema).max(MAX_MESSAGES),
   question: z.string().min(1).max(4_000),
+  /**
+   * Optional deep-dive target: the evaluation key of a specific case. When
+   * present, the route pulls that session's FULL transcript (server-side,
+   * Admin SDK) and grounds this one answer in the entire conversation rather
+   * than the closing-tail excerpt.
+   */
+  focusKey: z.string().min(1).max(128).optional(),
 })
 
 // ── Rate limiting (per-uid sliding window) ─────────────────────────────────────
@@ -121,7 +131,7 @@ function rateLimit(uid: string): void {
 export const POST = authenticatedRoute('/api/feedback-analyser', async (request, caller) => {
   rateLimit(caller.uid)
 
-  const { metrics, history, question } = await parseBody(request, bodySchema)
+  const { metrics, history, question, focusKey } = await parseBody(request, bodySchema)
 
   // Zero rated cases has nothing at all to work with — the client gates this
   // too, but never spend tokens on it. NOTE: rated cases with no written/
@@ -141,6 +151,61 @@ export const POST = authenticatedRoute('/api/feedback-analyser', async (request,
     })
   }
 
-  const response = await callFeedbackAnalyserServer(metrics, history, question)
+  // ── Deep-dive focus: pull the FULL transcript for the requested case ──────
+  let focusedTranscript: { label: string; transcript: string } | null = null
+  if (focusKey) {
+    const entry = metrics.feedbackEntries.find((f) => f.key === focusKey)
+    const lobbyId = entry?.lobbyId
+    if (!entry || !lobbyId) {
+      throw new BodyError(400, 'unknown_focus_case', 'That case could not be found in your history.')
+    }
+
+    try {
+      const snap = await adminDb.collection('sessions').doc(lobbyId).get()
+      const data = snap.data()
+      // Ownership check: the client supplies lobbyId, so never trust it —
+      // only hand back a transcript when this caller actually participated
+      // in that session.
+      const participantIds = [data?.candidateId, data?.interviewerId].filter(Boolean)
+      if (participantIds.length === 0 || !participantIds.includes(caller.uid)) {
+        throw new BodyError(400, 'unknown_focus_case', 'That case could not be found in your history.')
+      }
+      const rawTurns: unknown =
+        data?.mergedTranscriptTurns ?? (data?.recording as { transcriptTurns?: unknown } | undefined)?.transcriptTurns
+
+      if (!Array.isArray(rawTurns) || rawTurns.length === 0) {
+        throw new BodyError(
+          409,
+          'no_transcript',
+          'This case ran without a usable recording, so there is no transcript to deep-dive. Its feedback notes are still included in every answer.',
+        )
+      }
+
+      const formatted = (rawTurns as Array<Record<string, unknown>>)
+        .map((t) => {
+          const offset = typeof t.offsetMs === 'number' ? Math.round(t.offsetMs / 1000) : null
+          const role =
+            t.role === 'candidate' ? 'Candidate' : t.role === 'interviewer' ? 'Interviewer' : String(t.role ?? 'S?')
+          const ts = offset != null ? `[${Math.floor(offset / 60)}:${String(offset % 60).padStart(2, '0')}] ` : ''
+          return `${ts}${role}: ${typeof t.text === 'string' ? t.text : ''}`
+        })
+        .filter((line) => line.trim().length > 0)
+        .join('\n')
+
+      // Generous cap — even a two-hour stuck session stays within budget.
+      const transcript = formatted.length > 60_000 ? `${formatted.slice(0, 60_000)}\n…[truncated]` : formatted
+      focusedTranscript = { label: entry.label, transcript }
+    } catch (err) {
+      if (err instanceof BodyError) throw err
+      console.log('[feedback-analyser] focus fetch failed', {
+        uid: caller.uid,
+        lobbyId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      // Fall through without the focused block rather than failing the chat.
+    }
+  }
+
+  const response = await callFeedbackAnalyserServer(metrics, history, question, focusedTranscript)
   return jsonOk({ response })
 })

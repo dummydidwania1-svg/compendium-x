@@ -296,6 +296,16 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
   const isPreview = useIsPreview();
   const metrics = useMemo(() => computeFAMetrics(entries), [entries]);
   const analysisModes = useMemo(() => buildAnalysisModes(metrics), [metrics]);
+  // Deep-dive targets: most recent rated cases that actually have a recording
+  // to mine. Clicking one sends a focused question whose answer is grounded in
+  // that case's FULL transcript (server pulls it by key).
+  const deepDiveCases = useMemo(
+    () =>
+      entries
+        .filter((e) => !e.isUnrated && (e.transcriptTurns?.length || e.transcript))
+        .slice(0, 6),
+    [entries]
+  );
   const noCasesYet = metrics.totalCases === 0;
 
   const [isHovering, setIsHovering]   = useState(false);
@@ -318,7 +328,7 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
     );
   }, [metrics.initialGreeting]);
 
-  const handleSend = async (text: string, opts?: { hideUserBubble?: boolean }) => {
+  const handleSend = async (text: string, opts?: { hideUserBubble?: boolean; focusKey?: string }) => {
     if (!text.trim() || isLoading || noCasesYet) return;
     if (!opts?.hideUserBubble) setInput('');
     const historyForGemini = messages.slice(1);
@@ -329,7 +339,7 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
 
     let faResponse: FAResponse;
     try {
-      faResponse = await callGeminiFeedback(metrics, historyForGemini, text);
+      faResponse = await callGeminiFeedback(metrics, historyForGemini, text, opts?.focusKey);
     } catch (err) {
       const msg =
         err instanceof Error && err.message.toLowerCase().includes('too many requests')
@@ -569,6 +579,44 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
                     ))}
                   </div>
                 </div>
+
+                {/* Deep Dive — full-transcript analysis of one specific case */}
+                {deepDiveCases.length > 0 && (
+                  <>
+                    <div className="mx-5 border-t border-[#5C4033]/8" />
+                    <div className="p-5 pt-3">
+                      <div className="eyebrow !mb-1">Deep Dive a Case</div>
+                      <p className="text-[9px] text-[#5C4033]/40 font-sans leading-snug mb-2.5 pl-[2px]">
+                        Reads the entire recording of one case — opening, structure, math, close.
+                      </p>
+                      <div className="flex flex-col gap-1.5">
+                        {deepDiveCases.map((c) => (
+                          <button
+                            key={c.evaluationId}
+                            onClick={() =>
+                              handleSend(
+                                `Do a deep dive of my performance in "${c.name}" (${c.date}). Using the full transcript, assess: how I opened (objective and clarifying questions), the quality and customization of my framework, how I narrated math and whether I drew implications, and how I closed (recommendation quality). Point to my actual words as evidence.`,
+                                { focusKey: c.evaluationId },
+                              )
+                            }
+                            disabled={isLoading || noCasesYet}
+                            className="group w-full text-left px-3.5 py-2.5 rounded-xl border border-[#3D5A35]/14 bg-[#3D5A35]/4 hover:bg-[#3D5A35]/8 hover:border-[#3D5A35]/26 transition-all duration-200 flex items-center justify-between gap-2 disabled:opacity-50"
+                          >
+                            <span className="min-w-0">
+                              <span className="block text-[10.5px] text-[#3B2F2F]/70 font-medium leading-snug group-hover:text-[#3B2F2F]/88 transition-colors font-sans truncate">
+                                {c.name || 'Untitled case'}
+                              </span>
+                              <span className="block text-[8.5px] text-[#5C4033]/40 font-sans">
+                                {c.type} · {c.date}
+                              </span>
+                            </span>
+                            <ChevronRight className="w-3 h-3 text-[#3D5A35]/30 group-hover:text-[#3D5A35]/70 transition-colors shrink-0" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
 
               </div>
 

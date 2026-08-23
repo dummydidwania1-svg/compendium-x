@@ -11,6 +11,10 @@ export interface CaseFeedback {
   level: string
   notes: string | null
   verbal: string | null
+  /** For on-demand deep dives: which session doc holds this case's full transcript. */
+  lobbyId: string | null
+  /** One-line structured transcript digest (Cloud Function pass), null when unavailable. */
+  digest: string | null
 }
 
 /** Aggregated deterministic execution signals across all timed sessions. */
@@ -80,6 +84,59 @@ function computeStreak(entries: DashboardCaseEntry[]): number {
   return streak
 }
 
+/**
+ * Compacts the Cloud Function's transcriptDigest into one prompt line. Reads
+ * every field defensively — the shape is owned by the digest prompt, and
+ * older sessions have no digest at all.
+ */
+function digestSummaryLine(d: Record<string, unknown> | null): string | null {
+  if (!d || typeof d !== 'object') return null
+  const parts: string[] = []
+
+  const opening = d.opening as { clarifyingQuestions?: unknown; objectiveConfirmed?: unknown } | undefined
+  if (opening) {
+    const qCount = Array.isArray(opening.clarifyingQuestions) ? opening.clarifyingQuestions.length : 0
+    const firstQ =
+      Array.isArray(opening.clarifyingQuestions) && typeof opening.clarifyingQuestions[0] === 'string'
+        ? ` (e.g. "${truncateStr(opening.clarifyingQuestions[0] as string, 60)}")`
+        : ''
+    parts.push(`opening: asked ${qCount} clarifying question${qCount === 1 ? '' : 's'}${firstQ}, objective ${opening.objectiveConfirmed === true ? 'confirmed' : 'not explicitly confirmed'}`)
+  }
+
+  const fw = d.framework as { approach?: unknown; bucketsMentioned?: unknown } | undefined
+  if (fw && typeof fw.approach === 'string' && fw.approach !== 'unclear') {
+    parts.push(`framework: ${fw.approach}${typeof fw.bucketsMentioned === 'number' && fw.bucketsMentioned > 0 ? ` (${fw.bucketsMentioned} buckets)` : ''}`)
+  }
+
+  const mn = d.mathNarration as { approachStatedFirst?: unknown; linkedImplications?: unknown; exampleMoment?: unknown } | undefined
+  if (mn) {
+    const links = typeof mn.linkedImplications === 'number' ? mn.linkedImplications : 0
+    const ex = typeof mn.exampleMoment === 'string' && mn.exampleMoment !== 'none' ? ` ("${truncateStr(mn.exampleMoment, 70)}")` : ''
+    parts.push(`math narration: approach stated first = ${mn.approachStatedFirst === true ? 'yes' : 'no'}, implications drawn after ${links} calculation${links === 1 ? '' : 's'}${ex}`)
+  }
+
+  const syn = d.synthesis as { answerFirst?: unknown; gaveRecommendation?: unknown; includedNextSteps?: unknown; quote?: unknown } | undefined
+  if (syn) {
+    const q = typeof syn.quote === 'string' && syn.quote !== 'none' ? ` ("${truncateStr(syn.quote, 80)}")` : ''
+    parts.push(`synthesis: recommendation ${syn.gaveRecommendation === true ? 'given' : 'missing'}, answer-first = ${syn.answerFirst === true ? 'yes' : 'no'}, next steps = ${syn.includedNextSteps === true ? 'yes' : 'no'}${q}`)
+  }
+
+  const ad = d.adaptability as { redirects?: unknown; adaptedAfterRedirect?: unknown; example?: unknown } | undefined
+  if (ad) {
+    const r = typeof ad.redirects === 'number' ? ad.redirects : 0
+    if (r > 0) {
+      const ex = typeof ad.example === 'string' && ad.example !== 'none' ? ` ("${truncateStr(ad.example, 70)}")` : ''
+      parts.push(`adaptability: ${r} interviewer redirect${r === 1 ? '' : 's'}, adapted = ${typeof ad.adaptedAfterRedirect === 'string' ? ad.adaptedAfterRedirect : 'unknown'}${ex}`)
+    }
+  }
+
+  return parts.length > 0 ? parts.join('; ') : null
+}
+
+function truncateStr(s: string, max: number): string {
+  return s.length <= max ? s : `${s.slice(0, max).trimEnd()}…`
+}
+
 function feedbackEntriesFrom(entries: DashboardCaseEntry[]): CaseFeedback[] {
   const out: CaseFeedback[] = []
   for (const entry of entries) {
@@ -97,6 +154,8 @@ function feedbackEntriesFrom(entries: DashboardCaseEntry[]): CaseFeedback[] {
       level: entry.level,
       notes,
       verbal,
+      lobbyId: entry.lobbyId,
+      digest: digestSummaryLine(entry.transcriptDigest),
     })
   }
   return out
