@@ -99,6 +99,18 @@ workspaceImageUrls: string[]
   hasSnapshot: boolean
   hasAudio: boolean
   isUnrated: boolean
+  /**
+   * Backend "how the case ran" pass (Cloud Function analyzeCaseExecution):
+   * moment-specific execution findings from the transcript — time lost before
+   * structuring, hesitation, circular reasoning, missed clarifying questions,
+   * arithmetic stalls. Deliberately separate from stated interviewer feedback;
+   * consumers must present it as machine-measured context, never as a quote.
+   */
+  executionAnalysis: {
+    findings: Array<{ issue: string; momentDescription: string; approxOffsetSec?: number | null }>
+    overallNote: string
+    computedAt?: string | null
+  } | null
 }
 
 export type DashboardCaseMeta = {
@@ -133,6 +145,11 @@ export type DashboardSessionMeta = {
   // audio/transcript state directly from these.
   localAudioByteSize: number | null
   localStopReason: string | null
+  executionAnalysis: {
+    findings: Array<{ issue: string; momentDescription: string; approxOffsetSec?: number | null }>
+    overallNote: string
+    computedAt?: string | null
+  } | null
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
@@ -245,6 +262,34 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
   const recording = value?.recording
   const source = recording && typeof recording === 'object' ? (recording as Record<string, unknown>) : {}
 
+  // Backend execution-analysis pass (analyzeCaseExecution Cloud Function).
+  const rawExecution = value?.executionAnalysis
+  let executionAnalysis: DashboardSessionMeta['executionAnalysis'] = null
+  if (rawExecution && typeof rawExecution === 'object') {
+    const ex = rawExecution as Record<string, unknown>
+    const findingsRaw = Array.isArray(ex.findings) ? ex.findings : []
+    const findings = findingsRaw
+      .filter((f): f is Record<string, unknown> => !!f && typeof f === 'object')
+      .map((f) => ({
+        issue: typeof f.issue === 'string' ? f.issue : '',
+        momentDescription: typeof f.momentDescription === 'string' ? f.momentDescription : '',
+        approxOffsetSec: typeof f.approxOffsetSec === 'number' ? f.approxOffsetSec : null,
+      }))
+      .filter((f) => f.issue || f.momentDescription)
+      .slice(0, 4)
+    const overallNote = typeof ex.overallNote === 'string' ? ex.overallNote : ''
+    if (findings.length > 0 || overallNote) {
+      executionAnalysis = {
+        findings,
+        overallNote,
+        computedAt:
+          ex.computedAt && typeof (ex.computedAt as { toDate?: unknown }).toDate === 'function'
+            ? (ex.computedAt as { toDate: () => Date }).toDate().toISOString()
+            : null,
+      }
+    }
+  }
+
   // For dual-mic remote sessions the merged transcript lives on the session doc
   // itself (mergedTranscript / mergedTranscriptStatus), not in the embedded
   // recording map. Fall back to those fields when the embedded map has nothing.
@@ -315,6 +360,7 @@ export function mapSessionMeta(id: string, value: DocumentData): DashboardSessio
     // reference/backfill (the "no audio" gate keys off transcriptStatus).
     localAudioByteSize: asNumber(source.byteSize),
     localStopReason: asString(source.stopReason),
+    executionAnalysis,
   }
 }
 
@@ -384,6 +430,7 @@ return {
     transcriptReason: sessionMeta?.transcriptReason ?? null,
     transcriptTurns: sessionMeta?.transcriptTurns ?? null,
     durationMs: sessionMeta?.durationMs ?? null,
+    executionAnalysis: sessionMeta?.executionAnalysis ?? null,
     audioUrl: sessionMeta?.audioUrl ?? null,
     interviewerAudioUrl: sessionMeta?.interviewerAudioUrl ?? null,
     mergedAudioUrl: sessionMeta?.mergedAudioUrl ?? null,

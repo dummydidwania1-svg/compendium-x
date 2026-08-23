@@ -957,6 +957,67 @@ const playedRatio      = duration > 0 ? Math.min(1, currentTime / duration) : 0;
                 {/* Band divider */}
                 <div className="shrink-0" style={{ height: 1, background: 'rgba(92,64,51,.08)', margin: '16px 0 14px' }} />
 
+                {/* Band 1b — How the case ran (machine-measured execution pass).
+                    Deliberately styled apart from Interviewer Feedback — dashed
+                    border + "Measured" tag — so transcript-derived findings are
+                    never mistaken for something an interviewer said. */}
+                {entry.executionAnalysis &&
+                 (entry.executionAnalysis.findings.length > 0 || !!entry.executionAnalysis.overallNote) && (
+                  <div className="shrink-0">
+                    <div className="flex items-center justify-between mb-[6px]">
+                      <SectionLabel>How the case ran</SectionLabel>
+                      <span
+                        className="text-[7.5px] uppercase tracking-[0.14em] font-semibold px-1.5 py-[2px] rounded-md"
+                        style={{ background: 'rgba(92,64,51,.08)', color: 'rgba(92,64,51,.55)' }}
+                      >
+                        Measured from recording
+                      </span>
+                    </div>
+                    <div
+                      className="rounded-[8px] px-[14px] py-[10px]"
+                      style={{ border: '1.5px dashed rgba(92,64,51,.22)', background: 'rgba(244,237,227,.35)' }}
+                    >
+                      {!!entry.executionAnalysis.overallNote && (
+                        <p className="font-serif italic text-[12.5px]" style={{ color: 'rgba(92,64,51,.72)' }}>
+                          {entry.executionAnalysis.overallNote}
+                        </p>
+                      )}
+                      {entry.executionAnalysis.findings.length > 0 && (
+                        <ul
+                          className="flex flex-col gap-[5px]"
+                          style={{ marginTop: entry.executionAnalysis.overallNote ? 8 : 0 }}
+                        >
+                          {entry.executionAnalysis.findings.map((f, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-[8px] text-[11.5px] leading-snug"
+                              style={{ color: 'rgba(92,64,51,.78)' }}
+                            >
+                              <span
+                                className="shrink-0 mt-[6px] rounded-full"
+                                style={{ width: 4, height: 4, background: 'rgba(92,64,51,.35)' }}
+                              />
+                              <span>
+                                <span className="font-semibold" style={{ color: 'rgba(59,47,47,.85)' }}>{f.issue}</span>
+                                {' — '}{f.momentDescription}
+                                {typeof f.approxOffsetSec === 'number' && f.approxOffsetSec >= 0 && (
+                                  <span className="ml-1 whitespace-nowrap" style={{ color: 'rgba(92,64,51,.45)' }}>
+                                    (~{Math.floor(f.approxOffsetSec / 60)}:
+                                    {String(f.approxOffsetSec % 60).padStart(2, '0')} in)
+                                  </span>
+                                )}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Band divider */}
+                <div className="shrink-0" style={{ height: 1, background: 'rgba(92,64,51,.08)', margin: '16px 0 14px' }} />
+
                 {/* Band 2 — Interviewer Feedback (fills remaining height) */}
                 <div className="flex flex-col flex-1 min-h-0">
                   <div className="flex items-baseline justify-between">

@@ -4,8 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, ChevronRight, Sparkles, BarChart2, Layers, TrendingUp, Lock } from 'lucide-react';
 import TieLogo from '@/components/ui/TieLogo';
 import { computeFAMetrics } from '@/lib/feedbackPrecompute';
-import { callGeminiFeedback, ANALYSIS_MODES, type ChatMessage, type FAResponse, type FABlock, type FAViz } from '@/lib/geminiFeedback';
-import { useDashboard } from './DashboardContext';
+import { callGeminiFeedback, buildAnalysisModes, type ChatMessage, type FAResponse, type FABlock, type FAViz } from '@/lib/geminiFeedback';
+import { useDashboard, useIsPreview } from './DashboardContext';
+
+const REPORT_PROMPT = 'Build my full feedback report.';
 
 interface Props {
   isOpen: boolean;
@@ -25,9 +27,6 @@ const FA_TREE_SVG = `
   <circle cx="43" cy="9"  r="4.5" fill="rgba(61,90,53,0.62)" style="opacity:0;animation:fa-node-in 0.30s cubic-bezier(0.16,1,0.3,1) 660ms both"/>
   <circle cx="43" cy="23" r="4.5" fill="rgba(61,90,53,0.62)" style="opacity:0;animation:fa-node-in 0.30s cubic-bezier(0.16,1,0.3,1) 695ms both"/>
 </svg>`;
-
-// Last node: 695ms + 300ms = 995ms. Buffer to 1200ms.
-const ANIM_DURATION = 1200;
 
 // ── Friendly random verbs ─────────────────────────────────────────────────────
 const FA_VERBS = [
@@ -73,13 +72,13 @@ const IssueTreeLoader = () => {
 };
 
 // ── Inline quote block ────────────────────────────────────────────────────────
-const QuoteBlock = ({ text, caseId, date }: { text: string; caseId: string; date: string }) => (
+const QuoteBlock = ({ text, caseLabel, date }: { text: string; caseLabel: string; date: string }) => (
   <div className="relative pl-4 my-1.5">
     <div className="absolute left-0 top-0.5 bottom-0.5 w-[1.5px] rounded-full bg-[#3D5A35]/28" />
     <p className="text-[11px] italic text-[#3B2F2F]/55 leading-relaxed font-sans">"{text}"</p>
-    {(caseId || date) && (
+    {(caseLabel || date) && (
       <span className="text-[8.5px] text-[#3D5A35]/40 tracking-[0.08em] uppercase mt-0.5 block font-sans">
-        {caseId ? `Case ${caseId}` : ''}{caseId && date ? ' · ' : ''}{date}
+        {caseLabel}{caseLabel && date ? ' · ' : ''}{date}
       </span>
     )}
   </div>
@@ -199,9 +198,10 @@ const ScatterPlot = ({ title, subtitle, points, xLabel, yLabel }: {
         {/* x-axis baseline */}
         <line x1={PAD.left} y1={PAD.top + plotH} x2={VW - PAD.right} y2={PAD.top + plotH}
           stroke="rgba(92,64,51,0.10)" strokeWidth="0.7" />
-        {/* x-axis tick marks + values (5 evenly spaced) */}
-        {Array.from({ length: 5 }, (_, i) => Math.round(xMin + (i / 4) * (xMax - xMin))).map(x => (
-          <g key={x}>
+        {/* x-axis tick marks + values (5 evenly spaced) — index-keyed: tiny
+            ranges can round two ticks to the same value, colliding keys */}
+        {Array.from({ length: 5 }, (_, i) => Math.round(xMin + (i / 4) * (xMax - xMin))).map((x, i) => (
+          <g key={i}>
             <line x1={sx(x)} y1={PAD.top + plotH} x2={sx(x)} y2={PAD.top + plotH + 4}
               stroke="rgba(92,64,51,0.18)" strokeWidth="0.7" />
             <text x={sx(x)} y={PAD.top + plotH + 14} fontSize="8.5" fill="rgba(92,64,51,0.35)" textAnchor="middle">{x}</text>
@@ -270,7 +270,7 @@ const ResponseCard = ({ blocks, viz }: { blocks: FABlock[]; viz: FAViz }) => (
       {blocks.map((block, i) => {
         if (block.type === 'heading')  return <HeadingBlock key={i} text={block.text} tag={block.tag} />;
         if (block.type === 'bullet')   return <BulletBlock key={i} text={block.text} />;
-        if (block.type === 'quote')    return <QuoteBlock key={i} text={block.text} caseId={block.caseId ?? ''} date={block.date ?? ''} />;
+        if (block.type === 'quote')    return <QuoteBlock key={i} text={block.text} caseLabel={block.caseLabel ?? ''} date={block.date ?? ''} />;
         if (block.type === 'divider')  return <DividerBlock key={i} />;
         return <p key={i} className="text-[11px] leading-relaxed text-[#3B2F2F]/72 font-sans">{block.text}</p>;
       })}
@@ -293,65 +293,80 @@ const MODE_ICONS = [BarChart2, Layers, TrendingUp];
 // ── Main component ────────────────────────────────────────────────────────────
 const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
   const { entries } = useDashboard();
+  const isPreview = useIsPreview();
   const metrics = useMemo(() => computeFAMetrics(entries), [entries]);
-  const apiKeyMissing = !process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const analysisModes = useMemo(() => buildAnalysisModes(metrics), [metrics]);
   const noCasesYet = metrics.totalCases === 0;
-  const unavailableMessage =
-    'The Analyser is unavailable until NEXT_PUBLIC_GEMINI_API_KEY is configured.';
 
   const [isHovering, setIsHovering]   = useState(false);
   const [isLoading, setIsLoading]     = useState(false);
   const [messages, setMessages]       = useState<ChatMessage[]>([
-    { role: 'agent', text: apiKeyMissing ? unavailableMessage : metrics.initialGreeting },
+    { role: 'agent', text: metrics.initialGreeting },
   ]);
   const [input, setInput]             = useState('');
   const endRef                        = useRef<HTMLDivElement>(null);
+  // Report-first: the full report auto-generates once per open conversation,
+  // without injecting a fake user bubble.
+  const reportStartedRef = useRef(false);
 
   const handleMouseEnter = () => setIsHovering(true);
   const handleMouseLeave = () => setIsHovering(false);
 
   useEffect(() => {
-    const introText = apiKeyMissing ? unavailableMessage : metrics.initialGreeting;
     setMessages((prev) =>
-      prev.length <= 1 ? [{ role: 'agent', text: introText }] : prev
+      prev.length <= 1 ? [{ role: 'agent', text: metrics.initialGreeting }] : prev
     );
-  }, [apiKeyMissing, metrics.initialGreeting]);
+  }, [metrics.initialGreeting]);
 
-  const handleSend = async (text: string) => {
+  const handleSend = async (text: string, opts?: { hideUserBubble?: boolean }) => {
     if (!text.trim() || isLoading || noCasesYet) return;
-    setInput('');
+    if (!opts?.hideUserBubble) setInput('');
     const historyForGemini = messages.slice(1);
-    setMessages(prev => [...prev, { role: 'user', text }]);
+    if (!opts?.hideUserBubble) {
+      setMessages(prev => [...prev, { role: 'user', text }]);
+    }
     setIsLoading(true);
-    const animStart = Date.now();
 
     let faResponse: FAResponse;
     try {
       faResponse = await callGeminiFeedback(metrics, historyForGemini, text);
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('NEXT_PUBLIC_GEMINI_API_KEY')
-        ? unavailableMessage
-        : 'Something went wrong. Please check your connection and try again.';
+      const msg =
+        err instanceof Error && err.message.toLowerCase().includes('too many requests')
+          ? 'You\u2019re sending messages very quickly — give it a few seconds and try again.'
+          : 'Something went wrong reaching the analyser. Please check your connection and try again.';
       faResponse = {
         blocks: [{ type: 'paragraph', text: msg }],
         viz: { type: 'none', title: '' },
       };
     }
 
-    // Plain text for Gemini conversation history
+    // Conversation history carries the analytical frame forward (headings,
+    // observations, drills) instead of flattened paragraphs — follow-ups stay
+    // grounded in what was already said.
     const plainText = faResponse.blocks
-      .filter(b => b.type === 'paragraph')
-      .map(b => b.text)
-      .join(' ');
+      .filter(b => b.type !== 'divider')
+      .map(b => {
+        if (b.type === 'heading') return `${b.text}${b.tag ? ` [${b.tag}]` : ''}`;
+        if (b.type === 'quote') return `"${b.text}" (${b.caseLabel ?? ''}${b.date ? `, ${b.date}` : ''})`;
+        return b.text;
+      })
+      .join('\n');
 
-    // Hold response until the tree animation has fully drawn — whichever comes last
-    const elapsed = Date.now() - animStart;
-    const wait = Math.max(0, ANIM_DURATION - elapsed);
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'agent', text: plainText, response: faResponse }]);
-      setIsLoading(false);
-    }, wait);
+    // Render as soon as the response lands; the decorative tree animation
+    // plays alongside rather than gating the answer.
+    setMessages(prev => [...prev, { role: 'agent', text: plainText, response: faResponse }]);
+    setIsLoading(false);
   };
+
+  // Auto-generate the full feedback report the first time the overlay opens.
+  // Deliberately fires once per mount (ref-guarded) — handleSend is stable
+  // enough in practice and re-running on its identity would double-fire.
+  useEffect(() => {
+    if (!isOpen || isPreview || noCasesYet || reportStartedRef.current) return;
+    reportStartedRef.current = true;
+    void handleSend(REPORT_PROMPT, { hideUserBubble: true });
+  }, [isOpen, isPreview, noCasesYet]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -393,7 +408,8 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
         }
       `}</style>
 
-      {/* ── FAB + hover "Coming Soon" card ───────────────────────────────── */}
+      {/* ── FAB + hover "Coming Soon" card (hidden for signed-out previews) ── */}
+      {!isPreview && (
       <div
         className="fixed bottom-6 right-6 z-50 flex flex-col items-end"
         onMouseEnter={handleMouseEnter}
@@ -458,6 +474,7 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
           <Sparkles className="fa-sparkle absolute -top-0.5 -right-0.5 w-3 h-3 text-[#3D5A35]" />
         </button>
       </div>
+      )}
 
       {/* ── Full overlay (disabled — FAB no longer opens it) ─────────────── */}
       {isOpen && (
@@ -481,19 +498,12 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
                 THE ANALYSER
               </div>
               <div className="flex items-center gap-3">
-                {apiKeyMissing ? (
-                  <div className="flex items-center gap-1.5 px-2.5 py-[3px] rounded-md border border-[#C4A882]/40 bg-[#C4A882]/12">
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#C4A882]" />
-                    <span className="text-[8px] uppercase tracking-[0.1em] font-semibold text-[#C4A882]/80">Unavailable</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 px-2.5 py-[3px] rounded-md border border-[#5C4033]/10 bg-[#D9D0C4]/18">
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLoading ? 'animate-pulse bg-[#C4A882]' : 'bg-[#3D5A35]'}`} />
-                    <span className="text-[8px] uppercase tracking-[0.1em] font-semibold text-[#5C4033]/55">
-                      {isLoading ? 'Thinking' : 'Ready'}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5 px-2.5 py-[3px] rounded-md border border-[#5C4033]/10 bg-[#D9D0C4]/18">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLoading ? 'animate-pulse bg-[#C4A882]' : 'bg-[#3D5A35]'}`} />
+                  <span className="text-[8px] uppercase tracking-[0.1em] font-semibold text-[#5C4033]/55">
+                    {isLoading ? 'Thinking' : 'Ready'}
+                  </span>
+                </div>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="w-7 h-7 rounded-full flex items-center justify-center bg-[#D9D0C4]/30 hover:bg-[#D9D0C4]/55 text-[#5C4033]/60 hover:text-[#3B2F2F] transition-colors"
@@ -513,8 +523,8 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
                 <div className="p-5 pb-3">
                   <div className="eyebrow !mb-3">Analysis Modes</div>
                   <div className="flex flex-col gap-1.5">
-                    {ANALYSIS_MODES.map((mode, i) => {
-                      const Icon = MODE_ICONS[i];
+                    {analysisModes.map((mode, i) => {
+                      const Icon = MODE_ICONS[i % MODE_ICONS.length];
                       return (
                         <button
                         key={i}
@@ -548,7 +558,7 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
                       <button
                         key={i}
                         onClick={() => handleSend(q)}
-                        disabled={isLoading || apiKeyMissing || noCasesYet}
+                        disabled={isLoading || noCasesYet}
                         className="group w-full text-left px-3.5 py-2.5 rounded-xl border border-[#5C4033]/8 bg-transparent hover:bg-[#3D5A35]/5 hover:border-[#3D5A35]/18 transition-all duration-200 flex items-center justify-between gap-2 disabled:opacity-50"
                       >
                         <span className="text-[10.5px] text-[#3B2F2F]/60 font-medium leading-snug group-hover:text-[#3B2F2F]/82 transition-colors font-sans">
@@ -624,20 +634,18 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
                       type="text"
                       value={input}
                       onChange={e => setInput(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && !isLoading && !apiKeyMissing && !noCasesYet && handleSend(input)}
+                      onKeyDown={e => e.key === 'Enter' && !isLoading && !noCasesYet && handleSend(input)}
                       placeholder={
-                        apiKeyMissing
-                          ? 'AI analyser unavailable…'
-                          : noCasesYet
-                            ? 'Complete a case to unlock the analyser…'
-                            : 'Ask about your feedback patterns…'
+                        noCasesYet
+                          ? 'Complete a case to unlock the analyser…'
+                          : 'Ask about your feedback patterns…'
                       }
-                      disabled={isLoading || apiKeyMissing || noCasesYet}
+                      disabled={isLoading || noCasesYet}
                       className="w-full bg-[#D9D0C4]/20 border border-[#5C4033]/12 rounded-xl py-3 pl-4 pr-12 text-xs text-[#3B2F2F] placeholder:text-[#5C4033]/30 focus:outline-none focus:border-[#3D5A35]/40 transition-colors disabled:opacity-60 font-sans"
                     />
                     <button
                       onClick={() => handleSend(input)}
-                      disabled={isLoading || apiKeyMissing || noCasesYet || !input.trim()}
+                      disabled={isLoading || noCasesYet || !input.trim()}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center bg-[#3D5A35] text-[#fff8f0] hover:bg-[#3D5A35]/80 transition-colors disabled:opacity-40"
                     >
                       <ChevronRight className="w-3.5 h-3.5" />

@@ -1,9 +1,26 @@
 import type { DashboardCaseEntry } from '@/lib/dashboard/live'
+import { computeCaseSignals, type CaseSignals } from '@/lib/caseSignals'
 
 export interface CaseFeedback {
-  id: string
-  notes: string
-  verbal: string
+  /** Stable unique key (evaluation doc id) — unambiguous even for repeated cases. */
+  key: string
+  /** Human-facing label shown in citations, e.g. "Banking On You". */
+  label: string
+  date: string
+  caseType: string
+  level: string
+  notes: string | null
+  verbal: string | null
+}
+
+/** Aggregated deterministic execution signals across all timed sessions. */
+export interface ExecutionSignalSummary {
+  sessionsAnalyzed: number
+  avgLongSilences: number | null
+  avgOpeningQuestions: number | null
+  avgHedgeDensity: number | null
+  avgMathInsightLinkage: number | null
+  lowLinkageSessions: number
 }
 
 type Param = 'structure' | 'analysis' | 'creativity' | 'delivery'
@@ -26,6 +43,14 @@ export interface FAMetrics {
   allCasesCSV: string
   feedbackEntries: CaseFeedback[]
   feedbackCount: number
+  executionSummaries: Array<{
+    key: string
+    label: string
+    date: string
+    overallNote: string
+    findings: Array<{ issue: string; momentDescription: string }>
+  }>
+  executionSignals: ExecutionSignalSummary | null
   dynamicQuestions: string[]
   initialGreeting: string
 }
@@ -55,9 +80,59 @@ function computeStreak(entries: DashboardCaseEntry[]): number {
   return streak
 }
 
-function feedbackIdFor(entry: DashboardCaseEntry, index: number): string {
-  if (typeof entry.caseNumericId === 'number') return String(entry.caseNumericId)
-  return String(index + 1).padStart(2, '0')
+function feedbackEntriesFrom(entries: DashboardCaseEntry[]): CaseFeedback[] {
+  const out: CaseFeedback[] = []
+  for (const entry of entries) {
+    const notes = entry.notes?.trim() || null
+    const verbal = extractVerbalFeedback(entry)
+    // Cases with neither written notes nor a verbal excerpt carry zero signal —
+    // including them (with placeholder text) just wasted tokens and invited the
+    // model to treat sentinels as content.
+    if (!notes && !verbal) continue
+    out.push({
+      key: entry.evaluationId,
+      label: entry.name || 'Untitled case',
+      date: entry.date,
+      caseType: entry.type,
+      level: entry.level,
+      notes,
+      verbal,
+    })
+  }
+  return out
+}
+
+function executionSummariesFrom(entries: DashboardCaseEntry[]) {
+  return entries
+    .filter((e) => e.executionAnalysis)
+    .map((e) => ({
+      key: e.evaluationId,
+      label: e.name || 'Untitled case',
+      date: e.date,
+      overallNote: e.executionAnalysis!.overallNote,
+      findings: (e.executionAnalysis!.findings ?? []).map((f) => ({
+        issue: f.issue,
+        momentDescription: f.momentDescription,
+      })),
+    }))
+}
+
+function aggregateExecutionSignals(entries: DashboardCaseEntry[]): ExecutionSignalSummary | null {
+  const signals = entries
+    .map((e) => computeCaseSignals(e.transcriptTurns as never))
+    .filter((s): s is CaseSignals => !!s && s.timingAvailable)
+  if (signals.length === 0) return null
+  const avg = (vals: number[]): number | null =>
+    vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : null
+  const linkageVals = signals.map((s) => s.mathInsightLinkage).filter((v): v is number => v != null)
+  return {
+    sessionsAnalyzed: signals.length,
+    avgLongSilences: avg(signals.map((s) => s.longSilenceCount)),
+    avgOpeningQuestions: avg(signals.map((s) => s.openingQuestionCount)),
+    avgHedgeDensity: avg(signals.map((s) => s.hedgeDensity)),
+    avgMathInsightLinkage: avg(linkageVals),
+    lowLinkageSessions: linkageVals.filter((v) => v < 0.4).length,
+  }
 }
 
 // "Verbal feedback" is not the interviewer's whole spoken commentary — there's
@@ -93,15 +168,6 @@ function extractVerbalFeedback(entry: DashboardCaseEntry): string | null {
   }
 
   return null
-}
-
-function feedbackEntriesFrom(entries: DashboardCaseEntry[]): CaseFeedback[] {
-  return entries
-    .map((entry, index) => ({
-      id: feedbackIdFor(entry, index),
-      notes: entry.notes?.trim() || 'No written interviewer notes recorded.',
-      verbal: extractVerbalFeedback(entry) || 'No closing-remarks excerpt is available for this case yet.',
-    }))
 }
 
 function generateDynamicQuestions(
@@ -146,13 +212,17 @@ export function computeFAMetrics(entries: DashboardCaseEntry[]): FAMetrics {
       allCasesCSV: '',
       feedbackEntries: [],
       feedbackCount: 0,
+      executionSummaries: [],
+      executionSignals: null,
       dynamicQuestions: [
         'What will this analyser do once I complete a case?',
         'How will interviewer notes appear here?',
         'What can I learn from transcripts over time?',
       ],
       initialGreeting:
-        'Complete a case and submit interviewer feedback to unlock real feedback analysis here.',
+        'Hi. Complete a case with interviewer ratings and I\u2019ll start finding the patterns in what they tell you. ' +
+        'One tip so your very first session produces analyzable feedback: ask your interviewer to be specific about ' +
+        'your structure, how you narrated math, and whether your recommendation was clear.',
     }
   }
 
@@ -220,17 +290,21 @@ export function computeFAMetrics(entries: DashboardCaseEntry[]): FAMetrics {
   const recentAvgScore = mean(cases.slice(-14).map((c) => c.score))
   const streakDays = computeStreak(cases)
   const feedbackEntries = feedbackEntriesFrom(cases)
+  const executionSummaries = executionSummariesFrom(cases)
+  const executionSignals = aggregateExecutionSignals(cases)
 
+  // First column is the stable evaluation key so quote attribution can never
+  // collide across repeated cases; the human label rides along for citations.
   const allCasesCSV = cases
-    .map((c, index) => {
-      const id = feedbackIdFor(c, index)
-      return `${id},${c.date},${c.type},${c.level},${c.structure},${c.analysis},${c.creativity},${c.delivery},${c.score}`
-    })
+    .map(
+      (c) =>
+        `${c.evaluationId},${escapeCsv(c.name || 'Untitled case')},${c.date},${c.type},${c.level},${c.structure},${c.analysis},${c.creativity},${c.delivery},${c.score}`
+    )
     .join('\n')
 
   const dynamicQuestions = generateDynamicQuestions(weakestType, streakDays, recentAvgScore, globalAvg.score)
   const initialGreeting =
-    `Hi. I've analyzed interviewer feedback from ${feedbackEntries.length} of your ${n} completed sessions. ` +
+    `Hi. I've analyzed interviewer feedback across all ${n} of your rated sessions. ` +
     `${capitalize(mostImprovedParam)} shows the clearest improvement so far. ` +
     `Ask me what your interviewers are really saying.`
 
@@ -252,7 +326,14 @@ export function computeFAMetrics(entries: DashboardCaseEntry[]): FAMetrics {
     allCasesCSV,
     feedbackEntries,
     feedbackCount: feedbackEntries.length,
+    executionSummaries,
+    executionSignals,
     dynamicQuestions,
     initialGreeting,
   }
+}
+
+/** Minimal CSV field escape — labels can contain commas (case titles). */
+function escapeCsv(value: string): string {
+  return value.includes(',') || value.includes('"') ? `"${value.replace(/"/g, '""')}"` : value
 }

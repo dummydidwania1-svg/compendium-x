@@ -1,15 +1,14 @@
+import { apiPost } from '@/lib/api/client';
 import type { FAMetrics } from '@/lib/feedbackPrecompute';
-
-const GEMINI_MODEL = 'gemini-2.5-flash';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 export interface FABlock {
   type: 'heading' | 'paragraph' | 'bullet' | 'quote' | 'divider';
   text: string;
-  tag?: string;    // for heading: "Persisting" | "Improving" | "Emerging" | "Early only" | "Strength" | "Gap"
-  caseId?: string; // for quote
-  date?: string;   // for quote
+  tag?: string;      // for heading: "Persisting" | "Improving" | "Emerging" | "Early only" | "Strength" | "Gap"
+  caseKey?: string;  // for quote: stable evaluation key (unambiguous across repeated cases)
+  caseLabel?: string;// for quote: human-facing case title
+  date?: string;     // for quote
 }
 
 export interface FAViz {
@@ -35,266 +34,67 @@ export interface FAResponse {
 
 export interface ChatMessage {
   role: 'user' | 'agent';
-  text: string;        // plain-text summary — used for Gemini conversation history
+  text: string;        // plain-text summary — used for conversation history
   response?: FAResponse; // structured response — used for rendering
 }
 
-// ── Response schema ────────────────────────────────────────────────────────────
-const FA_RESPONSE_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    blocks: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          type:   { type: 'STRING', enum: ['heading', 'paragraph', 'bullet', 'quote', 'divider'] },
-          text:   { type: 'STRING' },
-          tag:    { type: 'STRING' },
-          caseId: { type: 'STRING' },
-          date:   { type: 'STRING' },
-        },
-        required: ['type', 'text'],
-      },
-    },
-    viz: {
-      type: 'OBJECT',
-      properties: {
-        type:     { type: 'STRING', enum: ['bars', 'scatter', 'table', 'none'] },
-        title:    { type: 'STRING' },
-        subtitle: { type: 'STRING' },
-        items: {
-          type: 'ARRAY',
-          items: {
-            type: 'OBJECT',
-            properties: {
-              label: { type: 'STRING' },
-              value: { type: 'NUMBER' },
-            },
-            required: ['label', 'value'],
-          },
-        },
-        maxValue: { type: 'NUMBER' },
-        points: {
-          type: 'ARRAY',
-          items: {
-            type: 'OBJECT',
-            properties: {
-              x:     { type: 'NUMBER' },
-              y:     { type: 'NUMBER' },
-              label: { type: 'STRING' },
-            },
-            required: ['x', 'y', 'label'],
-          },
-        },
-        xLabel:  { type: 'STRING' },
-        yLabel:  { type: 'STRING' },
-        headers: { type: 'ARRAY', items: { type: 'STRING' } },
-        rows:    { type: 'ARRAY', items: { type: 'ARRAY', items: { type: 'STRING' } } },
-      },
-      required: ['type', 'title'],
-    },
-  },
-  required: ['blocks', 'viz'],
-};
+/**
+ * Analysis mode shortcuts — built from the user's ACTUAL data. The old
+ * hardcoded variants ("persisted from October to March", "Market Entry vs
+ * Profitability") referenced demo-era dates and types that frequently didn't
+ * exist in the user's history, which was the single biggest driver of generic
+ * or hallucinated output.
+ */
+export function buildAnalysisModes(m: FAMetrics): Array<{ label: string; description: string; prompt: string }> {
+  const start = m.dateRange.start || 'your first session';
+  const end = m.dateRange.end || 'your latest session';
 
-// ── System prompt ─────────────────────────────────────────────────────────────
-function buildSystemPrompt(m: FAMetrics): string {
-  const feedbackBlock = m.feedbackEntries
-    .map(f => {
-      const c = m.allCasesCSV.split('\n').find(row => row.startsWith(f.id + ','));
-      const [, date, type, level] = c ? c.split(',') : ['', '', '', ''];
-      return `Case ${f.id} (${date}, ${type}, ${level})\n  Written notes: ${f.notes}\n  Closing-minutes excerpt: "${f.verbal}"`;
-    })
-    .join('\n\n');
-
-  const typeLines = Object.entries(m.typeBreakdown)
-    .sort((a, b) => a[1].avgScore - b[1].avgScore)
-    .map(([t, d]) => `  ${t}: avg score ${d.avgScore} (${d.count} cases)`)
-    .join('\n');
-
-  return `You are Feedback Analyser. Your foundation is what the interviewer actually communicated as feedback: their written notes, plus a short excerpt from the closing portion of the case recording (roughly the last few minutes, or a proportional tail on older sessions), where wrap-up remarks are most likely to land. Scores are secondary: use them to corroborate what the language already reveals.
-
-The closing-minutes excerpt is NOT a full case transcript — it's deliberately just the tail end. It may contain genuine spoken feedback, or it may just be the last moments of case-solving with little evaluative content; judge each one on its own merits rather than assuming every excerpt contains a verdict. Never treat it as a record of how the whole case went.
-
-You find patterns in language: what interviewers keep saying, what has disappeared from feedback over time, what new concerns have emerged, and what strengths get consistently praised.
-
-=== INTERVIEWER FEEDBACK (${m.feedbackEntries.length} sessions) ===
-${feedbackBlock}
-
-=== SCORE CONTEXT (secondary) ===
-Total cases: ${m.totalCases} | Date range: ${m.dateRange.start} to ${m.dateRange.end}
-Global avg score: ${m.globalAvg.score}/5
-By case type (weakest to strongest):
-${typeLines}
-Easy: ${m.easyAvgScore} | Medium: ${m.mediumAvgScore} | Hard: ${m.hardAvgScore}
-Last 14 cases avg: ${m.recentAvgScore}
-
-=== CASE DATA (CSV) ===
-id,date,type,level,structure,analysis,creativity,delivery,score
-${m.allCasesCSV}
-
-=== OUTPUT FORMAT (valid JSON only — no markdown, no code fences) ===
-
-Return a JSON object with exactly two keys: "blocks" and "viz".
-
-BLOCKS — structured as 2-3 named findings. Each finding must follow this exact pattern in order:
-  1. heading   — names the theme with a temporal tag
-  2. paragraph — 1-2 sentences of context (never more than 2 sentences)
-  3. 2-3 bullets — specific observations, each referencing case numbers, dates, or metric names
-  4. quote     — one direct evidence quote from the feedback data above
-  5. divider   — separates findings (omit before the first finding and after the last)
-
-Block types:
-  heading   → { "type": "heading",   "text": "Theme name", "tag": "Persisting|Improving|Emerging|Early only|Strength|Gap" }
-  paragraph → { "type": "paragraph", "text": "1-2 sentences only. State the pattern plainly." }
-  bullet    → { "type": "bullet",    "text": "One specific observation — name the case number, date, or metric." }
-  quote     → { "type": "quote",     "text": "Exact verbatim words from the notes or verbal field above.", "caseId": "31", "date": "2026-03-10" }
-  divider   → { "type": "divider",   "text": "" }
-
-Tag values for headings:
-  "Persisting"  — flagged in both early and recent sessions
-  "Improving"   — was an issue early, resolved or improving now
-  "Emerging"    — absent early, appearing in recent sessions
-  "Early only"  — flagged early, gone in recent sessions
-  "Strength"    — consistently praised throughout
-  "Gap"         — weak area without a clear time signal
-
-VIZ — one visualization that best illuminates the answer:
-  bars    → { "type": "bars",    "title": "...", "items": [{"label":"...", "value": 0.0},...], "maxValue": 5 }
-  scatter → { "type": "scatter", "title": "...", "points": [{"x": 1, "y": 3.5, "label": "01"},...], "xLabel": "Session", "yLabel": "Score" }
-  table   → { "type": "table",   "title": "...", "headers": ["...","..."], "rows": [["...","..."],...] }
-  none    → { "type": "none",    "title": "" }
-
-Viz selection: recurring themes → bars | score over time → scatter | before/after contrasts → table.
-Compute all viz values from the CSV data. maxValue for bars is 5. Never fabricate quotes.
-
-Example output:
-{
-  "blocks": [
-    { "type": "heading", "text": "Competitive Analysis Gap", "tag": "Persisting" },
-    { "type": "paragraph", "text": "Interviewers flagged missing competitive dynamics in 5 of 7 Market Entry sessions, from October through March." },
-    { "type": "bullet", "text": "Cases 05, 23, 35: named competitors but skipped moat analysis and competitive intensity" },
-    { "type": "bullet", "text": "Case 40: structure improved but competitive assessment still felt like a checkbox" },
-    { "type": "quote", "text": "You told me how to enter but never whether to enter.", "caseId": "05", "date": "2025-10-22" },
-    { "type": "divider", "text": "" },
-    { "type": "heading", "text": "Delivery Arc", "tag": "Improving" },
-    { "type": "paragraph", "text": "The language interviewers used about delivery shifted completely between October and March." },
-    { "type": "bullet", "text": "Oct–Dec (Cases 01, 08, 11): 'hesitant', 'second-guessing', 'apologizing for estimates'" },
-    { "type": "bullet", "text": "Feb–Mar (Cases 27, 31): 'confident', 'natural', 'owned the room'" },
-    { "type": "quote", "text": "This might be the cleanest case I have seen from you.", "caseId": "31", "date": "2026-03-10" }
-  ],
-  "viz": {
-    "type": "bars",
-    "title": "Avg score by case type",
-    "items": [{"label": "Market Entry", "value": 3.2}, {"label": "Profitability", "value": 3.7}],
-    "maxValue": 5
+  const types = Object.entries(m.typeBreakdown);
+  let typePair = '';
+  if (types.length >= 2) {
+    const sorted = [...types].sort((a, b) => a[1].avgScore - b[1].avgScore);
+    typePair = `Focus especially on ${sorted[0][0]} versus ${sorted[sorted.length - 1][0]}.`;
+  } else if (types.length === 1) {
+    typePair = `All my sessions are ${types[0][0]} cases.`;
   }
-}`;
+
+  return [
+    {
+      label: 'Feedback Patterns',
+      description: 'What interviewers keep saying',
+      prompt: `Analyze the recurring language across all my interviewer feedback (${start} to ${end}). What themes appear in multiple sessions? Which concerns have persisted and which have disappeared? For each pattern give me evidence and one specific drill to fix it. Quote specific feedback where it illustrates the pattern.`,
+    },
+    {
+      label: 'By Case Type',
+      description: 'Type-specific feedback deep-dive',
+      prompt: `What does interviewer feedback say about each of my case types? ${typePair} Quote the verbal and written notes. What is the one thing interviewers keep flagging in my weakest type?`,
+    },
+    {
+      label: 'Feedback Over Time',
+      description: 'How the narrative has shifted',
+      prompt: `Compare the language in my early feedback with my recent feedback (my history runs ${start} to ${end}). What words and phrases appeared early that no longer appear? What new positive signals are interviewers using? Show the arc.`,
+    },
+    {
+      label: 'Full Report',
+      description: 'Patterns, strengths, and this week\u2019s drills',
+      prompt: 'Build my full feedback report.',
+    },
+  ];
 }
 
-// ── Analysis mode prompts ─────────────────────────────────────────────────────
-export const ANALYSIS_MODES = [
-  {
-    label: 'Feedback Patterns',
-    description: 'What interviewers keep saying',
-    prompt:
-      'Analyze the recurring language across all my interviewer feedback. What themes appear in multiple sessions? Which concerns have persisted from October to March, and which ones have disappeared? Quote specific feedback where it illustrates the pattern.',
-  },
-  {
-    label: 'By Case Type',
-    description: 'Type-specific feedback deep-dive',
-    prompt:
-      'What does the interviewer feedback say specifically about my Market Entry and Profitability cases? Quote the verbal and written notes. What is the one thing interviewers keep flagging in Market Entry that they stopped flagging in Profitability?',
-  },
-  {
-    label: 'Feedback Over Time',
-    description: 'How the narrative has shifted',
-    prompt:
-      'Compare the language in my early feedback (October to December 2025) with my recent feedback (February to March 2026). What words and phrases appeared early that no longer appear? What new positive signals are interviewers using? Show the arc.',
-  },
-] as const;
-
-// ── Gemini API call ───────────────────────────────────────────────────────────
+/**
+ * Calls the server-side analyser proxy (authenticatedRoute + rate limiting +
+ * server-only Gemini key). The client never sees an API key anymore.
+ */
 export async function callGeminiFeedback(
   metrics: FAMetrics,
   history: ChatMessage[],
   userQuestion: string,
 ): Promise<FAResponse> {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  if (!apiKey) throw new Error('NEXT_PUBLIC_GEMINI_API_KEY is not set.');
-
-  const contents = [
-    ...history.map(msg => ({
-      role: msg.role === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text }],
-    })),
-    { role: 'user', parts: [{ text: userQuestion }] },
-  ];
-
-  // No explicit cache management here on purpose: Gemini 2.5's implicit
-  // caching is automatic (Google's infra, not this code) and this request
-  // shape already matches what it needs — systemInstruction (the large,
-  // byte-identical-across-turns feedback corpus) stays separate from and
-  // ahead of `contents` (the small, per-turn conversation history + the new
-  // question). Within one chat session every follow-up resends the same
-  // systemInstruction prefix, so consecutive calls land a cache hit on it
-  // automatically once it clears the ~2048-token minimum — at roughly 1/10th
-  // the input-token cost of a fresh (uncached) call. Building a bespoke
-  // explicit-cache layer on top would just be duplicating what already
-  // happens for free.
-  const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: buildSystemPrompt(metrics) }] },
-      contents,
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 1200,
-        thinkingConfig: { thinkingBudget: 0 },
-        responseMimeType: 'application/json',
-        responseSchema: FA_RESPONSE_SCHEMA,
-      },
-    }),
+  const res = await apiPost<{ response: FAResponse }>('/api/feedback-analyser', {
+    metrics,
+    history: history.map((msg) => ({ role: msg.role, text: msg.text })),
+    question: userQuestion,
   });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(
-      `Gemini error ${response.status}: ${(err as any)?.error?.message ?? response.statusText}`
-    );
-  }
-
-  const data = await response.json();
-
-  // Dev-facing only — confirms the implicit cache is actually landing hits
-  // in practice, not just in theory. Never shown in the UI.
-  const usage = data?.usageMetadata;
-  if (usage && typeof usage.cachedContentTokenCount === 'number' && usage.cachedContentTokenCount > 0) {
-    console.debug(
-      `[FeedbackAnalyser] cache hit: ${usage.cachedContentTokenCount}/${usage.promptTokenCount} prompt tokens served from cache`
-    );
-  }
-
-  const parts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
-  const raw = parts
-    .filter((p: any) => !p.thought)
-    .map((p: any) => p.text ?? '')
-    .join('')
-    .trim();
-
-  try {
-    const parsed: FAResponse = JSON.parse(raw);
-    if (!parsed.blocks || !Array.isArray(parsed.blocks) || !parsed.viz) {
-      throw new Error('Invalid structure');
-    }
-    return parsed;
-  } catch {
-    // Fallback: render raw text as a single paragraph block
-    return {
-      blocks: [{ type: 'paragraph', text: raw || 'Something went wrong. Please try again.' }],
-      viz: { type: 'none', title: '' },
-    };
-  }
+  return res.response;
 }

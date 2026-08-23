@@ -116,6 +116,7 @@ workspaceImageUrls,
       hasSnapshot: mockCase.hasSnapshot,
       hasAudio: false,
       isUnrated: false,
+      executionAnalysis: null,
     })
   }
 

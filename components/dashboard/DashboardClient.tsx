@@ -39,7 +39,10 @@ function DashboardContent() {
   const [filters, setFilters] = useState<DashboardFilters>(DEFAULT_FILTERS)
 
   const hasActiveFilters = filters.types.length > 0 || filters.levels.length > 0 || filters.time !== 'all'
-  const isGoalTrackerLocked = false
+  // Suite launch hold: all three AI surfaces (Coach / Goal Tracker / Feedback
+  // Analyser) ship behind their locks and flip together at the coordinated
+  // public launch.
+  const isGoalTrackerLocked = true
 
   const clearAllFilters = () => {
     setFilters(DEFAULT_FILTERS)

@@ -11,9 +11,9 @@ export default defineConfig({
     },
   },
   test: {
-    // Scoped deliberately to lib/goalTracker — this is the one module in the
-    // repo pure/deterministic enough to warrant unit tests; the rest of the
-    // app is verified manually/via the Firebase emulator, per existing convention.
-    include: ['lib/goalTracker/**/*.test.ts'],
+    // Scoped deliberately to pure/deterministic modules (goal-tracker engine,
+    // caseSignals) — the rest of the app is verified manually/via the Firebase
+    // emulator, per existing convention.
+    include: ['lib/goalTracker/**/*.test.ts', 'lib/caseSignals.test.ts'],
   },
 })
