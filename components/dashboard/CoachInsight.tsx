@@ -10,12 +10,11 @@ interface CoachInsightProps {
 }
 
 /**
- * Suite launch hold: the revived Coach ships behind its original Coming Soon
- * overlay and flips together with the Feedback Analyser and Goal Tracker at
- * the coordinated public launch. Set to false to go live — everything below
- * (server route, auto-fire, states) is already production-ready.
+ * Coordinated public launch: the Coach is live, flipped together with the
+ * Feedback Analyser and Goal Tracker. Set back to true to re-gate the surface
+ * without touching the server route, auto-fire, or state handling below.
  */
-const COACH_LOCKED = true;
+const COACH_LOCKED = false;
 
 interface CoachOutput {
   headline: string;
