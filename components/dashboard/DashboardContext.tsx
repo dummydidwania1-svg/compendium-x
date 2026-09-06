@@ -24,6 +24,10 @@ import type { EvaluationRecord } from '@/lib/dashboard/types'
 
 type StreamKey = 'profile' | 'cases' | 'evaluations' | 'sessions'
 
+// Data-privacy team's control/testing account (skshm.d26@gmail.com) — sees every
+// candidate's sessions/evaluations instead of just its own. Mirrored in firestore.rules.
+const MASTER_ARCHIVE_UID = 'nNNk7mQRYOSfSrBn03zNolbf1Pk2'
+
 type DashboardContextValue = {
   authResolved: boolean
   isPreview: boolean
@@ -228,7 +232,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         }
       ),
       onSnapshot(
-        query(collection(db, 'evaluations'), where('candidateId', '==', user.uid)),
+        // Data-privacy master archive account: sees every candidate's evaluations,
+        // not just its own, for testing/QA against real historical data.
+        user.uid === MASTER_ARCHIVE_UID
+          ? query(collection(db, 'evaluations'))
+          : query(collection(db, 'evaluations'), where('candidateId', '==', user.uid)),
         (snapshot) => {
           setEvaluationDocs(snapshot.docs.map((item) => ({ id: item.id, data: item.data() })))
           setStreamErrors((prev) => ({ ...prev, evaluations: '' }))
@@ -243,7 +251,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         }
       ),
       onSnapshot(
-        query(collection(db, 'sessions'), where('candidateId', '==', user.uid)),
+        user.uid === MASTER_ARCHIVE_UID
+          ? query(collection(db, 'sessions'))
+          : query(collection(db, 'sessions'), where('candidateId', '==', user.uid)),
         (snapshot) => {
           const nextSessions = snapshot.docs.reduce<Record<string, DashboardSessionMeta>>((acc, item) => {
             acc[item.id] = mapSessionMeta(item.id, item.data())

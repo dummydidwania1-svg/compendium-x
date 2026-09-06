@@ -35,7 +35,7 @@ const FOUNDERS = [
   {
     name: 'Tanvi Bansal',
     badge: 'Goldman Sachs • Intern',
-    description: 'Interned at Grant Thornton & Michael Page. A global semifinalist at Wharton & Bharatnatyam graduate, she served as Corporate Communications Head at the Placement Cell, SRCC.',
+    description: 'Tanvi interned at Goldman Sachs’ Private Wealth division, preceded by experience at Michael Page, alongside stints spanning sectors including financial advisory and consulting. She currently leads the Placement Cell, SRCC, as Secretary General. Having represented India at the Wharton Investment Competition as Team Leader, she is a CUET AIR 5 scorer and also holds a bachelor’s degree in Bharatanatyam.',
     school: 'SRCC • Class of 2027',
     linkedin: 'https://in.linkedin.com/in/tanvi-bansal-298786233/',
     photoSrc: '/team/tanvi-bansal.jpg',
