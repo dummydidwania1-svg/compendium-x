@@ -259,19 +259,16 @@ const CoachInsight = ({ filters }: CoachInsightProps) => {
 
       <div className="flex items-center justify-between mb-2">
         <HeaderRow />
-        {!loading && output && (
+        {/* Only offered when the filters have actually moved since this read.
+            Gated on staleSig rather than on `output`, so the "no cases match
+            this filter" state can be rerun too, and so a fresh result carries
+            no redundant control. */}
+        {!loading && staleSig && (output || message) && (
           <button
             onClick={() => void runAnalysis()}
-            disabled={loading}
-            aria-label={staleSig ? 'Rerun coach for the current filters' : 'Run the coach again'}
-            title={staleSig ? 'Filters changed since this read' : 'Run another pass'}
-            // Stale = the on-screen insight no longer matches the filters, so the
-            // control steps up from a quiet link to a filled chip.
-            className={
-              staleSig
-                ? 'flex items-center gap-1 rounded-lg border border-[#3D5A35]/30 bg-[#3D5A35]/10 px-2 py-1 text-[9px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35] hover:bg-[#3D5A35]/16 transition-all'
-                : 'flex items-center gap-1 text-[9px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35]/55 hover:text-[#3D5A35]/85 transition-colors'
-            }
+            aria-label="Rerun the coach for the current filters"
+            title="Filters changed since this read"
+            className="flex items-center gap-1.5 text-[9.5px] text-[#5C4033]/45 hover:text-[#3D5A35]/80 transition-colors"
           >
             <RefreshCw className="w-2.5 h-2.5" />
             Rerun
@@ -329,11 +326,12 @@ const CoachInsight = ({ filters }: CoachInsightProps) => {
       {!loading && !error && !output && !message && ratedCount > 0 && (
         <div className="flex flex-col gap-3 mt-1" style={{ animation: '_ci_fadein 0.4s ease forwards' }}>
           <p className="text-[11.5px] leading-relaxed text-[#5C4033]/55">
-            Read the last {ratedCount} rated {ratedCount === 1 ? 'case' : 'cases'} for the pattern worth acting on.
+            The pattern worth acting on, read from your {ratedCount} rated{' '}
+            {ratedCount === 1 ? 'case' : 'cases'}.
           </p>
           <button
             onClick={() => void runAnalysis()}
-            className="self-start inline-flex items-center gap-1.5 rounded-lg border border-[#3D5A35]/16 bg-[#fff8f0]/85 px-3 py-1.5 text-[9.5px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35] hover:border-[#3D5A35]/30 hover:bg-[#fff8f0] transition-all"
+            className="self-start inline-flex items-center gap-1.5 border-b border-[#3D5A35]/25 pb-[3px] text-[11px] text-[#3D5A35]/75 hover:text-[#3D5A35] hover:border-[#3D5A35]/50 transition-colors"
           >
             <Sparkles className="w-2.5 h-2.5" />
             Run the coach

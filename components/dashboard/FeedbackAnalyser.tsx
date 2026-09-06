@@ -338,10 +338,22 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
     try {
       faResponse = await callGeminiFeedback(metrics, historyForGemini, text, opts?.focusKey);
     } catch (err) {
+      // The server explains itself: a deep dive on a case with no usable
+      // recording returns 409 no_transcript with a sentence worth reading, and
+      // an unrecognised case returns 400. Collapsing every failure into "check
+      // your connection" hid those, which is why clicking some Deep Dive cases
+      // looked broken while the same question typed into the chat worked.
+      const apiErr = err as { status?: number; message?: string } | null;
+      const serverMessage =
+        apiErr && typeof apiErr.message === 'string' && typeof apiErr.status === 'number'
+        && apiErr.status >= 400 && apiErr.status < 500
+          ? apiErr.message
+          : null;
       const msg =
         err instanceof Error && err.message.toLowerCase().includes('too many requests')
           ? 'You\u2019re sending messages very quickly — give it a few seconds and try again.'
-          : 'Something went wrong reaching the analyser. Please check your connection and try again.';
+          : serverMessage
+            ?? 'Something went wrong reaching the analyser. Please check your connection and try again.';
       faResponse = {
         blocks: [{ type: 'paragraph', text: msg }],
         viz: { type: 'none', title: '' },
@@ -585,7 +597,7 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
                     <div className="p-5 pt-3">
                       <div className="eyebrow !mb-1">Deep Dive a Case</div>
                       <p className="text-[9px] text-[#5C4033]/40 font-sans leading-snug mb-2.5 pl-[2px]">
-                        Reads the entire recording of one case — opening, structure, math, close.
+                        Reads the entire recording of one case: opening, structure, math, close.
                       </p>
                       <div className="flex flex-col gap-1.5">
                         {deepDiveCases.map((c) => (
@@ -627,7 +639,7 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
                   {messages.length <= 1 && !isLoading && !noCasesYet && (
                     <button
                       onClick={runFullReport}
-                      className="self-start inline-flex items-center gap-2 rounded-xl border border-[#3D5A35]/22 bg-[#3D5A35]/8 px-4 py-2.5 text-[10px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35] hover:bg-[#3D5A35]/14 hover:border-[#3D5A35]/35 transition-all"
+                      className="self-start inline-flex items-center gap-1.5 border-b border-[#3D5A35]/25 pb-[3px] text-[11.5px] text-[#3D5A35]/75 hover:text-[#3D5A35] hover:border-[#3D5A35]/50 transition-colors"
                     >
                       <Sparkles className="w-3 h-3" />
                       Build my full report

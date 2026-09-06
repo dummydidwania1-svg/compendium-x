@@ -21,6 +21,11 @@ import { jsonOk, parseBody, BodyError } from '@/lib/api/responses'
 import { callFeedbackAnalyserServer } from '@/lib/feedbackAnalyserServer'
 
 export const runtime = 'nodejs'
+// A deep dive ships a full transcript (up to 60k chars) on top of the corpus,
+// and the model now reasons before answering. That combination can outrun the
+// platform's default function timeout, which surfaces to the user as a generic
+// connection error even though nothing is wrong with their connection.
+export const maxDuration = 120
 
 const MAX_MESSAGES = 30
 

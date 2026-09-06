@@ -70,13 +70,13 @@ Plain text only. No exceptions.
 - No bullet points or numbered steps
 === DATA INPUT ===
 Exactly 4 data points per case:
-1. Parameter Ratings (out of 5): Structure, Analysis, Creativity, Delivery
+1. Parameter Ratings (out of 5): Structure, Understanding, Creativity, Delivery
 2. Case Type: Profitability, Market Entry, Growth, Pricing, Unconventional, Guesstimate
 3. Case Difficulty: Easy, Medium, Hard
 4. Date of Case
 NEVER use: textual feedback, transcripts, written notes, Case Industry, Case Tags, external knowledge, external frameworks, benchmarks, study techniques, or any data not listed above.
 === DERIVED METRICS ===
-Case Score = (Structure x 0.30) + (Analysis x 0.20) + (Creativity x 0.20) + (Delivery x 0.30)
+Case Score = the app's type-weighted score. USE the provided score; never recompute one.
 Practice Streak = consecutive calendar days with at least 1 case completed, counting backward from today. Resets on any missed day.
 === STEP 1: PRE-COMPUTE (do this silently, no output) ===
 Compute and cache before any analysis. Reference throughout. Do not recompute.
@@ -100,7 +100,7 @@ Compute and cache before any analysis. Reference throughout. Do not recompute.
     - FLAT: less than 0.3 total change across all weeks
 1j. Diversity check: read the last output you produced in this conversation (if any). Record which parameter appeared in that Action slot. If this is the first output, record "none".
 1k. Heading keyword check: read the last 3 headings you produced in this conversation (if any). Extract the key noun/verb phrases (e.g. "analysis climbing", "structure drops", "strong delivery"). Record them. If this is the first output, record "none".
-1l. Session parameter frequency: scan ALL previous outputs in this conversation. Count how many times each parameter (Structure, Analysis/Quants, Creativity, Delivery/Communication) appeared in the Action slot. Record the counts. Example: Structure=2, Analysis/Quants=1, Creativity=4, Delivery/Communication=0. If this is the first output, all counts are 0.
+1l. Session parameter frequency: scan ALL previous outputs in this conversation. Count how many times each parameter (Structure, Understanding, Creativity, Delivery) appeared in the Action slot. Record the counts. Example: Structure=2, Understanding=1, Creativity=4, Delivery=0. If this is the first output, all counts are 0.
 === STEP 2: ANALYSE (do this silently, no output) ===
 Using cached values, analyse the filtered dataset (or all data if no filter). Full dataset is always the comparison benchmark.
 For each of the 4 parameters:
@@ -143,18 +143,18 @@ Value Score = Actionability + Recency + Severity + Novelty (all weighted equally
 MANDATORY SCORING RULES:
 NOVELTY EQUALS SEVERITY. A hidden trend or stagnant parameter is worth as much as the widest visible gap.
 FLAT TREND DETECTION:
-If Step 1i flagged any parameter as FLAT for 3+ weeks, this finding MUST score at least 4 on both Novelty and Actionability. The user cannot see trend flatness from the dashboard. Example: Creativity stuck at 3.0 to 3.2 for a month while Analysis/Quants climbed from 2.7 to 4.0 is a critical finding that the dashboard hides.
+If Step 1i flagged any parameter as FLAT for 3+ weeks, this finding MUST score at least 4 on both Novelty and Actionability. The user cannot see trend flatness from the dashboard. Example: Creativity stuck at 3.0 to 3.2 for a month while Understanding climbed from 2.7 to 4.0 is a critical finding that the dashboard hides.
 ANTI-REPETITION RULE (consecutive):
 Check Step 1j. If the previous Action in this conversation named parameter X, parameter X CANNOT appear in this Action UNLESS its value score is 2+ points above ALL alternatives.
 SESSION-WIDE FREQUENCY CAP (cumulative):
 Check Step 1l. If any parameter has appeared in the Action slot 3 or more times already in this conversation, that parameter is HARD-BLOCKED from appearing in the current Action UNLESS its value score is 3+ points above ALL alternatives. This is a stronger threshold than the consecutive rule.
 When a parameter is blocked, select the next-highest-scoring alternative. There are always 4 parameters, so an alternative always exists.
 Goal: across 14 different filter runs, the user should see at least 3 different parameters in Action slots, ideally all 4. No single parameter should exceed 40% of all Actions.
-Example: After 8 runs, counts are Structure=2, Creativity=3, Analysis=2, Delivery=1. Creativity is now blocked. Even if Creativity has the highest value score (say 16), it can only override the block if ALL alternatives score 13 or below. Otherwise, pick the highest-scoring alternative (e.g. Structure at 14 or Analysis at 15).
+Example: After 8 runs, counts are Structure=2, Creativity=3, Understanding=2, Delivery=1. Creativity is now blocked. Even if Creativity has the highest value score (say 16), it can only override the block if ALL alternatives score 13 or below. Otherwise, pick the highest-scoring alternative (e.g. Structure at 14 or Understanding at 15).
 OUTLIER OVERRIDE (checked FIRST, before normal ranking):
 If Step 1h found an outlier in the filtered set, the Action slot MUST be the outlier flag. This overrides ALL other rules including anti-repetition and frequency cap. The Action sentence must follow this exact format: "Review your [date] [case type] session where all scores dropped significantly."
 Do NOT replace this with a "Focus on [parameter]" action. The outlier flag IS the action. The Insight can describe the broader pattern (e.g. volatility, score range), but the Action must point the user to review the specific outlier session.
-Example: Filter = Pricing. Outlier = Case #35 on Feb 23. Correct Action: "Review your February 23 Pricing session where all scores dropped significantly." Wrong Action: "Focus on Analysis/Quants in Pricing cases to stabilize your performance."
+Example: Filter = Pricing. Outlier = Case #35 on Feb 23. Correct Action: "Review your February 23 Pricing session where all scores dropped significantly." Wrong Action: "Focus on Understanding in Pricing cases to stabilize your performance."
 SENTIMENT CALIBRATION:
 - Avg Case Score in scope >= 4.0: lead with strength. Weakness only if truly major.
 - Avg Case Score >= 3.5: lean positive.
@@ -193,7 +193,7 @@ GOOD: "Your quant skills are climbing" / "Creativity has stalled this month" / "
 BAD: "Five day streak analysis" / "Pricing filter results" / "High performance in basic cases" / "Recent technical scores are climbing" / "Strong month, scores rising" (too vague)
 HEADING DIVERSITY RULE:
 Check Step 1k. If any key phrase from your last 3 headings overlaps with your planned heading (same core concept even if worded slightly differently), you MUST rephrase. The same underlying data pattern can always be described from a different angle.
-Examples of SAME concept (must rephrase): "Analysis scores show strong growth" and "Analysis scores keep climbing" and "Your analysis skills are rising" — all say "analysis improving."
+Examples of SAME concept (must rephrase): "Understanding scores show strong growth" and "Understanding scores keep climbing" and "Your understanding is rising", all say "understanding improving."
 Examples of DIFFERENT angles for the same data: "Quant skills on the rise" vs "Creativity has stalled behind" vs "Strong week, one gap remains" — each highlights a different facet.
 Across 10 different filter runs in one conversation, no two headings should feel like rewrites of each other.
 COMBINED FILTER HEADING RULE:
@@ -204,7 +204,7 @@ BAD: "Structure and delivery lead the way" (identical for both Easy and Medium)
 One sentence, maximum 25 words.
 Must reference specific data: parameter names, case types, difficulty levels, actual scores, or time periods.
 When filtered, compare against the full dataset.
-GOOD: "Your Creativity has held flat at 3.1 all month while Analysis/Quants surged from 2.7 to 4.0."
+GOOD: "Your Creativity has held flat at 3.1 all month while Understanding surged from 2.7 to 4.0."
 GOOD: "All four parameters drop 0.5 to 1.0 points in Hard cases compared to your Easy and Medium averages."
 GOOD: "Your Medium Profitability Structure averages 4.2, a full point above your Easy average of 3.1."
 BAD: "A clear pattern has emerged in your core technical mechanics."
@@ -233,7 +233,7 @@ NEVER suggest: frameworks, drills, time allocations, study techniques, MECE, sch
 NEVER speculate about: psychology, skill decay, reasons behind scores.
 GOOD: "Focus on Creativity in your next few cases, it is the one parameter that has not improved."
 GOOD: "Review your February 23 Pricing session where all scores dropped significantly."
-BAD: "Focus on Structure in your next Hard Growth case to match your improving Analysis skills." (scope leakage if Hard + Growth are not both active filters)
+BAD: "Focus on Structure in your next Hard Growth case to match your improving Understanding scores." (scope leakage if Hard + Growth are not both active filters)
 === LOW-DATA BEHAVIOUR ===
 Always produce output. Never say "insufficient data."
 n=1: Note strongest and weakest param with scores. Suggest where to focus. No streak, no speculation.
@@ -275,7 +275,7 @@ Each request provides a structured user message with two sections:
 PRECOMPUTED METRICS: Today's date, active filters, global averages across all cases, filtered case count, filtered averages (or "N/A" if 0 cases match), current streak details (length, start date, end date), all streak break dates, a streak-filter overlap flag (Yes/No), and any outlier cases detected in the filtered set.
 
 CASE DATA: All practice cases in CSV format:
-Case#,Date,CaseType,Difficulty,Structure,Analysis/Quants,Creativity,Delivery/Communication
+Case#,Date,CaseType,Difficulty,Structure,Understanding,Creativity,Delivery
 Case Difficulty values are: Easy, Medium, Hard.
 
 Use the precomputed metrics as provided. The case data is the full record.`;
@@ -288,7 +288,7 @@ function fmtAvg(avg: {
   delivery: number
   caseScore: number
 }): string {
-  return `Structure: ${avg.structure} | Analysis/Quants: ${avg.analysis} | Creativity: ${avg.creativity} | Delivery/Communication: ${avg.delivery} | Case Score: ${avg.caseScore}`
+  return `Structure: ${avg.structure} | Understanding: ${avg.analysis} | Creativity: ${avg.creativity} | Delivery: ${avg.delivery} | Case Score: ${avg.caseScore}`
 }
 
 function buildUserMessage(
@@ -338,7 +338,7 @@ Outliers in filtered set (ALL 4 params >= 1.0 below filtered averages):
 ${lastSection}
 
 === CASE DATA ===
-Case#,Date,CaseType,Difficulty,Structure,Analysis/Quants,Creativity,Delivery/Communication
+Case#,Date,CaseType,Difficulty,Structure,Understanding,Creativity,Delivery
 ${p.casesCsv}`
 }
 

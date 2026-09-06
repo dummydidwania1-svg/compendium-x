@@ -19,6 +19,8 @@ import { jsonOk, parseBody, BodyError } from '@/lib/api/responses'
 import { callGeminiCoachServer, type CoachOutput } from '@/lib/coachServer'
 
 export const runtime = 'nodejs'
+// The Coach now reasons before answering; keep it clear of the default timeout.
+export const maxDuration = 60
 
 const paramAvgSchema = z.object({
   structure: z.number(),

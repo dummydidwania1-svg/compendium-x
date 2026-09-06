@@ -14,6 +14,7 @@
  *     them
  */
 import 'server-only'
+import casesCatalog from '@/data/cases.json'
 import type { FAMetrics } from '@/lib/feedbackPrecompute'
 import type { FAResponse } from '@/lib/geminiFeedback'
 
@@ -90,6 +91,8 @@ const FA_RESPONSE_SCHEMA = {
 
 /** Recent cases shipped verbatim; anything older is compressed to a summary line. */
 const FULL_CORPUS_WINDOW = 20
+// Case material is long; cap how many distinct cases ship their full content.
+const CASE_CONTENT_LIMIT = 8
 const SUMMARY_LINE_CHARS = 90
 
 function normalize(text: string): string {
@@ -100,6 +103,58 @@ function truncate(text: string | null | undefined, chars: number): string {
   const clean = (text ?? '').trim()
   if (clean.length <= chars) return clean
   return `${clean.slice(0, chars).trimEnd()}…`
+}
+
+/**
+ * The case material behind each practised session: the prompt the candidate
+ * was given, the expected structure, and the model answer. Without this the
+ * analyser can only see how someone was rated, never what they were rated
+ * against — so it cannot say which branch of the tree was missed or whether a
+ * recommendation actually answered the question that was asked.
+ *
+ * Matched on case title, the only case identity the client already sends.
+ * Titles are compared case-insensitively with whitespace collapsed.
+ */
+const caseByTitle: Map<string, { prompt?: string; frameworkTree?: string; framework?: string }> = (() => {
+  const map = new Map<string, { prompt?: string; frameworkTree?: string; framework?: string }>()
+  const list = Array.isArray(casesCatalog)
+    ? (casesCatalog as unknown[])
+    : Object.values(casesCatalog as Record<string, unknown>).flat()
+  for (const raw of list) {
+    const c = raw as { title?: unknown; prompt?: unknown; frameworkTree?: unknown; framework?: unknown }
+    if (typeof c?.title !== 'string') continue
+    map.set(normalize(c.title), {
+      prompt: typeof c.prompt === 'string' ? c.prompt : undefined,
+      frameworkTree: typeof c.frameworkTree === 'string' ? c.frameworkTree : undefined,
+      framework: typeof c.framework === 'string' ? c.framework : undefined,
+    })
+  }
+  return map
+})()
+
+/** Case content for the sessions in the recent window, deduped by title. */
+function buildCaseContentBlock(m: FAMetrics): string {
+  const seen = new Set<string>()
+  const blocks: string[] = []
+  const recent = m.feedbackEntries.slice(-FULL_CORPUS_WINDOW)
+
+  for (const f of recent) {
+    const key = normalize(f.label)
+    if (!key || seen.has(key)) continue
+    const content = caseByTitle.get(key)
+    if (!content) continue
+    seen.add(key)
+
+    const parts = [`"${f.label}" (${f.caseType}, ${f.level})`]
+    if (content.prompt) parts.push(`  Problem: ${truncate(content.prompt, 700)}`)
+    if (content.frameworkTree) parts.push(`  Expected structure: ${truncate(content.frameworkTree, 1_800)}`)
+    if (content.framework) parts.push(`  Model answer and what strong candidates do: ${truncate(content.framework, 2_600)}`)
+    if (parts.length > 1) blocks.push(parts.join('\n'))
+    if (blocks.length >= CASE_CONTENT_LIMIT) break
+  }
+
+  if (blocks.length === 0) return '(Case material unavailable for these sessions.)'
+  return blocks.join('\n\n')
 }
 
 function buildCorpusBlock(m: FAMetrics): string {
@@ -126,7 +181,7 @@ function buildCorpusBlock(m: FAMetrics): string {
 
   const olderBlock =
     older.length > 0
-      ? `\n\n=== OLDER SESSIONS (summary only — ask about specifics by key if needed) ===\n${older
+      ? `\n\n=== OLDER SESSIONS (summary only) ===\n${older
           .map(
             (f) =>
               `[${f.key}] "${f.label}" (${f.date}): ${truncate(f.notes ?? f.verbal ?? '', SUMMARY_LINE_CHARS)}`
@@ -194,7 +249,7 @@ The user is at the very start of their prep. Rules for this mode:
       : ''
   }
 
-=== INTERVIEWER FEEDBACK (each item keyed [key] "label") ===
+=== INTERVIEWER FEEDBACK (each item shows [internal key] "case title" (date, type, level)) ===
 ${buildCorpusBlock(m)}${
     m.feedbackEntries.length === 0
       ? '\n\nNOTE: No written or spoken interviewer feedback has been captured at all yet. Build your report from SCORE CONTEXT and the measured execution signals only, and say plainly in one line that written feedback has not been recorded yet \u2014 then give two practical tips for getting it (ask the interviewer to jot two strengths and one improvement right after the case).'
@@ -209,15 +264,23 @@ ${typeLines}
 Easy: ${m.easyAvgScore} | Medium: ${m.mediumAvgScore} | Hard: ${m.hardAvgScore}
 Last 14 sessions avg: ${m.recentAvgScore}
 
-=== CASE DATA (CSV; first column = citation key, second = case title) ===
-key,title,date,type,level,structure,analysis,creativity,delivery,score
+=== CASE MATERIAL (what each session was actually about) ===
+For the sessions below you have the problem the candidate was given, the structure a strong answer is
+built on, and the model answer. Use it to judge performance against the case rather than in the abstract:
+which branch of the expected structure went unexplored, whether the recommendation answered the question
+that was actually asked, whether the math the case required was attempted at all. When you cite this
+material, describe it in your own words; do not quote it as if the interviewer had said it.
+${buildCaseContentBlock(m)}
+
+=== CASE DATA (CSV; first column = internal citation key, second = case title) ===
+key,title,date,type,level,structure,understanding,creativity,delivery,score
 ${m.allCasesCSV}
 
 === DIAGNOSIS STANDARD (this is what separates useful feedback from generic feedback) ===
 "Be more structured" is a direction, not a diagnosis. Every finding you produce MUST be specific enough
 to change what the user practices next. Each finding follows this exact shape:
 1. PATTERN  (heading): name the concrete behavior, e.g. "Numbers without implications", not "Quant needs work".
-2. EVIDENCE (paragraph + bullets): where it shows up — which session keys, dates, and the measured signals above when relevant.
+2. EVIDENCE (paragraph + bullets): where it shows up, naming each session as its case title and date, plus the measured signals above when relevant.
 3. TRAJECTORY (heading tag): Persisting | Improving | Emerging | Early only | Strength | Gap.
 4. DRILL (final bullet of every finding, prefixed exactly "Drill:"): ONE specific practice rep drawn from the
    drill library below, tailored to this user's data. Never a vague instruction like "practice more".
@@ -247,7 +310,7 @@ Return a JSON object with exactly two keys: "blocks" and "viz".
 BLOCKS — structured findings, each in this order:
   heading   → { "type": "heading", "text": "Pattern name", "tag": "<trajectory tag>" }
   paragraph → { "type": "paragraph", "text": "1-2 sentences stating the pattern plainly." }
-  bullet    → { "type": "bullet", "text": "One specific observation citing session keys, dates, or measured signals." }
+  bullet    → { "type": "bullet", "text": "One specific observation, naming sessions by case title and date, plus measured signals." }
   bullet    → ...2-3 observation bullets...
   bullet    → { "type": "bullet", "text": "Drill: <one drill from the library, tailored>." }
   quote     → { "type": "quote", "text": "Exact verbatim words from the notes or verbal excerpt.", "caseKey": "<key>", "caseLabel": "<title>", "date": "<date>" }
@@ -260,16 +323,42 @@ QUOTES: copy EXACTLY, word-for-word, from the Written notes or Closing-minutes e
 verifies every quote against the source text and silently drops quotes that do not match, so paraphrasing
 a quote makes it disappear. If no exact quote supports a finding, omit the quote block.
 
+NAMING SESSIONS: in every visible string, refer to a session by its case title and date, e.g.
+"Dry Hard (14 Aug)". The citation key exists only for the caseKey field on quote blocks; it is an internal
+id and must NEVER appear in text the user reads.
+
+NO REPETITION: each finding must stand on its own. Do not restate a point already made in an earlier
+finding, do not reuse the same evidence for two findings, and do not repeat a sentence you have already
+written in this answer. If two patterns share the same root cause, merge them into one stronger finding
+rather than listing both.
+
 VIZ — one visualization that best illuminates the answer:
   bars    → { "type": "bars", "title": "...", "items": [{"label":"...", "value": 0.0}], "maxValue": 5 }
   scatter → { "type": "scatter", "title": "...", "points": [{"x": 1, "y": 3.5, "label": "..."}], "xLabel": "Session", "yLabel": "Score" }
   table   → { "type": "table", "title": "...", "headers": ["..."], "rows": [["..."]] }
   none    → { "type": "none", "title": "" }
-Compute all viz values from the CSV data. maxValue for bars is 5.
+Compute all viz values from the CSV data. For bars built from 0-5 parameter scores set maxValue to 5; for
+counts, percentages or any other unit set maxValue to the true maximum of the data instead.
+
+ANSWERING FOLLOW-UP QUESTIONS: after the report, the user can ask you anything about their practice, and
+you should answer it fully rather than deflecting. You have the scores, the written feedback, the spoken
+excerpts, the transcript digests and the case content itself. Handle comparisons, rankings, counts,
+cause-and-effect questions, "why", "which", "how many", "show me", hypotheticals about what to practise
+next, and requests for a specific chart or table. Reach for the closest viz type: a bar chart for
+comparisons across categories, a scatter for anything over time or against another variable, a table for
+anything that is genuinely a grid of values. If asked for a chart type this schema cannot draw (mekko,
+pie, sankey, waterfall), pick the closest supported type, build it from the real numbers, and say in one
+bullet which type you used instead. Only decline when the question has nothing to do with this user's case
+practice; say so plainly in a single paragraph block rather than returning an error.
 
 FULL REPORT MODE: when asked for the full report, produce 2-4 findings (strongest patterns first, at least
 one Strength if any exists), then a final heading "This week's plan" (tag "Improving") whose bullets are the
-two highest-leverage drills across your findings, in priority order.`
+two highest-leverage drills across your findings, in priority order.
+
+FOLLOW-UP MODE: for any question that is not the full report, answer only what was asked. Do NOT append a
+"This week's plan" section and do NOT add drill bullets unless the user explicitly asked what to practise.
+A follow-up answer is usually one to three findings, or a single paragraph plus a viz when the question has
+a direct factual answer.`
 }
 
 /** Drops quote blocks whose text does not appear verbatim in the cited entry's notes/verbal. */
