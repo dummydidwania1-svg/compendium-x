@@ -6,10 +6,15 @@ service cloud.firestore {
     }
 
     // Data-privacy team's control/testing account (skshm.d26@gmail.com) — can
-    // read every user's profile/sessions/evaluations, not just its own.
-    // Mirrored in components/dashboard/DashboardContext.tsx (MASTER_ARCHIVE_UID).
+    // read markanshaurya6@gmail.com's sessions/evaluations, not just its own.
+    // Mirrored in components/dashboard/DashboardContext.tsx (MASTER_ARCHIVE_UID /
+    // MASTER_ARCHIVE_TARGET_UID).
     function isMasterArchive() {
       return signedIn() && request.auth.uid == 'nNNk7mQRYOSfSrBn03zNolbf1Pk2';
+    }
+
+    function isMasterArchiveTargetDoc(candidateId) {
+      return isMasterArchive() && candidateId == 'UeQfSN3gEsMsMyRc2k2N5eAYgbr2';
     }
 
     // True once the caller's own profile has been soft-deleted (see
@@ -65,7 +70,7 @@ service cloud.firestore {
     // `resource == null` allows reads of non-existent docs (e.g. lobby page's
     // initial existence check before calling POST /api/sessions).
     match /sessions/{sessionId} {
-      allow read: if isMasterArchive() || (signedIn() && (
+      allow read: if (resource != null && isMasterArchiveTargetDoc(resource.data.candidateId)) || (signedIn() && (
         resource == null ||
         resource.data.candidateId == request.auth.uid ||
         (resource.data.interviewerId is string && resource.data.interviewerId == request.auth.uid)
@@ -77,7 +82,7 @@ service cloud.firestore {
     // /api/evaluations which uses the Admin SDK.
     // Image-URL updates are still permitted client-side (dashboard upload UI).
     match /evaluations/{evaluationId} {
-      allow read: if isMasterArchive() || (signedIn() && (
+      allow read: if isMasterArchiveTargetDoc(resource.data.candidateId) || (signedIn() && (
         resource.data.candidateId == request.auth.uid ||
         (resource.data.interviewerId is string && resource.data.interviewerId == request.auth.uid)
       ));

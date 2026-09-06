@@ -24,9 +24,11 @@ import type { EvaluationRecord } from '@/lib/dashboard/types'
 
 type StreamKey = 'profile' | 'cases' | 'evaluations' | 'sessions'
 
-// Data-privacy team's control/testing account (skshm.d26@gmail.com) — sees every
-// candidate's sessions/evaluations instead of just its own. Mirrored in firestore.rules.
+// Data-privacy team's control/testing account (skshm.d26@gmail.com) — sees
+// markanshaurya6@gmail.com's sessions/evaluations instead of just its own,
+// for testing against a real, data-rich candidate history. Mirrored in firestore.rules.
 const MASTER_ARCHIVE_UID = 'nNNk7mQRYOSfSrBn03zNolbf1Pk2'
+const MASTER_ARCHIVE_TARGET_UID = 'UeQfSN3gEsMsMyRc2k2N5eAYgbr2' // markanshaurya6@gmail.com
 
 type DashboardContextValue = {
   authResolved: boolean
@@ -232,11 +234,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         }
       ),
       onSnapshot(
-        // Data-privacy master archive account: sees every candidate's evaluations,
-        // not just its own, for testing/QA against real historical data.
-        user.uid === MASTER_ARCHIVE_UID
-          ? query(collection(db, 'evaluations'))
-          : query(collection(db, 'evaluations'), where('candidateId', '==', user.uid)),
+        // Data-privacy master archive account: sees markanshaurya6@gmail.com's
+        // evaluations instead of its own, for testing/QA against real historical data.
+        query(
+          collection(db, 'evaluations'),
+          where('candidateId', '==', user.uid === MASTER_ARCHIVE_UID ? MASTER_ARCHIVE_TARGET_UID : user.uid)
+        ),
         (snapshot) => {
           setEvaluationDocs(snapshot.docs.map((item) => ({ id: item.id, data: item.data() })))
           setStreamErrors((prev) => ({ ...prev, evaluations: '' }))
@@ -251,9 +254,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         }
       ),
       onSnapshot(
-        user.uid === MASTER_ARCHIVE_UID
-          ? query(collection(db, 'sessions'))
-          : query(collection(db, 'sessions'), where('candidateId', '==', user.uid)),
+        query(
+          collection(db, 'sessions'),
+          where('candidateId', '==', user.uid === MASTER_ARCHIVE_UID ? MASTER_ARCHIVE_TARGET_UID : user.uid)
+        ),
         (snapshot) => {
           const nextSessions = snapshot.docs.reduce<Record<string, DashboardSessionMeta>>((acc, item) => {
             acc[item.id] = mapSessionMeta(item.id, item.data())
