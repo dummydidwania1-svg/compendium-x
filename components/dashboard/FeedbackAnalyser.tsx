@@ -315,9 +315,6 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
   ]);
   const [input, setInput]             = useState('');
   const endRef                        = useRef<HTMLDivElement>(null);
-  // Report-first: the full report auto-generates once per open conversation,
-  // without injecting a fake user bubble.
-  const reportStartedRef = useRef(false);
 
   const handleMouseEnter = () => setIsHovering(true);
   const handleMouseLeave = () => setIsHovering(false);
@@ -369,14 +366,13 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
     setIsLoading(false);
   };
 
-  // Auto-generate the full feedback report the first time the overlay opens.
-  // Deliberately fires once per mount (ref-guarded) — handleSend is stable
-  // enough in practice and re-running on its identity would double-fire.
-  useEffect(() => {
-    if (!isOpen || isPreview || noCasesYet || reportStartedRef.current) return;
-    reportStartedRef.current = true;
+  // Run on demand only: opening the overlay no longer spends a model call.
+  // The greeting names the analysis modes, and "Full Report" below runs the
+  // same prompt the auto-fire used to send.
+  const runFullReport = () => {
+    if (isPreview || noCasesYet || isLoading) return;
     void handleSend(REPORT_PROMPT, { hideUserBubble: true });
-  }, [isOpen, isPreview, noCasesYet]);
+  };
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -627,6 +623,16 @@ const FeedbackAnalyser = ({ isOpen, setIsOpen }: Props) => {
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-4 custom-scrollbar">
+                  {/* Idle: the report costs a model call, so it waits to be asked. */}
+                  {messages.length <= 1 && !isLoading && !noCasesYet && (
+                    <button
+                      onClick={runFullReport}
+                      className="self-start inline-flex items-center gap-2 rounded-xl border border-[#3D5A35]/22 bg-[#3D5A35]/8 px-4 py-2.5 text-[10px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35] hover:bg-[#3D5A35]/14 hover:border-[#3D5A35]/35 transition-all"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      Build my full report
+                    </button>
+                  )}
                   {messages.map((msg, i) => (
                     <div
                       key={i}

@@ -142,24 +142,15 @@ const CoachInsight = ({ filters }: CoachInsightProps) => {
     }
   }, [metrics, signature, loading, ratedCount]);
 
-  // ── Original behaviour: auto-fire on mount, debounced on filter changes ──────
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const firstRunRef = useRef(true);
+  // ── Run on demand only ───────────────────────────────────────────────────────
+  // The Coach used to fire on mount and again (debounced) on every filter flip,
+  // which meant a model call for every dashboard visit and every stray filter
+  // toggle. Now nothing calls the model until the user asks: this effect only
+  // marks an existing result stale so the button can offer a rerun.
   useEffect(() => {
     if (COACH_LOCKED || isPreview || !metrics) return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (firstRunRef.current) {
-      firstRunRef.current = false;
-      void runAnalysis();
-      return;
-    }
-    // Data/filter changes after mount: mark cached result stale and debounce.
-    if (cacheRef.current.sig !== signature) setStaleSig(true);
-    debounceRef.current = setTimeout(() => void runAnalysis(), 1500);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [isPreview, metrics, runAnalysis, signature]);
+    if (cacheRef.current.sig && cacheRef.current.sig !== signature) setStaleSig(true);
+  }, [isPreview, metrics, signature]);
 
   // ── States ──
   // Suite launch hold: original tombstone, byte-for-byte the parked design.
@@ -272,12 +263,18 @@ const CoachInsight = ({ filters }: CoachInsightProps) => {
           <button
             onClick={() => void runAnalysis()}
             disabled={loading}
-            aria-label="Refresh coaching insight"
+            aria-label={staleSig ? 'Rerun coach for the current filters' : 'Run the coach again'}
             title={staleSig ? 'Filters changed since this read' : 'Run another pass'}
-            className="flex items-center gap-1 text-[9px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35]/55 hover:text-[#3D5A35]/85 transition-colors"
+            // Stale = the on-screen insight no longer matches the filters, so the
+            // control steps up from a quiet link to a filled chip.
+            className={
+              staleSig
+                ? 'flex items-center gap-1 rounded-lg border border-[#3D5A35]/30 bg-[#3D5A35]/10 px-2 py-1 text-[9px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35] hover:bg-[#3D5A35]/16 transition-all'
+                : 'flex items-center gap-1 text-[9px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35]/55 hover:text-[#3D5A35]/85 transition-colors'
+            }
           >
-            <RefreshCw className={`w-2.5 h-2.5 ${staleSig ? 'animate-spin-slow' : ''}`} />
-            {staleSig ? 'Refresh' : 'Rerun'}
+            <RefreshCw className="w-2.5 h-2.5" />
+            Rerun
           </button>
         )}
       </div>
@@ -326,6 +323,22 @@ const CoachInsight = ({ filters }: CoachInsightProps) => {
         >
           {message}
         </p>
+      )}
+
+      {/* Idle — nothing runs until asked. */}
+      {!loading && !error && !output && !message && ratedCount > 0 && (
+        <div className="flex flex-col gap-3 mt-1" style={{ animation: '_ci_fadein 0.4s ease forwards' }}>
+          <p className="text-[11.5px] leading-relaxed text-[#5C4033]/55">
+            Read the last {ratedCount} rated {ratedCount === 1 ? 'case' : 'cases'} for the pattern worth acting on.
+          </p>
+          <button
+            onClick={() => void runAnalysis()}
+            className="self-start inline-flex items-center gap-1.5 rounded-lg border border-[#3D5A35]/16 bg-[#fff8f0]/85 px-3 py-1.5 text-[9.5px] uppercase tracking-[0.12em] font-semibold text-[#3D5A35] hover:border-[#3D5A35]/30 hover:bg-[#fff8f0] transition-all"
+          >
+            <Sparkles className="w-2.5 h-2.5" />
+            Run the coach
+          </button>
+        </div>
       )}
 
       {/* Loaded content — headline / insight / action */}

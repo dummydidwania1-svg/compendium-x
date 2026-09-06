@@ -333,7 +333,13 @@ export async function callFeedbackAnalyserServer(
       contents,
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 1400,
+        // A full report is 2-4 findings, each carrying a heading, paragraph,
+        // 3-4 bullets and a verbatim quote, plus the "this week's plan" section
+        // and the viz object. At 1400 the JSON was routinely cut mid-string --
+        // Hindi-English quotes tokenize 2-3x heavier than English -- which threw
+        // JSON.parse and dumped the raw payload into the UI via the fallback
+        // below. Sized for the worst realistic report, not the average one.
+        maxOutputTokens: 6000,
         thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: 'application/json',
         responseSchema: FA_RESPONSE_SCHEMA,
@@ -347,22 +353,102 @@ export async function callFeedbackAnalyserServer(
   }
 
   const data = await response.json()
-  const parts: Array<{ text?: string; thought?: boolean }> = data?.candidates?.[0]?.content?.parts ?? []
+  const candidate = data?.candidates?.[0]
+  const parts: Array<{ text?: string; thought?: boolean }> = candidate?.content?.parts ?? []
   const raw = parts
     .filter((p) => !p.thought)
     .map((p) => p.text ?? '')
     .join('')
     .trim()
 
+  // MAX_TOKENS means the JSON is cut mid-structure, so JSON.parse below is
+  // guaranteed to throw. Log it distinctly: a truncated report is a capacity
+  // problem to fix here, not a malformed-model-output problem.
+  const truncated = candidate?.finishReason === 'MAX_TOKENS'
+  if (truncated) {
+    console.warn('[feedbackAnalyser] response hit MAX_TOKENS; JSON is incomplete', { rawLength: raw.length })
+  }
+
   try {
     const parsed = JSON.parse(raw) as FAResponse
     if (!parsed.blocks || !Array.isArray(parsed.blocks) || !parsed.viz) throw new Error('Invalid structure')
     return verifyQuotes(parsed, metrics, focusedTranscript ?? null)
   } catch {
-    // Fallback: render raw text as a single paragraph block
+    // Salvage: recover whole blocks from a truncated payload so a cut-off
+    // report still renders its complete findings instead of nothing.
+    const salvaged = salvageBlocks(raw)
+    if (salvaged.length) {
+      console.warn('[feedbackAnalyser] salvaged partial report', { blockCount: salvaged.length })
+      return verifyQuotes({ blocks: salvaged, viz: { type: 'none', title: '' } }, metrics, focusedTranscript ?? null)
+    }
+    // Never surface `raw` -- it is unparsed JSON, and rendering it as prose is
+    // what put a wall of braces in front of users.
+    console.error('[feedbackAnalyser] unparseable response', { truncated, rawPreview: raw.slice(0, 200) })
     return {
-      blocks: [{ type: 'paragraph', text: raw || 'Something went wrong. Please try again.' }],
+      blocks: [{
+        type: 'paragraph',
+        text: truncated
+          ? 'That report ran long and got cut off. Try narrowing the question — a single case type or a shorter date range usually gets a complete answer.'
+          : 'Something went wrong generating that report. Please try again.',
+      }],
       viz: { type: 'none', title: '' },
     }
   }
+}
+
+/**
+ * Pulls complete block objects out of a truncated `{"blocks":[...]}` payload.
+ * Scans with a brace-depth counter (skipping braces inside strings) and keeps
+ * only objects that close cleanly and parse, so the trailing half-written block
+ * is dropped rather than rendered.
+ */
+function salvageBlocks(raw: string): FAResponse['blocks'] {
+  const start = raw.indexOf('"blocks"')
+  if (start === -1) return []
+  const arrayStart = raw.indexOf('[', start)
+  if (arrayStart === -1) return []
+
+  const BLOCK_TYPES = ['heading', 'paragraph', 'bullet', 'quote', 'divider'] as const
+  const isBlock = (v: unknown): v is FAResponse['blocks'][number] => {
+    if (!v || typeof v !== 'object') return false
+    const b = v as { type?: unknown; text?: unknown }
+    return (
+      typeof b.type === 'string' &&
+      (BLOCK_TYPES as readonly string[]).includes(b.type) &&
+      typeof b.text === 'string'
+    )
+  }
+
+  const out: FAResponse['blocks'] = []
+  let depth = 0
+  let objStart = -1
+  let inString = false
+  let escaped = false
+
+  for (let i = arrayStart; i < raw.length; i += 1) {
+    const ch = raw[i]
+    if (escaped) { escaped = false; continue }
+    if (ch === '\\') { escaped = true; continue }
+    if (ch === '"') { inString = !inString; continue }
+    if (inString) continue
+
+    if (ch === '{') {
+      if (depth === 0) objStart = i
+      depth += 1
+    } else if (ch === '}') {
+      depth -= 1
+      if (depth === 0 && objStart !== -1) {
+        try {
+          const block: unknown = JSON.parse(raw.slice(objStart, i + 1))
+          if (isBlock(block)) out.push(block)
+        } catch {
+          // Half-written object -- skip it.
+        }
+        objStart = -1
+      }
+    } else if (ch === ']' && depth === 0) {
+      break
+    }
+  }
+  return out
 }
