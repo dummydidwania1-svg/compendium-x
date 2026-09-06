@@ -17,7 +17,16 @@ import 'server-only'
 import type { FAMetrics } from '@/lib/feedbackPrecompute'
 import type { FAResponse } from '@/lib/geminiFeedback'
 
-const GEMINI_MODEL = 'gemini-2.5-flash'
+// gemini-3.6-flash: the Analyser is the heaviest call in the app -- up to 20
+// feedback entries plus transcript digests (and sometimes a whole transcript),
+// heavily Hindi-English code-mixed, answered as schema-valid JSON with quotes
+// that must match the source word-for-word or they get dropped.
+//
+// Caveat worth knowing: lib/goalTracker/vertexInsight.ts documents this model
+// returning a prose preamble instead of JSON despite a schema. That was on the
+// Vertex Express Mode endpoint; this call goes to the plain Gemini API, so it
+// may not transfer -- but the JSON guard below exists because it might.
+const GEMINI_MODEL = 'gemini-3.6-flash'
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 const FA_RESPONSE_SCHEMA = {
@@ -339,8 +348,14 @@ export async function callFeedbackAnalyserServer(
         // Hindi-English quotes tokenize 2-3x heavier than English -- which threw
         // JSON.parse and dumped the raw payload into the UI via the fallback
         // below. Sized for the worst realistic report, not the average one.
-        maxOutputTokens: 6000,
-        thinkingConfig: { thinkingBudget: 0 },
+        // Thinking draws from this same budget, so it is sized for reasoning
+        // plus the report itself, not the report alone.
+        maxOutputTokens: 10000,
+        // Was 0 -- the most analytical surface in the app was writing
+        // multi-finding reports with no reasoning pass at all. It has to spot
+        // patterns across up to 20 sessions, rank them, and pick quotes that
+        // survive verbatim verification; that is reasoning work.
+        thinkingConfig: { thinkingBudget: 2048 },
         responseMimeType: 'application/json',
         responseSchema: FA_RESPONSE_SCHEMA,
       },
@@ -367,6 +382,23 @@ export async function callFeedbackAnalyserServer(
   const truncated = candidate?.finishReason === 'MAX_TOKENS'
   if (truncated) {
     console.warn('[feedbackAnalyser] response hit MAX_TOKENS; JSON is incomplete', { rawLength: raw.length })
+  }
+
+  // Structured-output guard: a response that never starts a JSON value is the
+  // prose-preamble failure documented against this model in
+  // lib/goalTracker/vertexInsight.ts ("Here is the JSON requested:" and nothing
+  // else). Logged separately from a parse failure so it is obvious in the logs
+  // whether the model ignored the schema or merely ran out of room.
+  const looksLikeJson = raw.startsWith('{') || raw.startsWith('[')
+  if (raw && !looksLikeJson) {
+    console.error('[feedbackAnalyser] model returned prose, not JSON -- schema ignored', {
+      model: GEMINI_MODEL,
+      rawPreview: raw.slice(0, 200),
+    })
+    return {
+      blocks: [{ type: 'paragraph', text: 'Something went wrong generating that report. Please try again.' }],
+      viz: { type: 'none', title: '' },
+    }
   }
 
   try {
